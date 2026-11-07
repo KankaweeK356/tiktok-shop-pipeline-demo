@@ -56,5 +56,8 @@ def test_notebook_one_click_setup_is_valid():
     nbformat.validate(nb)
     src=nb.cells[2].source
     assert 'KankaweeK356/tiktok-shop-pipeline-demo' in src
-    assert "'git','-C',str(target),'pull','--ff-only'" in src
+    # Setup must reuse an existing Colab checkout instead of pulling over a dirty tree.
+    assert 'if target.exists():' in src
+    assert "'clone'" in src
+    assert "subprocess.check_call(['git','-C',str(target),'pull','--ff-only'])" not in src
     assert 'pipeline/orchestrator.py' in src

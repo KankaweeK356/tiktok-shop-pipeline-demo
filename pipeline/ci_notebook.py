@@ -54,5 +54,29 @@ def main():
     print("COLAB NOTEBOOK USER JOURNEY: ALL CELLS PASSED", flush=True)
 
 
+def quick_demo():
+    """Exercise the lecturer-facing Run all journey, including its reports."""
+    path = ROOT / "notebooks" / "TikTok_Shop_Quick_Demo.ipynb"
+    notebook = nbformat.read(path, as_version=4)
+    nbformat.validate(notebook)
+    namespace = {"__name__": "__main__"}
+    for index in (2, 4, 6, 8, 10):
+        source = notebook.cells[index].source
+        print(f"BEGIN QUICK DEMO CELL {index}", flush=True)
+        exec(compile(source, f"quick-demo-{index}", "exec"), namespace)
+        if index == 4:
+            assert namespace["initial"]["status"] == "SUCCESS"
+            assert namespace["incremental"]["status"] == "SUCCESS"
+            assert namespace["replay_state"] == namespace["after"]
+        if index == 6:
+            assert len(namespace["errors"]) == 6 and namespace["errors"]["passed"].all()
+        if index == 8:
+            assert len(namespace["perf"]) == 2 and not namespace["monthly"].empty
+            assert Path(namespace["published"]["zip_path"]).is_file()
+        print(f"PASS QUICK DEMO CELL {index}", flush=True)
+    print("LECTURER QUICK DEMO: ALL CELLS PASSED", flush=True)
+
+
 if __name__ == "__main__":
     main()
+    quick_demo()

@@ -12,9 +12,23 @@
 
 [![Pipeline CI — ตรวจด้วย DuckDB / PyArrow จริง](https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/actions/workflows/pipeline-ci.yml/badge.svg)](https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/actions/workflows/pipeline-ci.yml)
 
-[![เปิด Demo บน Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/KankaweeK356/tiktok-shop-pipeline-demo/blob/main/notebooks/TikTok_Shop_Demo.ipynb)
+### Quick Demo — แนะนำสำหรับอาจารย์และผู้ทดลองครั้งแรก
 
-**สำหรับผู้ทดลอง:** กดปุ่มด้านบน แล้วรันหัวข้อ 00 → 01 → 02 ต่อด้วย 03–05 ตามต้องการ
+[![Open Quick Demo in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/KankaweeK356/tiktok-shop-pipeline-demo/blob/main/notebooks/TikTok_Shop_Quick_Demo.ipynb)
+
+**ทำแค่อย่างเดียว:** เปิดลิงก์ด้านบน → เลือก **Runtime → Run all** โดยไม่ต้องกรอก URL, อัปโหลด ZIP, เลือก Error Mode หรือเชื่อม Google Drive
+
+Quick Demo จะทำ Initial → Incremental → รันซ้ำ → Functional/Lineage → Error Recovery ครบ 6 กรณี → Performance → กำไร → Export รายงาน ให้อัตโนมัติ โดยแสดงผลใน Notebook เดียว
+
+- **กด Run all ซ้ำ:** สร้างข้อมูลทดลองใหม่ใน Colab Runtime โดยล้างเฉพาะ `output/main` ก่อนเริ่ม ไม่กระทบ Source ที่ GitHub หรือไฟล์ที่บันทึกใน Drive
+- **ต้องการเก็บถาวร:** ท้าย Quick Demo มีตัวเลือก Save to Google Drive (ปิดไว้เป็นค่าเริ่มต้น)
+- **พบ Error:** เปิดข้อมูลใต้ Cell ที่มีข้อความผิดพลาด และรายงานเวอร์ชัน Code จาก GitHub
+
+### Notebook ฉบับละเอียด — สำหรับตรวจสอบแต่ละขั้นตอน
+
+[เปิด Detailed Demo in Colab](https://colab.research.google.com/github/KankaweeK356/tiktok-shop-pipeline-demo/blob/main/notebooks/TikTok_Shop_Demo.ipynb)
+
+ฉบับละเอียดแยก Section 00–05 และมีตัวเลือกสุ่ม Error, Retry, บันทึก/เคลียร์ Drive เหมาะเมื่ออาจารย์ถามเชิงเทคนิค
 
 **ดูผลการทดสอบที่เผยแพร่แล้ว:** [reports/](reports/README.md) — เมื่อเจ้าของโปรเจกต์รัน Colab ผ่านครบและอัปโหลดรายงานที่ตรวจแล้ว
 
@@ -27,7 +41,7 @@
 
 **ผลลัพธ์อยู่ที่ไหน:** แสดงสรุปใต้แต่ละ Cell ใน Colab ส่วนไฟล์ฐานข้อมูล, Data Lake และรายงานถูกสร้างใน `output/` บน Runtime ของแต่ละคน
 
-**เริ่มใหม่:** ในหัวข้อ 00 ตั้ง `RESET_DEMO=True` แล้วรันหนึ่งครั้ง จากนั้นเปลี่ยนกลับเป็น `False` และรัน Run 1 ใหม่
+**เริ่มใหม่:** Quick Demo กด **Runtime → Run all** ซ้ำได้เลย ส่วนฉบับละเอียดตั้ง `RESET_DEMO=True` ในหัวข้อ 00 ก่อนรัน Run 1 ใหม่
 
 อ่านรายละเอียดได้จาก [วิธีเริ่ม Demo แบบสั้น](docs/QUICK_START_TH.md) ส่วนผู้พัฒนาที่ต้องการแก้ไขไฟล์ อ่าน [คู่มือ GitHub](docs/GITHUB_SETUP_TH.md)
 

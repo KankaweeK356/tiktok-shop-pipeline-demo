@@ -1,4 +1,25 @@
-# วิธีรัน Demo บน Google Colab
+# เริ่ม Demo แบบง่าย — กด Run all ครั้งเดียว
+
+[![เปิด Quick Demo บน Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/KankaweeK356/tiktok-shop-pipeline-demo/blob/main/notebooks/TikTok_Shop_Quick_Demo.ipynb)
+
+**สำหรับอาจารย์หรือผู้ที่เพิ่งทดลอง:** เปิดลิงก์ด้านบน → ไปที่ **Runtime → Run all** → ดูผลตามลำดับ ไม่ต้องดาวน์โหลด ZIP ไม่ต้องแก้ Code และไม่ต้องเชื่อม Google Drive
+
+| หน้า Quick Demo | ทำอะไร | ผลลัพธ์ |
+|---|---|---|
+| **00 Setup** | ดึง CSV และ Code จาก GitHub | จำนวน Source Orders |
+| **01 Load & Validate** | Run 1 → Run 2 → รันซ้ำ → Functional + Lineage | ยอดขายก่อน/หลัง, ไม่มีข้อมูลซ้ำ, ผลตรวจ |
+| **02 Error Recovery** | จำลอง/แก้ Error 6 กรณีอัตโนมัติ | Error, ขั้นที่ Retry, PASS/FAIL |
+| **03 KPI & Performance** | วัดเวลาประมวลผลและกำไร | ตาราง, กราฟ, รายงาน |
+| **04 Google Drive** | ทางเลือก (ปิดไว้) | ไม่ขอสิทธิ์ Drive ถ้าไม่ติ๊ก |
+
+**รันใหม่ทั้งหมด:** เลือก Runtime → Run all ซ้ำ — โปรแกรมรีเซ็ตเฉพาะผลทดลองใน Runtime ไม่แก้ Source ที่ GitHub
+
+**หากต้องการแก้เงื่อนไขจำลอง Error หรือล้าง Snapshot Drive:** ใช้ [Detailed Notebook](https://colab.research.google.com/github/KankaweeK356/tiktok-shop-pipeline-demo/blob/main/notebooks/TikTok_Shop_Demo.ipynb)
+
+---
+
+## รายละเอียดสำหรับผู้ที่ต้องการตรวจทีละขั้น
+# Detailed Demo (Advanced)
 
 ใช้เวลาอ่านแค่ส่วนนี้ก็เริ่มทดลองได้ ไม่ต้องเปิดทุกไฟล์ใน Repository
 

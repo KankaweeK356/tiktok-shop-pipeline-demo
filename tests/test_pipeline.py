@@ -47,3 +47,28 @@ def test_end_to_end_incremental_and_replay(tmp_path):
     assert two['functional_fails']==0
     assert run_batch(ws,'incremental',src)['status']=='SUCCESS'
     assert signature(ws)==after
+
+
+def test_colab_notebook_setup_can_be_rerun():
+    """Section 00 must not pull over a locally changed Colab checkout."""
+    import ast
+    import json
+    notebook = json.loads((ROOT/'notebooks'/'TikTok_Shop_Demo.ipynb').read_text(encoding='utf-8'))
+    setup = ''.join(notebook['cells'][2]['source'])
+    tree = ast.parse(setup)
+    subprocess_calls = [
+        node for node in ast.walk(tree)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+        and node.func.attr in ('check_call', 'run', 'check_output')
+    ]
+    for call in subprocess_calls:
+        for argument in call.args:
+            if isinstance(argument, ast.List):
+                literals = [element.value for element in argument.elts
+                            if isinstance(element, ast.Constant) and isinstance(element.value, str)]
+                assert 'pull' not in literals, 'Colab setup must not git pull in an existing runtime'
+    assert "if target.exists():" in setup
+    assert "'clone'" in setup
+    for cell in notebook['cells']:
+        if cell['cell_type'] == 'code':
+            ast.parse(''.join(cell['source']))

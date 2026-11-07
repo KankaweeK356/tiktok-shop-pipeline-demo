@@ -70,9 +70,9 @@ def test_t01_retry_with_legacy_integer_voucher_flag(monkeypatch,tmp_path):
     import pipeline.transform as transform_module
 
     monkeypatch.setitem(transform_module.NA_VOUCHER, 'Voucher_Active', 1)
-    results=error_suite(tmp_path/'test',cases=['T01'])
+    results=error_suite(tmp_path/'output'/'test',cases=['T01'])
     assert len(results)==1
     assert bool(results.iloc[0]['passed'])
-    voucher_file=tmp_path/'test'/'case_T01'/'workspace'/'lake'/'standardized'/'initial'/'Dim_Voucher.parquet'
+    voucher_file=tmp_path/'output'/'test'/'case_T01'/'workspace'/'lake'/'standardized'/'initial'/'Dim_Voucher.parquet'
     field=pq.read_schema(voucher_file).field('Voucher_Active')
     assert field.type == __import__('pyarrow').bool_()

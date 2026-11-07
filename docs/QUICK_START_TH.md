@@ -1,4 +1,31 @@
-# เริ่ม Demo แบบง่าย — กด Run all ครั้งเดียว
+# คู่มือ Demo แบบทีละขั้น — TikTok Shop Data Pipeline
+
+[![เปิด Step-by-Step Demo](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/KankaweeK356/tiktok-shop-pipeline-demo/blob/main/notebooks/TikTok_Shop_Step_by_Step_Demo.ipynb)
+
+**แนะนำสำหรับนำเสนออาจารย์:** เปิด Step-by-Step Demo แล้วกดปุ่ม ▶ **ทีละ Cell จากบนลงล่าง** โดยไม่ต้องแก้ Code
+
+| ลำดับ | ขั้นตอน | ผลลัพธ์ที่ต้องชี้ให้อาจารย์ดู |
+|---|---|---|
+| 00–01 | Setup + Source CSV | จำนวน Orders/Order Items, ข้อมูลตัวอย่าง |
+| 02 | SQLite ER1 | จำนวน Records ใน Fact_Orders, Fact_Order_Items, Dim_SKU |
+| 03–04 | Data Lake | Landing CSV → Raw Parquet → Standardized Parquet |
+| 05 | DuckDB ER2 | จำนวน Fact, Dimension, Mart และตัวอย่าง |
+| 06 | Functional/Lineage | ผลตรวจยอด, ข้อมูลต้นทางเทียบ Warehouse |
+| 07–12 | Incremental Load | Source ใหม่/Order เดิมที่แก้ → ER1 → Lake → ER2 → ตรวจยอด |
+| 13 | Replay Batch เดิม | จำนวนและยอดขาย **ไม่เพิ่มซ้ำ** |
+| 14 | Error Injection + Recovery | เลือก Error แล้วดู Detect, Retry Stage, PASS |
+| 15 | Full Test/KPI | Error 6 Cases, Latency, Throughput, ยอดขาย/กำไร |
+| 16 | Google Drive (Optional) | บันทึก Snapshot หากเลือกใช้ |
+
+**อย่าสับสนระหว่างสองคำนี้:** Incremental = **นำ Batch ใหม่เข้า** และทำให้ยอดเปลี่ยนจริง; Replay = **ส่ง Batch เดิมซ้ำ** ระบบต้องไม่สร้างข้อมูลซ้ำ
+
+**เริ่ม Demo ใหม่ทั้งหมด:** ใน Cell 00 ติ๊ก `RESET_DEMO` แล้วรันหนึ่งครั้ง จากนั้นเอาติ๊กออกและรัน Run 1 → Run 2 ใหม่ ไม่ต้องลบ Source หรืออัปโหลด ZIP
+
+**ข้อมูลที่สร้างอยู่ใน:** `output/main/er1.sqlite`, `output/main/lake/`, `output/main/er2.duckdb`, `output/main/reports/` ของ Colab Runtime ผู้รัน
+
+---
+
+# ทางเลือก: Quick Demo แบบรันอัตโนมัติ
 
 [![เปิด Quick Demo บน Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/KankaweeK356/tiktok-shop-pipeline-demo/blob/main/notebooks/TikTok_Shop_Quick_Demo.ipynb)
 

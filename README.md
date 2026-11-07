@@ -10,13 +10,32 @@
 
 ## เปิด Demo บน Google Colab
 
+### Step-by-Step Demo — เวอร์ชันหลัก (แนะนำ)
+
+[![เปิด Step-by-Step Demo ใน Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/KankaweeK356/tiktok-shop-pipeline-demo/blob/main/notebooks/TikTok_Shop_Step_by_Step_Demo.ipynb)
+
+**ให้กด ▶ ทีละ Cell จากบนลงล่าง** เพื่อดูผลลัพธ์จริงทุกชั้น: **Source CSV → SQLite ER1 → Landing/Raw/Standardized Parquet → DuckDB ER2 → Functional/Lineage** จากนั้นรัน Incremental ลง Database เดิม, รัน Batch ซ้ำเพื่อพิสูจน์ไม่ซ้ำ และจำลอง Error/Retry
+
+**สำคัญ:** Run 2 = เพิ่ม/อัปเดตข้อมูลอีก Batch ในฐานข้อมูลเดิม; Replay = ส่ง **Batch เดิม** ซ้ำ ผลลัพธ์ต้องไม่เพิ่มซ้ำ ไม่ต้อง Reset ระหว่างสอง Run
+
+- ไม่ต้องอัปโหลด CSV หรือกรอก GitHub URL
+- แต่ละ Cell มีชื่อขั้นตอนและแสดงจำนวนแถว/ตัวอย่างข้อมูล/ผลตรวจ
+- Error Case เลือกได้จาก Dropdown และใช้พื้นที่ทดสอบแยกจากฐานข้อมูลหลัก
+- Save to Drive เป็นทางเลือกท้าย Notebook และปิดไว้เป็นค่าเริ่มต้น
+
+**ล้างข้อมูลเพื่อเริ่มใหม่ตั้งแต่ Run 1:** ใน Cell 00 ติ๊ก `RESET_DEMO` แล้วกด Run หนึ่งครั้ง จากนั้นเอาติ๊กออกแล้วรันต่อ (ไม่ลบ Source บน GitHub หรือ Snapshot บน Drive)
+
+### อื่น ๆ: Quick Demo และ Detailed Notebook
+
+
+
 [![Pipeline CI — ตรวจด้วย DuckDB / PyArrow จริง](https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/actions/workflows/pipeline-ci.yml/badge.svg)](https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/actions/workflows/pipeline-ci.yml)
 
-### Quick Demo — แนะนำสำหรับอาจารย์และผู้ทดลองครั้งแรก
+### Quick Demo — รันอัตโนมัติ (ไม่ได้แสดงแต่ละ Stage แยก)
 
 [![Open Quick Demo in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/KankaweeK356/tiktok-shop-pipeline-demo/blob/main/notebooks/TikTok_Shop_Quick_Demo.ipynb)
 
-**ทำแค่อย่างเดียว:** เปิดลิงก์ด้านบน → เลือก **Runtime → Run all** โดยไม่ต้องกรอก URL, อัปโหลด ZIP, เลือก Error Mode หรือเชื่อม Google Drive
+**ทางเลือกสำหรับการดูผลรวม:** เปิดลิงก์ด้านบน → เลือก **Runtime → Run all**; หากต้องการเห็นแต่ละขั้นและ Output ให้ใช้ Step-by-Step Demo ด้านบน
 
 Quick Demo จะทำ Initial → Incremental → รันซ้ำ → Functional/Lineage → Error Recovery ครบ 6 กรณี → Performance → กำไร → Export รายงาน ให้อัตโนมัติ โดยแสดงผลใน Notebook เดียว
 

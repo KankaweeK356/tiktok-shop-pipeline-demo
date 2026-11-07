@@ -26,7 +26,13 @@ def stage_log(control:Path,record):
     p=control/'stage_history.jsonl'
     with open(p,'a',encoding='utf-8') as f:f.write(json.dumps(record,ensure_ascii=False)+'\n')
 
-def run_batch(workspace:Path,batch='initial',source_root:Path|None=None,inject_error=None,resume=True):
+def run_batch(workspace:Path,batch='initial',source_root:Path|None=None,inject_error=None,resume=True,stop_after:str|None=None):
+    """Run the full batch by default, or stop at one requested stage for a staged demo.
+    Completed stages are checkpointed, so advancing to the next stage never repeats
+    a successful ingest/extract/transform/load. Existing callers behave unchanged.
+    """
+    if stop_after is not None and stop_after not in STAGES:
+        raise ValueError(f'Invalid stop_after stage: {stop_after}')
     workspace=Path(workspace);source_root=Path(source_root or ROOT/'source')
     if batch not in ['initial','incremental']:raise ValueError('batch must be initial or incremental')
     if batch=='incremental' and not (workspace/'er1.sqlite').exists():
@@ -46,7 +52,10 @@ def run_batch(workspace:Path,batch='initial',source_root:Path|None=None,inject_e
             result['lineage']=lineage(workspace/'er1.sqlite',workspace/'er2.duckdb',batch,control,reports)
             return result
     for stage in STAGES:
-        if stage in state['completed']:continue
+        if stage in state['completed']:
+            if stage==stop_after:
+                break
+            continue
         start=time.perf_counter()
         try:
             result=task(stage)
@@ -71,7 +80,15 @@ def run_batch(workspace:Path,batch='initial',source_root:Path|None=None,inject_e
               'status':'FAILED','error_code':code,'error':str(e),'recovery':'Retry same batch after fixing '+stage,
               'completed_before_failure':state['completed']},indent=2,ensure_ascii=False),encoding='utf-8')
             raise
-    metrics=state['metrics'];seconds=sum(float(metrics[s]['elapsed_seconds']) for s in STAGES)
+        if stage==stop_after:
+            break
+    metrics=state['metrics']
+    if not set(STAGES).issubset(state['completed']):
+        seconds=sum(float(v['elapsed_seconds']) for v in metrics.values())
+        return {'batch':batch,'status':'PARTIAL','stopped_after':stop_after,
+            'completed':state['completed'],'elapsed_seconds':round(seconds,4),
+            'metrics':metrics}
+    seconds=sum(float(metrics[s]['elapsed_seconds']) for s in STAGES)
     return {'batch':batch,'status':'SUCCESS','completed':state['completed'],
        'elapsed_seconds':round(seconds,4),'metrics':metrics,
        'paid_sales_rows':metrics['validate']['result']['warehouse_sales_item_count'],

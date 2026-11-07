@@ -1,0 +1,6 @@
+﻿Platform_Fee_Rule_ID,Product_Group_ID,Total_Platform_Fee_Rate,Fee_Calculation_Mode,Platform_Commission_Rate,Transaction_Fee_Rate,Commerce_Growth_Fee_Rate,Infrastructure_Fee_Per_Order,Effective_From,Effective_To,Is_Mock_Assumption
+FEE-PG01,PG01,0.1,FIXED_TOTAL_RATE,,,,,2026-01-01,,True
+FEE-PG02,PG02,0.1,FIXED_TOTAL_RATE,,,,,2026-01-01,,True
+FEE-PG03,PG03,0.1,FIXED_TOTAL_RATE,,,,,2026-01-01,,True
+FEE-PG04,PG04,0.1,FIXED_TOTAL_RATE,,,,,2026-01-01,,True
+FEE-PG05,PG05,0.1,FIXED_TOTAL_RATE,,,,,2026-01-01,,True

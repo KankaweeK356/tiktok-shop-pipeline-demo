@@ -1,0 +1,4 @@
+﻿Voucher_ID,Voucher_Name,Discount_Rate,Minimum_Spend_Amount,Maximum_Discount_Amount,Is_Active,Effective_From,Effective_To
+V10,Seller 10 percent,0.1,250,60,True,2026-10-01,2026-11-30
+V15,Selected 15 percent,0.15,200,45,True,2026-10-01,2026-11-30
+V05,Low cap 5 percent,0.05,0,20,True,2026-10-01,2026-11-30

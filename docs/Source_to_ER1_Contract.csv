@@ -1,0 +1,26 @@
+﻿ER1_Table,Source_File_or_Generator,Load_Mode,Business_Transformation,Validation
+Dim_Product_Group,source/<batch>/Dim_Product_Group.csv,DIRECT_CSV,source/<batch>/Dim_Product_Group.csv,PK/FK and type/required validation
+Dim_SKU,source/<batch>/Dim_SKU.csv,DIRECT_CSV,source/<batch>/Dim_SKU.csv,PK/FK and type/required validation
+Dim_Creator,source/<batch>/Dim_Creator.csv,DIRECT_CSV,source/<batch>/Dim_Creator.csv,PK/FK and type/required validation
+Dim_Campaign,source/<batch>/Dim_Campaign.csv,DIRECT_CSV,source/<batch>/Dim_Campaign.csv,PK/FK and type/required validation
+Dim_Ad_Campaign,source/<batch>/Dim_Ad_Campaign.csv,DIRECT_CSV,source/<batch>/Dim_Ad_Campaign.csv,PK/FK and type/required validation
+Dim_Voucher,source/<batch>/Dim_Voucher.csv,DIRECT_CSV,source/<batch>/Dim_Voucher.csv,PK/FK and type/required validation
+Bridge_Campaign_Product_Group,source/<batch>/Bridge_Campaign_Product_Group.csv,DIRECT_CSV,source/<batch>/Bridge_Campaign_Product_Group.csv,PK/FK and type/required validation
+Bridge_Voucher_Product_Group,source/<batch>/Bridge_Voucher_Product_Group.csv,DIRECT_CSV,source/<batch>/Bridge_Voucher_Product_Group.csv,PK/FK and type/required validation
+Ref_Affiliate_Commission_Rule,source/<batch>/Ref_Affiliate_Commission_Rule.csv,DIRECT_CSV,source/<batch>/Ref_Affiliate_Commission_Rule.csv,PK/FK and type/required validation
+Ref_Platform_Fee_Estimate_Rule,source/<batch>/Ref_Platform_Fee_Estimate_Rule.csv,DIRECT_CSV,source/<batch>/Ref_Platform_Fee_Estimate_Rule.csv,PK/FK and type/required validation
+Ref_Business_Target,source/<batch>/Ref_Business_Target.csv,DIRECT_CSV,source/<batch>/Ref_Business_Target.csv,PK/FK and type/required validation
+Ref_Cost_Policy,source/<batch>/Ref_Cost_Policy.csv,DIRECT_CSV,source/<batch>/Ref_Cost_Policy.csv,PK/FK and type/required validation
+Fact_Goods_Receipt,source/<batch>/Fact_Goods_Receipt.csv,DIRECT_CSV,source/<batch>/Fact_Goods_Receipt.csv,PK/FK and type/required validation
+Fact_Goods_Receipt_Items,source/<batch>/Fact_Goods_Receipt_Items.csv,DIRECT_CSV,source/<batch>/Fact_Goods_Receipt_Items.csv,PK/FK and type/required validation
+Fact_Orders,source/<batch>/Fact_Orders.csv,CSV_PLUS_DERIVED,CSV order status/timestamps/voucher plus calculated GMV_Total/Voucher_Seller_Cost,Paid At basis; no refund
+Fact_Order_Items,source/<batch>/Fact_Order_Items.csv,CSV_PLUS_DERIVED,"CSV order item identity, quantity, SKU, creator plus campaign/voucher/COGS/affiliate business logic",Price locked on Order_Created_At; voucher item allocation; FIFO COGS
+Fact_FIFO_Allocation,(created by pipeline),DERIVED,FIFO allocation from paid Fact_Order_Items and Goods Receipt Lots,Paid order Item allocated once; fixed group unit cost
+Fact_Order_Platform_Fees,(created by pipeline),OPTIONAL_EMPTY,Real platform fee source not available in synthetic demo,Fixed estimated 10% rule in Ref_Platform_Fee_Estimate_Rule; avoid actual fee double count
+Fact_Internal_Fulfillment,source/<batch>/Fact_Internal_Fulfillment.csv,DIRECT_CSV,source/<batch>/Fact_Internal_Fulfillment.csv,PK/FK and type/required validation
+Fact_Marketing_Costs,source/<batch>/Fact_Marketing_Costs.csv,DIRECT_CSV,source/<batch>/Fact_Marketing_Costs.csv,PK/FK and type/required validation
+Fact_Claim_Header,source/<batch>/Fact_Claim_Header.csv,DIRECT_CSV,source/<batch>/Fact_Claim_Header.csv,PK/FK and type/required validation
+Fact_Claim_Details,source/<batch>/Fact_Claim_Details.csv,DIRECT_CSV,source/<batch>/Fact_Claim_Details.csv,PK/FK and type/required validation
+Fact_Free_Samples,source/<batch>/Fact_Free_Samples.csv,CSV_PLUS_DERIVED,CSV sample events plus standard-cost Sample_COGS,free sample COGS not sale COGS
+Fact_Stock_Movement,(created by pipeline),DERIVED,IN_PO / OUT_SALE movement events from receipts and FIFO,Not core analytics scope; idempotent movement key
+Fact_Inventory_Snapshot,(created by pipeline),DERIVED,Current ER1 receipt remaining quantity by SKU,Snapshot each batch; TikTok listed available mock = internal free qty

@@ -1,0 +1,551 @@
+// ============================================================
+// TIKTOK SHOP — BUSINESS DATABASE ER V3 (SOURCE / OLTP MODEL)
+// Updated from ER V2 supplied on 2026-11-07; aligned with approved Business Discovery for Demo
+// Scope: เก็บข้อมูลธุรกิจครบ เพื่อป้อน Data Warehouse แบบ Kimball ต่อไป
+//
+// Business Case Assumptions
+// - ร้านเสื้อผ้า Non-Mall 1 ร้าน; ไม่มี Refund; ยกเลิก Order ได้ก่อนชำระเงินเท่านั้น
+// - Revenue KPI ใช้ Paid_At สำหรับ Order ที่ชำระแล้ว (Paid/Shipped/Delivered) และไม่ถูก Cancelled
+// - Fact_Order_Items: 1 SKU line ต่อ Order (Quantity อาจมากกว่า 1)
+// - Affiliate: อัตราแยก Product Group; payout = อัตรา x Net Revenue ของ Order Item หลังจัดสรร Voucher
+// - Seller Voucher: สูงสุด 1 ใบต่อ Order; ลดเป็น %, ยอดซื้อขั้นต่ำ/ส่วนลดสูงสุด optional; สิทธิ์ตาม Product Group
+// - Sales Campaign Price: กำหนดราคาพิเศษต่อ Product Group; ไม่มีช่วงวันที่ซ้อนทับสำหรับ Group เดียวกัน
+//   มีผลเต็มวันและล็อกราคาตาม Order_Created_At; SKU ทุกสี/ไซซ์ในกลุ่มใช้ราคาเดียวกัน
+// - Platform Fee: ใช้อัตรารวมสมมติ 10% x Net Product Revenue (หลัง Campaign + Seller Voucher)
+//   ใช้ FIXED_TOTAL_RATE, ไม่บวกกับ fee component หรือ Actual Fee ซ้ำ
+// - COGS ของทุก SKU/สี/ไซซ์/Lot ใน Product Group = 40% x Base_Selling_Price ของกลุ่ม
+// - Cost: คง FIFO/Fulfillment/Claim ตาม Schema เดิม; Fulfillment ของ Order ผูกกำไรกับ Paid_At
+// - Free Sample เป็นค่าใช้จ่ายการตลาดที่ติดตาม ไม่ทำ Sample Attribution
+// - Ads attribution ไม่บังคับ: รายงาน GMV เสริมได้ถ้า Source มีระดับข้อมูลตรงกัน
+// - Planning framework (อิงยอดราคาเต็ม): Base Cost 60% / Marketing 30% / Minimum Profit 10%
+//   Minimum Profit Protection = Contribution_Profit >= 10% x Gross_Reference_Sales
+//   Profit Margin = Contribution_Profit / Net_Revenue (KPI คนละตัวกับ Profit Protection)
+//   ห้ามหัก Base Cost 60% ซ้ำกับรายการ Actual/Simulated Cost ที่คำนวณแล้ว
+// - Business Mart และ Dim_Date อยู่ใน ER 2 (Kimball DW) ไม่ใช่ Source ER นี้
+// - ETL metadata และ log ไม่รวมใน Business ER
+//
+// SOURCE ER: 25 TABLES (22 maintained operational tables + 3 new tables)
+// ============================================================
+
+// ============================================================
+// DIMENSION
+// ============================================================
+
+
+
+
+Table Dim_Product_Group {
+  Note: 'Grain=1 Product Group; ราคาเต็มและต้นทุนมาตรฐานเดียวกันทุกสี/ไซซ์; ต้นทุน Mock ต่อหน่วย = 40% x Base_Selling_Price และคงที่ทุก Lot ของ Group'
+
+  Product_Group_ID varchar [pk, note: 'รหัสกลุ่มสินค้า ใช้ระบุ Product Group แต่ละรายการไม่ให้ซ้ำกัน']
+  Product_Group_Name varchar [note: 'ชื่อกลุ่มสินค้า หรือชื่อรุ่นสินค้า']
+  Base_Selling_Price decimal [note: 'ราคาขายตั้งต้นของ Product Group ก่อนส่วนลดหรือ Campaign']
+  Cost_Standard_Product decimal [note: 'ต้นทุนต่อหน่วยสำหรับ Demo = ROUND(Base_Selling_Price x 0.40, 2); ใช้ทุก SKU/สี/ไซซ์/Lot ใน Group; ไม่ใช่ 40% ของราคาหลัง Campaign']
+  Status varchar [note: 'สถานะของ Product Group เช่น Active / Inactive']
+}
+
+
+Table Dim_SKU {
+  Note: 'เก็บข้อมูลสินค้าในระดับ SKU หรือ Variant เช่น สี ขนาด และความสัมพันธ์กับ Product Group'
+
+  SKU_ID varchar [pk, note: 'รหัส SKU ของสินค้าแต่ละ Variant']
+  Product_Group_ID varchar [not null, note: 'รหัส Product Group ที่ SKU นี้สังกัด']
+  SKU_Name varchar [note: 'ชื่อ SKU หรือชื่อ Variant']
+  Color varchar [note: 'สีของสินค้า']
+  Size varchar [note: 'ขนาดของสินค้า']
+  Status varchar [note: 'สถานะของ SKU เช่น Active / Inactive']
+}
+
+
+Table Dim_Creator {
+  Note: 'เก็บข้อมูล Creator หรือ Affiliate ที่เกี่ยวข้องกับการขายและการแจก Free Sample'
+
+  Creator_ID varchar [pk, note: 'รหัส Creator หรือ Affiliate']
+  Creator_Name varchar [note: 'ชื่อ Creator หรือ Affiliate']
+  Creator_Type varchar [note: 'ประเภทของ Creator เช่น Affiliate หรือ KOL']
+  Status varchar [note: 'สถานะของ Creator เช่น Active / Inactive']
+}
+
+
+Table Dim_Campaign {
+  Note: 'เก็บข้อมูล Campaign ด้านการขาย'
+
+  Campaign_ID varchar [pk, note: 'รหัส Campaign การขาย']
+  Campaign_Name varchar [note: 'ชื่อ Campaign']
+  Campaign_Type varchar [note: 'ประเภทของ Campaign เช่น Flash Sale หรือ Promotion']
+  Start_Date date [note: 'วันที่เริ่ม Campaign']
+  End_Date date [note: 'วันที่สิ้นสุด Campaign']
+}
+
+
+Table Dim_Ad_Campaign {
+  Note: 'เก็บข้อมูล Campaign ด้านโฆษณา'
+
+  Ad_Campaign_ID varchar [pk, note: 'รหัส Campaign โฆษณา']
+  Ad_Campaign_Name varchar [note: 'ชื่อ Campaign โฆษณา']
+  Ad_Type varchar [note: 'ประเภทของโฆษณา']
+  Start_Date date [note: 'วันที่เริ่มรันโฆษณา']
+  End_Date date [note: 'วันที่สิ้นสุดการรันโฆษณา']
+}
+
+
+Table Dim_Voucher {
+  Note: 'Seller-funded % voucher; สูงสุด 1 ใบต่อ Order. คำนวณ threshold เฉพาะยอดสินค้า Eligible หลัง Campaign ก่อน Voucher; จำกัดส่วนลดตาม Cap และกระจายตามมูลค่าราย Item ที่มีสิทธิ์'
+
+  Voucher_ID varchar [pk, note: 'รหัส Voucher']
+  Voucher_Name varchar [note: 'ชื่อ Voucher']
+  Discount_Rate decimal [not null, note: 'อัตราส่วนลดของ Seller Voucher เช่น 0.10 = 10%; ต้องอยู่ระหว่าง 0 ถึง 1']
+  Minimum_Spend_Amount decimal [not null, default: 0, note: 'ยอดขั้นต่ำ (บาท) ของสินค้าเฉพาะกลุ่มที่มีสิทธิ์หลัง Campaign ก่อน Voucher; 0 = ไม่มีขั้นต่ำ']
+  Maximum_Discount_Amount decimal [note: 'เพดานส่วนลดรวมต่อ Order (บาท); NULL = ไม่มีเพดาน; เมื่อกำหนดต้องมากกว่า 0']
+  Is_Active boolean [not null, note: 'เปิดหรือปิดคูปองในกรณีศึกษา']
+  Effective_From date [note: 'วันที่ Voucher เริ่มมีผล']
+  Effective_To date [note: 'วันที่ Voucher สิ้นสุดการใช้งาน (นับรวมวันสุดท้าย)']
+}
+
+
+// ============================================================
+// BRIDGE
+// ============================================================
+
+Table Bridge_Campaign_Product_Group {
+  Note: 'เลือกกลุ่มเข้าร่วม Campaign ได้ 1-5 กลุ่ม; ราคาพิเศษคงที่ระดับ Group ทุกสี/ไซซ์; ช่วงวัน Effective_From ถึง Effective_To รวมวันปลายทางและห้ามซ้อนกับ Campaign อื่นใน Group เดียวกัน; เทียบวันสร้าง Order'
+
+  Enrollment_ID varchar [pk, note: 'รหัสรายการเข้าร่วม Campaign']
+  Campaign_ID varchar [not null, note: 'รหัส Campaign ที่ Product Group เข้าร่วม']
+  Product_Group_ID varchar [not null, note: 'รหัส Product Group ที่เข้าร่วม Campaign']
+  Campaign_Selling_Price decimal [note: 'ราคาขายพิเศษต่อหน่วยสำหรับ Product Group (ทุก SKU ในกลุ่มใช้ราคาเดียวกัน); ต้องมากกว่า 0']
+  Effective_From date [note: 'วันที่เงื่อนไข Campaign เริ่มมีผล']
+  Effective_To date [note: 'วันที่เงื่อนไข Campaign สิ้นสุด']
+  Status varchar [note: 'สถานะการเข้าร่วม Campaign']
+
+  indexes {
+    (Campaign_ID, Product_Group_ID, Effective_From) [unique]
+  }
+}
+
+
+
+Table Bridge_Voucher_Product_Group {
+  Note: 'Voucher ใช้ได้เฉพาะ Product Group ที่มีแถวใน Bridge นี้; คำนวณขั้นต่ำและส่วนลดจากยอดหลัง Campaign ของ Eligible Items เท่านั้น; หากใช้ได้หลาย Group ให้มีหลายแถว'
+  Voucher_ID varchar [not null, note: 'รหัสคูปอง']
+  Product_Group_ID varchar [not null, note: 'รหัสกลุ่มสินค้าที่มีสิทธิ์ใช้คูปอง']
+
+  indexes {
+    (Voucher_ID, Product_Group_ID) [pk]
+  }
+}
+
+// ============================================================
+// BUSINESS RULE / REFERENCE
+// ============================================================
+
+Table Ref_Affiliate_Commission_Rule {
+  Note: 'อัตราคอมมิชชัน Affiliate แยกตาม Product Group และช่วงเวลา; Commission Amount = Net Revenue ของ Order Item หลังจัดสรร Voucher x Rate; ไม่ใช้ราคาเต็มหรือยอดรวมทั้ง Order'
+
+  Affiliate_Rule_ID varchar [pk, note: 'รหัสกฎ Affiliate Commission']
+  Product_Group_ID varchar [not null, note: 'Product Group ที่ใช้กฎนี้']
+  Affiliate_Commission_Rate decimal [note: 'เช่น 0.10 = 10%; อัตราที่ใช้คำนวณ Fee_Affiliate_Payout จาก Item Net Revenue หลัง Voucher; ไม่เกี่ยวกับสินค้าที่ไม่มี Creator']
+  Effective_From date [note: 'วันที่กฎเริ่มมีผล']
+  Effective_To date [note: 'วันที่กฎสิ้นสุด']
+  Is_Active boolean [note: 'ระบุว่ากฎยังใช้งานอยู่หรือไม่']
+}
+
+
+Table Ref_Platform_Fee_Estimate_Rule {
+  Note: 'Fixed Total Platform Fee Mock สำหรับ Non-Mall 1 ร้าน: 10% ของ Net Product Revenue หลัง Campaign/Voucher; อยู่ใน Base Cost 60% (planning group) และไม่หัก Cost 60% ซ้ำ; ห้ามบวก Component/Actual Fee ทับ'
+
+  Platform_Fee_Rule_ID varchar [pk, note: 'รหัสกฎประมาณ Platform Fee']
+  Product_Group_ID varchar [not null, note: 'Product Group ที่ใช้กฎนี้']
+  Total_Platform_Fee_Rate decimal [note: 'สำหรับ Demo กำหนด 0.10 ทุก Product Group; fee = rate x Net Product Revenue ของรายการขายที่เข้าเกณฑ์; ไม่รวมค่าจัดส่งที่ลูกค้าจ่าย']
+  Fee_Calculation_Mode varchar [note: 'FIXED_TOTAL_RATE หรือ COMPONENT_BREAKDOWN: เลือกวิธีคำนวณเพียงอย่างเดียวในช่วงที่กฎมีผล']
+  Platform_Commission_Rate decimal [note: 'อัตรา Platform Commission ที่ใช้ประมาณ']
+  Transaction_Fee_Rate decimal [note: 'อัตรา Transaction Fee ที่ใช้ประมาณ']
+  Commerce_Growth_Fee_Rate decimal [note: 'อัตรา Commerce Growth Fee ที่ใช้ประมาณ']
+  Infrastructure_Fee_Per_Order decimal [note: 'Infrastructure Fee ที่คิดต่อ Order']
+  Effective_From date [note: 'วันที่กฎเริ่มมีผล']
+  Effective_To date [note: 'วันที่กฎสิ้นสุด']
+  Is_Mock_Assumption boolean [note: 'ระบุว่าค่านี้เป็น Assumption/Mock หรือกฎที่ยืนยันแล้ว']
+}
+
+
+
+Table Ref_Business_Target {
+  Note: 'เป้าหมายรายเดือนของร้านเดียว: Revenue Target จาก Net Product Revenue และเกณฑ์ Profit Protection ที่วัดจากยอดราคาเต็มก่อนส่วนลด; Actual Profit Margin เป็น KPI แยก' 
+  Target_Year_Month varchar [pk, note: 'ปี-เดือน YYYY-MM เช่น 2026-10']
+  Revenue_Target decimal [not null, note: 'รายได้สุทธิเป้าหมายของร้านในเดือนนั้น (บาท)']
+  Minimum_Profit_Protection_Rate decimal [not null, default: 0.10, note: '0.10 = กำไรขั้นต่ำ 10% ของ SUM(Base_Unit_Price_At_Sale x Quantity) ที่เป็น Paid; ไม่ใช่ 10% ของ Net Revenue']
+}
+
+Table Ref_Cost_Policy {
+  Note: 'Planning Policy อิงราคาเต็ม: Base Cost 60% (COGS 40% + Platform + Fulfillment + Claim ภายในกรอบที่เหลือ), Marketing 30%, Minimum Profit 10%; ไม่ใช่ต้นทุน Transaction ที่ต้องหักซ้ำ; Platform Fee Mock 10% ใช้ Ref_Platform_Fee_Estimate_Rule'
+  Cost_Policy_ID varchar [pk, note: 'รหัสชุดนโยบายต้นทุน']
+  Fixed_Fulfillment_Cost_Per_Order decimal [note: 'ค่าดำเนินการคงที่ต่อ Order ใช้ใน Scenario หรือกรณีไม่มีต้นทุนจริง']
+  Claim_Risk_Allowance_Rate decimal [note: 'อัตราเผื่อ Claim ในการวางแผนเทียบฐานรายได้ที่ตกลงกัน; ไม่ใช้ซ้ำกับ Actual Claim Cost ในการวัดกำไรเดียวกัน']
+  Planning_Base_Cost_Rate decimal [default: 0.60, note: 'สมมติฐานกรอบ Base Cost 60% ของราคาเต็ม ไม่ใช่ Cost ที่หักเพิ่ม']
+  Planning_Adjustable_Gap_Rate decimal [default: 0.30, note: 'สมมติฐานกรอบ Adjustable 30% ของราคาเต็ม ไม่ใช่รายจ่ายที่เกิดจริง']
+  Effective_From date [not null, note: 'วันที่เริ่มใช้กฎ']
+  Effective_To date [note: 'วันสิ้นสุดกฎ; null เมื่อไม่มีกำหนด']
+  Is_Active boolean [not null, note: 'สถานะกฎ']
+}
+
+// ============================================================
+// PURCHASE / INVENTORY RECEIPT
+// ============================================================
+
+Table Fact_Goods_Receipt {
+  Note: 'เก็บข้อมูลการรับสินค้าเข้าคลังระดับเอกสารรับสินค้า หรือ Lot Receipt'
+
+  Goods_Receipt_ID varchar [pk, note: 'รหัสเอกสารรับสินค้าเข้าคลัง']
+  Receipt_Date datetime [note: 'วันและเวลาที่รับสินค้าเข้าคลัง']
+  Supplier_ID varchar [note: 'รหัส Supplier ที่ส่งสินค้า']
+  Reference_PO_ID varchar [note: 'รหัส Purchase Order ที่เกี่ยวข้อง']
+  Source_System varchar [note: 'ระบบต้นทางที่บันทึกการรับสินค้า']
+}
+
+
+Table Fact_Goods_Receipt_Items {
+  Note: 'รับสินค้าเข้าราย SKU/Lot สำหรับ FIFO; ใน Demo ทุก Lot และ SKU ที่อยู่ Product Group เดียวกันมี Unit_Cost เท่ากับ Cost_Standard_Product ของกลุ่ม'
+
+  Goods_Receipt_Item_ID varchar [pk, note: 'รหัสรายละเอียดสินค้าในเอกสารรับเข้า']
+  Goods_Receipt_ID varchar [not null, note: 'รหัสเอกสารรับสินค้าที่รายการนี้สังกัด']
+  SKU_ID varchar [not null, note: 'SKU ที่รับเข้าคลัง']
+  Received_Qty int [not null, note: 'จำนวนสินค้าที่รับเข้าจาก Lot นี้']
+  Unit_Cost decimal [not null, note: 'ต้นทุนต่อหน่วยของ SKU ใน Lot นี้; สำหรับ Demo = Dim_Product_Group.Cost_Standard_Product และเท่ากันทุก Lot ของ Group']
+  Total_Cost decimal [note: 'ต้นทุนรวมของ Lot รายการนี้ = Received Qty × Unit Cost']
+  Remaining_Qty int [note: 'จำนวนคงเหลือของ Lot ที่ยังไม่ถูกตัดต้นทุนตาม FIFO']
+  Lot_No varchar [note: 'เลข Lot ของสินค้า หากธุรกิจมีการระบุ Lot']
+}
+
+
+// ============================================================
+// ORDER
+// ============================================================
+
+Table Fact_Orders {
+  Note: 'Grain=1 Order; ราคา Campaign ล็อกตาม Order_Created_At; Revenue KPI ใช้ Paid_At; Cancelled ได้เฉพาะก่อนชำระใน Demo ไม่มี Refund; ใช้ Seller Voucher ได้สูงสุด 1 ใบ'
+
+  Order_ID varchar [pk, note: 'รหัส Order จาก TikTok']
+  Order_Created_At datetime [note: 'วันและเวลาที่ลูกค้าสร้าง Order']
+  Current_Status varchar [note: 'สถานะล่าสุดของ Order; Pending/Cancelled ก่อน Paid หรือ Paid/Shipped/Delivered หลังชำระ; ห้าม Paid -> Cancelled ใน Demo']
+  Voucher_ID varchar [note: 'รหัส Voucher ที่ใช้ใน Order หากไม่มีสามารถเป็น Null']
+  GMV_Total decimal [note: 'ยอดรวม Total_Selling_Amount ของ Order หลัง Campaign Price แต่ก่อน Seller Voucher; ไม่นับยอด Cancelled Order เป็นรายได้']
+  Voucher_Seller_Cost decimal [note: 'ส่วนลด Seller Voucher รวมทั้ง Order หลัง Min Spend/Discount Cap; = SUM(Fact_Order_Items.Voucher_Allocated_Amount); เป็น 0 หากไม่ใช้; หักจากยอดหลัง Campaign เพียงครั้งเดียว']
+  Shipping_Fee_Collected decimal [note: 'เก็บข้อมูลค่าจัดส่งไว้ใน Source; Case Study KPI ไม่รวมใน Net Product Revenue โดยไม่มีหลักฐานว่าเป็นรายได้ของร้าน']
+  Shipping_Mode varchar [note: 'รูปแบบหรือวิธีการจัดส่ง']
+  Paid_At datetime [note: 'เวลาชำระสำเร็จ ใช้กำหนด Sales_Date_Key ใน ER2 และผูก Fulfillment Cost กับงวดรายได้; NULL หากยังไม่ชำระ']
+  Shipped_At datetime [note: 'วันและเวลาที่ Order ถูกจัดส่ง']
+  Delivered_At datetime [note: 'วันและเวลาที่สินค้าส่งถึงลูกค้า']
+  Cancelled_At datetime [note: 'เวลา Cancelled เฉพาะกรณีก่อนชำระเงินใน Demo; NULL สำหรับ Order ที่ Paid แล้ว']
+}
+
+
+Table Fact_Order_Items {
+  Note: '''
+  เก็บรายการ SKU ภายใน Order และราคาที่ใช้จริง ณ วันขาย
+
+  Grain = 1 แถวต่อ 1 SKU Line ใน 1 Order
+
+  ตัวอย่าง:
+  Order 001 ซื้อ SKU A = 5 และ SKU B = 5
+  จะเกิด Fact_Order_Items จำนวน 2 แถว
+  '''
+
+  Order_Item_ID varchar [pk, note: 'รหัสรายการสินค้าใน Order']
+  Source_Order_Item_ID varchar [note: 'รหัสรายการสินค้าต้นฉบับจาก TikTok']
+  Order_ID varchar [not null, note: 'รหัส Order ที่รายการสินค้านี้สังกัด']
+  SKU_ID varchar [not null, note: 'รหัส SKU ที่ลูกค้าซื้อ']
+  Quantity int [not null, note: 'จำนวน SKU ที่ลูกค้าซื้อใน Order Item นี้']
+  Creator_ID varchar [note: 'Creator/Affiliate ที่เกี่ยวข้องกับการขายรายการนี้']
+  Campaign_ID varchar [note: 'Campaign ที่เกี่ยวข้องกับรายการขายนี้']
+  Base_Unit_Price_At_Sale decimal [note: 'ราคาเต็มต่อหน่วยที่อ้างอิง ณ วันขาย (snapshot กันราคา Master เปลี่ยนย้อนหลัง)']
+  Unit_Selling_Price decimal [note: 'ราคาขายต่อหน่วยหลังใช้ Campaign Special Price แล้ว แต่ก่อนหัก Seller Voucher']
+  Campaign_Discount_Amount decimal [note: 'ส่วนลดจากราคา Campaign ของ SKU line = Quantity x (Base_Unit_Price_At_Sale - Unit_Selling_Price); ใช้แสดง Breakdown ไม่หักซ้ำจาก Total_Selling_Amount']
+  Voucher_Allocated_Amount decimal [not null, default: 0, note: 'ส่วนลด Seller Voucher ที่จัดสรรเฉพาะ Item ที่ Eligible ตามสัดส่วนยอดหลัง Campaign; Round 2 ตำแหน่งและปรับเศษใน Item สุดท้าย; รวมเท่ากับ Fact_Orders.Voucher_Seller_Cost']
+  Total_Selling_Amount decimal [note: 'Quantity x Unit_Selling_Price (หลัง Campaign ก่อน Voucher); Item Net Revenue = Total_Selling_Amount - Voucher_Allocated_Amount']
+  Total_COGS decimal [note: 'ต้นทุนสินค้าที่ขายรวมของ Order Item จากการตัด FIFO']
+  Fee_Affiliate_Payout decimal [note: 'คอมมิชชันจาก Item Net Revenue หลัง Voucher x อัตรา Product Group; 0 ถ้าไม่มี Creator; ปัด 2 ตำแหน่ง; Marketing Cost 30%']
+  Created_At datetime [note: 'วันและเวลาที่รายการสินค้าใน Order ถูกสร้าง']
+}
+
+
+// ============================================================
+// FIFO COST ALLOCATION
+// ============================================================
+
+Table Fact_FIFO_Allocation {
+  Note: '''
+  เก็บรายละเอียดการตัดต้นทุน FIFO ของแต่ละ Order Item
+
+  1 Order Item สามารถถูกตัดต้นทุนจากหลาย Goods Receipt / Lot ได้
+
+  ตัวอย่าง:
+  SKU A ขาย 5 ชิ้น
+  Lot 1 = 3 ชิ้น @ 79.60
+  Lot 2 = 2 ชิ้น @ 79.60
+  (ตัวอย่างคอกลมที่ต้นทุน 40% x 199 บาท)
+
+  จะเกิด FIFO Allocation 2 แถว
+  '''
+
+  FIFO_Allocation_ID varchar [pk, note: 'รหัสรายการการตัดต้นทุน FIFO']
+  Order_Item_ID varchar [not null, note: 'Order Item ที่กำลังตัดต้นทุน']
+  Goods_Receipt_Item_ID varchar [not null, note: 'Lot/รายการรับสินค้าที่ถูกนำมาตัดต้นทุน']
+  Allocated_Qty int [not null, note: 'จำนวนสินค้าที่ตัดจาก Lot นี้']
+  Unit_Cost decimal [not null, note: 'ต้นทุนจาก Lot ที่ตัดด้วย FIFO; สำหรับ Group เดียวกันทุก Lot มีต้นทุนต่อหน่วยเดียวกันตามกฎ Demo']
+  Allocated_Cost decimal [not null, note: 'ต้นทุนรวมจาก Lot นี้ = Allocated Qty × Unit Cost']
+  Allocated_At datetime [note: 'วันและเวลาที่ระบบคำนวณการตัด FIFO']
+
+  indexes {
+    (Order_Item_ID, Goods_Receipt_Item_ID) [unique]
+  }
+}
+
+
+// ============================================================
+// PLATFORM FEE / FULFILLMENT
+// ============================================================
+
+Table Fact_Order_Platform_Fees {
+  Note: 'Optional: เก็บรายการ Platform Fee จริงระดับ Order หากมี Source จริง; สำหรับ Demo ใช้ FIXED_TOTAL_RATE 10% จาก Ref_Platform_Fee_Estimate_Rule แทน ไม่สร้าง Actual ปลอมหรือหักซ้ำ'
+
+  Platform_Fee_ID varchar [pk, note: 'รหัสรายการ Platform Fee']
+  Order_ID varchar [not null, unique, note: 'Order ที่ค่าธรรมเนียมนี้เกี่ยวข้อง']
+  Fee_Platform_Commission decimal [note: 'ค่าคอมมิชชัน Platform จริง']
+  Fee_Transaction decimal [note: 'Transaction Fee จริง']
+  Fee_Commerce_Growth decimal [note: 'Commerce Growth Fee จริง']
+  Fee_Platform_Infrastructure decimal [note: 'Infrastructure Fee จริง']
+}
+
+
+Table Fact_Internal_Fulfillment {
+  Note: 'ต้นทุนบรรจุภัณฑ์/แรงแพ็ก/ขนส่งที่ธุรกิจจ่ายระดับ Order (Mock actual); เมื่อข้อมูลเข้าทีหลังให้ปรับกำไรที่ Sales_Date_Key จาก Paid_At ไม่ลงงวดใหม่; หากต้นทุนยังขาดต้องระบุว่าไม่ครบ ไม่ตีเป็นศูนย์เงียบ ๆ'
+
+  Fulfillment_ID varchar [pk, note: 'รหัสรายการ Fulfillment']
+  Order_ID varchar [not null, unique, note: 'Order ที่มีต้นทุน Fulfillment นี้']
+  Secondary_Packaging_Cost decimal [note: 'ต้นทุนบรรจุภัณฑ์เพิ่มเติม']
+  Packing_Labor_Cost decimal [note: 'ต้นทุนค่าแรงในการแพ็ก']
+  Actual_Shipping_Cost decimal [note: 'ค่าขนส่งที่ร้านต้องจ่าย (mock actual) ไม่ใช่ Shipping_Fee_Collected ที่ลูกค้าจ่าย']
+  Fulfillment_Timestamp datetime [note: 'วันและเวลาที่ดำเนินการ Fulfillment']
+}
+
+
+// ============================================================
+// MARKETING
+// ============================================================
+
+Table Fact_Marketing_Costs {
+  Note: 'เก็บค่าใช้จ่ายและผลลัพธ์จากการทำโฆษณา แยกตามวัน Campaign และ Product Group'
+
+  Ad_Record_ID varchar [pk, note: 'รหัสรายการข้อมูลโฆษณา']
+  Record_Date date [note: 'วันที่ของข้อมูลโฆษณา']
+  Ad_Campaign_ID varchar [not null, note: 'รหัส Campaign โฆษณา']
+  Product_Group_ID varchar [not null, note: 'Product Group ที่ถูกโปรโมต']
+  Ad_Spend_Amount decimal [note: 'ค่าใช้จ่ายโฆษณา']
+  Impressions int [note: 'จำนวนครั้งที่โฆษณาถูกแสดง']
+  Clicks int [note: 'จำนวนครั้งที่ผู้ใช้คลิกโฆษณา']
+  Conversions int [note: 'จำนวน Conversion ที่ Source รายงาน']
+  Reported_Ads_GMV decimal [note: 'Optional: ยอดขายที่ TikTok รายงานให้ Ads หากข้อมูลมี grain วัน x Ad Campaign x Product Group; ไม่ใช่ยอดขายเพิ่มใหม่']
+  Reported_Ads_Orders int [note: 'Optional: จำนวน Order ที่ TikTok รายงานให้ Ads หาก Grain และนิยามตรงกับ Source']
+  Reported_Revenue_Basis varchar [note: 'Optional: ระบุรูปแบบรายงาน (เช่น SHOP_ADS_ATTRIBUTED, GMV_MAX_TOTAL); ไม่เทียบข้ามนิยาม']
+
+  indexes {
+    (Record_Date, Ad_Campaign_ID, Product_Group_ID) [unique]
+  }
+}
+
+
+// ============================================================
+// CLAIM
+// ============================================================
+
+Table Fact_Claim_Header {
+  Note: 'เก็บข้อมูลระดับเคส Claim'
+
+  Claim_ID varchar [pk, note: 'รหัสเคส Claim']
+  Claim_Date datetime [note: 'วันและเวลาที่เปิด Claim']
+  Claim_Reason varchar [note: 'เหตุผลที่เกิด Claim']
+  Claim_Status varchar [note: 'สถานะของเคส Claim']
+}
+
+
+Table Fact_Claim_Details {
+  Note: '''
+  เก็บรายละเอียด Claim ของสินค้าใน Order
+
+  ตัวอย่าง:
+  ลูกค้าซื้อ SKU A จำนวน 5 ชิ้น
+  แต่ Claim เพียง 1 ชิ้น
+  Claim_Qty = 1
+  '''
+
+  Claim_Detail_ID varchar [pk, note: 'รหัสรายละเอียด Claim']
+  Claim_ID varchar [not null, note: 'รหัส Claim Header ที่รายการนี้สังกัด']
+  Order_Item_ID varchar [not null, note: 'รายการ SKU ใน Order ที่เกิด Claim']
+  Claim_Qty int [not null, note: 'จำนวนสินค้าที่ Claim จาก Quantity ที่ซื้อใน Order Item']
+  Replacement_Qty int [note: 'จำนวนสินค้าที่ส่งทดแทนให้ลูกค้า']
+  Return_Qty int [note: 'จำนวนสินค้าที่ลูกค้าส่งคืน']
+  Disposal_Qty int [note: 'จำนวนสินค้าที่ต้องตัดจำหน่ายหรือทิ้ง']
+  Backend_Packing_Cost decimal [note: 'ค่า Packing เพิ่มเติมจากการดำเนินการ Claim']
+  Backend_Shipping_Cost decimal [note: 'ค่าขนส่งเพิ่มเติมจาก Claim']
+  Replacement_Product_Cost decimal [note: 'ต้นทุนสินค้าที่ใช้ส่ง Replacement']
+  Disposal_Loss_Cost decimal [note: 'มูลค่าความสูญเสียจากสินค้าที่ต้อง Disposal']
+  Backend_Action_Date datetime [note: 'วันและเวลาที่ระบบหลังบ้านดำเนินการ Claim']
+
+  indexes {
+    (Claim_ID, Order_Item_ID) [unique]
+  }
+}
+
+
+// ============================================================
+// FREE SAMPLE
+// ============================================================
+
+Table Fact_Free_Samples {
+  Note: 'เก็บข้อมูลสินค้า Free Sample ที่ส่งให้ Creator รวมต้นทุนสินค้าและค่าขนส่ง'
+
+  Sample_ID varchar [pk, note: 'รหัสรายการ Free Sample']
+  SKU_ID varchar [not null, note: 'SKU ที่นำไปแจกเป็น Sample']
+  Creator_ID varchar [not null, note: 'Creator ที่ได้รับ Sample']
+  Sample_Quantity int [note: 'จำนวนสินค้าที่แจกเป็น Sample']
+  Request_Date datetime [note: 'วันที่มีการขอ Sample']
+  Dispatched_Date datetime [note: 'วันที่ส่ง Sample ออก']
+  Sample_Shipping_Cost decimal [note: 'ค่าขนส่งของ Free Sample']
+  Sample_COGS decimal [note: 'ต้นทุนสินค้าที่ใช้เป็น Free Sample']
+}
+
+
+// ============================================================
+// INVENTORY
+// ============================================================
+
+Table Fact_Stock_Movement {
+  Note: 'เก็บทุกเหตุการณ์ที่ทำให้ Stock เพิ่ม ลด จอง หรือปล่อยคืน'
+
+  Stock_Movement_ID varchar [pk, note: 'รหัสเหตุการณ์ Stock Movement']
+  Event_Timestamp datetime [note: 'วันและเวลาที่ Stock Movement เกิดขึ้น']
+  SKU_ID varchar [not null, note: 'SKU ที่ได้รับผลจาก Movement']
+  Movement_Type varchar [note: 'ประเภท Movement เช่น IN_PO, ORDER_RESERVE, OUT_SALE, OUT_SAMPLE, OUT_REPLACEMENT, IN_RETURN, OUT_DISPOSAL']
+  Quantity int [note: 'จำนวนสินค้าที่เพิ่มหรือลดตาม Movement']
+  Unit_Cost decimal [note: 'ต้นทุนต่อหน่วยของสินค้าที่เกี่ยวข้องกับ Movement']
+  Total_Cost decimal [note: 'ต้นทุนรวมของ Movement']
+  Reference_ID varchar [note: 'รหัสเอกสารหรือ Transaction ต้นทาง เช่น Order, Receipt, Claim หรือ Sample']
+  Source_System varchar [note: 'ระบบต้นทางที่สร้าง Stock Movement']
+}
+
+
+Table Fact_Inventory_Snapshot {
+  Note: 'เก็บภาพสถานะ Inventory ณ ช่วงเวลาหนึ่ง เพื่อใช้ดู Stock ย้อนหลัง'
+
+  Snapshot_ID varchar [pk, note: 'รหัส Inventory Snapshot']
+  Snapshot_Timestamp datetime [note: 'วันและเวลาที่บันทึก Snapshot']
+  SKU_ID varchar [not null, note: 'SKU ที่ Snapshot นี้บันทึกสถานะ']
+  Ending_Physical_Qty int [note: 'จำนวนสินค้าที่มีอยู่จริงในคลัง']
+  TikTok_Listed_Available_Qty int [note: 'จำนวน Stock ที่เปิดขายบน TikTok']
+  TikTok_Order_Reserved_Qty int [note: 'จำนวน Stock ที่ถูกจองให้ Order แล้ว']
+  TikTok_Unavailable_Qty int [note: 'จำนวน Stock ที่ไม่สามารถนำไปใช้ส่วนอื่นได้ตามกฎธุรกิจ']
+  Internal_Available_Qty int [note: 'จำนวน Stock ที่ระบบภายในยังสามารถนำไปใช้ได้']
+  Claim_Buffer_Qty int [note: 'จำนวน Stock ที่กันไว้สำหรับ Claim/Replacement']
+  Creator_Buffer_Qty int [note: 'จำนวน Stock ที่กันไว้สำหรับ Creator']
+  Free_Stock_Qty int [note: 'Stock ที่ยังไม่ได้ถูกกันหรือจัดสรรให้วัตถุประสงค์อื่น']
+  Inventory_Value decimal [note: 'มูลค่ารวมของ Inventory']
+
+  indexes {
+    (Snapshot_Timestamp, SKU_ID) [unique]
+  }
+}
+
+
+// ============================================================
+// RELATIONSHIPS
+// ============================================================
+
+Ref: Dim_SKU.Product_Group_ID > Dim_Product_Group.Product_Group_ID
+
+Ref: Bridge_Campaign_Product_Group.Campaign_ID > Dim_Campaign.Campaign_ID
+Ref: Bridge_Campaign_Product_Group.Product_Group_ID > Dim_Product_Group.Product_Group_ID
+
+Ref: Ref_Affiliate_Commission_Rule.Product_Group_ID > Dim_Product_Group.Product_Group_ID
+Ref: Ref_Platform_Fee_Estimate_Rule.Product_Group_ID > Dim_Product_Group.Product_Group_ID
+
+Ref: Fact_Goods_Receipt_Items.Goods_Receipt_ID > Fact_Goods_Receipt.Goods_Receipt_ID
+Ref: Fact_Goods_Receipt_Items.SKU_ID > Dim_SKU.SKU_ID
+
+Ref: Bridge_Voucher_Product_Group.Voucher_ID > Dim_Voucher.Voucher_ID
+Ref: Bridge_Voucher_Product_Group.Product_Group_ID > Dim_Product_Group.Product_Group_ID
+
+Ref: Fact_Orders.Voucher_ID > Dim_Voucher.Voucher_ID
+
+Ref: Fact_Order_Items.Order_ID > Fact_Orders.Order_ID
+Ref: Fact_Order_Items.SKU_ID > Dim_SKU.SKU_ID
+Ref: Fact_Order_Items.Creator_ID > Dim_Creator.Creator_ID
+Ref: Fact_Order_Items.Campaign_ID > Dim_Campaign.Campaign_ID
+
+Ref: Fact_FIFO_Allocation.Order_Item_ID > Fact_Order_Items.Order_Item_ID
+Ref: Fact_FIFO_Allocation.Goods_Receipt_Item_ID > Fact_Goods_Receipt_Items.Goods_Receipt_Item_ID
+
+Ref: Fact_Order_Platform_Fees.Order_ID > Fact_Orders.Order_ID
+Ref: Fact_Internal_Fulfillment.Order_ID > Fact_Orders.Order_ID
+
+Ref: Fact_Marketing_Costs.Ad_Campaign_ID > Dim_Ad_Campaign.Ad_Campaign_ID
+Ref: Fact_Marketing_Costs.Product_Group_ID > Dim_Product_Group.Product_Group_ID
+
+Ref: Fact_Claim_Details.Claim_ID > Fact_Claim_Header.Claim_ID
+Ref: Fact_Claim_Details.Order_Item_ID > Fact_Order_Items.Order_Item_ID
+
+Ref: Fact_Free_Samples.SKU_ID > Dim_SKU.SKU_ID
+Ref: Fact_Free_Samples.Creator_ID > Dim_Creator.Creator_ID
+
+Ref: Fact_Stock_Movement.SKU_ID > Dim_SKU.SKU_ID
+Ref: Fact_Inventory_Snapshot.SKU_ID > Dim_SKU.SKU_ID
+
+// ============================================================
+// DW HANDOFF RULES — APPROVED BUSINESS DISCOVERY (NOT PHYSICAL TABLES)
+// ============================================================
+// 1) Price: apply exactly one active Campaign special price per Product Group
+//    using DATE(Order_Created_At) as-of; Effective_From/To inclusive full days.
+//    Price locked at Order creation. Other groups use Base_Selling_Price.
+// 2) Voucher: at most one seller-funded voucher per Order; percent discount.
+//    Eligible_Base = SUM(Total_Selling_Amount) of eligible Product Groups ONLY.
+//    If Eligible_Base < Minimum_Spend_Amount => Voucher_Seller_Cost = 0.
+//    Else = MIN(Eligible_Base * Discount_Rate, Maximum_Discount_Amount)
+//    with Maximum_Discount_Amount=NULL meaning no cap.
+//    Prorate Voucher_Seller_Cost across eligible Order Items by each Item's
+//    Total_Selling_Amount / Eligible_Base, rounded to cents; reconcile residual.
+//    Ineligible Items must have Voucher_Allocated_Amount=0.
+//    SUM(Item.Voucher_Allocated_Amount) = Order.Voucher_Seller_Cost.
+// 3) Revenue: Item Net Revenue = Total_Selling_Amount - Voucher_Allocated_Amount.
+//    Only orders paid (Paid_At NOT NULL, eligible paid statuses) and not
+//    Cancelled count toward KPI; Sales Date = DATE(Paid_At).
+//    Demo permits cancellations ONLY before Paid, no refunds modeled.
+// 4) Campaign_Discount_Amount already embedded in Unit_Selling_Price;
+//    do NOT deduct it twice from Net Revenue or Contribution Profit.
+// 5) Affiliate = Item Net Revenue x Product Group rate (0 without creator).
+//    Affiliate Commission is Marketing Cost; no rate fixed in discovery.
+// 6) COGS: Product Group Standard Cost = ROUND(Base_Selling_Price * 0.40, 2);
+//    all SKU variants and receipt lots in each Group use this identical cost.
+//    Keep FIFO allocation trace and require Order Item Total_COGS =
+//    SUM(Fact_FIFO_Allocation.Allocated_Cost).
+// 7) Platform Fee: case-study FIXED_TOTAL_RATE=0.10 of Net Product Revenue,
+//    after Campaign and seller-funded Voucher, excluding customer shipping;
+//    classify as Base Cost and label SIMULATED/ESTIMATED_10PCT.
+//    No duplicate actual fee + component estimate + fixed rate.
+// 8) Fulfillment (packing + labor + shipping paid by seller) is Order-grain;
+//    allocate to Items consistently; attribute costs to Paid_At for profitability.
+//    Late fulfillment updates must recalculate the affected paid sales date.
+//    Customer Shipping_Fee_Collected is NOT Net Product Revenue in this Demo.
+// 9) Sales/Ads/Sample/Claim streams have different grains. Never fan-out
+//    Ads x SKU or add ad-reported attributed GMV to Order revenue.
+//    Claim actual vs risk allowance cannot be deducted together in same KPI.
+// 10) Profit: Contribution_Profit = Net_Revenue - COGS - Platform_Fee -
+//     Fulfillment - Affiliate - Ads - Sample - Claim (costs counted once).
+//     Planning policy 60/30/10 based on Gross_Reference_Sales is a framework;
+//     never separately deduct Base Cost 60% or Marketing Budget 30%.
+//     Gross_Reference_Sales = SUM(Qty x Base_Unit_Price_At_Sale) for paid sales.
+//     Profit Protection passes when Contribution_Profit >=
+//     Gross_Reference_Sales x Minimum_Profit_Protection_Rate (default 10%).
+//     Actual Profit Margin = Contribution_Profit / Net_Revenue, separately.
+// 11) ER 2 holds Kimball conformed Dim_Date, Facts, Mart and Monthly KPI View;
+//     do not introduce duplicate analytics tables in ER 1.
+// 12) All data in the study is MOCK; store pricing, rate and cost assumptions
+//     as such; ETL metadata/batches/error logs live outside these 25 tables.

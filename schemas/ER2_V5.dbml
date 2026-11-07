@@ -1,0 +1,253 @@
+// ============================================================
+// TIKTOK SHOP — ER 2 V5 (KIMBALL DWH, APPROVED BUSINESS DISCOVERY ALIGNMENT)
+// SOURCE: user-supplied ER 2 V4 (2026-11-07); cross-checked with ER 1 V3
+// TARGET: one Non-Mall simulated clothing shop; no refund; cancel only before Paid.
+// FLOW: Mock Source -> ER1 SQLite -> Parquet Data Lake -> ER2 DuckDB -> KPI/Scenario
+// CORE: 4 Fact tables + 6 Dimensions + 1 Daily Mart + 1 SQL View (logical only)
+// DO NOT duplicate Campaign or Voucher discounts in the Profit expense stack.
+// Profit Protection >= 10% of Gross Reference Sales (full list price x qty).
+// Profit Margin = Profit / Net Product Revenue (a separate descriptive KPI).
+// Planning Base 60%, Marketing 30%, Minimum Profit 10% = allocation guidelines
+// based on list price, NOT an extra expense deducted from recorded Profit.
+// Historical transactions: price locked at Order_Created_At; revenue booked Paid_At.
+// Group-grain Ads / Claims / Mart must NEVER join raw SKU-level facts by Group ID.
+// DuckDB is the demo runtime; database_type PostgreSQL only for DBML diagram rendering.
+// ETL audit, Data Lake control/checkpoints, and Scenario assumptions are out of core.
+// ============================================================
+Project TikTok_Shop_ER2_V5_Core {
+  database_type: 'PostgreSQL'
+  Note: 'V5: 4 facts, 6 dimensions, 1 derived daily product-group mart, 1 logical month KPI view. One simulated Non-Mall shop. Warehouse runtime DuckDB; PostgreSQL only for DBML renderer compatibility. Voucher %, 10% of list-price Profit Protection, verified ER1 V3 handoff.'
+}
+
+// =================== CONFORMED DIMENSIONS ===================
+Table Dim_Date {
+  Date_Key int [pk, note: 'Surrogate key YYYYMMDD or DW-generated integer; fact foreign keys use this key']
+  Full_Date date [not null, unique, note: 'วันที่จริง ไม่ซ้ำกัน']
+  Day_Number int [note: 'วันที่ 1 ถึง 31']
+  Day_Name varchar [note: 'ชื่อวัน']
+  Week_Start_Date date [note: 'วันแรกของสัปดาห์']
+  Month_Number int [note: 'เดือน 1 ถึง 12']
+  Month_Name varchar [note: 'ชื่อเดือน']
+  Year_Month varchar [not null, note: 'YYYY-MM สำหรับรวมข้อมูลรายเดือน']
+  Quarter_Number int [note: 'ไตรมาส']
+  Year_Number int [not null, note: 'ปี ค.ศ.']
+  Is_Month_Start boolean [note: 'ใช้ตรวจแถวแรกของเดือนสำหรับ Target Fact']
+  Note: 'Conformed Date สำหรับทุก Fact; Month Target ใช้ Date_Key ของวันแรกเดือนเท่านั้น ไม่เพิ่ม Target รายวันหรือเข้าทุก Product Group'
+}
+
+Table Dim_Product {
+  Product_Key int [pk, increment, note: 'SKU surrogate key; if SCD2 enabled each historical version gets a new key']
+  SKU_ID varchar [not null, note: 'SKU natural key from ER1']
+  SKU_Name varchar
+  Color varchar
+  Size varchar
+  Product_Group_ID varchar [not null, note: 'group business ID, flattened from ER1 Product Group Master; used to AGGREGATE SKU-grain Sales/Sample into group-grain']
+  Product_Group_Name varchar [not null, note: 'Product Group label flattened in SKU dimension']
+  Base_Selling_Price decimal [note: 'Product Group reference/base price; not the actual price on sale day']
+  Standard_Product_Cost decimal [note: 'ER1 Dim_Product_Group.Cost_Standard_Product = 40% x Base_Selling_Price in Demo, same across all SKU variants and lots; reporting reference only, not an additional cost deduction']
+  Product_Group_Status varchar [note: 'Snapshot of group status for this SKU dimension version']
+  Product_Status varchar
+  Effective_From date [not null, note: 'Beginning of this SKU dimension version; use valid as-of date when loading Fact FK']
+  Effective_To date [note: 'Exclusive end of this version, NULL while current']
+  Is_Current boolean
+  Note: 'Grain=one SKU version, fully flattened Product Group. ER1 Dim_SKU + Dim_Product_Group. Sales Product_Key resolves from SKU version valid at Order_Created_At; Sales_Date_Key remains Paid_At. Samples resolve as-of Dispatched_Date. Base price in Dim_Product is for reference, while each Sale Fact carries locked unit price snapshot. Ads/Claim/Mart use group grain; NEVER join Ads to every SKU.'
+  indexes { (SKU_ID, Effective_From) [unique] }
+}
+
+Table Dim_Creator {
+  Creator_Key int [pk, increment]
+  Creator_ID varchar [not null]
+  Creator_Name varchar
+  Creator_Type varchar
+  Creator_Status varchar
+  Note: 'Creator/Affiliate; ใช้สมาชิก Not Applicable ใน Fact Sales เมื่อไม่ได้ขายผ่าน Affiliate'
+}
+
+Table Dim_Ad_Campaign {
+  Ad_Campaign_Key int [pk, increment]
+  Ad_Campaign_ID varchar [not null]
+  Ad_Campaign_Name varchar
+  Ad_Type varchar
+  Campaign_Start_Date date
+  Campaign_End_Date date
+  Note: 'Ads campaign dimension is separate from Sales campaign attributes now stored in Fact_Sales_Order_Item. Does NOT imply Ad spend is attributable to any specific sold order.'
+}
+
+Table Dim_Voucher {
+  Voucher_Key int [pk, increment]
+  Voucher_ID varchar [not null, note: 'ER1 Dim_Voucher.Voucher_ID; create Not Applicable member for no voucher and ineligible item']
+  Voucher_Name varchar
+  Discount_Rate decimal [not null, note: 'ER1 Dim_Voucher.Discount_Rate; decimal fraction 0..1; e.g. 0.10 = 10%']
+  Minimum_Spend_Amount decimal [not null, note: 'ER1 minimum spend in THB on ELIGIBLE items only, after Campaign and before Voucher']
+  Maximum_Discount_Amount decimal [note: 'ER1 maximum voucher discount THB per order; NULL = no cap']
+  Voucher_Active boolean
+  Voucher_Start_Date date
+  Voucher_End_Date date
+  Note: 'Grain=one voucher version or master row for Demo. One seller voucher per Order; applicable Product Groups come from ER1 Bridge_Voucher_Product_Group in ETL, not a DWH bridge. Actual per-item discount from ER1 Fact_Order_Items.Voucher_Allocated_Amount is stored only in Fact_Sales_Order_Item.Voucher_Allocated. Validate threshold, cap, and allocation reconciliation; do not reapply discount.'
+}
+
+
+Table Dim_Cost_Basis {
+  Cost_Basis_Key int [pk, increment, note: 'Small junk dimension key used in high-volume sales Fact']
+  Platform_Fee_Basis varchar [not null, note: 'Demo default ESTIMATED_10PCT = simplified fixed 10% of item Net_Revenue, not real TikTok fees; ACTUAL only if actual source exists; never combine']
+  Fulfillment_Basis varchar [not null, note: 'MOCK_ACTUAL for complete ER1 Fact_Internal_Fulfillment; POLICY_FIXED only for explicit fallback; UNKNOWN if incomplete']
+  Note: 'Junk dimension, one row per distinct (Platform_Fee_Basis, Fulfillment_Basis). For Demo platform fee is simulated rate 10% on Net_Revenue; Fulfillment is mock actual costs supplied in ER1. If missing, explicitly tag UNKNOWN and the corresponding Mart as INCOMPLETE; never mistake missing cost for a free service. Applied allocation methods and Batch IDs live in versioned ETL audit outside this core.'
+  indexes { (Platform_Fee_Basis, Fulfillment_Basis) [unique] }
+}
+
+
+// =================== ATOMIC FACT TABLES ===================
+Table Fact_Sales_Order_Item {
+  Sales_Fact_Key bigint [pk, increment]
+  Sales_Date_Key int [not null, note: 'Dim_Date key from ER1 Fact_Orders.Paid_At; include paid orders (Paid, Shipped, Delivered) excluding pending/cancelled; Demo forbids cancel after Paid']
+  Product_Key int [not null, note: 'SKU-version FK to Dim_Product resolved as of ER1 Fact_Orders.Order_Created_At, which locks base/campaign unit price']
+  Creator_Key int [not null, note: 'Not Applicable member when no creator']
+  Voucher_Key int [not null, note: 'ER1 Fact_Orders.Voucher_ID for eligible item if voucher applied; otherwise Not Applicable member']
+  Cost_Basis_Key int [not null, note: 'lookup from (Platform_Fee_Basis, Fulfillment_Basis) in Dim_Cost_Basis']
+  Campaign_ID varchar [note: 'ER1 Fact_Order_Items.Campaign_ID snapshot at Order_Created_At; null outside sales Campaign; distinct from Ads campaign']
+  Campaign_Name varchar [note: 'Campaign name SNAPSHOT as-of sale; repeated in Fact by agreed V4 design']
+  Campaign_Type varchar [note: 'Campaign category SNAPSHOT as-of sale; repeated in Fact by agreed V4 design']
+  Source_Order_ID varchar [not null, note: 'degenerate order identifier; never SUM']
+  Source_Order_Item_ID varchar [not null, unique, note: 'one SKU line per order']
+  Quantity int [not null, note: 'quantity sold on this SKU line, >0']
+  Base_Unit_Price_At_Sale decimal [note: 'base price snapshot at sale time']
+  Campaign_Unit_Price_At_Sale decimal [note: 'ER1 Fact_Order_Items.Unit_Selling_Price locked at Order_Created_At: after Product Group Campaign special price, before voucher']
+  Gross_Reference_Sales decimal [note: 'Quantity * Base_Unit_Price_At_Sale; not actual KPI revenue']
+  Campaign_Price_Reduction decimal [note: 'ER1 Fact_Order_Items.Campaign_Discount_Amount = Gross_Reference_Sales - Sales_After_Campaign; analytical breakdown only, not another cost subtraction']
+  Sales_After_Campaign decimal [not null, note: 'Quantity * Campaign_Unit_Price_At_Sale']
+  Voucher_Allocated decimal [not null, note: 'ER1 Fact_Order_Items.Voucher_Allocated_Amount; eligible items only; sum per order must match Fact_Orders.Voucher_Seller_Cost after rounding']
+  Net_Revenue decimal [not null, note: 'Sales_After_Campaign - Voucher_Allocated; excludes Shipping_Fee_Collected; primary product revenue metric']
+  COGS decimal [not null, note: 'ER1 Fact_Order_Items.Total_COGS reconciled to FIFO allocation; model cost 40% of base price per unit, regardless of Campaign/Voucher; no extra 40% deduction']
+  Platform_Fee_Cost decimal [not null, note: 'Demo simplified 10% of Net_Revenue, rounded and reconciled per order; Base Cost 60% category; never sum actual and estimated fee']
+  Fulfillment_Cost decimal [not null, note: 'Order-level packaging + labor + shop-paid shipping from ER1 distributed to items; recognized on Paid_At; late costs update old order/date. Missing uses explicitly tagged fallback/UNKNOWN, not silent actual zero']
+  Affiliate_Cost decimal [not null, note: 'ER1 Fact_Order_Items.Fee_Affiliate_Payout = item Net_Revenue x applicable Product Group rate, 0 if no creator; Marketing 30% category']
+  Sales_Contribution_Pre_Ads_Sample_Claim decimal [note: 'Net_Revenue - COGS - Platform - Fulfillment - Affiliate']
+  Note: 'Grain=1 PAID Order Item/SKU line, source ER1 Fact_Order_Items.Order_Item_ID. Revenue date is Paid_At, product/campaign/price snapshot is Order_Created_At. One group-level sales Campaign per item, no overlapping campaigns by Group/date. Item Net Revenue = post-campaign item amount minus allocated seller voucher. Reconcile voucher and cost allocation sums at Order level; store method/version in ETL audit. Profit before group Ads/Sample/Claim = Net_Revenue - COGS - Platform_Fee_Cost - Fulfillment_Cost - Affiliate_Cost. Simulation fee 10% on Net Revenue; cannot also deduct fixed 60% base planning budget. Cost_Basis describes source and completeness; NEVER silently treat unknown cost as complete profit. UPSERT on Source_Order_Item_ID during incremental loads.'
+  indexes { (Source_Order_ID, Source_Order_Item_ID) [unique] }
+}
+
+Table Fact_Ads_Daily {
+  Ads_Fact_Key bigint [pk, increment]
+  Date_Key int [not null]
+  Product_Group_ID varchar [not null, note: 'group business ID from Ads source; validated against source group master; NOT a FK to SKU-grain Dim_Product']
+  Ad_Campaign_Key int [not null]
+  Source_Ad_Record_ID varchar [not null, unique]
+  Ads_Spend decimal [not null, note: 'ต้นทุนการตลาดที่นับหนึ่งครั้ง']
+  Impressions bigint
+  Clicks bigint
+  Conversions bigint [note: 'ค่าที่ source รายงาน; อาจไม่ใช่จำนวน order โดยตรง']
+  Reported_Ads_GMV decimal [note: 'optional; หาก Source มีระดับเดียวกัน ไม่รวมเป็น Net Revenue ใหม่']
+  Reported_Ads_Orders bigint [note: 'optional']
+  Reported_Revenue_Basis varchar [note: 'เช่น ATTRIBUTED / GMV_MAX_TOTAL, ต้องระบุความหมาย']
+  Note: 'Grain=1 Date x 1 Ad Campaign x 1 Product Group (if source supports it). Product_Group_ID is a validated GROUP business ID with no SKU-level Dim FK; NEVER join Ads on group code to every Dim_Product SKU. Ads attributed GMV is not additional shop revenue. Aggregate Ads by Date x Group before drill-across.'
+  indexes { (Date_Key, Product_Group_ID, Ad_Campaign_Key) [unique] }
+}
+
+Table Fact_Free_Sample {
+  Sample_Fact_Key bigint [pk, increment]
+  Dispatched_Date_Key int [not null, note: 'จาก Fact_Free_Samples.Dispatched_Date']
+  Product_Key int [not null]
+  Creator_Key int [not null]
+  Source_Sample_ID varchar [not null, unique]
+  Sample_Quantity int [not null]
+  Sample_COGS decimal [not null]
+  Sample_Shipping_Cost decimal [not null]
+  Total_Sample_Cost decimal [not null, note: 'Sample_COGS + Sample_Shipping_Cost']
+  Note: 'Grain=1 sample dispatch x SKU x creator. Resolve group from Dim_Product as-of dispatch time; aggregate by Date x Product_Group_ID before combining with Ads. Sample_COGS must not duplicate sale COGS. No sample attribution.'
+}
+
+Table Fact_Business_Target_Monthly {
+  Target_Fact_Key bigint [pk, increment]
+  Month_Start_Date_Key int [not null, unique, note: 'Dim_Date.Date_Key for first date of shop month; one shop x month, never repeated by Product Group']
+  Target_Year_Month varchar [not null, unique, note: 'ER1 Ref_Business_Target.Target_Year_Month YYYY-MM']
+  Revenue_Target decimal [not null, note: 'ER1 Ref_Business_Target.Revenue_Target >= 0; zero target yields N/A achievement']
+  Minimum_Profit_Protection_Rate decimal [not null, note: 'ER1 Ref_Business_Target.Minimum_Profit_Protection_Rate. 0.10 means minimum profit = 10% of full-price Gross_Reference_Sales, not of Net_Revenue; rate is nonadditive']
+  Note: 'Grain=one shop per month. Revenue target is compared with Net Product Revenue; profit protection rate is applied to Gross Reference Sales of paid items. Validate month key and policy rate [0,1]. Monthly aggregation precedes join to this target to avoid multiplying target by day, product group, or SKU.'
+}
+
+// =================== DERIVED DASHBOARD MART ===================
+Table Mart_Product_Group_Daily_Performance {
+  Date_Key int [not null]
+  Product_Group_ID varchar [not null, note: 'verified common Group ID across Sales, Ads, Sample, Claim; not SKU FK']
+  Product_Group_Name varchar [note: 'Daily group label snapshot from ER1 Group Master (not by joining to many SKU rows); for PG-level dashboard without group dimension']
+  Gross_Reference_Sales decimal [not null, note: 'ยอดอ้างอิงราคาเต็มจาก Sales Fact']
+  Campaign_Price_Reduction decimal [not null, note: 'ใช้วิเคราะห์ ไม่หักซ้ำใน Profit']
+  Voucher_Discount decimal [not null, note: 'ส่วนลดคูปองที่จัดสรรจาก Sales Fact; ใช้แสดง breakdown แต่หักใน Net_Revenue แล้ว']
+  Net_Revenue decimal [not null]
+  COGS decimal [not null]
+  Platform_Fee_Cost decimal [not null]
+  Fulfillment_Cost decimal [not null]
+  Affiliate_Cost decimal [not null]
+  Ads_Cost decimal [not null]
+  Sample_Cost decimal [not null]
+  Claim_Cost decimal [not null, note: 'ETL รวมจาก ER1 Fact_Claim_Details ตาม Backend_Action_Date x Product Group; ไม่มี Fact Claim แยก']
+  Contribution_Profit decimal [note: 'Net Revenue - COGS - Platform - Fulfillment - Affiliate - Ads - Sample - Claim; NULL only if mandatory cost information is incomplete and the row is marked Data_Cost_Basis=INCOMPLETE']
+  Data_Cost_Basis varchar [note: 'MOCK_ACTUAL_WITH_POLICY_FEE / PARTLY_ESTIMATED / INCOMPLETE; when incomplete, do NOT report final profit KPIs; Claim Actual and planning allowance must not both be deducted']
+  Calculated_At datetime
+  Note: 'Grain=1 paid revenue date/expense event date x Product Group. Aggregate Sales/Sample via SKU version -> Group separately; Ads by native Group/date; Claim by ER1 Backend_Action_Date/Group. UNION distinct Date/Group before joining streams, preserving expense-only days. Fulfillment late updates same Paid_At date. Net_Revenue already reflects Campaign and Voucher; never deduct discounts again. Contribution_Profit = Net_Revenue - COGS - Platform - Fulfillment - Affiliate - Ads - Sample - Claim. If costs incomplete, Data_Cost_Basis=INCOMPLETE and Contribution_Profit=NULL, propagate incomplete month status to KPI view. Monthly targets are separate grain and are never joined into daily Mart. No duplicate Ads by SKU, no double count actual claim and planning allowance.'
+  indexes { (Date_Key, Product_Group_ID) [pk] }
+}
+
+// =================== STAR & MART RELATIONSHIPS ===================
+Ref: Fact_Sales_Order_Item.Sales_Date_Key > Dim_Date.Date_Key
+Ref: Fact_Sales_Order_Item.Product_Key > Dim_Product.Product_Key
+Ref: Fact_Sales_Order_Item.Creator_Key > Dim_Creator.Creator_Key
+Ref: Fact_Sales_Order_Item.Voucher_Key > Dim_Voucher.Voucher_Key
+Ref: Fact_Sales_Order_Item.Cost_Basis_Key > Dim_Cost_Basis.Cost_Basis_Key
+
+Ref: Fact_Ads_Daily.Date_Key > Dim_Date.Date_Key
+Ref: Fact_Ads_Daily.Ad_Campaign_Key > Dim_Ad_Campaign.Ad_Campaign_Key
+// Fact_Ads_Daily.Product_Group_ID is a governed business code, NOT a FK to Dim_Product.
+
+Ref: Fact_Free_Sample.Dispatched_Date_Key > Dim_Date.Date_Key
+Ref: Fact_Free_Sample.Product_Key > Dim_Product.Product_Key
+Ref: Fact_Free_Sample.Creator_Key > Dim_Creator.Creator_Key
+
+Ref: Fact_Business_Target_Monthly.Month_Start_Date_Key > Dim_Date.Date_Key
+
+Ref: Mart_Product_Group_Daily_Performance.Date_Key > Dim_Date.Date_Key
+// Mart Product_Group_ID matches validated group codes across aggregated source streams.
+
+// =================== LOGICAL SQL VIEW (NOT A PHYSICAL FACT TABLE) ===================
+// DBML Table below is a DIAGRAM placeholder only; create a native VIEW using V5 companion DuckDB SQL.
+Table View_Shop_Monthly_KPI {
+  Year_Month varchar [pk, note: 'one shop x YYYY-MM; logical SQL VIEW, not a stored fact']
+  Month_Start_Date_Key int [note: 'Target first-date key, NULL for actual-only months with no configured target']
+  Gross_Reference_Sales decimal [not null, note: 'SUM(Mart_Product_Group_Daily_Performance.Gross_Reference_Sales) of paid sales at BASE full price']
+  Net_Revenue decimal [not null, note: 'SUM(daily Mart Net_Revenue), after Campaign + seller Voucher; excludes customer shipping']
+  Contribution_Profit decimal [note: 'SUM(daily group Profit) only when every contributing group/date is complete; NULL for incomplete months']
+  Revenue_Target decimal [note: 'Monthly shop goal, NULL if not configured']
+  Minimum_Profit_Protection_Rate decimal [note: 'Minimum Profit / Gross Reference Sales; e.g. 0.10']
+  Revenue_Gap decimal [note: 'Net_Revenue - Revenue_Target; NULL if missing target']
+  Revenue_Achievement_Pct decimal [note: '100 * Net_Revenue / Revenue_Target; NULL if zero/missing target']
+  Profit_Margin_Pct decimal [note: '100 * Contribution_Profit / Net_Revenue, descriptive, NOT a protection gate']
+  Profit_Protection_Required decimal [note: 'Gross_Reference_Sales * Minimum_Profit_Protection_Rate']
+  Profit_Protection_Rate_Pct decimal [note: '100 * Contribution_Profit / Gross_Reference_Sales, NULL when zero base / incomplete']
+  Profit_Protection_Gap_Pp decimal [note: 'Profit_Protection_Rate_Pct - 100 * Minimum_Profit_Protection_Rate, in percentage points']
+  Profit_Protection_Headroom decimal [note: 'Contribution_Profit - Profit_Protection_Required (THB); negative means below 10% of base list-price sales']
+  Profit_Protection_Status varchar [note: 'PASS / FAIL / NO_REFERENCE_SALES / MISSING_POLICY / INVALID_POLICY / INCOMPLETE_COST']
+  Profit_Data_Status varchar [not null, note: 'COMPLETE / INCOMPLETE; protects against silently reporting profit with missing costs']
+  Target_Status varchar [not null, note: 'OK / ZERO_TARGET / MISSING_TARGET / INVALID_TARGET']
+  Note: 'LOGICAL VIEW ONLY. Aggregate daily Product Group Mart to shop-month BEFORE joining one-row shop-month target (FULL OUTER JOIN); no fanout. Profit Protection base = Gross_Reference_Sales, NEVER Net_Revenue. Profit Margin remains separate. If any Mart group/date has Data_Cost_Basis INCOMPLETE or Profit NULL, month Contribution_Profit/protection are NULL; Revenue KPIs still visible. Monthly partial periods are MTD. Implement from companion DuckDB SQL file.'
+}
+
+TableGroup Core_Star_Schema {
+  Dim_Date
+  Dim_Product
+  Dim_Creator
+  Dim_Ad_Campaign
+  Dim_Voucher
+  Dim_Cost_Basis
+  Fact_Sales_Order_Item
+  Fact_Ads_Daily
+  Fact_Free_Sample
+  Fact_Business_Target_Monthly
+}
+
+TableGroup Dashboard_Analytical_Mart {
+  Mart_Product_Group_Daily_Performance
+}
+
+TableGroup Derived_KPI_View_Logical_Only {
+  View_Shop_Monthly_KPI
+}

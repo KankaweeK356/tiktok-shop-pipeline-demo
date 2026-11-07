@@ -1,0 +1,2 @@
+﻿Cost_Policy_ID,Fixed_Fulfillment_Cost_Per_Order,Claim_Risk_Allowance_Rate,Planning_Base_Cost_Rate,Planning_Adjustable_Gap_Rate,Effective_From,Effective_To,Is_Active
+PLAN-2026,12,0.02,0.6,0.3,2026-01-01,,True

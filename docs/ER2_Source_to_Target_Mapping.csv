@@ -1,0 +1,133 @@
+﻿Target_Table,Target_Field,Source_Tables,Transformation_Rule,Data_Grain_And_Load
+Dim_Date,Date_Key,ER1 Fact_Orders.Paid_At / other event dates,Calendar YYYYMMDD for Oct-Nov 2026; dates/quarter/ISO week derived; month target first-of-month,small master dimension full upsert
+Dim_Date,Full_Date,ER1 Fact_Orders.Paid_At / other event dates,Calendar YYYYMMDD for Oct-Nov 2026; dates/quarter/ISO week derived; month target first-of-month,small master dimension full upsert
+Dim_Date,Day_Number,ER1 Fact_Orders.Paid_At / other event dates,Calendar YYYYMMDD for Oct-Nov 2026; dates/quarter/ISO week derived; month target first-of-month,small master dimension full upsert
+Dim_Date,Day_Name,ER1 Fact_Orders.Paid_At / other event dates,Calendar YYYYMMDD for Oct-Nov 2026; dates/quarter/ISO week derived; month target first-of-month,small master dimension full upsert
+Dim_Date,Week_Start_Date,ER1 Fact_Orders.Paid_At / other event dates,Calendar YYYYMMDD for Oct-Nov 2026; dates/quarter/ISO week derived; month target first-of-month,small master dimension full upsert
+Dim_Date,Month_Number,ER1 Fact_Orders.Paid_At / other event dates,Calendar YYYYMMDD for Oct-Nov 2026; dates/quarter/ISO week derived; month target first-of-month,small master dimension full upsert
+Dim_Date,Month_Name,ER1 Fact_Orders.Paid_At / other event dates,Calendar YYYYMMDD for Oct-Nov 2026; dates/quarter/ISO week derived; month target first-of-month,small master dimension full upsert
+Dim_Date,Year_Month,ER1 Fact_Orders.Paid_At / other event dates,Calendar YYYYMMDD for Oct-Nov 2026; dates/quarter/ISO week derived; month target first-of-month,small master dimension full upsert
+Dim_Date,Quarter_Number,ER1 Fact_Orders.Paid_At / other event dates,Calendar YYYYMMDD for Oct-Nov 2026; dates/quarter/ISO week derived; month target first-of-month,small master dimension full upsert
+Dim_Date,Year_Number,ER1 Fact_Orders.Paid_At / other event dates,Calendar YYYYMMDD for Oct-Nov 2026; dates/quarter/ISO week derived; month target first-of-month,small master dimension full upsert
+Dim_Date,Is_Month_Start,ER1 Fact_Orders.Paid_At / other event dates,Calendar YYYYMMDD for Oct-Nov 2026; dates/quarter/ISO week derived; month target first-of-month,small master dimension full upsert
+Dim_Product,Product_Key,ER1 Dim_SKU + Dim_Product_Group,"SKU version, deterministic Product_Key; flatten PG; cost 40% of base price",small master dimension full upsert
+Dim_Product,SKU_ID,ER1 Dim_SKU + Dim_Product_Group,"SKU version, deterministic Product_Key; flatten PG; cost 40% of base price",small master dimension full upsert
+Dim_Product,SKU_Name,ER1 Dim_SKU + Dim_Product_Group,"SKU version, deterministic Product_Key; flatten PG; cost 40% of base price",small master dimension full upsert
+Dim_Product,Color,ER1 Dim_SKU + Dim_Product_Group,"SKU version, deterministic Product_Key; flatten PG; cost 40% of base price",small master dimension full upsert
+Dim_Product,Size,ER1 Dim_SKU + Dim_Product_Group,"SKU version, deterministic Product_Key; flatten PG; cost 40% of base price",small master dimension full upsert
+Dim_Product,Product_Group_ID,ER1 Dim_SKU + Dim_Product_Group,"SKU version, deterministic Product_Key; flatten PG; cost 40% of base price",small master dimension full upsert
+Dim_Product,Product_Group_Name,ER1 Dim_SKU + Dim_Product_Group,"SKU version, deterministic Product_Key; flatten PG; cost 40% of base price",small master dimension full upsert
+Dim_Product,Base_Selling_Price,ER1 Dim_SKU + Dim_Product_Group,"SKU version, deterministic Product_Key; flatten PG; cost 40% of base price",small master dimension full upsert
+Dim_Product,Standard_Product_Cost,ER1 Dim_SKU + Dim_Product_Group,"SKU version, deterministic Product_Key; flatten PG; cost 40% of base price",small master dimension full upsert
+Dim_Product,Product_Group_Status,ER1 Dim_SKU + Dim_Product_Group,"SKU version, deterministic Product_Key; flatten PG; cost 40% of base price",small master dimension full upsert
+Dim_Product,Product_Status,ER1 Dim_SKU + Dim_Product_Group,"SKU version, deterministic Product_Key; flatten PG; cost 40% of base price",small master dimension full upsert
+Dim_Product,Effective_From,ER1 Dim_SKU + Dim_Product_Group,"SKU version, deterministic Product_Key; flatten PG; cost 40% of base price",small master dimension full upsert
+Dim_Product,Effective_To,ER1 Dim_SKU + Dim_Product_Group,"SKU version, deterministic Product_Key; flatten PG; cost 40% of base price",small master dimension full upsert
+Dim_Product,Is_Current,ER1 Dim_SKU + Dim_Product_Group,"SKU version, deterministic Product_Key; flatten PG; cost 40% of base price",small master dimension full upsert
+Dim_Creator,Creator_Key,ER1 Dim_Creator,Creator dimension; Creator_Key=0 Not Applicable,small master dimension full upsert
+Dim_Creator,Creator_ID,ER1 Dim_Creator,Creator dimension; Creator_Key=0 Not Applicable,small master dimension full upsert
+Dim_Creator,Creator_Name,ER1 Dim_Creator,Creator dimension; Creator_Key=0 Not Applicable,small master dimension full upsert
+Dim_Creator,Creator_Type,ER1 Dim_Creator,Creator dimension; Creator_Key=0 Not Applicable,small master dimension full upsert
+Dim_Creator,Creator_Status,ER1 Dim_Creator,Creator dimension; Creator_Key=0 Not Applicable,small master dimension full upsert
+Dim_Ad_Campaign,Ad_Campaign_Key,ER1 Dim_Ad_Campaign,"Ad campaign master, not sales campaign",small master dimension full upsert
+Dim_Ad_Campaign,Ad_Campaign_ID,ER1 Dim_Ad_Campaign,"Ad campaign master, not sales campaign",small master dimension full upsert
+Dim_Ad_Campaign,Ad_Campaign_Name,ER1 Dim_Ad_Campaign,"Ad campaign master, not sales campaign",small master dimension full upsert
+Dim_Ad_Campaign,Ad_Type,ER1 Dim_Ad_Campaign,"Ad campaign master, not sales campaign",small master dimension full upsert
+Dim_Ad_Campaign,Campaign_Start_Date,ER1 Dim_Ad_Campaign,"Ad campaign master, not sales campaign",small master dimension full upsert
+Dim_Ad_Campaign,Campaign_End_Date,ER1 Dim_Ad_Campaign,"Ad campaign master, not sales campaign",small master dimension full upsert
+Dim_Voucher,Voucher_Key,ER1 Dim_Voucher,"Percentage rate, minimum spend and cap; Voucher_Key=0 Not Applicable",small master dimension full upsert
+Dim_Voucher,Voucher_ID,ER1 Dim_Voucher,"Percentage rate, minimum spend and cap; Voucher_Key=0 Not Applicable",small master dimension full upsert
+Dim_Voucher,Voucher_Name,ER1 Dim_Voucher,"Percentage rate, minimum spend and cap; Voucher_Key=0 Not Applicable",small master dimension full upsert
+Dim_Voucher,Discount_Rate,ER1 Dim_Voucher,"Percentage rate, minimum spend and cap; Voucher_Key=0 Not Applicable",small master dimension full upsert
+Dim_Voucher,Minimum_Spend_Amount,ER1 Dim_Voucher,"Percentage rate, minimum spend and cap; Voucher_Key=0 Not Applicable",small master dimension full upsert
+Dim_Voucher,Maximum_Discount_Amount,ER1 Dim_Voucher,"Percentage rate, minimum spend and cap; Voucher_Key=0 Not Applicable",small master dimension full upsert
+Dim_Voucher,Voucher_Active,ER1 Dim_Voucher,"Percentage rate, minimum spend and cap; Voucher_Key=0 Not Applicable",small master dimension full upsert
+Dim_Voucher,Voucher_Start_Date,ER1 Dim_Voucher,"Percentage rate, minimum spend and cap; Voucher_Key=0 Not Applicable",small master dimension full upsert
+Dim_Voucher,Voucher_End_Date,ER1 Dim_Voucher,"Percentage rate, minimum spend and cap; Voucher_Key=0 Not Applicable",small master dimension full upsert
+Dim_Cost_Basis,Cost_Basis_Key,ER1 Ref_Platform_Fee_Estimate_Rule + Fact_Internal_Fulfillment,Fixed ESTIMATED_10PCT; fulfillment MOCK_ACTUAL / UNKNOWN,small master dimension full upsert
+Dim_Cost_Basis,Platform_Fee_Basis,ER1 Ref_Platform_Fee_Estimate_Rule + Fact_Internal_Fulfillment,Fixed ESTIMATED_10PCT; fulfillment MOCK_ACTUAL / UNKNOWN,small master dimension full upsert
+Dim_Cost_Basis,Fulfillment_Basis,ER1 Ref_Platform_Fee_Estimate_Rule + Fact_Internal_Fulfillment,Fixed ESTIMATED_10PCT; fulfillment MOCK_ACTUAL / UNKNOWN,small master dimension full upsert
+Fact_Sales_Order_Item,Sales_Fact_Key,ER1 Fact_Order_Items + Fact_Orders + Fact_Internal_Fulfillment + Dim_SKU + Campaign,"Stable surrogate allocated during Warehouse first insert, retained on upsert",source-grain / delta upsert
+Fact_Sales_Order_Item,Sales_Date_Key,ER1 Fact_Order_Items + Fact_Orders + Fact_Internal_Fulfillment + Dim_SKU + Campaign,"Fact_Orders.Paid_At -> YYYYMMDD, Paid non-cancelled",source-grain / delta upsert
+Fact_Sales_Order_Item,Product_Key,ER1 Fact_Order_Items + Fact_Orders + Fact_Internal_Fulfillment + Dim_SKU + Campaign,Fact_Order_Items.SKU_ID -> Dim_Product as-of Order_Created_At,source-grain / delta upsert
+Fact_Sales_Order_Item,Creator_Key,ER1 Fact_Order_Items + Fact_Orders + Fact_Internal_Fulfillment + Dim_SKU + Campaign,Fact_Order_Items.Creator_ID -> Dim_Creator; 0 for none,source-grain / delta upsert
+Fact_Sales_Order_Item,Voucher_Key,ER1 Fact_Order_Items + Fact_Orders + Fact_Internal_Fulfillment + Dim_SKU + Campaign,"Fact_Orders.Voucher_ID for eligible item with allocated voucher, else 0",source-grain / delta upsert
+Fact_Sales_Order_Item,Cost_Basis_Key,ER1 Fact_Order_Items + Fact_Orders + Fact_Internal_Fulfillment + Dim_SKU + Campaign,ESTIMATED_10PCT+MOCK_ACTUAL or UNKNOWN based on fulfillment existence,source-grain / delta upsert
+Fact_Sales_Order_Item,Campaign_ID,ER1 Fact_Order_Items + Fact_Orders + Fact_Internal_Fulfillment + Dim_SKU + Campaign,Fact_Order_Items.Campaign_ID locked at order creation,source-grain / delta upsert
+Fact_Sales_Order_Item,Campaign_Name,ER1 Fact_Order_Items + Fact_Orders + Fact_Internal_Fulfillment + Dim_SKU + Campaign,Dim_Campaign.Campaign_Name joined by Campaign_ID,source-grain / delta upsert
+Fact_Sales_Order_Item,Campaign_Type,ER1 Fact_Order_Items + Fact_Orders + Fact_Internal_Fulfillment + Dim_SKU + Campaign,Dim_Campaign.Campaign_Type joined by Campaign_ID,source-grain / delta upsert
+Fact_Sales_Order_Item,Source_Order_ID,ER1 Fact_Order_Items + Fact_Orders + Fact_Internal_Fulfillment + Dim_SKU + Campaign,Fact_Order_Items.Order_ID,source-grain / delta upsert
+Fact_Sales_Order_Item,Source_Order_Item_ID,ER1 Fact_Order_Items + Fact_Orders + Fact_Internal_Fulfillment + Dim_SKU + Campaign,Fact_Order_Items.Order_Item_ID,source-grain / delta upsert
+Fact_Sales_Order_Item,Quantity,ER1 Fact_Order_Items + Fact_Orders + Fact_Internal_Fulfillment + Dim_SKU + Campaign,Fact_Order_Items.Quantity,source-grain / delta upsert
+Fact_Sales_Order_Item,Base_Unit_Price_At_Sale,ER1 Fact_Order_Items + Fact_Orders + Fact_Internal_Fulfillment + Dim_SKU + Campaign,Fact_Order_Items.Base_Unit_Price_At_Sale,source-grain / delta upsert
+Fact_Sales_Order_Item,Campaign_Unit_Price_At_Sale,ER1 Fact_Order_Items + Fact_Orders + Fact_Internal_Fulfillment + Dim_SKU + Campaign,Fact_Order_Items.Unit_Selling_Price,source-grain / delta upsert
+Fact_Sales_Order_Item,Gross_Reference_Sales,ER1 Fact_Order_Items + Fact_Orders + Fact_Internal_Fulfillment + Dim_SKU + Campaign,Quantity * Base_Unit_Price_At_Sale,source-grain / delta upsert
+Fact_Sales_Order_Item,Campaign_Price_Reduction,ER1 Fact_Order_Items + Fact_Orders + Fact_Internal_Fulfillment + Dim_SKU + Campaign,Fact_Order_Items.Campaign_Discount_Amount,source-grain / delta upsert
+Fact_Sales_Order_Item,Sales_After_Campaign,ER1 Fact_Order_Items + Fact_Orders + Fact_Internal_Fulfillment + Dim_SKU + Campaign,Fact_Order_Items.Total_Selling_Amount,source-grain / delta upsert
+Fact_Sales_Order_Item,Voucher_Allocated,ER1 Fact_Order_Items + Fact_Orders + Fact_Internal_Fulfillment + Dim_SKU + Campaign,Fact_Order_Items.Voucher_Allocated_Amount,source-grain / delta upsert
+Fact_Sales_Order_Item,Net_Revenue,ER1 Fact_Order_Items + Fact_Orders + Fact_Internal_Fulfillment + Dim_SKU + Campaign,Sales_After_Campaign - Voucher_Allocated (shipping excluded),source-grain / delta upsert
+Fact_Sales_Order_Item,COGS,ER1 Fact_Order_Items + Fact_Orders + Fact_Internal_Fulfillment + Dim_SKU + Campaign,"Fact_Order_Items.Total_COGS, reconciled to FIFO",source-grain / delta upsert
+Fact_Sales_Order_Item,Platform_Fee_Cost,ER1 Fact_Order_Items + Fact_Orders + Fact_Internal_Fulfillment + Dim_SKU + Campaign,"ROUND(0.10 x Net_Revenue, 2) simulated fee",source-grain / delta upsert
+Fact_Sales_Order_Item,Fulfillment_Cost,ER1 Fact_Order_Items + Fact_Orders + Fact_Internal_Fulfillment + Dim_SKU + Campaign,"Pro-rata Fact_Internal_Fulfillment packaging+labor+shipping allocated to item net, reconcile cents",source-grain / delta upsert
+Fact_Sales_Order_Item,Affiliate_Cost,ER1 Fact_Order_Items + Fact_Orders + Fact_Internal_Fulfillment + Dim_SKU + Campaign,Fact_Order_Items.Fee_Affiliate_Payout = group rate x item net,source-grain / delta upsert
+Fact_Sales_Order_Item,Sales_Contribution_Pre_Ads_Sample_Claim,ER1 Fact_Order_Items + Fact_Orders + Fact_Internal_Fulfillment + Dim_SKU + Campaign,Net Revenue - COGS - Platform - Fulfillment - Affiliate,source-grain / delta upsert
+Fact_Ads_Daily,Ads_Fact_Key,ER1 Fact_Marketing_Costs,"Date x Ads Campaign x Product Group, not SKU joins",source-grain / delta upsert
+Fact_Ads_Daily,Date_Key,ER1 Fact_Marketing_Costs,"Date x Ads Campaign x Product Group, not SKU joins",source-grain / delta upsert
+Fact_Ads_Daily,Product_Group_ID,ER1 Fact_Marketing_Costs,"Date x Ads Campaign x Product Group, not SKU joins",source-grain / delta upsert
+Fact_Ads_Daily,Ad_Campaign_Key,ER1 Fact_Marketing_Costs,"Date x Ads Campaign x Product Group, not SKU joins",source-grain / delta upsert
+Fact_Ads_Daily,Source_Ad_Record_ID,ER1 Fact_Marketing_Costs,"Date x Ads Campaign x Product Group, not SKU joins",source-grain / delta upsert
+Fact_Ads_Daily,Ads_Spend,ER1 Fact_Marketing_Costs,"Date x Ads Campaign x Product Group, not SKU joins",source-grain / delta upsert
+Fact_Ads_Daily,Impressions,ER1 Fact_Marketing_Costs,"Date x Ads Campaign x Product Group, not SKU joins",source-grain / delta upsert
+Fact_Ads_Daily,Clicks,ER1 Fact_Marketing_Costs,"Date x Ads Campaign x Product Group, not SKU joins",source-grain / delta upsert
+Fact_Ads_Daily,Conversions,ER1 Fact_Marketing_Costs,"Date x Ads Campaign x Product Group, not SKU joins",source-grain / delta upsert
+Fact_Ads_Daily,Reported_Ads_GMV,ER1 Fact_Marketing_Costs,"Date x Ads Campaign x Product Group, not SKU joins",source-grain / delta upsert
+Fact_Ads_Daily,Reported_Ads_Orders,ER1 Fact_Marketing_Costs,"Date x Ads Campaign x Product Group, not SKU joins",source-grain / delta upsert
+Fact_Ads_Daily,Reported_Revenue_Basis,ER1 Fact_Marketing_Costs,"Date x Ads Campaign x Product Group, not SKU joins",source-grain / delta upsert
+Fact_Free_Sample,Sample_Fact_Key,ER1 Fact_Free_Samples + Dim_SKU,"Dispatch date x SKU x creator, separate from order sales",source-grain / delta upsert
+Fact_Free_Sample,Dispatched_Date_Key,ER1 Fact_Free_Samples + Dim_SKU,"Dispatch date x SKU x creator, separate from order sales",source-grain / delta upsert
+Fact_Free_Sample,Product_Key,ER1 Fact_Free_Samples + Dim_SKU,"Dispatch date x SKU x creator, separate from order sales",source-grain / delta upsert
+Fact_Free_Sample,Creator_Key,ER1 Fact_Free_Samples + Dim_SKU,"Dispatch date x SKU x creator, separate from order sales",source-grain / delta upsert
+Fact_Free_Sample,Source_Sample_ID,ER1 Fact_Free_Samples + Dim_SKU,"Dispatch date x SKU x creator, separate from order sales",source-grain / delta upsert
+Fact_Free_Sample,Sample_Quantity,ER1 Fact_Free_Samples + Dim_SKU,"Dispatch date x SKU x creator, separate from order sales",source-grain / delta upsert
+Fact_Free_Sample,Sample_COGS,ER1 Fact_Free_Samples + Dim_SKU,"Dispatch date x SKU x creator, separate from order sales",source-grain / delta upsert
+Fact_Free_Sample,Sample_Shipping_Cost,ER1 Fact_Free_Samples + Dim_SKU,"Dispatch date x SKU x creator, separate from order sales",source-grain / delta upsert
+Fact_Free_Sample,Total_Sample_Cost,ER1 Fact_Free_Samples + Dim_SKU,"Dispatch date x SKU x creator, separate from order sales",source-grain / delta upsert
+Fact_Business_Target_Monthly,Target_Fact_Key,ER1 Ref_Business_Target,"One store-month target, never replicate by group/day",source-grain / delta upsert
+Fact_Business_Target_Monthly,Month_Start_Date_Key,ER1 Ref_Business_Target,"One store-month target, never replicate by group/day",source-grain / delta upsert
+Fact_Business_Target_Monthly,Target_Year_Month,ER1 Ref_Business_Target,"One store-month target, never replicate by group/day",source-grain / delta upsert
+Fact_Business_Target_Monthly,Revenue_Target,ER1 Ref_Business_Target,"One store-month target, never replicate by group/day",source-grain / delta upsert
+Fact_Business_Target_Monthly,Minimum_Profit_Protection_Rate,ER1 Ref_Business_Target,"One store-month target, never replicate by group/day",source-grain / delta upsert
+Mart_Product_Group_Daily_Performance,Date_Key,ER2 Sales/Ads/Sample + ER1 Fact_Claim_Details,"Separate group/date aggregations, combine without fan-out, affected date-group recomputation",affected Date x Product Group
+Mart_Product_Group_Daily_Performance,Product_Group_ID,ER2 Sales/Ads/Sample + ER1 Fact_Claim_Details,"Separate group/date aggregations, combine without fan-out, affected date-group recomputation",affected Date x Product Group
+Mart_Product_Group_Daily_Performance,Product_Group_Name,ER2 Sales/Ads/Sample + ER1 Fact_Claim_Details,"Separate group/date aggregations, combine without fan-out, affected date-group recomputation",affected Date x Product Group
+Mart_Product_Group_Daily_Performance,Gross_Reference_Sales,ER2 Sales/Ads/Sample + ER1 Fact_Claim_Details,SUM Sales Fact Gross by Paid Date+PG,affected Date x Product Group
+Mart_Product_Group_Daily_Performance,Campaign_Price_Reduction,ER2 Sales/Ads/Sample + ER1 Fact_Claim_Details,SUM Sales Fact Campaign reduction by Paid Date+PG,affected Date x Product Group
+Mart_Product_Group_Daily_Performance,Voucher_Discount,ER2 Sales/Ads/Sample + ER1 Fact_Claim_Details,SUM Sales Fact Voucher_Allocated by Paid Date+PG,affected Date x Product Group
+Mart_Product_Group_Daily_Performance,Net_Revenue,ER2 Sales/Ads/Sample + ER1 Fact_Claim_Details,SUM Sales Fact Net by Paid Date+PG,affected Date x Product Group
+Mart_Product_Group_Daily_Performance,COGS,ER2 Sales/Ads/Sample + ER1 Fact_Claim_Details,SUM Sales Fact COGS,affected Date x Product Group
+Mart_Product_Group_Daily_Performance,Platform_Fee_Cost,ER2 Sales/Ads/Sample + ER1 Fact_Claim_Details,SUM Sales Fact Platform_Fee_Cost,affected Date x Product Group
+Mart_Product_Group_Daily_Performance,Fulfillment_Cost,ER2 Sales/Ads/Sample + ER1 Fact_Claim_Details,SUM Sales Fact Fulfillment_Cost,affected Date x Product Group
+Mart_Product_Group_Daily_Performance,Affiliate_Cost,ER2 Sales/Ads/Sample + ER1 Fact_Claim_Details,SUM Sales Fact Affiliate_Cost,affected Date x Product Group
+Mart_Product_Group_Daily_Performance,Ads_Cost,ER2 Sales/Ads/Sample + ER1 Fact_Claim_Details,SUM Fact_Ads_Daily Ads_Spend by Date+PG (never join to SKU),affected Date x Product Group
+Mart_Product_Group_Daily_Performance,Sample_Cost,ER2 Sales/Ads/Sample + ER1 Fact_Claim_Details,SUM Fact_Free_Sample Total_Sample_Cost by Dispatched Date+PG,affected Date x Product Group
+Mart_Product_Group_Daily_Performance,Claim_Cost,ER2 Sales/Ads/Sample + ER1 Fact_Claim_Details,SUM ER1 Fact_Claim_Details costs by Backend_Action_Date+PG via external standardized claim ledger,affected Date x Product Group
+Mart_Product_Group_Daily_Performance,Contribution_Profit,ER2 Sales/Ads/Sample + ER1 Fact_Claim_Details,Net - COGS - Platform - Fulfillment - Affiliate - Ads - Sample - Claim; NULL if incomplete,affected Date x Product Group
+Mart_Product_Group_Daily_Performance,Data_Cost_Basis,ER2 Sales/Ads/Sample + ER1 Fact_Claim_Details,INCOMPLETE if any UNKNOWN fulfillment; else MOCK_ACTUAL_WITH_POLICY_FEE,affected Date x Product Group
+Mart_Product_Group_Daily_Performance,Calculated_At,ER2 Sales/Ads/Sample + ER1 Fact_Claim_Details,timestamp of mart row rebuild,affected Date x Product Group
+View_Shop_Monthly_KPI,Year_Month,ER2 daily Mart + Fact_Business_Target_Monthly,Dim_Date.Year_Month group via Mart.Date_Key,logical SQL view
+View_Shop_Monthly_KPI,Month_Start_Date_Key,ER2 daily Mart + Fact_Business_Target_Monthly,Monthly target first-of-month Date_Key,logical SQL view
+View_Shop_Monthly_KPI,Gross_Reference_Sales,ER2 daily Mart + Fact_Business_Target_Monthly,SUM Mart Gross_Reference_Sales by Year_Month,logical SQL view
+View_Shop_Monthly_KPI,Net_Revenue,ER2 daily Mart + Fact_Business_Target_Monthly,SUM Mart Net_Revenue by Year_Month,logical SQL view
+View_Shop_Monthly_KPI,Contribution_Profit,ER2 daily Mart + Fact_Business_Target_Monthly,"SUM Mart Profit, NULL if incomplete month",logical SQL view
+View_Shop_Monthly_KPI,Revenue_Target,ER2 daily Mart + Fact_Business_Target_Monthly,Fact_Business_Target_Monthly.Revenue_Target,logical SQL view
+View_Shop_Monthly_KPI,Minimum_Profit_Protection_Rate,ER2 daily Mart + Fact_Business_Target_Monthly,Fact_Business_Target_Monthly.Minimum_Profit_Protection_Rate,logical SQL view
+View_Shop_Monthly_KPI,Revenue_Gap,ER2 daily Mart + Fact_Business_Target_Monthly,Net_Revenue - Revenue_Target,logical SQL view
+View_Shop_Monthly_KPI,Revenue_Achievement_Pct,ER2 daily Mart + Fact_Business_Target_Monthly,100 x Revenue / Revenue_Target if target>0,logical SQL view
+View_Shop_Monthly_KPI,Profit_Margin_Pct,ER2 daily Mart + Fact_Business_Target_Monthly,100 x Profit / Net_Revenue (descriptive not gate),logical SQL view
+View_Shop_Monthly_KPI,Profit_Protection_Required,ER2 daily Mart + Fact_Business_Target_Monthly,Gross_Reference_Sales x Minimum_Profit_Protection_Rate,logical SQL view
+View_Shop_Monthly_KPI,Profit_Protection_Rate_Pct,ER2 daily Mart + Fact_Business_Target_Monthly,100 x Profit / Gross_Reference_Sales,logical SQL view
+View_Shop_Monthly_KPI,Profit_Protection_Gap_Pp,ER2 daily Mart + Fact_Business_Target_Monthly,100 x (Profit/Gross - policy rate),logical SQL view
+View_Shop_Monthly_KPI,Profit_Protection_Headroom,ER2 daily Mart + Fact_Business_Target_Monthly,Contribution_Profit - Profit_Protection_Required,logical SQL view
+View_Shop_Monthly_KPI,Profit_Protection_Status,ER2 daily Mart + Fact_Business_Target_Monthly,PASS if Profit>=Required else FAIL; handle incomplete/missing/zero policy,logical SQL view
+View_Shop_Monthly_KPI,Profit_Data_Status,ER2 daily Mart + Fact_Business_Target_Monthly,COMPLETE / INCOMPLETE from constituent Mart rows,logical SQL view
+View_Shop_Monthly_KPI,Target_Status,ER2 daily Mart + Fact_Business_Target_Monthly,OK / ZERO_TARGET / MISSING_TARGET / INVALID_TARGET,logical SQL view

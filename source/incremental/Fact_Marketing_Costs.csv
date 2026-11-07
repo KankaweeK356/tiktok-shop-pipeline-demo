@@ -1,0 +1,6 @@
+﻿Ad_Record_ID,Record_Date,Ad_Campaign_ID,Product_Group_ID,Ad_Spend_Amount,Impressions,Clicks,Conversions,Reported_Ads_GMV,Reported_Ads_Orders,Reported_Revenue_Basis
+AD-20261101-PG01,2026-11-01,AD2,PG01,12,432,10,0,,,
+AD-20261101-PG02,2026-11-01,AD3,PG02,12,213,9,1,,,
+AD-20261101-PG03,2026-11-01,AD1,PG03,18,231,8,8,,,
+AD-20261101-PG04,2026-11-01,AD2,PG04,0,42,9,1,,,
+AD-20261101-PG05,2026-11-01,AD3,PG05,0,117,17,1,,,

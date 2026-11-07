@@ -1,0 +1,6 @@
+﻿Product_Group_ID,Product_Group_Name,Base_Selling_Price,Cost_Standard_Product,Status
+PG01,คอกลม,199,79.6,Active
+PG02,คอวี,229,91.6,Active
+PG03,คอเต่า,279,111.6,Active
+PG04,Crop,189,75.6,Active
+PG05,Oversize,259,103.6,Active

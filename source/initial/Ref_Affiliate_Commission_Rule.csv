@@ -1,0 +1,6 @@
+﻿Affiliate_Rule_ID,Product_Group_ID,Affiliate_Commission_Rate,Effective_From,Effective_To,Is_Active
+AFF-PG01,PG01,0.06,2026-01-01,,True
+AFF-PG02,PG02,0.08,2026-01-01,,True
+AFF-PG03,PG03,0.1,2026-01-01,,True
+AFF-PG04,PG04,0.12,2026-01-01,,True
+AFF-PG05,PG05,0.09,2026-01-01,,True

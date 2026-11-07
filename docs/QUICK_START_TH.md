@@ -2,7 +2,7 @@
 
 [![เปิด Step-by-Step Demo](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/KankaweeK356/tiktok-shop-pipeline-demo/blob/main/notebooks/TikTok_Shop_Step_by_Step_Demo.ipynb)
 
-**แนะนำสำหรับนำเสนออาจารย์:** เปิด Step-by-Step Demo แล้วกดปุ่ม ▶ **ทีละ Cell จากบนลงล่าง** โดยไม่ต้องแก้ Code
+**แนะนำสำหรับนำเสนออาจารย์:** เปิด Step-by-Step Demo แล้วเลือก **Runtime → Run all เพียงครั้งเดียว** แต่ละ Stage จะรันอัตโนมัติและแสดง Output แยกใต้ Cell จากบนลงล่าง ไม่ต้องแก้ Code
 
 | ลำดับ | ขั้นตอน | ผลลัพธ์ที่ต้องชี้ให้อาจารย์ดู |
 |---|---|---|
@@ -19,7 +19,7 @@
 
 **อย่าสับสนระหว่างสองคำนี้:** Incremental = **นำ Batch ใหม่เข้า** และทำให้ยอดเปลี่ยนจริง; Replay = **ส่ง Batch เดิมซ้ำ** ระบบต้องไม่สร้างข้อมูลซ้ำ
 
-**เริ่ม Demo ใหม่ทั้งหมด:** ใน Cell 00 ติ๊ก `RESET_DEMO` แล้วรันหนึ่งครั้ง จากนั้นเอาติ๊กออกและรัน Run 1 → Run 2 ใหม่ ไม่ต้องลบ Source หรืออัปโหลด ZIP
+**กด Run all ซ้ำ:** ทำได้ทันทีและเริ่ม Demo ใหม่ครบเส้นทาง โดย Setup รีเซ็ตเฉพาะ `output/main` ใน Colab *ครั้งเดียวตอนเริ่ม* เท่านั้น ส่วน Run 2 เพิ่ม/อัปเดตในฐานข้อมูล Run 1 เดิม และ Replay ทดสอบว่า Batch เดิมไม่สร้างรายการซ้ำ ไม่ต้องลบ Source หรืออัปโหลด ZIP
 
 **ข้อมูลที่สร้างอยู่ใน:** `output/main/er1.sqlite`, `output/main/lake/`, `output/main/er2.duckdb`, `output/main/reports/` ของ Colab Runtime ผู้รัน
 

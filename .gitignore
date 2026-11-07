@@ -1,0 +1,8 @@
+output/
+__pycache__/
+.pytest_cache/
+.ipynb_checkpoints/
+*.pyc
+*.sqlite
+*.duckdb
+.DS_Store

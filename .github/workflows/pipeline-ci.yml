@@ -36,6 +36,9 @@ jobs:
       - name: Test actual Colab notebook sections 00-05
         run: python -m pipeline.ci_notebook
 
+      - name: Test step-by-step Source to ER1 Lake ER2 and Incremental Demo
+        run: python -m pipeline.ci_step_demo
+
       - name: Full Pipeline and business results
         run: python -m pipeline.ci_smoke
 

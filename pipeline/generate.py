@@ -129,8 +129,11 @@ def generate(target:Path|None=None,n_initial=800,n_incremental=100,seed=7202):
     h,it,fl=orders(n_initial,seed,datetime(2026,10,1), 'OCT',skus,[v[0] for v in vouchers])
     dump(i,'Fact_Orders',h);dump(i,'Fact_Order_Items',it);dump(i,'Fact_Internal_Fulfillment',fl)
     h2,it2,fl2=orders(n_incremental,seed+1,datetime(2026,11,1),'NOV',skus,[v[0] for v in vouchers])
+    # Promote only previously Pending orders. Never move already-paid October
+    # sales into November; that would corrupt the monthly KPI on incremental load.
+    pending_october=[order for order in h if order['Current_Status']=='Pending']
     updates=[];extra_fulfill=[]
-    for j,orig in enumerate(h[:24]):
+    for j,orig in enumerate(pending_october[:24]):
         revised=orig.copy();revised['Current_Status']='Paid';revised['Paid_At']=(datetime(2026,11,1,8,0)+timedelta(minutes=j)).isoformat(' ')
         updates.append(revised)
         extra_fulfill.append({'Fulfillment_ID':f'FUL-{orig["Order_ID"]}','Order_ID':orig['Order_ID'],
@@ -183,7 +186,7 @@ def generate(target:Path|None=None,n_initial=800,n_incremental=100,seed=7202):
     # Explicit validation metadata; generator never claims these are observed TikTok records.
     (base/'README.md').write_text('# SYNTHETIC SOURCE DATA\nEntirely generated for educational demo. No actual TikTok API, customer or billing records.\n'
       f'Random seed: {seed}; initial orders: {n_initial}; incremental new orders: {n_incremental}.\n'
-      'Run 2 includes 24 October pending->November paid transitions and 8 October fulfillment revisions.\n'
+      f'Run 2 includes {len(updates)} October pending->November paid transitions and {len(corrections)} October fulfillment revisions.\n'
       'ER1 price, discounts, COGS and commission are derived by ingestion and intentionally blank in item CSVs.\n',encoding='utf-8')
     return {'initial_orders':n_initial,'incremental_new_orders':n_incremental,'pending_to_paid':len(updates),'late_fulfillment_updates':len(corrections)}
 

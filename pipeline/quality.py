@@ -2,10 +2,15 @@
 from __future__ import annotations
 import sqlite3,json,hashlib
 from pathlib import Path
+from decimal import Decimal
 from datetime import datetime
 import pandas as pd
 from .schema import parse_dbml,ROOT
 from .er1 import PAID,money
+
+def profit_protection_status(profit,required):
+    """Compare DuckDB Decimal values without mixing with Python floats."""
+    return 'PASS' if Decimal(str(profit)) >= Decimal(str(required)) else 'FAIL'
 
 def verify(er1:Path,er2:Path,report_dir:Path,batch:str):
     import duckdb
@@ -69,7 +74,7 @@ def verify(er1:Path,er2:Path,report_dir:Path,batch:str):
             if profit is not None and rate is not None:
                 add(f'{month} profit protection required',float(required),money(float(gross)*float(rate)))
                 add(f'{month} profit headroom',float(headroom),money(float(profit)-float(required)))
-                if gross>0:add(f'{month} profit protection status',status,'PASS' if profit+0.00001>=required else 'FAIL')
+                if gross>0:add(f'{month} profit protection status',status,profit_protection_status(profit,required))
         result={'batch':batch,'checks':len(checks),'passed':sum(x['PASS'] for x in checks),
           'failed':sum(not x['PASS'] for x in checks),
           'source_paid_item_count':rows[0], 'warehouse_sales_item_count':fact[0],

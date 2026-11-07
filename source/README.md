@@ -1,14 +1,5 @@
-# Source Data — ข้อมูลจำลองที่ใช้ใน Demo
-
-ข้อมูลในโฟลเดอร์นี้สร้างขึ้นเพื่อทดสอบ Data Pipeline **ไม่ใช่ข้อมูลที่ดึงจาก TikTok Shop จริง** และไม่มีข้อมูลลูกค้าจริง
-
-| โฟลเดอร์ | มีข้อมูลอะไร | ใช้เมื่อไร |
-|---|---|---|
-| `initial/` | Master และข้อมูลธุรกรรมตั้งต้นเดือนตุลาคม 2026 | Run 1 |
-| `incremental/` | Order ใหม่ การเปลี่ยนสถานะ และต้นทุน/ข้อมูลที่เข้าทีหลัง | Run 2 |
-
-ชุดข้อมูลสร้างด้วย Random Seed `7202` เพื่อให้ทดลองซ้ำได้ในเงื่อนไขเดียวกัน โดยเตรียม **800 Orders ตั้งต้น** และ **100 Orders ใหม่** พร้อม 24 Order เดิมที่เปลี่ยนจาก Pending เป็น Paid และ 8 รายการปรับต้นทุน Fulfillment ย้อนหลัง
-
-ข้อมูล Master มี **5 Product Groups และ 140 SKUs** ส่วนราคา Campaign, การใช้ Voucher, ต้นทุน COGS และ Affiliate Payout คำนวณ/ตรวจเพิ่มเติมระหว่างรับข้อมูลเข้าสู่ ER 1 ตาม Business Rules ของกรณีศึกษา
-
-ดูรายละเอียดการจัดเก็บและตรวจสอบข้อมูลได้ที่ [หน้าแรกของโปรเจกต์](../README.md) และ [Source-to-ER 1 Contract](../docs/Source_to_ER1_Contract.csv)
+# SYNTHETIC SOURCE DATA
+Entirely generated for educational demo. No actual TikTok API, customer or billing records.
+Random seed: 7202; initial orders: 800; incremental new orders: 100.
+Run 2 includes 24 October pending->November paid transitions and 8 October fulfillment revisions.
+ER1 price, discounts, COGS and commission are derived by ingestion and intentionally blank in item CSVs.

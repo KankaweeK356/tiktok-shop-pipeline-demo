@@ -1,7 +1,7 @@
 """Reusable per-stage checkpoints, failure audit, manual reset and batch replay guards."""
 from __future__ import annotations
 import json,time,shutil,traceback
-from datetime import datetime
+from datetime import datetime,timezone
 from pathlib import Path
 from .schema import ROOT
 from .er1 import ingest,PipelineError
@@ -55,12 +55,12 @@ def run_batch(workspace:Path,batch='initial',source_root:Path|None=None,inject_e
             state['metrics'][stage]={'elapsed_seconds':elapsed,'result':result}
             state_file.write_text(json.dumps(state,indent=2,ensure_ascii=False),encoding='utf-8')
             stage_log(control,{'batch':batch,'stage':stage,'status':'SUCCESS','elapsed_seconds':elapsed,
-               'at':datetime.utcnow().isoformat()})
+               'at':datetime.now(timezone.utc).isoformat()})
         except Exception as e:
             elapsed=round(time.perf_counter()-start,4)
             code=e.code if isinstance(e,PipelineError) else type(e).__name__
             stage_log(control,{'batch':batch,'stage':stage,'status':'FAILED','error_code':code,
-                'detail':str(e),'elapsed_seconds':elapsed,'at':datetime.utcnow().isoformat()})
+                'detail':str(e),'elapsed_seconds':elapsed,'at':datetime.now(timezone.utc).isoformat()})
             governance=workspace/'lake'/'governance'/'quarantine'
             governance.mkdir(parents=True,exist_ok=True)
             (governance/f'{batch}_{stage}_{code}.json').write_text(json.dumps({

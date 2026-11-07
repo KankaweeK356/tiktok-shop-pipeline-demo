@@ -10,6 +10,8 @@
 
 ## เปิด Demo บน Google Colab
 
+[![Pipeline CI — ตรวจด้วย DuckDB / PyArrow จริง](https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/actions/workflows/pipeline-ci.yml/badge.svg)](https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/actions/workflows/pipeline-ci.yml)
+
 [![เปิด Demo บน Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/KankaweeK356/tiktok-shop-pipeline-demo/blob/main/notebooks/TikTok_Shop_Demo.ipynb)
 
 **สำหรับผู้ทดลอง:** กดปุ่มด้านบน แล้วรันหัวข้อ 00 → 01 → 02 ต่อด้วย 03–05 ตามต้องการ
@@ -28,6 +30,14 @@
 **เริ่มใหม่:** ในหัวข้อ 00 ตั้ง `RESET_DEMO=True` แล้วรันหนึ่งครั้ง จากนั้นเปลี่ยนกลับเป็น `False` และรัน Run 1 ใหม่
 
 อ่านรายละเอียดได้จาก [วิธีเริ่ม Demo แบบสั้น](docs/QUICK_START_TH.md) ส่วนผู้พัฒนาที่ต้องการแก้ไขไฟล์ อ่าน [คู่มือ GitHub](docs/GITHUB_SETUP_TH.md)
+
+## ตรวจสอบการรันจริงบน GitHub Actions
+
+เมื่ออัปโหลดไฟล์ **ครบทั้งชุด** และ Commit ขึ้นสาขา `main` แล้ว GitHub Actions จะเริ่ม **Pipeline CI - Real DuckDB and PyArrow** โดยอัตโนมัติ (หรือเข้าแท็บ Actions กด Run workflow ได้)
+
+Workflow จะติดตั้ง Python 3.13, DuckDB และ PyArrow จริง แล้วทดสอบ Regression, Run 1, Run 2, การรันซ้ำ, Functional/Lineage, Error Recovery ครบ 6 กรณี, Performance และการสร้างชุดรายงาน หากสำเร็จจะแสดงเครื่องหมายสีเขียว ✅ ในแท็บ Actions และมีไฟล์ผลทดสอบให้ดาวน์โหลดใน **Artifacts** ของ Workflow นั้น
+
+**หมายเหตุ:** เครื่องหมายเขียวแสดงว่าผ่านบน GitHub Actions เท่านั้น หากต้องการยืนยันเฉพาะ Runtime ของ Google Colab ยังต้องเปิด Notebook แล้วทดสอบอีกครั้ง GitHub Actions ไม่ Commit Database หรือ Output ลง Repository อัตโนมัติ
 
 ## แต่ละขั้นทำอะไร และเห็นผลตรงไหน?
 
@@ -77,6 +87,7 @@ Code ทั้งหมดทำงานใน **Google Colab** และสร
 ```text
 README.md             เริ่มอ่านที่นี่
 notebooks/            Google Colab สำหรับสาธิต
+.github/workflows/    Automated Tests บน GitHub Actions
 source/               CSV จำลองสำหรับ Run 1 และ Run 2
 schemas/              ER 1 V3 และ ER 2 V5 (DBML)
 pipeline/             Python Modules สำหรับแต่ละขั้น

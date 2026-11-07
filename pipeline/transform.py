@@ -90,7 +90,7 @@ def transform(lake_dir:Path,control_dir:Path,batch:str,inject_error=None):
       'Dim_Voucher':[NA_VOUCHER]+[{'Voucher_Key':voucher[x['Voucher_ID']],
        'Voucher_ID':x['Voucher_ID'],'Voucher_Name':x['Voucher_Name'],
        'Discount_Rate':x['Discount_Rate'],'Minimum_Spend_Amount':x['Minimum_Spend_Amount'],
-       'Maximum_Discount_Amount':x['Maximum_Discount_Amount'],'Voucher_Active':x['Is_Active'],
+       'Maximum_Discount_Amount':x['Maximum_Discount_Amount'],'Voucher_Active':bool(x['Is_Active']),
        'Voucher_Start_Date':x['Effective_From'],'Voucher_End_Date':x['Effective_To']} for x in vouchers],
       'Dim_Cost_Basis':[{'Cost_Basis_Key':1,'Platform_Fee_Basis':'ESTIMATED_10PCT',
          'Fulfillment_Basis':'MOCK_ACTUAL'},

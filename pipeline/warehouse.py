@@ -2,7 +2,7 @@
 from __future__ import annotations
 import json
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime,timezone
 import pandas as pd
 from .schema import init_er2,ROOT,parse_dbml
 from .er1 import PipelineError,money
@@ -98,7 +98,7 @@ def rebuild_mart(con,std:Path,meta):
         row={'Date_Key':d,'Product_Group_ID':g,'Product_Group_Name':names.get(g)}
         row.update({k:money(sr.get(k,0)) for k in measure})
         row.update({'Ads_Cost':money(ads),'Sample_Cost':money(samples),'Claim_Cost':money(claim),
-          'Calculated_At':datetime.utcnow().isoformat(sep=' ',timespec='seconds')})
+          'Calculated_At':datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')})
         missing=bool(sr.get('Missing_Cost',0))
         row['Data_Cost_Basis']='INCOMPLETE' if missing else 'MOCK_ACTUAL_WITH_POLICY_FEE'
         row['Contribution_Profit']=(None if missing else money(row['Net_Revenue']-row['COGS']-

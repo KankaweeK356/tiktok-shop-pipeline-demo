@@ -30,8 +30,18 @@ def test_end_to_end_incremental_and_replay(tmp_path):
     ws=tmp_path/'output'/'main'
     one=run_batch(ws,'initial',src)
     before=signature(ws)
+    import duckdb
+    con=duckdb.connect(str(ws/'er2.duckdb'),read_only=True)
+    before_oct=float(con.execute(
+        "SELECT Net_Revenue FROM View_Shop_Monthly_KPI WHERE Year_Month='2026-10'").fetchone()[0])
+    con.close()
     two=run_batch(ws,'incremental',src)
     after=signature(ws)
+    con=duckdb.connect(str(ws/'er2.duckdb'),read_only=True)
+    after_oct=float(con.execute(
+        "SELECT Net_Revenue FROM View_Shop_Monthly_KPI WHERE Year_Month='2026-10'").fetchone()[0])
+    con.close()
+    assert abs(after_oct-before_oct)<0.011
     assert one['status']==two['status']=='SUCCESS'
     assert after['orders']>before['orders']
     assert two['functional_fails']==0

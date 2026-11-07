@@ -180,10 +180,13 @@ def ingest(source_dir:Path,db_path:Path,batch:str,control_dir:Path):
     changed_orders=set(); changed_ads=set();changed_samples=set();changed_claims=set(); counts={}
     try:
         conn.execute('BEGIN')
-        if not (source_dir/'Fact_Orders.csv').exists():
-            raise PipelineError('E02_MISSING_SOURCE','Fact_Orders.csv')
-        if not (source_dir/'Fact_Order_Items.csv').exists():
-            raise PipelineError('E02_MISSING_SOURCE','Fact_Order_Items.csv')
+        # A partial GitHub upload must fail with a clear Source missing error.
+        expected=(SOURCE_ORDER if batch=='initial' else [
+            'Fact_Orders','Fact_Order_Items','Fact_Internal_Fulfillment',
+            'Fact_Marketing_Costs','Fact_Free_Samples'])
+        missing=[t for t in expected if not (source_dir/f'{t}.csv').is_file()]
+        if missing:
+            raise PipelineError('E02_MISSING_SOURCE',', '.join(f'{t}.csv' for t in missing))
         for table in SOURCE_ORDER:
             p=source_dir/f'{table}.csv'
             if not p.exists():continue

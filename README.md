@@ -8,19 +8,24 @@
 
 > **ข้อมูลทั้งหมดเป็นข้อมูลจำลองเพื่อการศึกษา** ไม่ได้เชื่อมต่อ TikTok Shop API ไม่ใช่ข้อมูลลูกค้าหรือยอดขายจริง และ Platform Fee 10% เป็นสมมติฐานของกรณีศึกษา
 
-## เริ่มทดลองด้วย Google Colab
+## เปิด Demo บน Google Colab
 
-ไม่ต้องติดตั้ง Database หรือ Python บนคอมพิวเตอร์ของตัวเอง ใช้ Google Colab เป็นหน้าจอรันทุกขั้นตอน
+[![เปิด Demo บน Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/KankaweeK356/tiktok-shop-pipeline-demo/blob/main/notebooks/TikTok_Shop_Demo.ipynb)
 
-1. เปิด [`notebooks/TikTok_Shop_Demo.ipynb`](notebooks/TikTok_Shop_Demo.ipynb) แล้วเลือกเปิดด้วย **Google Colab** หรือเปิด [Google Colab](https://colab.research.google.com/) แล้วเลือกไฟล์จากแท็บ **GitHub**
-2. ในหัวข้อ **00 เตรียมโปรเจกต์** ใส่ลิงก์ Repository นี้ในช่อง `REPO_URL` (เช่น `https://github.com/USERNAME/tiktok-shop-pipeline-demo`) แล้วรัน Cell
-3. รันหัวข้อ **01 Run 1** ต่อด้วย **02 Run 2** เพื่อเห็นข้อมูลตั้งต้นและข้อมูลที่เพิ่มเข้ามา
-4. รันหัวข้อ **03–05** เพื่อดูผลตรวจข้อมูล ทดลอง Error และดูผลประสิทธิภาพกับกำไร
+**สำหรับผู้ทดลอง:** กดปุ่มด้านบน แล้วรันหัวข้อ 00 → 01 → 02 ต่อด้วย 03–05 ตามต้องการ
 
-**เริ่ม Demo ใหม่:** ที่หัวข้อ 00 ตั้ง `RESET_DEMO=True` แล้วรัน 1 ครั้ง ก่อนเปลี่ยนกลับเป็น `False` จากนั้นเริ่ม Run 1 ใหม่  
-**ลอง Run 2 ซ้ำ:** รันหัวข้อ 02 อีกครั้ง จำนวนรายการและยอดขายต้องไม่เพิ่มจาก Batch เดิม
+- **ไม่ต้องดาวน์โหลด ZIP หรืออัปโหลด Source เอง** — Notebook ดึง Code และข้อมูลจำลองจาก Repository นี้อัตโนมัติ
+- **ไม่ต้องกรอก REPO_URL** — ตั้งลิงก์ Repository นี้ไว้ให้แล้ว
+- ใช้บัญชี Google เพื่อเปิดและรัน Google Colab; ครั้งแรกอาจต้องกดเชื่อถือ Notebook และยืนยันการเชื่อมต่อ Runtime
+- ส่วนที่ต้องติดตั้ง Python Libraries จะทำในหัวข้อ 00 ของ Notebook
+- กด **Run 1** เพื่อสร้างข้อมูลตั้งต้น แล้วกด **Run 2** เพื่อเพิ่ม/อัปเดตข้อมูล
+- รัน **Run 2** ซ้ำได้โดยไม่สร้างยอดขายซ้ำ และเลือกทดสอบ Error ในหัวข้อ 04 ได้
 
-หากเพิ่งเริ่มใช้ GitHub อ่าน [คู่มือสร้าง Repository และอัปโหลดไฟล์](docs/GITHUB_SETUP_TH.md) หรืออ่าน [วิธีเริ่ม Demo แบบสั้น](docs/QUICK_START_TH.md)
+**ผลลัพธ์อยู่ที่ไหน:** แสดงสรุปใต้แต่ละ Cell ใน Colab ส่วนไฟล์ฐานข้อมูล, Data Lake และรายงานถูกสร้างใน `output/` บน Runtime ของแต่ละคน
+
+**เริ่มใหม่:** ในหัวข้อ 00 ตั้ง `RESET_DEMO=True` แล้วรันหนึ่งครั้ง จากนั้นเปลี่ยนกลับเป็น `False` และรัน Run 1 ใหม่
+
+อ่านรายละเอียดได้จาก [วิธีเริ่ม Demo แบบสั้น](docs/QUICK_START_TH.md) ส่วนผู้พัฒนาที่ต้องการแก้ไขไฟล์ อ่าน [คู่มือ GitHub](docs/GITHUB_SETUP_TH.md)
 
 ## แต่ละขั้นทำอะไร และเห็นผลตรงไหน?
 

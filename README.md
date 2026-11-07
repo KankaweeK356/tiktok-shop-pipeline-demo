@@ -14,6 +14,8 @@
 
 **สำหรับผู้ทดลอง:** กดปุ่มด้านบน แล้วรันหัวข้อ 00 → 01 → 02 ต่อด้วย 03–05 ตามต้องการ
 
+**ดูผลการทดสอบที่เผยแพร่แล้ว:** [reports/](reports/README.md) — เมื่อเจ้าของโปรเจกต์รัน Colab ผ่านครบและอัปโหลดรายงานที่ตรวจแล้ว
+
 - **ไม่ต้องดาวน์โหลด ZIP หรืออัปโหลด Source เอง** — Notebook ดึง Code และข้อมูลจำลองจาก Repository นี้อัตโนมัติ
 - **ไม่ต้องกรอก REPO_URL** — ตั้งลิงก์ Repository นี้ไว้ให้แล้ว
 - ใช้บัญชี Google เพื่อเปิดและรัน Google Colab; ครั้งแรกอาจต้องกดเชื่อถือ Notebook และยืนยันการเชื่อมต่อ Runtime
@@ -53,7 +55,22 @@ Code ทั้งหมดทำงานใน **Google Colab** และสร
 | `output/test/` | ผลทดสอบ Error แยกจากข้อมูลหลัก |
 | `output/performance/` | รายงานเวลาประมวลผลและจำนวนรายการต่อวินาที |
 
-ดูผลสรุปได้ **ใต้ Code Cell ใน Colab** และเปิดไฟล์ที่สร้างจากแถบ **Files** ด้านซ้าย หากปิดหรือ Reset Colab Runtime ไฟล์ในพื้นที่ชั่วคราวอาจหาย สามารถรันสร้างใหม่ได้ หรือดาวน์โหลด/คัดลอกไป Google Drive เพื่อเก็บต่อ
+ดูผลสรุปได้ **ใต้ Code Cell ใน Colab** และเปิดไฟล์ที่สร้างจากแถบ **Files** ด้านซ้าย หากปิดหรือ Reset Colab Runtime ไฟล์ในพื้นที่ชั่วคราวอาจหาย สามารถรันสร้างใหม่ได้
+
+### เก็บผลบน Google Drive (ไม่บังคับ)
+
+ท้าย Notebook หัวข้อ **05.4** เลือก `DRIVE_ACTION=save` เพื่อบันทึก Snapshot ลง **Google Drive ของผู้รันเอง** ใน `MyDrive/TikTok_Shop_Demo/snapshots/` ระบบจะขอให้เชื่อม Drive เมื่อผู้ใช้เลือกเท่านั้น ข้อมูลบน GitHub ไม่เปลี่ยน และคนอื่นไม่เห็นผลบน Drive ของเรา
+
+หากต้องการเคลียร์ Snapshot ให้เลือก `DRIVE_ACTION=clear` และพิมพ์ `CLEAR_TIKTOK_SHOP_DEMO` ในช่องยืนยัน ระบบลบ **เฉพาะ Snapshot ภายในโฟลเดอร์ Demo ที่ระบบจัดการ** ไม่ลบทั้ง Drive ไม่ลบไฟล์ใน GitHub และไม่ลบข้อมูลผลการรันใน Colab
+
+### เผยแพร่รายงานผลทดสอบบน GitHub
+
+1. รัน Run 1, Run 2, Functional/Lineage, Error Suite 6 กรณี, Performance และ Business Results บน Colab ให้ครบ
+2. หัวข้อ **05.3** กดสร้าง `github_report_upload.zip` ระบบจะตรวจว่ารายงานทดสอบผ่านครบก่อนสร้างไฟล์
+3. ดาวน์โหลด ZIP → แตกไฟล์ → อัปโหลดโฟลเดอร์ `reports/` กลับขึ้น GitHub และกด Commit changes
+4. อาจารย์จะเปิด [reports/](reports/README.md) ดูผลสรุปที่ตรวจแล้วได้ โดยไม่ต้องรัน Colab เอง
+
+**รายงานบน GitHub เป็น Snapshot ที่อัปโหลดด้วยตัวเอง ไม่ใช่ผลสดอัตโนมัติของทุกคนที่กดรัน**
 
 ## โครงสร้าง Repository
 
@@ -65,7 +82,8 @@ schemas/              ER 1 V3 และ ER 2 V5 (DBML)
 pipeline/             Python Modules สำหรับแต่ละขั้น
 tests/                Automated Tests
 sql/                  SQL ของ Monthly KPI View
-docs/                 คู่มือ Mapping และหลักฐานการทดสอบ
+docs/                 คู่มือ Mapping และสถานะการทดสอบ
+reports/              ผลรันที่เจ้าของโปรเจกต์ตรวจและอัปโหลดหลังทดลอง
 requirements.txt      Python Libraries ที่ต้องใช้
 ```
 
@@ -82,7 +100,7 @@ requirements.txt      Python Libraries ที่ต้องใช้
 
 ## สถานะการทดสอบและข้อจำกัด
 
-มีการตรวจ Schema, ทดสอบ SQLite และทดสอบ Logic ของ Pipeline/Recovery ในสภาพแวดล้อมพัฒนาแล้ว แต่ **ยังไม่ได้ยืนยันการรันครบเส้นทางด้วย DuckDB และ PyArrow จริงบน Google Colab** จึงควรรัน Notebook และเก็บผลทดสอบบน Colab ก่อนนำเสนอหรืออ้างว่า End-to-End ผ่านจริง
+มีการตรวจ Schema, ทดสอบ SQLite และทดสอบ Logic ของ Pipeline/Recovery ในสภาพแวดล้อมพัฒนาแล้ว รวมถึงทดสอบระบบ Export Reports/Save/Clear Drive ด้วยไฟล์ทดสอบแยก แต่ **ยังไม่ได้ยืนยันการรันครบเส้นทางด้วย DuckDB และ PyArrow จริงบน Google Colab** จึงควรรัน Notebook และเก็บผลทดสอบบน Colab ก่อนนำเสนอหรืออ้างว่า End-to-End ผ่านจริง
 
 ดูขอบเขตการทดสอบและข้อจำกัดได้ที่ [VALIDATION_STATUS.md](docs/VALIDATION_STATUS.md) โดยตรง
 

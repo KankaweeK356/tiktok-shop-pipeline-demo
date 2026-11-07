@@ -35,3 +35,24 @@
 
 **สถานะการทดสอบ:** [อ่านข้อจำกัดที่ตรวจยืนยันแล้ว](VALIDATION_STATUS.md)  
 **ดูภาพรวมงาน:** [README หน้าแรก](../README.md)
+
+
+## ถ้าต้องการให้ GitHub มีรายงานที่ตรวจแล้ว
+
+เมื่อ Run 1, Run 2, Functional/Lineage, Error Tests ทั้ง 6 กรณี และ Performance/Business Results ผ่านจริงบน Colab:
+
+1. ในหัวข้อ **05.3** ตั้ง `PREPARE_GITHUB_REPORTS=True` แล้วกดรัน
+2. ถ้าระบบแจ้งว่ารายงานยังไม่ครบ ให้กลับไปรัน Section ที่ขาดก่อน (ระบบไม่แต่งตัวเลขขึ้นมาแทน)
+3. ตั้ง `DOWNLOAD_GITHUB_REPORTS_ZIP=True` แล้วกดรันซ้ำ เพื่อดาวน์โหลด `github_report_upload.zip`
+4. แตก ZIP จะเห็น `reports/` แล้วนำไปอัปโหลดขึ้น GitHub Repository เดิมและกด Commit changes
+5. เปิด `reports/README.md` บน GitHub เพื่อตรวจว่าลิงก์รายงานใช้งานได้
+
+**หมายเหตุ:** คนอื่นที่รัน Colab จะไม่ได้อัปโหลดผลกลับ GitHub ของเจ้าของโปรเจกต์อัตโนมัติ
+
+## หากต้องการบันทึกผลบน Google Drive
+
+เลือกหัวข้อ **05.4** ตั้ง `DRIVE_ACTION=save` แล้วกดรัน Colab จะขอให้เชื่อม Drive ของตัวเอง และบันทึกผลไว้ที่ `MyDrive/TikTok_Shop_Demo/snapshots/<เวลา>` โดยไม่เปลี่ยนข้อมูลบน GitHub
+
+หากต้องการล้างผลที่บันทึกไว้ ให้ตั้ง `DRIVE_ACTION=clear` และพิมพ์ `CLEAR_TIKTOK_SHOP_DEMO` ที่ช่อง `CLEAR_CONFIRM` ก่อนกดรัน ระบบจะลบเฉพาะ Snapshot ที่ระบบสร้างในโฟลเดอร์ Demo นี้ **อย่าใช้กับโฟลเดอร์ Drive ที่มีไฟล์อื่นปะปน**
+
+ถ้าไม่ต้องการใช้ Drive ปล่อย `DRIVE_ACTION=none` ได้เลย ไม่ต้องให้สิทธิ์ Drive

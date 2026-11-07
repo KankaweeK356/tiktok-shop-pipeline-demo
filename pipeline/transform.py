@@ -22,6 +22,11 @@ def load_raw(raw,name):
 def save_std(std,name,rows,cols=None):
     df=pd.DataFrame(rows,columns=cols if cols else None)
     if df.empty and cols is None:df=pd.DataFrame({'__empty__':[]})
+    # SQLite booleans are 0/1. Legacy Colab sessions can also mutate the
+    # shared default voucher flag to integer 1. Normalize before PyArrow:
+    # mixed bool/int object columns otherwise fail with ArrowInvalid.
+    if name=='Dim_Voucher' and 'Voucher_Active' in df.columns:
+        df['Voucher_Active']=df['Voucher_Active'].fillna(False).astype(bool)
     df.to_parquet(std/f'{name}.parquet',index=False,engine='pyarrow')
     return len(df)
 

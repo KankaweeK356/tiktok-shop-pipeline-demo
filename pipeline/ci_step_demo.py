@@ -12,13 +12,11 @@ os.environ.setdefault("MPLBACKEND", "Agg")
 
 import nbformat
 from .schema import ROOT
-from .orchestrator import reset
 
 
-def main():
+def run_once(pass_number: int):
     notebook = nbformat.read(ROOT / "notebooks" / "TikTok_Shop_Step_by_Step_Demo.ipynb", as_version=4)
     nbformat.validate(notebook)
-    reset(ROOT / "output" / "main")
     ctx = {"__name__": "__main__"}
     code_cells = [cell for cell in notebook.cells if cell.cell_type == "code"]
     expected = 17
@@ -60,7 +58,15 @@ def main():
             assert len(ctx["perf"]) == 2
             assert Path(ctx["evidence"]["zip_path"]).is_file()
         print(f"PASS STAGED CELL {i:02d}", flush=True)
-    print("STEP-BY-STEP SOURCE / ER1 / LAKE / ER2 / INCREMENTAL / REPLAY / ERROR: ALL PASSED", flush=True)
+    print(f"STAGED RUN ALL #{pass_number}: ALL CELLS PASSED", flush=True)
+
+
+def main():
+    # Re-run all 17 cells without deleting the runtime. Cell 00 itself must
+    # reset only the demo workspace, then each run must recreate its own ER1/ER2.
+    run_once(1)
+    run_once(2)
+    print("STEP-BY-STEP RUN ALL + RE-RUN ALL: PASSED", flush=True)
 
 
 if __name__ == "__main__":

@@ -33,6 +33,9 @@ jobs:
       - name: Regression tests
         run: python -m pytest -q tests/
 
+      - name: Test actual Colab notebook sections 00-05
+        run: python -m pipeline.ci_notebook
+
       - name: Full Pipeline and business results
         run: python -m pipeline.ci_smoke
 

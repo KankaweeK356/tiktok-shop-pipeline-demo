@@ -8,6 +8,14 @@ on:
       - 'tests/test_dashboard.py'
       - 'vercel.json'
       - '.github/workflows/decision-dashboard-ci.yml'
+      - 'api/**'
+      - 'pipeline/ci_neon_run.py'
+      - 'pipeline/neon_control.py'
+      - 'pipeline/neon_reset.py'
+      - 'pipeline/archive_recovery.py'
+      - 'pipeline/neon_source.py'
+      - 'tests/test_neon_control_contracts.py'
+      - 'sql/neon_er1_demo_bootstrap.sql'
   workflow_dispatch:
 
 # Only trusted same-repository PRs get a write-capable token.

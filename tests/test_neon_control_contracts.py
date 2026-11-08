@@ -18,8 +18,9 @@ def test_reset_is_manual_and_cannot_cascade_or_drop():
     source=(ROOT/"pipeline"/"neon_reset.py").read_text(encoding="utf-8")
     ast.parse(source)
     assert 'CONFIRM_PHRASE = "RESET-DEMO-DATA"' in source
-    assert 'RESTART IDENTITY' in source
-    assert "CASCADE" not in source.split('cur.execute("TRUNCATE TABLE "+names')[1]
+    assert 'for table in reversed(tables):' in source
+    assert 'cur.execute("DELETE FROM demo_er1."+_quoted(table.name))' in source
+    assert "TRUNCATE TABLE" not in source
     assert "DROP TABLE" not in source
     assert "demo_control.reset_audit" in source
     assert "Cannot reset while a pipeline run is active" in source

@@ -2,7 +2,7 @@
   "classification": "SYNTHETIC_EDUCATIONAL_NOT_TIKTOK",
   "runner": "github_actions_or_local_python",
   "source_engine": "SQLITE_NOT_NEON",
-  "snapshot_at_utc": "2026-11-08T14:11:41.457799+00:00",
+  "snapshot_at_utc": "2026-11-08T14:14:51.656509+00:00",
   "layers": {
     "source": [
       {
@@ -8412,7 +8412,7 @@
             "Claim_Cost": 0.0,
             "Contribution_Profit": 160.51,
             "Data_Cost_Basis": "MOCK_ACTUAL_WITH_POLICY_FEE",
-            "Calculated_At": "2026-11-08T14:11:20"
+            "Calculated_At": "2026-11-08T14:14:35"
           },
           {
             "Date_Key": 20251101,
@@ -8431,7 +8431,7 @@
             "Claim_Cost": 0.0,
             "Contribution_Profit": 201.2,
             "Data_Cost_Basis": "MOCK_ACTUAL_WITH_POLICY_FEE",
-            "Calculated_At": "2026-11-08T14:11:20"
+            "Calculated_At": "2026-11-08T14:14:35"
           },
           {
             "Date_Key": 20251101,
@@ -8450,7 +8450,7 @@
             "Claim_Cost": 0.0,
             "Contribution_Profit": 203.86,
             "Data_Cost_Basis": "MOCK_ACTUAL_WITH_POLICY_FEE",
-            "Calculated_At": "2026-11-08T14:11:20"
+            "Calculated_At": "2026-11-08T14:14:35"
           },
           {
             "Date_Key": 20251101,
@@ -8469,7 +8469,7 @@
             "Claim_Cost": 0.0,
             "Contribution_Profit": 156.86,
             "Data_Cost_Basis": "MOCK_ACTUAL_WITH_POLICY_FEE",
-            "Calculated_At": "2026-11-08T14:11:20"
+            "Calculated_At": "2026-11-08T14:14:35"
           },
           {
             "Date_Key": 20251101,
@@ -8488,7 +8488,7 @@
             "Claim_Cost": 0.0,
             "Contribution_Profit": 185.09,
             "Data_Cost_Basis": "MOCK_ACTUAL_WITH_POLICY_FEE",
-            "Calculated_At": "2026-11-08T14:11:20"
+            "Calculated_At": "2026-11-08T14:14:35"
           }
         ]
       },
@@ -8742,7 +8742,7 @@
         ],
         "metrics": {
           "ingest": {
-            "elapsed_seconds": 3.3416,
+            "elapsed_seconds": 2.6001,
             "result": {
               "input_records": 13821,
               "modified_orders": 3552,
@@ -8750,7 +8750,7 @@
             }
           },
           "extract": {
-            "elapsed_seconds": 0.2072,
+            "elapsed_seconds": 0.1414,
             "result": {
               "parquet_tables": 25,
               "source_files": 21,
@@ -8758,7 +8758,7 @@
             }
           },
           "transform": {
-            "elapsed_seconds": 0.3827,
+            "elapsed_seconds": 0.2975,
             "result": {
               "standardized_tables": 11,
               "changed_sales": 4212,
@@ -8768,7 +8768,7 @@
             }
           },
           "load": {
-            "elapsed_seconds": 35.1776,
+            "elapsed_seconds": 27.8543,
             "result": {
               "loaded_rows": {
                 "Dim_Date": 395,
@@ -8788,7 +8788,7 @@
             }
           },
           "validate": {
-            "elapsed_seconds": 0.1214,
+            "elapsed_seconds": 0.0964,
             "result": {
               "batch": "initial",
               "checks": 53,
@@ -9015,7 +9015,7 @@
         ],
         "metrics": {
           "ingest": {
-            "elapsed_seconds": 0.1669,
+            "elapsed_seconds": 0.1645,
             "result": {
               "input_records": 402,
               "modified_orders": 132,
@@ -9023,7 +9023,7 @@
             }
           },
           "extract": {
-            "elapsed_seconds": 0.1365,
+            "elapsed_seconds": 0.1024,
             "result": {
               "parquet_tables": 25,
               "source_files": 5,
@@ -9031,7 +9031,7 @@
             }
           },
           "transform": {
-            "elapsed_seconds": 0.202,
+            "elapsed_seconds": 0.1485,
             "result": {
               "standardized_tables": 11,
               "changed_sales": 182,
@@ -9041,7 +9041,7 @@
             }
           },
           "load": {
-            "elapsed_seconds": 2.2772,
+            "elapsed_seconds": 1.7976,
             "result": {
               "loaded_rows": {
                 "Dim_Date": 395,
@@ -9061,7 +9061,7 @@
             }
           },
           "validate": {
-            "elapsed_seconds": 0.1003,
+            "elapsed_seconds": 0.0791,
             "result": {
               "batch": "incremental",
               "checks": 54,

@@ -2,7 +2,7 @@
 (function () {
   "use strict";
   const $ = s => document.querySelector(s);
-  const state = { data:null, evidence:null, evidenceLayer:"source", evidenceTable:"", view:"business", month:"", group:"ALL", sku:"", model:"", week:"", replay:false, rows:[] };
+  const state = { data:null, evidence:null, evidenceLayer:"source", evidenceTable:"", neonStatus:"not_loaded", neonTables:[], neonTable:"", neonData:null, neonError:"", view:"business", month:"", group:"ALL", sku:"", model:"", week:"", replay:false, rows:[] };
   const names = {
     business:["ภาพรวมธุรกิจ","ยอดขาย กำไร และ KPI ของร้านเสื้อผ้าผู้หญิง","ภาพรวมธุรกิจ"],
     pipeline:["ทดสอบการนำเข้าข้อมูล","เส้นทางข้อมูลจากต้นทางถึงคลังข้อมูลและหลักฐานการตรวจสอบ","การนำเข้าข้อมูล"],
@@ -283,10 +283,76 @@
         small("โปรเจกต์ Neon demo-pipeline ยังแยกจาก Snapshot นี้ · อย่าตีความว่าข้อมูลตรงกันจนกว่าจะเชื่อมและตรวจยอดจริง"))));
   }
 
+  async function loadNeonEvidence(table=""){
+    if(state.neonStatus==="loading")return;
+    state.neonStatus="loading";state.neonError="";
+    if(state.view==="pipeline")renderPipeline();
+    try {
+      const url="/api/neon-evidence"+(table?"?table="+encodeURIComponent(table)+"&limit=10":"");
+      const response=await fetch(url,{cache:"no-store"});
+      const payload=await response.json();
+      if(!response.ok || !payload.connected || payload.origin!=="NEON_LIVE")
+        throw Error(payload.error || "ยังไม่สามารถอ่าน Neon ได้");
+      if(!table){
+        state.neonTables=payload.tables;
+        state.neonData=null;
+        state.neonTable="";
+      }else{
+        state.neonData=payload;
+        state.neonTable=table;
+      }
+      state.neonStatus="ready";
+    }catch(error){
+      state.neonStatus="error";
+      state.neonError=error.message||"ไม่สามารถติดต่อฐานข้อมูลได้";
+    }
+    if(state.view==="pipeline")renderPipeline();
+  }
+
+  function renderNeonExplorer(root){
+    const wrap=contentArea();
+    wrap.append(notice("ข้อมูลส่วนนี้อ่านจาก Neon Branch demo-pipeline โดยตรง ผ่าน API แบบอ่านอย่างเดียว ไม่ใช่ Snapshot ของ GitHub Actions"));
+    if(state.neonStatus==="loading"){
+      wrap.append(small("กำลังตรวจสอบฐานข้อมูล Neon…"));
+    }else if(state.neonStatus==="error"){
+      wrap.append(notice("ยังเชื่อม Neon ไม่สำเร็จ: "+state.neonError,true));
+    }else if(state.neonStatus==="not_loaded"){
+      wrap.append(small("กดตรวจสอบเพื่ออ่านรายชื่อตารางจริงจาก Neon"));
+    }else{
+      wrap.append(small("เชื่อมต่อได้ · Schema demo_er1 · "+state.neonTables.length+" ตาราง · ข้อมูลจำลอง"));
+      if(state.neonTables.length){
+        wrap.append(chooseField("เลือกตารางใน Neon",
+          [["","— เลือกตาราง —"],...state.neonTables.map(t=>[t,t])],
+          state.neonTable, name=>{if(name)loadNeonEvidence(name);}));
+      }
+      const d=state.neonData;
+      if(d?.table){
+        wrap.append(box("pipeline-meta",
+          small("ตาราง: "+d.table),
+          small("จำนวน Records: "+money(d.row_count)),
+          small("เวลา Query: "+(d.generated_at||"—"))));
+        wrap.append(small("โครงสร้างตาราง ("+d.columns.length+" คอลัมน์)"));
+        wrap.append(dataTable([["column_name","ชื่อคอลัมน์"],["data_type","ชนิดข้อมูล"]],d.columns.slice(0,35)));
+        wrap.append(small("ตัวอย่างข้อมูลสูงสุด "+d.preview_limit+" รายการ"));
+        const cols=d.columns.slice(0,8).map(x=>[x.column_name,x.column_name]);
+        wrap.append(d.preview_rows.length?dataTable(cols,d.preview_rows):
+          small("ตารางนี้ยังไม่มีข้อมูลจริงใน Neon · ขณะนี้ยังไม่ได้รัน Cloud Pipeline"));
+      }
+    }
+    const button=node("button","button button-outline","↻ ตรวจสอบ Neon อีกครั้ง");
+    button.type="button";button.disabled=state.neonStatus==="loading";
+    button.addEventListener("click",()=>loadNeonEvidence());
+    wrap.append(button);
+    wrap.append(link("เปิด Neon Console เพื่อตรวจเอง (ต้องมีสิทธิ์)","https://console.neon.tech/app/projects"));
+    root.append(panel("เปิดข้อมูลจริงจาก Neon PostgreSQL",
+      "โครงสร้างตาราง ตัวอย่างข้อมูล และจำนวนรายการที่ Query จากฐานข้อมูล ณ ขณะนั้น",wrap));
+  }
+
   function renderPipeline(){
     const p=state.data.pipeline,meta=p.history.source||{};
     const root=$("#app");root.replaceChildren();
     root.append(notice("ขณะนี้เป็นผลทดสอบ Pipeline จาก SQLite/DuckDB ใน GitHub Actions ยังไม่ได้อ่านข้อมูลจาก Neon โดยตรง",true));
+    renderNeonExplorer(root);
     root.append(add(box("metrics"),
       metric("ฐานข้อมูลต้นทาง · SQLite","25 ตาราง","OLTP Schema"),
       metric("คลังข้อมูล · DuckDB",money(p.physical_warehouse_tables)+" ตาราง","ตารางข้อมูลจริง"),
@@ -432,6 +498,7 @@
     $("#groupFilterWrap").classList.toggle("hidden",value==="pipeline");
     $("#modelFilterWrap").classList.toggle("hidden",value!=="ml");
     render();
+    if(value==="pipeline" && state.neonStatus==="not_loaded")loadNeonEvidence();
   }
   function exportCsv(){
     const rows=state.rows;if(!rows.length)return;

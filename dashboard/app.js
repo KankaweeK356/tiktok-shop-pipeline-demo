@@ -4,9 +4,9 @@
   const $ = s => document.querySelector(s);
   const state = { data:null, view:"business", month:"", group:"ALL", model:"", week:"", replay:false, rows:[] };
   const names = {
-    business:["Business Overview","ยอดขาย กำไร และการติดตาม KPI จาก Data Warehouse","BUSINESS OVERVIEW"],
-    pipeline:["Pipeline Explorer","เส้นทางข้อมูล ผลรัน และหลักฐานการตรวจยอดจริง","PIPELINE EXPLORER"],
-    ml:["ML Lab & Monitoring","Model Evaluation, Serving Replay และ Monitoring","ML LAB"]
+    business:["ภาพรวมธุรกิจ","ยอดขาย กำไร และ KPI ของร้านเสื้อผ้าผู้หญิง","ภาพรวมธุรกิจ"],
+    pipeline:["ทดสอบการนำเข้าข้อมูล","เส้นทางข้อมูลจากต้นทางถึงคลังข้อมูลและหลักฐานการตรวจสอบ","การนำเข้าข้อมูล"],
+    ml:["พยากรณ์ยอดขาย","ผลทำนายเทียบยอดขายจริงและความน่าเชื่อถือของโมเดล","พยากรณ์ยอดขาย"]
   };
   const groups=["PG01","PG02","PG03","PG04","PG05"];
   const money = (n,digits=0) => n===null||n===undefined||!Number.isFinite(Number(n)) ? "—" :
@@ -101,15 +101,15 @@
     const rowIncomplete=shown.some(x=>x.contribution_profit===null);
     const allShop=state.group==="ALL";
     const metrics=allShop?[
-      metric("Net Revenue · ยอดขายสุทธิ","฿"+money(m.net_revenue),m.month),
-      metric("Revenue Target Achievement",pct(m.revenue_achievement_pct),"เป้าหมาย ฿"+money(m.revenue_target)+" · ทั้งร้าน",Number(m.revenue_achievement_pct)>=100?"metric-good":"metric-bad"),
-      metric("Contribution Profit",m.contribution_profit===null?"—":"฿"+money(m.contribution_profit),m.profit_data_status==="COMPLETE"?"ต้นทุนครบ":"ต้นทุนไม่ครบ"),
-      metric("Profit Protection",pct(m.profit_protection_rate_pct),"เกณฑ์ "+pct(Number(m.minimum_profit_protection_rate)*100,0)+" ของ Gross Reference",m.profit_protection_status==="PASS"?"metric-good":"metric-bad")
+      metric("ยอดขายสุทธิ","฿"+money(m.net_revenue),m.month),
+      metric("ยอดขายเทียบเป้าหมาย",pct(m.revenue_achievement_pct),"เป้าหมาย ฿"+money(m.revenue_target)+" · ทั้งร้าน",Number(m.revenue_achievement_pct)>=100?"metric-good":"metric-bad"),
+      metric("กำไรหลังต้นทุนที่เกี่ยวข้อง",m.contribution_profit===null?"—":"฿"+money(m.contribution_profit),m.profit_data_status==="COMPLETE"?"ต้นทุนครบ":"ต้นทุนไม่ครบ"),
+      metric("อัตรารักษากำไร",pct(m.profit_protection_rate_pct),"เกณฑ์ "+pct(Number(m.minimum_profit_protection_rate)*100,0)+" ของ Gross Reference",m.profit_protection_status==="PASS"?"metric-good":"metric-bad")
     ]:[
-      metric("Group Net Revenue","฿"+money(total("net_revenue")),state.group+" · "+m.month),
-      metric("Gross Reference","฿"+money(total("gross_reference_sales")),"ก่อนหักส่วนลด"),
-      metric("Ads Cost","฿"+money(total("ads_cost")),"จาก Group Daily Mart"),
-      metric("Group Contribution Profit",rowIncomplete?"—":"฿"+money(total("contribution_profit")),"ไม่ใช่ Profit Protection Gate")
+      metric("ยอดขายสุทธิของกลุ่ม","฿"+money(total("net_revenue")),state.group+" · "+m.month),
+      metric("ยอดขายก่อนส่วนลด","฿"+money(total("gross_reference_sales")),"ก่อนหักส่วนลด"),
+      metric("ค่าโฆษณา","฿"+money(total("ads_cost")),"จาก Group Daily Mart"),
+      metric("กำไรกลุ่มสินค้า",rowIncomplete?"—":"฿"+money(total("contribution_profit")),"ไม่ใช่ Profit Protection Gate")
     ];
     const root=$("#app");root.replaceChildren();
     root.append(notice(allShop?"Revenue Target และ Profit Protection ประเมินระดับทั้งร้านต่อเดือน ไม่ใช่ราย Product Group":
@@ -129,11 +129,11 @@
       });
       monthChart.append(btn);
     });
-    const trend=panel("แนวโน้มยอดขายรายเดือน","คลิกแท่งเพื่อเปลี่ยนเดือน",contentArea(monthChart,
+    const trend=panel("ยอดขายย้อนหลังรายเดือน","คลิกแท่งเพื่อเปลี่ยนเดือน",contentArea(monthChart,
       box("mini-axis",small(months[0].month),small("Net Revenue (บาท)"),small(months[months.length-1].month)),
       small("หมายเหตุ: ตุลาคม 2026 รวม Source Initial Demo ซึ่งมีปริมาณ Order สูงกว่าช่วงย้อนหลัง")));
     const groupBars=shown.map(x=>({name:title(x.product_group_id),value:x.net_revenue,display:"฿"+money(x.net_revenue)}));
-    const groupPanel=panel("ยอดขายแยก Product Group","Net Revenue · "+m.month,contentArea(barChart(groupBars)));
+    const groupPanel=panel("ยอดขายแยกกลุ่มสินค้า","Net Revenue · "+m.month,contentArea(barChart(groupBars)));
     root.append(box("two-col",trend,groupPanel));
     const gov=contentArea(
       box("pipeline-meta",small("Revenue Target: "+m.target_status),small("Profit Status: "+m.profit_protection_status),
@@ -142,10 +142,10 @@
       node("div","callout","สูตร KPI: Revenue Achievement = Net Revenue ÷ Revenue Target; Profit Protection = Contribution Profit ÷ Gross Reference Sales (ยอดก่อนส่วนลด) ทั้งสองเป็น KPI ของทั้งร้านต่อเดือน")
     );
     root.append(panel("KPI Governance · Monthly View","อ่านจาก View_Shop_Monthly_KPI จริง",gov,link("ER2 Schema",d.links.schema)));
-    const cols=[["product_group_id","Product Group"],["net_revenue","Net Revenue"],["gross_reference_sales","Gross Reference"],["ads_cost","Ads Cost"],["campaign_reduction","Campaign Reduction"],["contribution_profit","Contribution Profit"]];
+    const cols=[["product_group_id","Product Group"],["net_revenue","Net Revenue"],["gross_reference_sales","ยอดขายก่อนส่วนลด"],["ads_cost","ค่าโฆษณา"],["campaign_reduction","Campaign Reduction"],["contribution_profit","กำไรหลังต้นทุนที่เกี่ยวข้อง"]];
     const fmt={};
     cols.slice(1).forEach(x=>fmt[x[0]]={kind:"money",align:"text-right"});
-    root.append(panel("Product Group Performance","Grain = Month × Group · ไม่ JOIN Ads ซ้ำกับ SKU",dataTable(cols,shown,fmt)));
+    root.append(panel("ผลการดำเนินงานแยกกลุ่มสินค้า","Grain = Month × Group · ไม่ JOIN Ads ซ้ำกับ SKU",dataTable(cols,shown,fmt)));
     renderScenario(root);
     state.rows=shown;
   }
@@ -158,7 +158,7 @@
     const ads=labelInput("Planned Ads ต่อสัปดาห์ (บาท)","number","0","0","1000000");
     const discount=labelInput("ส่วนลด Campaign เฉลี่ย (%)","number","0","0","100");
     const grid=box("scenario-grid",choices,ads.label,discount.label);
-    const summary=node("strong","", "—"),explanation=small("Planning Input Only · ไม่คำนวณยอดขายเพิ่มหรือกำไร"),resetButton=node("button","button button-outline","รีเซ็ตค่า");
+    const summary=node("strong","", "—"),explanation=small("เป็นเพียงการเปรียบเทียบแผน ไม่ใช่การพยากรณ์ยอดขายหรือกำไร"),resetButton=node("button","button button-outline","รีเซ็ตค่า");
     resetButton.type="button";
     const result=box("scenario-results",box("",small("แผนอ้างอิงสัปดาห์ "+d.scenario.reference_week),summary,explanation),resetButton);
     const ref=()=>d.scenario.reference_plans.find(x=>x.product_group_id===choices.querySelector("select").value);
@@ -179,16 +179,17 @@
     ads.field.addEventListener("input",update);discount.field.addEventListener("input",update);
     resetButton.addEventListener("click",reset);
     add(panelBody,grid,result);
-    root.append(panel("Marketing Plan Sandbox","ทดลองกรอกแผนได้ แต่ยังไม่ได้รัน Scenario Forecast",panelBody));
+    root.append(panel("ทดลองวางแผนการตลาด","ทดลองกรอกแผนได้ แต่ยังไม่ได้รัน Scenario Forecast",panelBody));
     reset();
   }
 
   function renderPipeline(){
     const p=state.data.pipeline,meta=p.history.source||{};
     const root=$("#app");root.replaceChildren();
+    root.append(notice("ขณะนี้เป็นผลทดสอบ Pipeline จาก SQLite/DuckDB ใน GitHub Actions ยังไม่ได้อ่านข้อมูลจาก Neon โดยตรง",true));
     root.append(add(box("metrics"),
-      metric("ER1 · SQLite","25 ตาราง","OLTP Schema"),
-      metric("ER2 · DuckDB",money(p.physical_warehouse_tables)+" ตาราง","Physical Tables"),
+      metric("ฐานข้อมูลต้นทาง · SQLite","25 ตาราง","OLTP Schema"),
+      metric("คลังข้อมูล · DuckDB",money(p.physical_warehouse_tables)+" ตาราง","ตารางข้อมูลจริง"),
       metric("Initial Validation",p.initial.passed+"/"+p.initial.checks,"Functional Checks","metric-good"),
       metric("Incremental Validation",p.incremental.passed+"/"+p.incremental.checks,"Functional Checks","metric-good")));
     const name={ingest:"Database",extract:"Landing/Raw",transform:"Standardize",load:"Warehouse",validate:"Reconcile"};
@@ -199,7 +200,7 @@
         node("strong","",name[stage.stage]||stage.stage),
         small(stage.status+" · "+money(stage.elapsed_seconds,2)+" sec")));
     });
-    root.append(panel("End-to-End Pipeline · Actual Stages","Initial และ Incremental จาก Batch ที่ตรวจสอบจริง",
+    root.append(panel("เส้นทางการประมวลผลข้อมูล","Initial และ Incremental จาก Batch ที่ตรวจสอบจริง",
       contentArea(flow,node("div","flow-divider"),
         box("pipeline-meta",small("Historical Orders: "+money(meta.historical_orders)),
           small("Ads Records: "+money(meta.historical_ads_rows)),
@@ -219,14 +220,14 @@
         box("listline",node("span","",k),node("strong","",v))),
       node("div","callout","ข้อมูลเป็น Snapshot ของ GitHub Actions ไม่ได้เช็กสถานะเซิร์ฟเวอร์แบบ Live"));
     root.append(box("two-col",
-      panel("Reconciliation & Quality","ผลที่ตรวจจาก Database และ Warehouse",dataTable([["check","Check"],["measure","Measured"],["result","Status"]],checks,{result:{kind:"status"}})),
-      panel("Data Assets & Governance","ไม่เพิ่มตาราง ML ใน ER1/ER2",assets)));
+      panel("ตรวจสอบความถูกต้องของข้อมูล","ผลที่ตรวจจาก Database และ Warehouse",dataTable([["check","Check"],["measure","Measured"],["result","Status"]],checks,{result:{kind:"status"}})),
+      panel("ชุดข้อมูลและการกำกับข้อมูล","ไม่เพิ่มตาราง ML ใน ER1/ER2",assets)));
     const line=(p.lineage_sample||[]).map(x=>({
       item:x.Source_Order_Item_ID,source:x.Source,
       er1:x.ER1_Net_Revenue,dwh:x.ER2_Net_Revenue,
       group:x.Product_Group_ID,date:x.Sales_Date_Key
     }));
-    root.append(panel("Lineage · Order Item Examples","Trace จาก Source → SQLite → DuckDB",
+    root.append(panel("ติดตามที่มาของรายการขาย","Trace จาก Source → SQLite → DuckDB",
       dataTable([["item","Item ID"],["source","Source"],["er1","ER1 Net"],["dwh","DWH Net"],["group","Group"],["date","Date Key"]],line,
         {er1:{kind:"money",digits:2},dwh:{kind:"money",digits:2}}),
       link("Repository Evidence",state.data.links.repo)));
@@ -239,10 +240,10 @@
     const root=$("#app");root.replaceChildren();
     root.append(notice("Synthetic ML แบบ DEMO ONLY: เปรียบเทียบ Forecast Accuracy ไม่ใช่หลักฐานเชิงเหตุและผลว่าเพิ่ม Ads แล้วขายเพิ่ม",true));
     root.append(add(box("metrics"),
-      metric("Selected by Validation",ml.registry.selected_model,"ไม่ได้เลือกจาก Test"),
+      metric("โมเดลที่เลือกจากผลทดสอบ",ml.registry.selected_model,"ไม่ได้เลือกจาก Test"),
       metric("Group WAPE · "+chosen,pct(score.group_wape_pct,2),"เป้าหมาย ≤20%",score.group_target_20pct?"metric-good":"metric-bad"),
       metric("Shop WAPE · "+chosen,pct(score.shop_wape_pct,2),"เป้าหมาย ≤15%",score.shop_target_15pct?"metric-good":"metric-bad"),
-      metric("Training Dataset",money(ml.backtest.dataset_rows)+" Rows",ml.backtest.weeks+" Weeks × "+ml.backtest.groups+" Groups")));
+      metric("ชุดข้อมูลฝึกโมเดล",money(ml.backtest.dataset_rows)+" Rows",ml.backtest.weeks+" Weeks × "+ml.backtest.groups+" Groups")));
     const steps=[
       ["01","Data Extraction","CSV / SQLite / Parquet / DuckDB"],
       ["02","EDA","Monthly / Group Analysis"],
@@ -255,16 +256,16 @@
     ];
     const stepsGrid=node("div","steps-grid");
     steps.forEach(s=>stepsGrid.append(box("step-card",node("div","step-num",s[0]),node("span","step-name",s[1]),node("div","step-text",s[2]))));
-    root.append(panel("MLOps Lifecycle · 8 Steps","ครบกระบวนการตามบทเรียน · Offline Demonstration",contentArea(stepsGrid)));
+    root.append(panel("ขั้นตอนพัฒนาและตรวจสอบโมเดล (สำหรับผู้สนใจ)","ครบกระบวนการตามบทเรียน · Offline Demonstration",contentArea(stepsGrid)));
     const modelRows=ml.test_metrics.map(m=>({name:m.model,value:m.group_wape_pct,display:pct(m.group_wape_pct,2)}));
     const valRows=ml.model_selection.map(m=>({name:m.model,value:m.validation_group_wape_pct,display:pct(m.validation_group_wape_pct,2)}));
     root.append(box("two-col",
-      panel("Final Test · Group WAPE","Aug–Sep 2026 · ยิ่งต่ำยิ่งดี",contentArea(barChart(modelRows,chosen),small("WAPE ไม่ใช่เปอร์เซ็นต์ความแม่นยำที่นำไปลบจาก 100"))),
-      panel("Rolling Validation · WAPE","เลือกโมเดลจาก May / June / July",contentArea(barChart(valRows,ml.registry.selected_model)))));
+      panel("ความคลาดเคลื่อนการทำนายรายกลุ่ม","Aug–Sep 2026 · ยิ่งต่ำยิ่งดี",contentArea(barChart(modelRows,chosen),small("WAPE ไม่ใช่เปอร์เซ็นต์ความแม่นยำที่นำไปลบจาก 100"))),
+      panel("เปรียบเทียบผลประเมินโมเดล","เลือกโมเดลจาก May / June / July",contentArea(barChart(valRows,ml.registry.selected_model)))));
     const byGroup=ml.test_by_group.filter(x=>x.model===chosen&&(state.group==="ALL"||x.product_group_id===state.group));
     const imp=ml.feature_importance.slice(0,8).map(x=>({name:x.feature,value:x.gain,display:money(x.gain)}));
     root.append(box("two-col",
-      panel("Performance by Product Group",chosen,dataTable(
+      panel("ความคลาดเคลื่อนแยกกลุ่มสินค้า",chosen,dataTable(
         [["product_group_id","Group"],["wape_pct","WAPE"],["mae_thb_per_week","MAE / Week"],["bias_pct","Bias"]],
         byGroup,{wape_pct:{kind:"percent",digits:2},mae_thb_per_week:{kind:"money"},bias_pct:{kind:"percent"}})),
       panel("Feature Importance · Marketing","Gain: ความสัมพันธ์ ไม่ใช่ผล causal",contentArea(barChart(imp)))));
@@ -274,7 +275,7 @@
     const selector=chooseField("Forecast Week (Monday)",weeks.map(x=>[x,x]),state.week,v=>{
       state.week=v;state.replay=false;renderML();
     });
-    const replayButton=node("button","button button-primary","ดูผล Serving / Prediction");replayButton.type="button";
+    const replayButton=node("button","button button-primary","ดูผลพยากรณ์");replayButton.type="button";
     replayButton.addEventListener("click",()=>{state.replay=true;renderML()});
     replayContainer.append(box("h-stack",selector,replayButton));
     const archived=ml.test_predictions.filter(x=>x.model===chosen&&x.forecast_week_start===state.week&&
@@ -301,8 +302,8 @@
       node("span","tag","Approval: DEMO ONLY")));
     replayContainer.append(small(alerts.length?"Alert: "+alerts.join(", "):"ไม่มี Alert ในสัปดาห์ Replay"));
     replayContainer.append(small("Serving/Monitoring เป็น Offline Replay: ใช้ Actual หลังจากทำนายแล้ว ไม่ใช่ระบบสด"));
-    root.append(panel("Model Serving & Monitoring","เลือกรอบ Backtest แล้วเปิดหลักฐานการทำนาย",replayContainer,link("Workflow",state.data.links.ml)));
-    root.append(panel("Feature Store · Data Preview","10 ตัวอย่างจาก "+money(ml.feature_count)+" Weekly Feature Rows",
+    root.append(panel("ผลทำนายและการติดตามโมเดล","เลือกรอบ Backtest แล้วเปิดหลักฐานการทำนาย",replayContainer,link("Workflow",state.data.links.ml)));
+    root.append(panel("ตัวอย่างข้อมูลที่ใช้ทำนาย","10 ตัวอย่างจาก "+money(ml.feature_count)+" Weekly Feature Rows",
       dataTable([["as_of_date","As-of"],["forecast_week_start","Forecast"],["product_group_id","Group"],["revenue_last_week","Past Revenue"],["planned_ads_week","Planned Ads"]],
         ml.feature_preview,{revenue_last_week:{kind:"money"},planned_ads_week:{kind:"money"}})));
     state.rows=archived;
@@ -375,14 +376,14 @@
       $("#snapshotStamp").textContent=d.generated_at_utc?new Intl.DateTimeFormat("th-TH",{
         timeZone:"Asia/Bangkok",year:"numeric",month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"
       }).format(new Date(d.generated_at_utc)):"Batch Snapshot";
-      $("#headerMode").textContent="Batch Snapshot · Not Live";
+      $("#headerMode").textContent="รายงานจากการรันล่าสุด · ไม่ใช่ข้อมูลสด";
       $("#footerStatus").textContent=d.source_run;
       $("#repoLink").href=d.links.repo;
       setView("business");
     } catch(e){
       $("#app").replaceChildren(notice("ไม่สามารถโหลด Report Snapshot: "+e.message+
         " กรุณารัน Python Exporter แล้วเปิดเว็บด้วย HTTP Server ไม่ใช่ file://",true));
-      $("#headerMode").textContent="Data unavailable";
+      $("#headerMode").textContent="ไม่พบข้อมูลรายงาน";
       $("#exportCurrent").disabled=true;
     }
   }

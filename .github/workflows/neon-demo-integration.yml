@@ -1,0 +1,41 @@
+name: Neon Demo Secret Integration Check
+
+on:
+  push:
+    branches:
+      - test/neon-demo-secret-ci-20261108
+    paths:
+      - .github/workflows/neon-demo-integration.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-neon-demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: Install pipeline and Neon driver
+        run: |
+          python -m pip install -r requirements.txt
+          python -m pip install "psycopg[binary]>=3,<4"
+      - name: Verify Neon backed initial incremental and replay
+        env:
+          NEON_DEMO_DATABASE_URL: ${{ secrets.NEON_DEMO_DATABASE_URL }}
+        run: python -m pipeline.ci_neon_run
+      - name: Preserve verification report
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: neon-demo-pipeline-verification
+          path: output/neon_demo/reports/neon_pipeline_verification.json
+          if-no-files-found: error
+          retention-days: 14

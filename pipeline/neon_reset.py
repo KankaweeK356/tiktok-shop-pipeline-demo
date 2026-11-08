@@ -50,9 +50,11 @@ def reset_source(database_url: str, *, confirmation: str,
             """)
             if cur.fetchone()[0]:
                 raise RuntimeError("Cannot reset during an active storage upload")
-            names=", ".join("demo_er1."+_quoted(t.name) for t in tables)
-            # All 25 tables are included; no CASCADE, no DROP, no warehouse changes.
-            cur.execute("TRUNCATE TABLE "+names+" RESTART IDENTITY")
+            # The scoped writer has DELETE but deliberately not TRUNCATE privileges.
+            # Reverse foreign-key topological order safely deletes children first.
+            # All statements run in one transaction; failures roll back every deletion.
+            for table in reversed(tables):
+                cur.execute("DELETE FROM demo_er1."+_quoted(table.name))
             next_cycle=current_cycle+1
             cur.execute("""
                 UPDATE demo_control.dataset_state

@@ -127,6 +127,30 @@ def export_classroom_evidence(workspace: Path, destination: Path) -> dict:
         }
     errors_file = ROOT / "output" / "test" / "error_suite_summary.json"
     errors = json.loads(errors_file.read_text(encoding="utf-8")) if errors_file.exists() else None
+    case_details = []
+    for case_dir in sorted((ROOT / "output" / "test").glob("case_*")):
+        case_workspace = case_dir / "workspace"
+        err_path = case_workspace / "reports" / "error_initial.json"
+        events_path = case_workspace / "lake" / "control" / "stage_history.jsonl"
+        quarantine = case_workspace / "lake" / "governance" / "quarantine"
+        events = []
+        if events_path.exists():
+            for entry in events_path.read_text(encoding="utf-8").splitlines():
+                if entry.strip():
+                    events.append(json.loads(entry))
+        final_validation = case_workspace / "reports" / "functional_initial.json"
+        case_details.append({
+            "case_id": case_dir.name.removeprefix("case_"),
+            "detected_error": json.loads(err_path.read_text(encoding="utf-8"))
+                if err_path.exists() else None,
+            "stage_events": events,
+            "quarantine_receipts": [
+                json.loads(p.read_text(encoding="utf-8"))
+                for p in sorted(quarantine.glob("*.json"))
+            ] if quarantine.exists() else [],
+            "validation_after_retry": json.loads(final_validation.read_text(encoding="utf-8"))
+                if final_validation.exists() else None,
+        })
     result = {
         "classification": "SYNTHETIC_EDUCATIONAL_NOT_TIKTOK",
         "runner": "github_actions_or_local_python",
@@ -135,6 +159,7 @@ def export_classroom_evidence(workspace: Path, destination: Path) -> dict:
         "layers": layers,
         "stage_evidence": checks,
         "error_recovery_evidence": errors,
+        "error_case_details": case_details,
         "neon_connected": False,
         "limitation_th": "ข้อมูลจาก SQLite/PyArrow/DuckDB ที่รันจริง; ยังไม่ได้เชื่อม Neon",
     }

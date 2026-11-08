@@ -1,0 +1,9 @@
+{
+  "name": "tiktok-shop-classroom-dashboard",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.0"
+  }
+}

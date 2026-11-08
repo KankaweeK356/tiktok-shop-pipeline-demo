@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from datetime import datetime,timedelta,date
+import calendar
 from collections import defaultdict
 import pandas as pd
 from .er1 import PipelineError,money,PAID
@@ -30,8 +31,8 @@ def save_std(std,name,rows,cols=None):
     df.to_parquet(std/f'{name}.parquet',index=False,engine='pyarrow')
     return len(df)
 
-def dim_date_rows():
-    cur=date(2026,10,1);end=date(2026,11,30);out=[]
+def dim_date_rows(start=date(2026,10,1),end=date(2026,11,30)):
+    cur=start;out=[]
     while cur<=end:
         out.append({'Date_Key':int(cur.strftime('%Y%m%d')),'Full_Date':str(cur),
           'Day_Number':cur.day,'Day_Name':cur.strftime('%A'),
@@ -74,8 +75,23 @@ def transform(lake_dir:Path,control_dir:Path,batch:str,inject_error=None):
                a['Status']=='Active' and b['Status']=='Active' and \
                a['Effective_From']<=b['Effective_To'] and b['Effective_From']<=a['Effective_To']:
                 raise PipelineError('T02_CAMPAIGN_OVERLAP',f"{a['Product_Group_ID']} campaigns overlap")
+    # Dynamic date coverage: extended ML history must not silently fall outside
+    # the conformed Date dimension. Original Oct/Nov demo range is unchanged.
+    dates=[date(2026,10,1),date(2026,11,30)]
+    for records,field in ((orders,'Order_Created_At'),(orders,'Paid_At'),
+                          (ads,'Record_Date'),(samples,'Dispatched_Date'),
+                          (claims,'Backend_Action_Date')):
+        for record in records:
+            value=record.get(field)
+            if value is not None and not blank(value):
+                dates.append(date.fromisoformat(str(value)[:10]))
+    for target in targets:
+        dates.append(date.fromisoformat(str(target['Target_Year_Month'])+'-01'))
+    first=min(dates)
+    last=max(dates)
+    last=date(last.year,last.month,calendar.monthrange(last.year,last.month)[1])
     dims={
-      'Dim_Date':dim_date_rows(),
+      'Dim_Date':dim_date_rows(first,last),
       'Dim_Product':[{'Product_Key':product[s['SKU_ID']],'SKU_ID':s['SKU_ID'],'SKU_Name':s['SKU_Name'],
          'Color':s['Color'],'Size':s['Size'],'Product_Group_ID':s['Product_Group_ID'],
          'Product_Group_Name':pgroup[s['Product_Group_ID']]['Product_Group_Name'],

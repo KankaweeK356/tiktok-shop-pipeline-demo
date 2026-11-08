@@ -1,0 +1,45 @@
+name: Weekly MLOps Demo - Synthetic Real Training Serving Monitoring
+
+on:
+  pull_request:
+    paths:
+      - 'pipeline/ml_weekly.py'
+      - 'pipeline/ml_weekly_serve.py'
+      - 'pipeline/ci_ml_weekly_demo.py'
+      - 'tests/test_ml_weekly.py'
+      - '.github/workflows/ml-weekly-demo-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  weekly-demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: Install data and ML requirements
+        run: python -m pip install -r requirements-ml.txt
+      - name: Test feature timing and weekly aggregation
+        run: python -m pytest -q tests/test_ml_weekly.py tests/test_ml_features.py tests/test_ml_history.py
+      - name: Extract Source Database Lake Warehouse history
+        run: python -m pipeline.ci_ml_history
+      - name: Train weekly models evaluate and demonstrate serving monitoring
+        run: python -m pipeline.ci_ml_weekly_demo
+      - name: Keep real reports for classroom replay
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-mlops-demo-real-reports
+          path: |
+            output/ml_history_ci/main/reports/ml_weekly/
+            output/ml_history_ci/main/reports/ml_history_summary.json
+          retention-days: 14
+          if-no-files-found: warn

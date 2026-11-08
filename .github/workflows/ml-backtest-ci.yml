@@ -1,0 +1,47 @@
+name: ML Backtesting - Synthetic Sales and Marketing
+
+on:
+  pull_request:
+    paths:
+      - 'pipeline/ml_backtest.py'
+      - 'pipeline/ci_ml_backtest.py'
+      - 'tests/test_ml_backtest.py'
+      - 'requirements-ml.txt'
+      - '.github/workflows/ml-backtest-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evaluate-ml:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: Install Data + ML libraries
+        run: |
+          python -m pip install -r requirements-ml.txt
+          python -c "import lightgbm, sklearn, duckdb; print('LightGBM',lightgbm.__version__,'sklearn',sklearn.__version__,'DuckDB',duckdb.__version__)"
+      - name: Verify time-based features, plan as-of and split integrity
+        run: python -m pytest -q tests/test_ml_backtest.py tests/test_ml_history.py tests/test_ml_features.py
+      - name: Generate historical source and execute Database Lake Warehouse
+        run: python -m pipeline.ci_ml_history
+      - name: Train baselines + LightGBM and evaluate rolling folds
+        run: python -m pipeline.ci_ml_backtest
+      - name: Preserve real offline features, forecasts, models, and score reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tiktok-synthetic-ml-training-and-backtest
+          path: |
+            output/ml_history_ci/main/reports/ml_backtest/
+            output/ml_history_ci/main/reports/ml_history_summary.json
+          if-no-files-found: warn
+          retention-days: 14

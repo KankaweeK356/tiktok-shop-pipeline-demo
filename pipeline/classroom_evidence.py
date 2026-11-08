@@ -84,7 +84,7 @@ def export_classroom_evidence(workspace: Path, destination: Path) -> dict:
                     import pyarrow.parquet as parquet
                     p = parquet.ParquetFile(path)
                     count = p.metadata.num_rows
-                    sample = pd.read_parquet(path).head(MAX_ROWS)
+                    sample = p.iter_batches(batch_size=MAX_ROWS).__next__().to_pandas() if count else pd.DataFrame(columns=p.schema_arrow.names)
                 layers[group].append({
                     "name": path.name, "batch": batch, "type": group+"_file",
                     "records": count,

@@ -14,7 +14,24 @@
 
 [![เปิด Step-by-Step Demo ใน Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/KankaweeK356/tiktok-shop-pipeline-demo/blob/main/notebooks/TikTok_Shop_Step_by_Step_Demo.ipynb)
 
-**กด Google Colab → Runtime → Run all ครั้งเดียว** เพื่อให้ Code รันทุก Stage จากบนลงล่าง และแสดงผลลัพธ์แยกใต้แต่ละ Cell: **Source CSV → SQLite ER1 → Landing/Raw/Standardized Parquet → DuckDB ER2 → Functional/Lineage** จากนั้นรัน Incremental ลง Database เดิม, รัน Batch ซ้ำเพื่อพิสูจน์ไม่ซ้ำ และจำลอง Error/Retry
+**กด Google Colab → Runtime → Run all ครั้งเดียว** ระบบจะรันทีละขั้นจากบนลงล่าง แต่แสดงตารางผลของแต่ละขั้นให้ดูแยกกัน เช่น จำนวนแถว ตัวอย่าง 5 รายการ และคำอธิบายภาษาไทยว่าได้อะไรจากขั้นนั้น ไม่ต้องกด Run ทีละ Cell
+
+**ลำดับที่ผู้ดูจะเห็น:**
+
+| ส่วน | ใช้ทำอะไร | ผลที่แสดงจริง |
+|---|---|---|
+| Source CSV | ตรวจข้อมูลตั้งต้นจาก GitHub | จำนวนไฟล์ ออเดอร์ รายการสินค้า และตัวอย่าง |
+| **ER1 = SQLite Database** | เก็บข้อมูลคำสั่งซื้อ/สินค้าในฐานข้อมูลต้นทาง | จำนวนตาราง จำนวน Records และตัวอย่าง SQL |
+| **Data Lake = ไฟล์ CSV/Parquet** | เก็บ Landing → Raw → Standardized ระหว่างทาง | จำนวนไฟล์/แถว และตัวอย่างข้อมูลที่แปลงแล้ว |
+| **ER2 = DuckDB Data Warehouse** | จัด Fact/Dimension/Mart สำหรับวิเคราะห์ | จำนวนรายการขายและข้อมูลการเงิน |
+| Validation | ตรวจยอด ER1 เทียบ ER2 และตามที่มาของข้อมูล | PASS/FAIL รายข้อ และตัวอย่าง Lineage |
+| Run 2 (Incremental) | เพิ่ม/อัปเดต Batch ใหม่ใน ER1 และ ER2 เดิม | ออเดอร์ใหม่ ออเดอร์ที่อัปเดต และยอดก่อน–หลัง |
+| Replay | นำ Batch เดิมที่ผ่านแล้วมารันซ้ำ | จำนวนรายการและยอดขายต้องไม่เพิ่ม |
+| Error Recovery และ Summary | จำลองข้อผิดพลาด กู้คืน แล้วสรุปผล | Error/Retry, Latency/Throughput และ KPI |
+
+> **ER1 ไม่ใช่ Data Lake:** ER1 เป็นแบบของฐานข้อมูลต้นทาง (SQLite) ส่วน Data Lake เป็นพื้นที่เก็บไฟล์ระหว่างทาง และ ER2 เป็นแบบของคลังข้อมูลวิเคราะห์ (DuckDB)
+
+ทุกขั้นแสดง **ผลที่คำนวณจากการรันจริง** ไม่ใช่ตัวเลขตัวอย่างที่ฝังไว้ใน Notebook
 
 **สำคัญ:** Run 2 = เพิ่ม/อัปเดตข้อมูลอีก Batch ในฐานข้อมูลเดิม; Replay = ส่ง **Batch เดิม** ซ้ำ ผลลัพธ์ต้องไม่เพิ่มซ้ำ ไม่ต้อง Reset ระหว่างสอง Run
 

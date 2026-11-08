@@ -118,7 +118,7 @@ def lineage(er1:Path,er2:Path,batch:str,control_dir:Path,report_dir:Path,limit=8
             mart=dw.execute('''SELECT Net_Revenue,Contribution_Profit FROM Mart_Product_Group_Daily_Performance
                 WHERE Date_Key=? AND Product_Group_ID=?''',[dwrow[3],dwrow[4]]).fetchone()
             processed=item_processed_batch.get(itemid,'initial')
-            origin='initial' if row[0].startswith('OCT') else 'incremental'
+            origin='initial' if row[0].startswith(('OCT','H')) else 'incremental'
             month=str(dwrow[3])[:4]+'-'+str(dwrow[3])[4:6]
             rec.append({'Batch_Inspected':batch,'Source_Order_Item_ID':itemid,
                 'Source':f'source/{origin}/Fact_Order_Items.csv',

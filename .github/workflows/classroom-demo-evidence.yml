@@ -1,0 +1,53 @@
+name: Classroom Demo - Real Pipeline and Evidence
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/classroom-demo-evidence-foundation
+    paths:
+      - 'pipeline/classroom_evidence.py'
+      - 'tests/test_classroom_evidence.py'
+      - '.github/workflows/classroom-demo-evidence.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: classroom-evidence-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify-and-export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: Install SQLite / PyArrow / DuckDB demo dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Validate contracts (offline)
+        run: python -m pytest -q tests/test_classroom_evidence.py tests/test_neon_schema.py
+      - name: Run REAL local-engine Initial Incremental Replay and six errors
+        run: python -m pipeline.ci_smoke
+      - name: Export source table, lake dataset and warehouse evidence
+        run: python -m pipeline.classroom_evidence
+      - name: Upload evidence including error recovery and data previews
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: classroom-pipeline-evidence
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            output/classroom_evidence.json
+            output/main/reports/
+            output/main/lake/control/
+            output/main/lake/governance/
+            output/test/error_suite_summary.json
+            output/test/error_suite_summary.csv

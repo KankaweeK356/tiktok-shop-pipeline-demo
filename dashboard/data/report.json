@@ -1,6 +1,6 @@
 {
   "schema_version": "decision_dashboard_v1",
-  "generated_at_utc": "2026-11-08T13:44:46.090421+00:00",
+  "generated_at_utc": "2026-11-08T14:11:40.631617+00:00",
   "source_classification": "SYNTHETIC_EDUCATIONAL_NOT_TIKTOK",
   "snapshot_mode": "BATCH_SNAPSHOT_NOT_LIVE",
   "source_run": "ml_history_ci__incremental__weekly_mlops_demo",
@@ -261,7 +261,7 @@
         "batch": "initial",
         "stage": "ingest",
         "status": "SUCCESS",
-        "elapsed_seconds": 2.5936,
+        "elapsed_seconds": 3.3416,
         "summary": {
           "input_records": 13821,
           "modified_orders": 3552,
@@ -272,7 +272,7 @@
         "batch": "initial",
         "stage": "extract",
         "status": "SUCCESS",
-        "elapsed_seconds": 0.162,
+        "elapsed_seconds": 0.2072,
         "summary": {
           "parquet_tables": 25,
           "source_files": 21,
@@ -283,7 +283,7 @@
         "batch": "initial",
         "stage": "transform",
         "status": "SUCCESS",
-        "elapsed_seconds": 0.3138,
+        "elapsed_seconds": 0.3827,
         "summary": {
           "standardized_tables": 11,
           "changed_sales": 4212,
@@ -296,7 +296,7 @@
         "batch": "initial",
         "stage": "load",
         "status": "SUCCESS",
-        "elapsed_seconds": 28.8865,
+        "elapsed_seconds": 35.1776,
         "summary": {
           "loaded_rows": {
             "Dim_Date": 395,
@@ -319,7 +319,7 @@
         "batch": "initial",
         "stage": "validate",
         "status": "SUCCESS",
-        "elapsed_seconds": 0.0969,
+        "elapsed_seconds": 0.1214,
         "summary": {
           "batch": "initial",
           "checks": 53,
@@ -432,7 +432,7 @@
         "batch": "incremental",
         "stage": "ingest",
         "status": "SUCCESS",
-        "elapsed_seconds": 0.1441,
+        "elapsed_seconds": 0.1669,
         "summary": {
           "input_records": 402,
           "modified_orders": 132,
@@ -443,7 +443,7 @@
         "batch": "incremental",
         "stage": "extract",
         "status": "SUCCESS",
-        "elapsed_seconds": 0.1108,
+        "elapsed_seconds": 0.1365,
         "summary": {
           "parquet_tables": 25,
           "source_files": 5,
@@ -454,7 +454,7 @@
         "batch": "incremental",
         "stage": "transform",
         "status": "SUCCESS",
-        "elapsed_seconds": 0.1518,
+        "elapsed_seconds": 0.202,
         "summary": {
           "standardized_tables": 11,
           "changed_sales": 182,
@@ -467,7 +467,7 @@
         "batch": "incremental",
         "stage": "load",
         "status": "SUCCESS",
-        "elapsed_seconds": 1.8152,
+        "elapsed_seconds": 2.2772,
         "summary": {
           "loaded_rows": {
             "Dim_Date": 395,
@@ -490,7 +490,7 @@
         "batch": "incremental",
         "stage": "validate",
         "status": "SUCCESS",
-        "elapsed_seconds": 0.0812,
+        "elapsed_seconds": 0.1003,
         "summary": {
           "batch": "incremental",
           "checks": 54,

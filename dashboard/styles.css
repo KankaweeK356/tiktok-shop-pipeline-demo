@@ -30,3 +30,8 @@
 .metric{border-color:#eee1e3}
 .panel{border-color:#eee1e3}
 .nav-item.is-active{box-shadow:inset 3px 0 0 var(--red)}
+
+.header-fashion-icon{display:block;width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid #fff7f6}
+.logo-mark:has(.header-fashion-icon){background:transparent;box-shadow:none}
+.fashion-preview{width:104px;height:104px;object-fit:contain;float:right;border:1px solid #eddae0;border-radius:14px;margin:0 0 8px 15px;background:#fbf1f1}
+@media(max-width:720px){.fashion-preview{width:76px;height:76px}}

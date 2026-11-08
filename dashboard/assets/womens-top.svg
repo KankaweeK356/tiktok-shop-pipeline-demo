@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" role="img" aria-labelledby="title desc">
+<title id="title">เสื้อแฟชั่นผู้หญิง</title>
+<desc id="desc">ภาพประกอบเสื้อคอกลมผู้หญิงสีชมพูนู้ด ไม่ใช่ภาพสินค้าจริง</desc>
+<rect width="180" height="180" rx="28" fill="#fbf1f1"/>
+<ellipse cx="90" cy="151" rx="58" ry="8" fill="#e9d9d9" opacity=".7"/>
+<path d="M60 37 72 29Q90 47 108 29L120 37 149 58 134 83 120 75 120 143 60 143 60 75 46 83 31 58Z" fill="#dba2b0" stroke="#af7384" stroke-width="2.4" stroke-linejoin="round"/>
+<path d="M72 29Q90 66 108 29" fill="none" stroke="#b57c8b" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M61 75 67 84M119 75 113 84" stroke="#bf8694" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M71 141H109" stroke="#bd8794" stroke-width="2" stroke-linecap="round"/>
+<path d="M79 71 Q88 85 85 103" fill="none" stroke="#efc8d0" stroke-width="2" opacity=".8"/>
+</svg>

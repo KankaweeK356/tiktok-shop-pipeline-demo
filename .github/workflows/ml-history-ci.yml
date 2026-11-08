@@ -1,0 +1,46 @@
+name: ML Historical Mock - Full Data Pipeline
+
+on:
+  pull_request:
+    paths:
+      - 'pipeline/generate_ml_history.py'
+      - 'pipeline/ci_ml_history.py'
+      - 'pipeline/transform.py'
+      - 'pipeline/quality.py'
+      - 'tests/test_ml_history.py'
+      - '.github/workflows/ml-history-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  history-to-warehouse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: Install project dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Verify deterministic generator and short-range ETL
+        run: python -m pytest -q tests/test_ml_history.py tests/test_ml_features.py
+      - name: Generate full 12-month mock and run it through Database Lake Warehouse
+        run: python -m pipeline.ci_ml_history
+      - name: Preserve source, marketing plans, and ML-ready validation reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tiktok-12-month-synthetic-ml-history
+          path: |
+            output/ml_history_ci/source/
+            output/ml_history_ci/main/reports/ml_history_*.csv
+            output/ml_history_ci/main/reports/ml_history_summary.json
+            output/ml_history_ci/main/reports/functional_*.json
+          if-no-files-found: warn
+          retention-days: 14

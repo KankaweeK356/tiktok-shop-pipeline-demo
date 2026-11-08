@@ -105,6 +105,54 @@ def export_dashboard(
               JOIN "Dim_Date" d ON m."Date_Key" = d."Date_Key"
              GROUP BY 1,2 ORDER BY 1,2
         ''')
+        sku_performance = _query_records(con, '''
+            SELECT d."Year_Month" AS month,
+                   p."Product_Group_ID" AS product_group_id,
+                   p."SKU_ID" AS sku_id,
+                   MAX(p."SKU_Name") AS sku_name,
+                   MAX(p."Color") AS color,
+                   MAX(p."Size") AS size,
+                   SUM(s."Quantity") AS quantity,
+                   SUM(s."Gross_Reference_Sales") AS gross_reference_sales,
+                   SUM(s."Campaign_Price_Reduction") AS campaign_reduction,
+                   SUM(s."Voucher_Allocated") AS voucher_discount,
+                   SUM(s."Net_Revenue") AS net_revenue,
+                   SUM(s."COGS") AS cogs,
+                   SUM(s."Platform_Fee_Cost") AS platform_cost,
+                   SUM(s."Fulfillment_Cost") AS fulfillment_cost,
+                   SUM(s."Affiliate_Cost") AS affiliate_cost,
+                   SUM(s."Sales_Contribution_Pre_Ads_Sample_Claim")
+                       AS contribution_before_group_costs
+              FROM "Fact_Sales_Order_Item" s
+              JOIN "Dim_Product" p ON s."Product_Key"=p."Product_Key"
+              JOIN "Dim_Date" d ON s."Sales_Date_Key"=d."Date_Key"
+             GROUP BY 1,2,3 ORDER BY 1,2,3
+        ''')
+        ads_campaigns = _query_records(con, '''
+            SELECT d."Year_Month" AS month,
+                   f."Product_Group_ID" AS product_group_id,
+                   f."Ad_Campaign_Key" AS ad_campaign_key,
+                   SUM(f."Ads_Spend") AS ads_spend,
+                   SUM(f."Impressions") AS impressions,
+                   SUM(f."Clicks") AS clicks,
+                   SUM(f."Conversions") AS conversions
+              FROM "Fact_Ads_Daily" f
+              JOIN "Dim_Date" d ON f."Date_Key"=d."Date_Key"
+             GROUP BY 1,2,3 ORDER BY 1,2,3
+        ''')
+        creator_performance = _query_records(con, '''
+            SELECT d."Year_Month" AS month,
+                   p."Product_Group_ID" AS product_group_id,
+                   s."Creator_Key" AS creator_key,
+                   SUM(s."Net_Revenue") AS associated_sales,
+                   SUM(s."Affiliate_Cost") AS affiliate_commission,
+                   SUM(s."Quantity") AS units
+              FROM "Fact_Sales_Order_Item" s
+              JOIN "Dim_Product" p ON s."Product_Key"=p."Product_Key"
+              JOIN "Dim_Date" d ON s."Sales_Date_Key"=d."Date_Key"
+             WHERE s."Affiliate_Cost">0
+             GROUP BY 1,2,3 ORDER BY 1,2,3
+        ''')
         tables = _query_records(con, '''
             SELECT table_name, COUNT(*) OVER() AS physical_tables
               FROM information_schema.tables
@@ -142,6 +190,18 @@ def export_dashboard(
                          float(month["gross_reference_sales"]),
                          month["profit_protection_rate_pct"],
                          f"Profit Protection {month['month']}", tol=0.011)
+    for month in months:
+        for group in [g for g in groups if g["month"] == month["month"]]:
+            sku_rows = [
+                x for x in sku_performance
+                if x["month"] == month["month"] and
+                x["product_group_id"] == group["product_group_id"]
+            ]
+            _check_money(sum(float(x["net_revenue"]) for x in sku_rows),
+                         group["net_revenue"],
+                         f"SKU drilldown reconciliation {month['month']}/{group['product_group_id']}")
+    _check_money(sum(float(x["ads_spend"]) for x in ads_campaigns),
+                 ads_cost, "Ads campaign subtotal vs source Fact")
     _check_money(ads_cost, mart_ads_cost, "Ads Fact vs Mart")
     _check_money(fact_sales_count, functional_incremental["warehouse_sales_item_count"],
                  "Sales count")
@@ -231,6 +291,9 @@ def export_dashboard(
         "business": {
             "months": months,
             "groups": groups,
+            "sku_performance": sku_performance,
+            "ads_campaigns": ads_campaigns,
+            "creator_performance": creator_performance,
             "shop_profit_protection_basis": "CONTRIBUTION_PROFIT_DIVIDED_BY_GROSS_REFERENCE_SALES",
             "revenue_target_basis": "MONTHLY_NET_REVENUE_DIVIDED_BY_REVENUE_TARGET",
         },

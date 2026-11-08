@@ -2,7 +2,7 @@
 (function () {
   "use strict";
   const $ = s => document.querySelector(s);
-  const state = { data:null, view:"business", month:"", group:"ALL", sku:"", model:"", week:"", replay:false, rows:[] };
+  const state = { data:null, evidence:null, evidenceLayer:"source", evidenceTable:"", view:"business", month:"", group:"ALL", sku:"", model:"", week:"", replay:false, rows:[] };
   const names = {
     business:["ภาพรวมธุรกิจ","ยอดขาย กำไร และ KPI ของร้านเสื้อผ้าผู้หญิง","ภาพรวมธุรกิจ"],
     pipeline:["ทดสอบการนำเข้าข้อมูล","เส้นทางข้อมูลจากต้นทางถึงคลังข้อมูลและหลักฐานการตรวจสอบ","การนำเข้าข้อมูล"],
@@ -232,6 +232,49 @@
     reset();
   }
 
+  function renderEvidenceExplorer(root){
+    const evidence=state.evidence;
+    if(!evidence){
+      root.append(panel("สำรวจตารางและไฟล์ของแต่ละชั้นข้อมูล",
+        "ยังไม่มีไฟล์หลักฐานของการรันที่ส่งออกในชุดข้อมูลนี้",
+        contentArea(notice("รายชื่อตารางและข้อมูลตัวอย่างจะปรากฏเมื่อ GitHub Actions สร้าง classroom_evidence.json สำเร็จ"))));
+      return;
+    }
+    const labels={source:"ฐานข้อมูลต้นทาง (SQLite)",landing:"Data Lake — Landing",
+      raw:"Data Lake — Raw",standardized:"Data Lake — Standardized",
+      warehouse:"Data Warehouse (DuckDB)",governance:"Governance",control:"Control"};
+    if(!evidence.layers[state.evidenceLayer])state.evidenceLayer="source";
+    const list=evidence.layers[state.evidenceLayer]||[];
+    const options=Object.entries(labels).map(([key,label])=>
+      [key,label+" · "+(evidence.layers[key]||[]).length+" รายการ"]);
+    const layerSelect=chooseField("เลือกชั้นข้อมูล",options,state.evidenceLayer,v=>{
+      state.evidenceLayer=v;state.evidenceTable="";renderPipeline();
+    });
+    if(!list.some(x=>x.name===state.evidenceTable))
+      state.evidenceTable=list[0]?.name||"";
+    const datasetSelect=chooseField("เลือกตาราง/ชุดข้อมูล",
+      list.map(x=>[x.name,x.name+(x.batch?" · "+x.batch:"")]),
+      state.evidenceTable,v=>{state.evidenceTable=v;renderPipeline()});
+    const item=list.find(x=>x.name===state.evidenceTable)||list[0];
+    const details=item?box("scenario-results",box("",
+      small("รูปแบบ: "+item.type+(item.batch?" · รอบ "+item.batch:"")),
+      node("strong","",item.name),
+      small("จำนวนรายการ: "+(item.records===undefined?"—":money(item.records))+
+        " · คอลัมน์: "+(item.columns?.length??"—")),
+      small("ตำแหน่งข้อมูล: "+(item.path||"Query จากฐานข้อมูลชั่วคราวใน Runner"))
+    )):small("ไม่พบรายการข้อมูลในชั้นนี้");
+    const headers=(item?.columns||[]).slice(0,8).map(key=>[key,key]);
+    const preview=item?.preview?.length?dataTable(headers,item.preview):small("ไม่มีแถวตัวอย่างหรือเป็นไฟล์ Metadata");
+    root.append(panel("สำรวจตารางและไฟล์ของแต่ละชั้นข้อมูล",
+      "ดูชื่อชุดข้อมูล โครงสร้างคอลัมน์ และตัวอย่างข้อมูลจากผลรันจริง (Snapshot ไม่ใช่ข้อมูลสด)",
+      contentArea(notice("หลักฐานนี้มาจาก SQLite / Parquet / DuckDB ของ GitHub Actions ยังไม่ใช่การ Query Neon โดยตรง",true),
+        box("two-col",layerSelect,datasetSelect),details,preview,
+        box("h-stack",
+          link("ตรวจ Workflow และดาวน์โหลดหลักฐาน","https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/actions/workflows/decision-dashboard-ci.yml"),
+          link("เปิด Neon Console (ต้องมีสิทธิ์)","https://console.neon.tech/app/projects")),
+        small("โปรเจกต์ Neon demo-pipeline ยังแยกจาก Snapshot นี้ · อย่าตีความว่าข้อมูลตรงกันจนกว่าจะเชื่อมและตรวจยอดจริง"))));
+  }
+
   function renderPipeline(){
     const p=state.data.pipeline,meta=p.history.source||{};
     const root=$("#app");root.replaceChildren();
@@ -271,6 +314,7 @@
     root.append(box("two-col",
       panel("ตรวจสอบความถูกต้องของข้อมูล","ผลที่ตรวจจาก Database และ Warehouse",dataTable([["check","Check"],["measure","Measured"],["result","Status"]],checks,{result:{kind:"status"}})),
       panel("ชุดข้อมูลและการกำกับข้อมูล","ไม่เพิ่มตาราง ML ใน ER1/ER2",assets)));
+    renderEvidenceExplorer(root);
     const line=(p.lineage_sample||[]).map(x=>({
       item:x.Source_Order_Item_ID,source:x.Source,
       er1:x.ER1_Net_Revenue,dwh:x.ER2_Net_Revenue,
@@ -429,6 +473,17 @@
       $("#footerStatus").textContent=d.source_run;
       $("#repoLink").href=d.links.repo;
       setView("business");
+      try {
+        const evidenceResponse=await fetch("./data/classroom_evidence.json",{cache:"no-cache"});
+        if(evidenceResponse.ok){
+          const evidence=await evidenceResponse.json();
+          if(evidence.classification==="SYNTHETIC_EDUCATIONAL_NOT_TIKTOK"
+            && evidence.layers?.source && evidence.layers?.warehouse)state.evidence=evidence;
+        }
+      }catch(_error){
+        // Explorer will clearly report that the real evidence snapshot is unavailable.
+      }
+      if(state.view==="pipeline")renderPipeline();
     } catch(e){
       $("#app").replaceChildren(notice("ไม่สามารถโหลด Report Snapshot: "+e.message+
         " กรุณารัน Python Exporter แล้วเปิดเว็บด้วย HTTP Server ไม่ใช่ file://",true));

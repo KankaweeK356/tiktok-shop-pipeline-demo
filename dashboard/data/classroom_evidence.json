@@ -2,7 +2,7 @@
   "classification": "SYNTHETIC_EDUCATIONAL_NOT_TIKTOK",
   "runner": "github_actions_or_local_python",
   "source_engine": "SQLITE_NOT_NEON",
-  "snapshot_at_utc": "2026-11-08T13:23:54.104121+00:00",
+  "snapshot_at_utc": "2026-11-08T13:33:25.328347+00:00",
   "layers": {
     "source": [
       {
@@ -8412,7 +8412,7 @@
             "Claim_Cost": 0.0,
             "Contribution_Profit": 160.51,
             "Data_Cost_Basis": "MOCK_ACTUAL_WITH_POLICY_FEE",
-            "Calculated_At": "2026-11-08T13:23:37"
+            "Calculated_At": "2026-11-08T13:33:04"
           },
           {
             "Date_Key": 20251101,
@@ -8431,7 +8431,7 @@
             "Claim_Cost": 0.0,
             "Contribution_Profit": 201.2,
             "Data_Cost_Basis": "MOCK_ACTUAL_WITH_POLICY_FEE",
-            "Calculated_At": "2026-11-08T13:23:37"
+            "Calculated_At": "2026-11-08T13:33:04"
           },
           {
             "Date_Key": 20251101,
@@ -8450,7 +8450,7 @@
             "Claim_Cost": 0.0,
             "Contribution_Profit": 203.86,
             "Data_Cost_Basis": "MOCK_ACTUAL_WITH_POLICY_FEE",
-            "Calculated_At": "2026-11-08T13:23:37"
+            "Calculated_At": "2026-11-08T13:33:04"
           },
           {
             "Date_Key": 20251101,
@@ -8469,7 +8469,7 @@
             "Claim_Cost": 0.0,
             "Contribution_Profit": 156.86,
             "Data_Cost_Basis": "MOCK_ACTUAL_WITH_POLICY_FEE",
-            "Calculated_At": "2026-11-08T13:23:37"
+            "Calculated_At": "2026-11-08T13:33:04"
           },
           {
             "Date_Key": 20251101,
@@ -8488,7 +8488,7 @@
             "Claim_Cost": 0.0,
             "Contribution_Profit": 185.09,
             "Data_Cost_Basis": "MOCK_ACTUAL_WITH_POLICY_FEE",
-            "Calculated_At": "2026-11-08T13:23:37"
+            "Calculated_At": "2026-11-08T13:33:04"
           }
         ]
       },
@@ -8517,82 +8517,6 @@
         ],
         "preview": [
           {
-            "Year_Month": "2025-12",
-            "Month_Start_Date_Key": 20251201,
-            "Gross_Reference_Sales": 94470.0,
-            "Net_Revenue": 90953.4,
-            "Contribution_Profit": 33286.06,
-            "Revenue_Target": 52000.0,
-            "Minimum_Profit_Protection_Rate": 0.1,
-            "Revenue_Gap": 38953.4,
-            "Revenue_Achievement_Pct": 174.91,
-            "Profit_Margin_Pct": 36.6,
-            "Profit_Protection_Required": 9447.0,
-            "Profit_Protection_Rate_Pct": 35.23,
-            "Profit_Protection_Gap_Pp": 25.23,
-            "Profit_Protection_Headroom": 23839.06,
-            "Profit_Protection_Status": "PASS",
-            "Profit_Data_Status": "COMPLETE",
-            "Target_Status": "OK"
-          },
-          {
-            "Year_Month": "2026-06",
-            "Month_Start_Date_Key": 20260601,
-            "Gross_Reference_Sales": 91712.0,
-            "Net_Revenue": 88495.48,
-            "Contribution_Profit": 33379.92,
-            "Revenue_Target": 56000.0,
-            "Minimum_Profit_Protection_Rate": 0.1,
-            "Revenue_Gap": 32495.48,
-            "Revenue_Achievement_Pct": 158.03,
-            "Profit_Margin_Pct": 37.72,
-            "Profit_Protection_Required": 9171.2,
-            "Profit_Protection_Rate_Pct": 36.4,
-            "Profit_Protection_Gap_Pp": 26.4,
-            "Profit_Protection_Headroom": 24208.72,
-            "Profit_Protection_Status": "PASS",
-            "Profit_Data_Status": "COMPLETE",
-            "Target_Status": "OK"
-          },
-          {
-            "Year_Month": "2026-08",
-            "Month_Start_Date_Key": 20260801,
-            "Gross_Reference_Sales": 81272.0,
-            "Net_Revenue": 79116.8,
-            "Contribution_Profit": 29784.47,
-            "Revenue_Target": 52000.0,
-            "Minimum_Profit_Protection_Rate": 0.1,
-            "Revenue_Gap": 27116.8,
-            "Revenue_Achievement_Pct": 152.15,
-            "Profit_Margin_Pct": 37.65,
-            "Profit_Protection_Required": 8127.2,
-            "Profit_Protection_Rate_Pct": 36.65,
-            "Profit_Protection_Gap_Pp": 26.65,
-            "Profit_Protection_Headroom": 21657.27,
-            "Profit_Protection_Status": "PASS",
-            "Profit_Data_Status": "COMPLETE",
-            "Target_Status": "OK"
-          },
-          {
-            "Year_Month": "2026-07",
-            "Month_Start_Date_Key": 20260701,
-            "Gross_Reference_Sales": 92272.0,
-            "Net_Revenue": 89175.58,
-            "Contribution_Profit": 33041.79,
-            "Revenue_Target": 50000.0,
-            "Minimum_Profit_Protection_Rate": 0.1,
-            "Revenue_Gap": 39175.58,
-            "Revenue_Achievement_Pct": 178.35,
-            "Profit_Margin_Pct": 37.05,
-            "Profit_Protection_Required": 9227.2,
-            "Profit_Protection_Rate_Pct": 35.81,
-            "Profit_Protection_Gap_Pp": 25.81,
-            "Profit_Protection_Headroom": 23814.59,
-            "Profit_Protection_Status": "PASS",
-            "Profit_Data_Status": "COMPLETE",
-            "Target_Status": "OK"
-          },
-          {
             "Year_Month": "2025-11",
             "Month_Start_Date_Key": 20251101,
             "Gross_Reference_Sales": 84612.0,
@@ -8607,6 +8531,82 @@
             "Profit_Protection_Rate_Pct": 36.7,
             "Profit_Protection_Gap_Pp": 26.7,
             "Profit_Protection_Headroom": 22592.19,
+            "Profit_Protection_Status": "PASS",
+            "Profit_Data_Status": "COMPLETE",
+            "Target_Status": "OK"
+          },
+          {
+            "Year_Month": "2026-01",
+            "Month_Start_Date_Key": 20260101,
+            "Gross_Reference_Sales": 99221.0,
+            "Net_Revenue": 96997.64,
+            "Contribution_Profit": 37124.79,
+            "Revenue_Target": 54000.0,
+            "Minimum_Profit_Protection_Rate": 0.1,
+            "Revenue_Gap": 42997.64,
+            "Revenue_Achievement_Pct": 179.63,
+            "Profit_Margin_Pct": 38.27,
+            "Profit_Protection_Required": 9922.1,
+            "Profit_Protection_Rate_Pct": 37.42,
+            "Profit_Protection_Gap_Pp": 27.42,
+            "Profit_Protection_Headroom": 27202.69,
+            "Profit_Protection_Status": "PASS",
+            "Profit_Data_Status": "COMPLETE",
+            "Target_Status": "OK"
+          },
+          {
+            "Year_Month": "2026-03",
+            "Month_Start_Date_Key": 20260301,
+            "Gross_Reference_Sales": 79389.0,
+            "Net_Revenue": 77332.4,
+            "Contribution_Profit": 28553.84,
+            "Revenue_Target": 50000.0,
+            "Minimum_Profit_Protection_Rate": 0.1,
+            "Revenue_Gap": 27332.4,
+            "Revenue_Achievement_Pct": 154.66,
+            "Profit_Margin_Pct": 36.92,
+            "Profit_Protection_Required": 7938.9,
+            "Profit_Protection_Rate_Pct": 35.97,
+            "Profit_Protection_Gap_Pp": 25.97,
+            "Profit_Protection_Headroom": 20614.94,
+            "Profit_Protection_Status": "PASS",
+            "Profit_Data_Status": "COMPLETE",
+            "Target_Status": "OK"
+          },
+          {
+            "Year_Month": "2026-04",
+            "Month_Start_Date_Key": 20260401,
+            "Gross_Reference_Sales": 78452.0,
+            "Net_Revenue": 74559.53,
+            "Contribution_Profit": 27468.94,
+            "Revenue_Target": 52000.0,
+            "Minimum_Profit_Protection_Rate": 0.1,
+            "Revenue_Gap": 22559.53,
+            "Revenue_Achievement_Pct": 143.38,
+            "Profit_Margin_Pct": 36.84,
+            "Profit_Protection_Required": 7845.2,
+            "Profit_Protection_Rate_Pct": 35.01,
+            "Profit_Protection_Gap_Pp": 25.01,
+            "Profit_Protection_Headroom": 19623.74,
+            "Profit_Protection_Status": "PASS",
+            "Profit_Data_Status": "COMPLETE",
+            "Target_Status": "OK"
+          },
+          {
+            "Year_Month": "2026-09",
+            "Month_Start_Date_Key": 20260901,
+            "Gross_Reference_Sales": 81589.0,
+            "Net_Revenue": 78043.89,
+            "Contribution_Profit": 28115.94,
+            "Revenue_Target": 54000.0,
+            "Minimum_Profit_Protection_Rate": 0.1,
+            "Revenue_Gap": 24043.89,
+            "Revenue_Achievement_Pct": 144.53,
+            "Profit_Margin_Pct": 36.03,
+            "Profit_Protection_Required": 8158.9,
+            "Profit_Protection_Rate_Pct": 34.46,
+            "Profit_Protection_Gap_Pp": 24.46,
+            "Profit_Protection_Headroom": 19957.04,
             "Profit_Protection_Status": "PASS",
             "Profit_Data_Status": "COMPLETE",
             "Target_Status": "OK"
@@ -8742,7 +8742,7 @@
         ],
         "metrics": {
           "ingest": {
-            "elapsed_seconds": 2.5908,
+            "elapsed_seconds": 3.3659,
             "result": {
               "input_records": 13821,
               "modified_orders": 3552,
@@ -8750,7 +8750,7 @@
             }
           },
           "extract": {
-            "elapsed_seconds": 0.1477,
+            "elapsed_seconds": 0.2085,
             "result": {
               "parquet_tables": 25,
               "source_files": 21,
@@ -8758,7 +8758,7 @@
             }
           },
           "transform": {
-            "elapsed_seconds": 0.3029,
+            "elapsed_seconds": 0.3904,
             "result": {
               "standardized_tables": 11,
               "changed_sales": 4212,
@@ -8768,7 +8768,7 @@
             }
           },
           "load": {
-            "elapsed_seconds": 28.3798,
+            "elapsed_seconds": 34.7421,
             "result": {
               "loaded_rows": {
                 "Dim_Date": 395,
@@ -8788,7 +8788,7 @@
             }
           },
           "validate": {
-            "elapsed_seconds": 0.1016,
+            "elapsed_seconds": 0.1144,
             "result": {
               "batch": "initial",
               "checks": 53,
@@ -9015,7 +9015,7 @@
         ],
         "metrics": {
           "ingest": {
-            "elapsed_seconds": 0.1731,
+            "elapsed_seconds": 0.1668,
             "result": {
               "input_records": 402,
               "modified_orders": 132,
@@ -9023,7 +9023,7 @@
             }
           },
           "extract": {
-            "elapsed_seconds": 0.1086,
+            "elapsed_seconds": 0.1302,
             "result": {
               "parquet_tables": 25,
               "source_files": 5,
@@ -9031,7 +9031,7 @@
             }
           },
           "transform": {
-            "elapsed_seconds": 0.153,
+            "elapsed_seconds": 0.1981,
             "result": {
               "standardized_tables": 11,
               "changed_sales": 182,
@@ -9041,7 +9041,7 @@
             }
           },
           "load": {
-            "elapsed_seconds": 1.8254,
+            "elapsed_seconds": 2.2285,
             "result": {
               "loaded_rows": {
                 "Dim_Date": 395,
@@ -9061,7 +9061,7 @@
             }
           },
           "validate": {
-            "elapsed_seconds": 0.0812,
+            "elapsed_seconds": 0.0982,
             "result": {
               "batch": "incremental",
               "checks": 54,

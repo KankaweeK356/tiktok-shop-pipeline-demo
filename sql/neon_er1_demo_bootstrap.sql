@@ -533,3 +533,17 @@ CREATE INDEX IF NOT EXISTS idx_stage_events_run_time ON demo_control.stage_event
 CREATE INDEX IF NOT EXISTS idx_artifacts_run ON demo_control.pipeline_artifacts(run_id,stage_name);
 
 CREATE INDEX IF NOT EXISTS idx_pipeline_runs_recent ON demo_control.pipeline_runs(dataset_key,cycle_number,created_at DESC);
+
+-- Secure short-lived CI transfers to branch-scoped Neon Object Storage.
+-- Additive control metadata only; no changes to ER1/ER2 business tables.
+CREATE TABLE IF NOT EXISTS demo_control.upload_sessions (
+ session_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+ run_id UUID NOT NULL REFERENCES demo_control.pipeline_runs(run_id),
+ token_sha256 TEXT NOT NULL UNIQUE CHECK(token_sha256 ~ '^[0-9a-f]{64}$'),
+ allowed_prefix TEXT NOT NULL CHECK(length(allowed_prefix) BETWEEN 4 AND 300),
+ max_object_bytes BIGINT NOT NULL DEFAULT 10485760 CHECK(max_object_bytes BETWEEN 1 AND 20971520),
+ expires_at TIMESTAMPTZ NOT NULL,
+ revoked BOOLEAN NOT NULL DEFAULT FALSE,
+ created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_upload_sessions_expires ON demo_control.upload_sessions(expires_at);

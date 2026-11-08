@@ -2,7 +2,7 @@
 (function () {
   "use strict";
   const $ = s => document.querySelector(s);
-  const state = { data:null, view:"business", month:"", group:"ALL", model:"", week:"", replay:false, rows:[] };
+  const state = { data:null, view:"business", month:"", group:"ALL", sku:"", model:"", week:"", replay:false, rows:[] };
   const names = {
     business:["ภาพรวมธุรกิจ","ยอดขาย กำไร และ KPI ของร้านเสื้อผ้าผู้หญิง","ภาพรวมธุรกิจ"],
     pipeline:["ทดสอบการนำเข้าข้อมูล","เส้นทางข้อมูลจากต้นทางถึงคลังข้อมูลและหลักฐานการตรวจสอบ","การนำเข้าข้อมูล"],
@@ -135,6 +135,55 @@
     const groupBars=shown.map(x=>({name:title(x.product_group_id),value:x.net_revenue,display:"฿"+money(x.net_revenue)}));
     const groupPanel=panel("ยอดขายแยกกลุ่มสินค้า","Net Revenue · "+m.month,contentArea(barChart(groupBars)));
     root.append(box("two-col",trend,groupPanel));
+    // Existing DuckDB Sales Fact x Product Dimension; no ad-spend allocation to SKU.
+    const skuRows=(d.business.sku_performance||[]).filter(x=>
+      x.month===m.month && (state.group==="ALL"||x.product_group_id===state.group)
+    ).sort((a,b)=>Number(b.net_revenue)-Number(a.net_revenue));
+    if(skuRows.length){
+      const choices=[["","เลือก SKU เพื่อดูรายละเอียด"],...skuRows.map(x=>
+        [x.sku_id, (x.sku_name||x.sku_id)+" · "+(x.color||"")+" / "+(x.size||"")+" ("+x.sku_id+")"]
+      )];
+      if(!skuRows.some(x=>x.sku_id===state.sku))state.sku="";
+      const picker=chooseField("เจาะลึกสินค้า (SKU)",choices,state.sku,v=>{state.sku=v;renderBusiness()});
+      const skuCols=[["sku_id","รหัส SKU"],["sku_name","สินค้า"],["color","สี"],["size","ไซซ์"],
+        ["quantity","จำนวนชิ้น"],["net_revenue","ยอดขายสุทธิ"],["contribution_before_group_costs","กำไรก่อนค่าใช้จ่ายระดับกลุ่ม"]];
+      const skuFmt={quantity:{align:"text-right"},net_revenue:{kind:"money",align:"text-right"},
+        contribution_before_group_costs:{kind:"money",align:"text-right"}};
+      const selected=skuRows.find(x=>x.sku_id===state.sku);
+      const detail=selected?box("scenario-results",
+        box("",small("รหัส SKU "+selected.sku_id+" · "+title(selected.product_group_id)),
+          node("strong","", "ยอดขาย ฿"+money(selected.net_revenue)+" · "+money(selected.quantity)+" ชิ้น"),
+          small("ต้นทุนสินค้า ฿"+money(selected.cogs)+" · ส่วนลดแคมเปญ ฿"+money(selected.campaign_reduction)+
+            " · ส่วนลด Voucher ฿"+money(selected.voucher_discount)),
+          small("ค่าธรรมเนียม ฿"+money(selected.platform_cost)+" · ค่าจัดส่ง ฿"+money(selected.fulfillment_cost)+
+            " · ค่านายหน้า ฿"+money(selected.affiliate_cost)),
+          small("กำไรก่อน Ads / Sample / Claim ฿"+money(selected.contribution_before_group_costs))),
+        notice("กำไร SKU นี้ยังไม่ได้หักโฆษณาและต้นทุนระดับกลุ่ม ไม่ใช่กำไรสุทธิหลังค่าโฆษณา")
+      ):small("เลือก SKU ด้านบนเพื่อดูแยกยอดขาย ส่วนลด ต้นทุน และค่านายหน้า");
+      root.append(panel("วิเคราะห์รายสินค้า · Product Group → SKU",
+        "อ่านจาก Fact_Sales_Order_Item และ Dim_Product ไม่แก้โครงสร้าง Warehouse",
+        contentArea(picker,detail,dataTable(skuCols,skuRows.slice(0,20),skuFmt),
+          small("เรียงยอดขายมากไปน้อย แสดง 20 SKU แรกของช่วงที่เลือก · เลือก SKU ด้านบนเพื่อดูตัวอื่นได้"))));
+    }
+    const adsRows=(d.business.ads_campaigns||[]).filter(x=>
+      x.month===m.month && (state.group==="ALL"||x.product_group_id===state.group)
+    ).sort((a,b)=>Number(b.ads_spend)-Number(a.ads_spend));
+    const creators=(d.business.creator_performance||[]).filter(x=>
+      x.month===m.month && (state.group==="ALL"||x.product_group_id===state.group)
+    ).sort((a,b)=>Number(b.affiliate_commission)-Number(a.affiliate_commission));
+    if(adsRows.length||creators.length)root.append(box("two-col",
+      panel("ค่าโฆษณาแยกแคมเปญ",
+        "ระดับเดือน × แคมเปญ × กลุ่มสินค้า ไม่ใช่ Ads ราย SKU",
+        dataTable([["product_group_id","กลุ่ม"],["ad_campaign_key","รหัสแคมเปญ"],["ads_spend","ค่าโฆษณา"],
+          ["impressions","แสดงผล"],["clicks","คลิก"],["conversions","Conversion จาก Source"]],
+          adsRows.slice(0,15),{ads_spend:{kind:"money",align:"text-right"}})),
+      panel("ยอดขายที่เกี่ยวข้องกับนายหน้า",
+        "รวมเฉพาะรายการขายที่มีค่าคอมมิชชัน ไม่บวกยอดขายซ้ำ",
+        dataTable([["product_group_id","กลุ่ม"],["creator_key","รหัส Creator"],["associated_sales","ยอดขายที่เกี่ยวข้อง"],
+          ["affiliate_commission","ค่านายหน้า"]],creators.slice(0,15),
+          {associated_sales:{kind:"money",align:"text-right"},
+           affiliate_commission:{kind:"money",align:"text-right"}}))
+    ));
     const gov=contentArea(
       box("pipeline-meta",small("Revenue Target: "+m.target_status),small("Profit Status: "+m.profit_protection_status),
         small("Revenue Gap: "+(m.revenue_target===null?"—":"฿"+money(Number(m.net_revenue)-Number(m.revenue_target))))),
@@ -371,7 +420,7 @@
       }));
       $("#modelFilter").value=state.model;
       $("#monthFilter").addEventListener("change",e=>{state.month=e.target.value;render()});
-      $("#groupFilter").addEventListener("change",e=>{state.group=e.target.value;render()});
+      $("#groupFilter").addEventListener("change",e=>{state.group=e.target.value;state.sku="";render()});
       $("#modelFilter").addEventListener("change",e=>{state.model=e.target.value;state.replay=false;render()});
       $("#snapshotStamp").textContent=d.generated_at_utc?new Intl.DateTimeFormat("th-TH",{
         timeZone:"Asia/Bangkok",year:"numeric",month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"

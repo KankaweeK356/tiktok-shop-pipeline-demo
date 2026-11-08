@@ -15,15 +15,23 @@ export default async function handler(req,res){
                 result_summary->>'backfill_type' AS evidence_type,
                 result_summary->>'note' AS evidence_note
                 FROM demo_control.pipeline_runs WHERE dataset_key='classroom'
+                  AND cycle_number=(SELECT cycle_number FROM demo_control.dataset_state WHERE dataset_key='classroom')
                 ORDER BY created_at DESC LIMIT 12`),
       sql.query(`SELECT (SELECT COUNT(*) FROM demo_er1."Fact_Orders")::int AS orders,
                 (SELECT COUNT(*) FROM demo_er1."Fact_Order_Items")::int AS order_items,
-                (SELECT COUNT(*) FROM demo_control.pipeline_artifacts)::int AS artifacts,
-                (SELECT COUNT(*) FROM demo_control.stage_runs)::int AS stage_records`),
+                (SELECT COUNT(*) FROM demo_control.pipeline_artifacts a
+                  JOIN demo_control.pipeline_runs r ON r.run_id=a.run_id
+                  JOIN demo_control.dataset_state d ON d.dataset_key=r.dataset_key
+                 WHERE r.cycle_number=d.cycle_number)::int AS artifacts,
+                (SELECT COUNT(*) FROM demo_control.pipeline_artifacts)::int AS historical_artifacts_including_prior_cycles,
+                (SELECT COUNT(*) FROM demo_control.stage_runs s
+                  JOIN demo_control.pipeline_runs r ON r.run_id=s.run_id
+                  JOIN demo_control.dataset_state d ON d.dataset_key=r.dataset_key
+                 WHERE r.cycle_number=d.cycle_number)::int AS stage_records`),
     ]);
     return res.status(200).json({connected:true,origin:"NEON_LIVE",branch:"demo-pipeline",
       state:state[0]??null,runs,counts:counts[0],generated_at:new Date().toISOString(),
-      artifact_scope:"metadata recorded in Neon; does not prove object bytes exist without verification"});
+      artifact_scope:"Artifacts and runs are scoped to active cycle; older recovery archives are preserved separately"});
   }catch(err){
     console.error("Neon run status error",err?.code||err?.name||"unknown");
     return res.status(503).json({connected:false,error:"ไม่สามารถตรวจสอบสถานะ Pipeline จาก Neon ได้"});

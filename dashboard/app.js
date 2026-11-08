@@ -2,7 +2,7 @@
 (function () {
   "use strict";
   const $ = s => document.querySelector(s);
-  const state = { data:null, evidence:null, evidenceLayer:"source", evidenceTable:"", neonStatus:"not_loaded", neonTables:[], neonTable:"", neonData:null, neonError:"", view:"business", month:"", group:"ALL", sku:"", model:"", week:"", replay:false, rows:[] };
+  const state = { data:null, evidence:null, evidenceLayer:"source", evidenceTable:"", neonStatus:"not_loaded", neonTables:[], neonTable:"", neonData:null, neonError:"", neonRunStatus:null, view:"business", month:"", group:"ALL", sku:"", model:"", week:"", replay:false, rows:[] };
   const names = {
     business:["ภาพรวมธุรกิจ","ยอดขาย กำไร และ KPI ของร้านเสื้อผ้าผู้หญิง","ภาพรวมธุรกิจ"],
     pipeline:["ทดสอบการนำเข้าข้อมูล","เส้นทางข้อมูลจากต้นทางถึงคลังข้อมูลและหลักฐานการตรวจสอบ","การนำเข้าข้อมูล"],
@@ -297,6 +297,13 @@
         state.neonTables=payload.tables;
         state.neonData=null;
         state.neonTable="";
+        try {
+          const statusResponse=await fetch("/api/neon-status",{cache:"no-store"});
+          const live=await statusResponse.json();
+          if(statusResponse.ok&&live.connected&&live.origin==="NEON_LIVE")
+            state.neonRunStatus=live;
+        }catch(_error){state.neonRunStatus=null;}
+
       }else{
         state.neonData=payload;
         state.neonTable=table;
@@ -320,6 +327,33 @@
       wrap.append(small("กดตรวจสอบเพื่ออ่านรายชื่อตารางจริงจาก Neon"));
     }else{
       wrap.append(small("เชื่อมต่อได้ · Schema demo_er1 · "+state.neonTables.length+" ตาราง · ข้อมูลจำลอง"));
+      const live=state.neonRunStatus;
+      if(live?.state){
+        const phase=live.state.phase;
+        const translated={EMPTY:"ยังไม่มีข้อมูลการทดสอบ",RUN1_READY:"Run 1 ผ่านแล้ว",
+          RUN2_READY:"Run 2 ผ่านแล้ว · พร้อมตรวจผล"};
+        wrap.append(box("pipeline-meta",
+          small("สถานะจริง: "+(translated[phase]||phase)),
+          small("รอบข้อมูล: "+live.state.cycle_number),
+          small("ออเดอร์ใน Neon: "+money(live.counts.orders)),
+          small("รายการสินค้า: "+money(live.counts.order_items)),
+          small("หลักฐานไฟล์ที่ลงทะเบียน: "+money(live.counts.artifacts))));
+        if(live.runs?.length){
+          const rows=live.runs.slice(0,8).map(row=>({
+            run_type:row.run_type,status:row.status,
+            evidence_type:row.evidence_type==="HISTORICAL_EVIDENCE_IMPORT"?
+              "บันทึกย้อนหลังจากรายงาน GitHub":"บันทึกจากระบบ",
+            runner_ref:row.runner_ref||"—"
+          }));
+          wrap.append(small("ประวัติการประมวลผล (Neon Control)"));
+          wrap.append(dataTable([
+            ["run_type","การรัน"],["status","ผล"],["evidence_type","ที่มาหลักฐาน"]
+          ],rows));
+        }
+        if(live.counts.artifacts===0)
+          wrap.append(notice("ยังไม่มีไฟล์ Data Lake ที่ลงทะเบียนในพื้นที่จัดเก็บถาวร · ประวัติ Run บันทึกแล้ว แต่ยังต้องเก็บไฟล์ Parquet/คลังข้อมูล",true));
+      }
+
       if(state.neonTables.length){
         wrap.append(chooseField("เลือกตารางใน Neon",
           [["","— เลือกตาราง —"],...state.neonTables.map(t=>[t,t])],
@@ -351,7 +385,7 @@
   function renderPipeline(){
     const p=state.data.pipeline,meta=p.history.source||{};
     const root=$("#app");root.replaceChildren();
-    root.append(notice("ขณะนี้เป็นผลทดสอบ Pipeline จาก SQLite/DuckDB ใน GitHub Actions ยังไม่ได้อ่านข้อมูลจาก Neon โดยตรง",true));
+    root.append(notice("ข้อมูล Neon ด้านบนเป็นสถานะสดจาก PostgreSQL ส่วนแผนภาพและ KPI ของ Batch ด้านล่างเป็น Snapshot การทดสอบ SQLite/DuckDB แยกกัน",true));
     renderNeonExplorer(root);
     root.append(add(box("metrics"),
       metric("ฐานข้อมูลต้นทาง · SQLite","25 ตาราง","OLTP Schema"),

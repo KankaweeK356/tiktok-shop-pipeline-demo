@@ -21,7 +21,7 @@ def test_neon_ddl_matches_er1_contract():
     )
     assert set(control) == {
         "dataset_state", "pipeline_runs", "stage_runs",
-        "reset_audit", "pipeline_artifacts", "stage_events",
+        "reset_audit", "pipeline_artifacts", "stage_events", "upload_sessions",
     }
     for table in tables:
         names = re.findall(

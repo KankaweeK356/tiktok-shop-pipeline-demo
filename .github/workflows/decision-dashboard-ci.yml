@@ -40,11 +40,14 @@ jobs:
         run: python -m pipeline.export_dashboard --output dashboard/data/report.json
       - name: Export Data Explorer evidence from generated local-engine pipeline
         run: python -c "from pathlib import Path; from pipeline.classroom_evidence import export_classroom_evidence; export_classroom_evidence(Path('output/ml_history_ci/main'),Path('dashboard/data/classroom_evidence.json'))"
+      - name: Verify Neon source adapter contracts without cloud credentials
+        run: python -m pytest -q tests/test_neon_source.py
       - name: Test KPIs provenance and security boundaries
         run: python -m pytest -q tests/test_dashboard.py
       - name: Validate frontend JavaScript and Vercel config
         run: |
           node --check dashboard/app.js
+          node --check api/neon-evidence.js
           python -c "import json;from pathlib import Path; p=json.loads(Path('vercel.json').read_text()); assert p['outputDirectory']=='dashboard'; assert Path('dashboard/data/report.json').is_file()"
       - name: Commit generated snapshot for the static frontend
         if: github.event_name == 'pull_request'

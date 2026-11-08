@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#b91c1c">
+  <meta name="description" content="TikTok Shop Synthetic Data | Data Engineering & MLOps Decision Dashboard">
+  <title>Commerce Intelligence | MLOps Demo</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-lockup">
+      <span class="logo-mark" aria-hidden="true">C<span class="dot">.</span></span>
+      <div>
+        <div class="brand-name">Commerce <strong>Intelligence</strong></div>
+        <div class="brand-sub">TikTok Shop · Data Engineering & MLOps</div>
+      </div>
+    </div>
+    <div class="topbar-meta">
+      <span class="tag tag-red">SYNTHETIC DATA</span>
+      <span class="tag" id="headerMode">Offline demo · loading</span>
+      <a id="repoLink" class="header-link" href="https://github.com/KankaweeK356/tiktok-shop-pipeline-demo" target="_blank" rel="noopener">GitHub ↗</a>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside class="sidebar" aria-label="เมนูหน้าจอ">
+      <p class="side-label">WORKSPACE</p>
+      <nav id="navigation" class="navigation" aria-label="เปลี่ยนหน้าจอ">
+        <button type="button" data-view="business" class="nav-item is-active" aria-current="page">
+          <span class="nav-icon" aria-hidden="true">◫</span><span>Business Overview</span>
+        </button>
+        <button type="button" data-view="pipeline" class="nav-item">
+          <span class="nav-icon" aria-hidden="true">⛓</span><span>Pipeline Explorer</span>
+        </button>
+        <button type="button" data-view="ml" class="nav-item">
+          <span class="nav-icon" aria-hidden="true">◇</span><span>ML Lab & Monitoring</span>
+        </button>
+      </nav>
+      <div class="side-bottom">
+        <div class="side-caption">DATA GOVERNANCE</div>
+        <div class="meta-row"><span>Environment</span><strong>Classroom</strong></div>
+        <div class="meta-row"><span>Source</span><strong>Mock</strong></div>
+        <div class="meta-row"><span>Model</span><strong>Demo only</strong></div>
+        <div class="side-note">ตัวเลขทุกค่าอ่านจากรายงานที่ระบบสร้าง ไม่ใช่ยอดขาย TikTok จริง</div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="page-heading">
+        <div>
+          <p class="eyebrow">ANALYTICS WORKSPACE / <span id="crumbView">BUSINESS OVERVIEW</span></p>
+          <h1 id="pageTitle">Business Overview</h1>
+          <p id="pageSubtitle" class="page-subtitle">ยอดขาย กำไร และประสิทธิภาพการตลาดของร้านค้า Mock</p>
+        </div>
+        <div class="asof-area"><span class="asof-label">SOURCE SNAPSHOT</span><strong id="snapshotStamp">—</strong></div>
+      </div>
+      <div id="dataWarning" class="notice notice-info" role="status">
+        <span aria-hidden="true">ⓘ</span>
+        <span>ข้อมูลสังเคราะห์สำหรับการสาธิต ไม่ใช่ระบบจริงหรือการคาดการณ์ผลตอบแทนจากโฆษณา</span>
+      </div>
+      <section id="controlBar" class="filters" aria-label="ตัวกรองข้อมูล">
+        <label class="field" id="monthFilterWrap">
+          <span>เดือนที่วิเคราะห์</span>
+          <select id="monthFilter"><option value="">กำลังอ่านข้อมูล…</option></select>
+        </label>
+        <label class="field" id="groupFilterWrap">
+          <span>Product Group</span>
+          <select id="groupFilter"><option value="ALL">ทุกกลุ่ม</option></select>
+        </label>
+        <label class="field hidden" id="modelFilterWrap">
+          <span>โมเดลเปรียบเทียบ</span>
+          <select id="modelFilter"></select>
+        </label>
+        <button id="exportCurrent" class="button button-outline" type="button">↓ Export CSV</button>
+      </section>
+      <div id="app" class="app-body" aria-live="polite">
+        <div class="loading">กำลังโหลดข้อมูลจาก Pipeline และ ML Reports…</div>
+      </div>
+      <footer class="footer">
+        <span>Educational demo · Financial rules from DuckDB Monthly KPI View</span>
+        <span id="footerStatus">Data source: not loaded</span>
+      </footer>
+    </main>
+  </div>
+</body>
+</html>

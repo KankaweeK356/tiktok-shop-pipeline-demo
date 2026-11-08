@@ -1,0 +1,68 @@
+name: Decision Dashboard - Source-backed Demo and Static Checks
+
+on:
+  pull_request:
+    paths:
+      - 'dashboard/**'
+      - 'pipeline/export_dashboard.py'
+      - 'tests/test_dashboard.py'
+      - 'vercel.json'
+      - '.github/workflows/decision-dashboard-ci.yml'
+  workflow_dispatch:
+
+# Only trusted same-repository PRs get a write-capable token.
+permissions:
+  contents: write
+
+jobs:
+  dashboard-evidence:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout review branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          persist-credentials: true
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: Install ETL and ML dependencies
+        run: python -m pip install -r requirements-ml.txt
+      - name: Generate Source and reconcile Database Lake Warehouse
+        run: python -m pipeline.ci_ml_history
+      - name: Train weekly ML models Serving and Monitoring
+        run: python -m pipeline.ci_ml_weekly_demo
+      - name: Export verified static report
+        run: python -m pipeline.export_dashboard --output dashboard/data/report.json
+      - name: Test KPIs provenance and security boundaries
+        run: python -m pytest -q tests/test_dashboard.py
+      - name: Validate frontend JavaScript and Vercel config
+        run: |
+          node --check dashboard/app.js
+          python -c "import json;from pathlib import Path; p=json.loads(Path('vercel.json').read_text()); assert p['outputDirectory']=='dashboard'; assert Path('dashboard/data/report.json').is_file()"
+      - name: Commit generated snapshot for the static frontend
+        if: github.event_name == 'pull_request'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f dashboard/data/report.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'data(dashboard): refresh validated synthetic snapshot'
+            git push origin "HEAD:$GITHUB_HEAD_REF"
+          fi
+      - name: Upload tested frontend and evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tiktok-decision-dashboard-demo-evidence
+          path: |
+            dashboard/
+            output/ml_history_ci/main/reports/ml_weekly/weekly_test_metrics.csv
+            output/ml_history_ci/main/reports/ml_weekly/weekly_backtest_summary.json
+            output/ml_history_ci/main/reports/functional_incremental.json
+          if-no-files-found: warn
+          retention-days: 14

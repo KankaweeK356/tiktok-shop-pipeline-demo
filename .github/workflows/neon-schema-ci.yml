@@ -1,0 +1,27 @@
+name: Neon ER1 Schema Contract
+
+on:
+  pull_request:
+    paths:
+      - 'sql/neon_er1_demo_bootstrap.sql'
+      - 'tests/test_neon_schema.py'
+      - 'docs/NEON_CLASSROOM_PIPELINE_ARCHITECTURE_TH.md'
+      - '.github/workflows/neon-schema-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-neon-schema:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install test runner
+        run: python -m pip install "pytest>=8,<10"
+      - name: Check ER1 contract, 26 references and scoped metadata
+        run: python -m pytest -q tests/test_neon_schema.py

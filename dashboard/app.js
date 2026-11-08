@@ -2,7 +2,7 @@
 (function () {
   "use strict";
   const $ = s => document.querySelector(s);
-  const state = { data:null, evidence:null, evidenceLayer:"source", evidenceTable:"", neonStatus:"not_loaded", neonTables:[], neonTable:"", neonData:null, neonError:"", neonRunStatus:null, view:"business", month:"", group:"ALL", sku:"", model:"", week:"", replay:false, rows:[] };
+  const state = { data:null, evidence:null, evidenceLayer:"source", evidenceTable:"", neonStatus:"not_loaded", neonTables:[], neonTable:"", neonData:null, neonError:"", neonRunStatus:null, neonArtifactType:"ALL", view:"business", month:"", group:"ALL", sku:"", model:"", week:"", replay:false, rows:[] };
   const names = {
     business:["ภาพรวมธุรกิจ","ยอดขาย กำไร และ KPI ของร้านเสื้อผ้าผู้หญิง","ภาพรวมธุรกิจ"],
     pipeline:["ทดสอบการนำเข้าข้อมูล","เส้นทางข้อมูลจากต้นทางถึงคลังข้อมูลและหลักฐานการตรวจสอบ","การนำเข้าข้อมูล"],
@@ -352,6 +352,28 @@
         }
         if(live.counts.artifacts===0)
           wrap.append(notice("ยังไม่มีไฟล์ Data Lake ที่ลงทะเบียนในพื้นที่จัดเก็บถาวร · ประวัติ Run บันทึกแล้ว แต่ยังต้องเก็บไฟล์ Parquet/คลังข้อมูล",true));
+        const files=live.archived_files||[];
+        if(files.length){
+          const types=["ALL",...new Set(files.map(f=>f.artifact_type))];
+          if(!types.includes(state.neonArtifactType))state.neonArtifactType="ALL";
+          wrap.append(chooseField("เลือกประเภทไฟล์หลักฐาน",types.map(t=>
+            [t,t==="ALL"?"ทุกประเภท":t]),state.neonArtifactType,v=>{
+              state.neonArtifactType=v;renderPipeline();
+            }));
+          const filtered=files.filter(f=>state.neonArtifactType==="ALL"||
+            f.artifact_type===state.neonArtifactType);
+          const shown=filtered.map(f=>({
+            artifact_type:f.artifact_type,
+            filename:(f.artifact_uri||"").split("/").pop(),
+            bytes:f.size_bytes,
+            stage:f.stage_name
+          }));
+          wrap.append(dataTable([
+            ["artifact_type","ประเภทไฟล์"],["filename","ชื่อไฟล์"],
+            ["stage","ขั้นตอน"],["bytes","ขนาด (Bytes)"]
+          ],shown));
+          wrap.append(small("เป็นรายการหลักฐานจาก Neon Control · พื้นที่เก็บไฟล์เป็น Private และตรวจว่ามีไฟล์จริงแล้ว"));
+        }
       }
 
       if(state.neonTables.length){

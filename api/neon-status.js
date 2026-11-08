@@ -9,7 +9,7 @@ export default async function handler(req,res){
   if(!connection)return res.status(503).json({connected:false,error:"ยังไม่ได้ตั้งค่าการเชื่อมต่อ Neon"});
   try{
     const sql=neon(connection);
-    const [state,runs,counts,files]=await Promise.all([
+    const [state,runs,files,counts]=await Promise.all([
       sql.query("SELECT phase,cycle_number,lock_version,updated_at,last_run_id FROM demo_control.dataset_state WHERE dataset_key='classroom' LIMIT 1"),
       sql.query(`SELECT run_id::text,run_type,status,runner_ref,triggered_by,created_at,
                 result_summary->>'backfill_type' AS evidence_type,

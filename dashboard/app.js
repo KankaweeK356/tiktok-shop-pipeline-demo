@@ -92,6 +92,14 @@
     return label;
   }
 
+  function fashionThumb(){
+    const image=node("img","fashion-preview");
+    image.src="./assets/womens-top.svg";
+    image.alt="ภาพประกอบเสื้อผู้หญิง ไม่ใช่ภาพสินค้าจริง";
+    image.loading="lazy";
+    return image;
+  }
+
   function renderBusiness(){
     const d=state.data,months=d.business.months;
     const m=months.find(x=>x.month===state.month)||months[months.length-1];
@@ -151,7 +159,7 @@
         contribution_before_group_costs:{kind:"money",align:"text-right"}};
       const selected=skuRows.find(x=>x.sku_id===state.sku);
       const detail=selected?box("scenario-results",
-        box("",small("รหัส SKU "+selected.sku_id+" · "+title(selected.product_group_id)),
+        box("",fashionThumb(),small("รหัส SKU "+selected.sku_id+" · "+title(selected.product_group_id)),
           node("strong","", "ยอดขาย ฿"+money(selected.net_revenue)+" · "+money(selected.quantity)+" ชิ้น"),
           small("ต้นทุนสินค้า ฿"+money(selected.cogs)+" · ส่วนลดแคมเปญ ฿"+money(selected.campaign_reduction)+
             " · ส่วนลด Voucher ฿"+money(selected.voucher_discount)),

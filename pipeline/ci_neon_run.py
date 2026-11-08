@@ -17,6 +17,7 @@ import psycopg
 from .schema import ROOT
 from .orchestrator import run_batch, reset
 from .demo_tests import signature
+from .neon_control import begin_run, complete_run, fail_run
 
 
 def _assert_empty(database_url: str):
@@ -48,12 +49,32 @@ def main():
     _assert_empty(db_url)
     ws = ROOT / "output" / "neon_demo"
     reset(ws)
-    run1 = run_batch(ws, "initial")
-    before = signature(ws)
-    run2 = run_batch(ws, "incremental")
-    after = signature(ws)
-    replay = run_batch(ws, "incremental")
-    stable = signature(ws) == after
+    run1_id=begin_run(db_url,"RUN1")
+    try:
+        run1=run_batch(ws,"initial")
+        complete_run(db_url,run1_id,"RUN1",run1,ws)
+    except Exception as exc:
+        fail_run(db_url,run1_id,"RUN1",ws,exc)
+        raise
+    before=signature(ws)
+    run2_id=begin_run(db_url,"RUN2")
+    try:
+        run2=run_batch(ws,"incremental")
+        complete_run(db_url,run2_id,"RUN2",run2,ws)
+    except Exception as exc:
+        fail_run(db_url,run2_id,"RUN2",ws,exc)
+        raise
+    after=signature(ws)
+    replay_id=begin_run(db_url,"REPLAY")
+    try:
+        replay=run_batch(ws,"incremental")
+        stable=signature(ws)==after
+        if not stable:
+            raise AssertionError("Replay changed financial signature")
+        complete_run(db_url,replay_id,"REPLAY",replay,ws)
+    except Exception as exc:
+        fail_run(db_url,replay_id,"REPLAY",ws,exc)
+        raise
     if (run1["status"] != "SUCCESS" or run2["status"] != "SUCCESS"
             or replay["status"] != "SUCCESS" or
             run1["functional_fails"] or run2["functional_fails"] or

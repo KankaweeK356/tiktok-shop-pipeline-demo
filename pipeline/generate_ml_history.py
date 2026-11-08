@@ -201,7 +201,7 @@ def generate_ml_history(
     first_plan = start
     last_plan = NOVEMBER_INCREMENTAL
 
-    # For each date/group, create a frozen plan known *before* the sale date.
+    # For each date/group, create a frozen 35-day-ahead plan known *before* the sale date.
     # Realized spend may differ from budget; order demand has seasonality and
     # stochastic variation. These are *simulation rules*, NOT learned effects.
     for day in _days(first_plan, last_plan):
@@ -225,7 +225,7 @@ def generate_ml_history(
                 "planned_campaign_discount_rate": discount,
                 "plan_status": "HISTORICAL",
                 "plan_source": "SYNTHETIC_HISTORICAL_PLAN",
-                "recorded_at": f"{(day - timedelta(days=1)).isoformat()}T17:00:00+07:00",
+                "recorded_at": f"{(day - timedelta(days=35)).isoformat()}T17:00:00+07:00",
             })
             if not in_history:
                 # October/Nov remain controlled by the established source demo.
@@ -337,7 +337,7 @@ def generate_ml_history(
         f"Seed: {seed}\n"
         f"Historical paid order range: {start} to {end}\n"
         "The original October 2026 and November incremental examples are retained.\n"
-        "Plans were GENERATED as if recorded before each date, NOT sourced from real planning systems.\n"
+        "Plans were GENERATED 35 days before planned dates (synthetic), NOT sourced from real planning systems.\n"
         "Actual Ads spend varies around the generated plan; demand includes stochastic seasonality.\n"
         "These synthetic patterns are NOT evidence of a real-world advertising causal effect.\n"
         "Do NOT mark a retrospective latest-DWH feature snapshot as point-in-time verified.\n",

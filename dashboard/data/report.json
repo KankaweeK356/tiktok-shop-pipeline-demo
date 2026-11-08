@@ -1,0 +1,3656 @@
+{
+  "schema_version": "decision_dashboard_v1",
+  "generated_at_utc": "2026-11-08T11:33:29.296112+00:00",
+  "source_classification": "SYNTHETIC_EDUCATIONAL_NOT_TIKTOK",
+  "snapshot_mode": "BATCH_SNAPSHOT_NOT_LIVE",
+  "source_run": "ml_history_ci__incremental__weekly_mlops_demo",
+  "links": {
+    "repo": "https://github.com/KankaweeK356/tiktok-shop-pipeline-demo",
+    "pipeline": "https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/actions/workflows/ml-history-ci.yml",
+    "ml": "https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/actions/workflows/ml-weekly-demo-ci.yml",
+    "schema": "https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/blob/main/schemas/ER2_V5.dbml",
+    "ml_guide": "https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/blob/main/docs/ML_WEEKLY_DEMO_GUIDE_TH.md"
+  },
+  "pipeline": {
+    "history": {
+      "source": {
+        "profile": "ML_HISTORICAL_SYNTHETIC",
+        "seed": 8102,
+        "historical_start": "2025-11-01",
+        "historical_end": "2026-09-30",
+        "historical_orders": 2752,
+        "historical_order_items": 3215,
+        "historical_ads_rows": 1670,
+        "marketing_plan_rows": 1830,
+        "historic_campaign_enrolments": 86,
+        "historic_monthly_targets": 11,
+        "original_demo": {
+          "initial_orders": 800,
+          "incremental_new_orders": 100,
+          "pending_to_paid": 24,
+          "late_fulfillment_updates": 8
+        },
+        "source": "output/ml_history_ci/source"
+      },
+      "initial_pipeline": {
+        "status": "SUCCESS",
+        "functional_fails": 0,
+        "paid_item_rows": 4212
+      },
+      "incremental_pipeline": {
+        "status": "SUCCESS",
+        "functional_fails": 0,
+        "paid_item_rows": 4382
+      },
+      "months": 13,
+      "product_group_month_rows": 65,
+      "historical_ad_fact_rows": 1670,
+      "ads_reconciliation_difference": 0.0,
+      "feature_preview_rows": 10,
+      "feature_preview_training_ready": false,
+      "data_classification": "SYNTHETIC_EDUCATIONAL_NOT_TIKTOK"
+    },
+    "initial": {
+      "batch": "initial",
+      "checks": 53,
+      "passed": 53,
+      "failed": 0,
+      "source_paid_item_count": 4212,
+      "warehouse_sales_item_count": 4212,
+      "er1_net_revenue": 1267809.32,
+      "er2_net_revenue": 1267809.32,
+      "monthly_kpis": [
+        {
+          "month": "2025-11",
+          "gross": 84612.0,
+          "net": 81745.27,
+          "profit": 31053.39,
+          "protection": "PASS"
+        },
+        {
+          "month": "2025-12",
+          "gross": 94470.0,
+          "net": 90953.4,
+          "profit": 33286.06,
+          "protection": "PASS"
+        },
+        {
+          "month": "2026-01",
+          "gross": 99221.0,
+          "net": 96997.64,
+          "profit": 37124.79,
+          "protection": "PASS"
+        },
+        {
+          "month": "2026-02",
+          "gross": 65250.0,
+          "net": 61939.15,
+          "profit": 21598.87,
+          "protection": "PASS"
+        },
+        {
+          "month": "2026-03",
+          "gross": 79389.0,
+          "net": 77332.4,
+          "profit": 28553.84,
+          "protection": "PASS"
+        },
+        {
+          "month": "2026-04",
+          "gross": 78452.0,
+          "net": 74559.53,
+          "profit": 27468.94,
+          "protection": "PASS"
+        },
+        {
+          "month": "2026-05",
+          "gross": 85391.0,
+          "net": 82161.88,
+          "profit": 30418.7,
+          "protection": "PASS"
+        },
+        {
+          "month": "2026-06",
+          "gross": 91712.0,
+          "net": 88495.48,
+          "profit": 33379.92,
+          "protection": "PASS"
+        },
+        {
+          "month": "2026-07",
+          "gross": 92272.0,
+          "net": 89175.58,
+          "profit": 33041.79,
+          "protection": "PASS"
+        },
+        {
+          "month": "2026-08",
+          "gross": 81272.0,
+          "net": 79116.8,
+          "profit": 29784.47,
+          "protection": "PASS"
+        },
+        {
+          "month": "2026-09",
+          "gross": 81589.0,
+          "net": 78043.89,
+          "profit": 28115.94,
+          "protection": "PASS"
+        },
+        {
+          "month": "2026-10",
+          "gross": 382973.0,
+          "net": 367288.3,
+          "profit": 145016.33,
+          "protection": "PASS"
+        },
+        {
+          "month": "2026-11",
+          "gross": 0.0,
+          "net": 0.0,
+          "profit": 0.0,
+          "protection": "NO_REFERENCE_SALES"
+        }
+      ]
+    },
+    "incremental": {
+      "batch": "incremental",
+      "checks": 54,
+      "passed": 54,
+      "failed": 0,
+      "source_paid_item_count": 4382,
+      "warehouse_sales_item_count": 4382,
+      "er1_net_revenue": 1332877.67,
+      "er2_net_revenue": 1332877.67,
+      "monthly_kpis": [
+        {
+          "month": "2025-11",
+          "gross": 84612.0,
+          "net": 81745.27,
+          "profit": 31053.39,
+          "protection": "PASS"
+        },
+        {
+          "month": "2025-12",
+          "gross": 94470.0,
+          "net": 90953.4,
+          "profit": 33286.06,
+          "protection": "PASS"
+        },
+        {
+          "month": "2026-01",
+          "gross": 99221.0,
+          "net": 96997.64,
+          "profit": 37124.79,
+          "protection": "PASS"
+        },
+        {
+          "month": "2026-02",
+          "gross": 65250.0,
+          "net": 61939.15,
+          "profit": 21598.87,
+          "protection": "PASS"
+        },
+        {
+          "month": "2026-03",
+          "gross": 79389.0,
+          "net": 77332.4,
+          "profit": 28553.84,
+          "protection": "PASS"
+        },
+        {
+          "month": "2026-04",
+          "gross": 78452.0,
+          "net": 74559.53,
+          "profit": 27468.94,
+          "protection": "PASS"
+        },
+        {
+          "month": "2026-05",
+          "gross": 85391.0,
+          "net": 82161.88,
+          "profit": 30418.7,
+          "protection": "PASS"
+        },
+        {
+          "month": "2026-06",
+          "gross": 91712.0,
+          "net": 88495.48,
+          "profit": 33379.92,
+          "protection": "PASS"
+        },
+        {
+          "month": "2026-07",
+          "gross": 92272.0,
+          "net": 89175.58,
+          "profit": 33041.79,
+          "protection": "PASS"
+        },
+        {
+          "month": "2026-08",
+          "gross": 81272.0,
+          "net": 79116.8,
+          "profit": 29784.47,
+          "protection": "PASS"
+        },
+        {
+          "month": "2026-09",
+          "gross": 81589.0,
+          "net": 78043.89,
+          "profit": 28115.94,
+          "protection": "PASS"
+        },
+        {
+          "month": "2026-10",
+          "gross": 382973.0,
+          "net": 367288.3,
+          "profit": 144992.33,
+          "protection": "PASS"
+        },
+        {
+          "month": "2026-11",
+          "gross": 69096.0,
+          "net": 65068.35,
+          "profit": 25540.79,
+          "protection": "PASS"
+        }
+      ]
+    },
+    "stages": [
+      {
+        "batch": "initial",
+        "stage": "ingest",
+        "status": "SUCCESS",
+        "elapsed_seconds": 1.8245,
+        "summary": {
+          "input_records": 13821,
+          "modified_orders": 3552,
+          "source_tables": 21
+        }
+      },
+      {
+        "batch": "initial",
+        "stage": "extract",
+        "status": "SUCCESS",
+        "elapsed_seconds": 0.1425,
+        "summary": {
+          "parquet_tables": 25,
+          "source_files": 21,
+          "raw_records": 22385
+        }
+      },
+      {
+        "batch": "initial",
+        "stage": "transform",
+        "status": "SUCCESS",
+        "elapsed_seconds": 0.4101,
+        "summary": {
+          "standardized_tables": 11,
+          "changed_sales": 4212,
+          "changed_ads": 1825,
+          "changed_samples": 11,
+          "dirty_groups_dates": 1825
+        }
+      },
+      {
+        "batch": "initial",
+        "stage": "load",
+        "status": "SUCCESS",
+        "elapsed_seconds": 22.1192,
+        "summary": {
+          "loaded_rows": {
+            "Dim_Date": 395,
+            "Dim_Product": 140,
+            "Dim_Creator": 9,
+            "Dim_Ad_Campaign": 3,
+            "Dim_Voucher": 4,
+            "Dim_Cost_Basis": 2,
+            "Fact_Sales_Order_Item": 4212,
+            "Fact_Ads_Daily": 1825,
+            "Fact_Free_Sample": 11,
+            "Fact_Business_Target_Monthly": 13,
+            "Mart_Product_Group_Daily_Performance": 1825
+          },
+          "total_loaded": 8439,
+          "sales_fact_rows": 4212
+        }
+      },
+      {
+        "batch": "initial",
+        "stage": "validate",
+        "status": "SUCCESS",
+        "elapsed_seconds": 0.066,
+        "summary": {
+          "batch": "initial",
+          "checks": 53,
+          "passed": 53,
+          "failed": 0,
+          "source_paid_item_count": 4212,
+          "warehouse_sales_item_count": 4212,
+          "er1_net_revenue": 1267809.32,
+          "er2_net_revenue": 1267809.32,
+          "monthly_kpis": [
+            {
+              "month": "2025-11",
+              "gross": 84612.0,
+              "net": 81745.27,
+              "profit": 31053.39,
+              "protection": "PASS"
+            },
+            {
+              "month": "2025-12",
+              "gross": 94470.0,
+              "net": 90953.4,
+              "profit": 33286.06,
+              "protection": "PASS"
+            },
+            {
+              "month": "2026-01",
+              "gross": 99221.0,
+              "net": 96997.64,
+              "profit": 37124.79,
+              "protection": "PASS"
+            },
+            {
+              "month": "2026-02",
+              "gross": 65250.0,
+              "net": 61939.15,
+              "profit": 21598.87,
+              "protection": "PASS"
+            },
+            {
+              "month": "2026-03",
+              "gross": 79389.0,
+              "net": 77332.4,
+              "profit": 28553.84,
+              "protection": "PASS"
+            },
+            {
+              "month": "2026-04",
+              "gross": 78452.0,
+              "net": 74559.53,
+              "profit": 27468.94,
+              "protection": "PASS"
+            },
+            {
+              "month": "2026-05",
+              "gross": 85391.0,
+              "net": 82161.88,
+              "profit": 30418.7,
+              "protection": "PASS"
+            },
+            {
+              "month": "2026-06",
+              "gross": 91712.0,
+              "net": 88495.48,
+              "profit": 33379.92,
+              "protection": "PASS"
+            },
+            {
+              "month": "2026-07",
+              "gross": 92272.0,
+              "net": 89175.58,
+              "profit": 33041.79,
+              "protection": "PASS"
+            },
+            {
+              "month": "2026-08",
+              "gross": 81272.0,
+              "net": 79116.8,
+              "profit": 29784.47,
+              "protection": "PASS"
+            },
+            {
+              "month": "2026-09",
+              "gross": 81589.0,
+              "net": 78043.89,
+              "profit": 28115.94,
+              "protection": "PASS"
+            },
+            {
+              "month": "2026-10",
+              "gross": 382973.0,
+              "net": 367288.3,
+              "profit": 145016.33,
+              "protection": "PASS"
+            },
+            {
+              "month": "2026-11",
+              "gross": 0.0,
+              "net": 0.0,
+              "profit": 0.0,
+              "protection": "NO_REFERENCE_SALES"
+            }
+          ],
+          "lineage": {
+            "traced_items": 8,
+            "file": "output/ml_history_ci/main/reports/lineage_initial.csv"
+          }
+        }
+      },
+      {
+        "batch": "incremental",
+        "stage": "ingest",
+        "status": "SUCCESS",
+        "elapsed_seconds": 0.0872,
+        "summary": {
+          "input_records": 402,
+          "modified_orders": 132,
+          "source_tables": 5
+        }
+      },
+      {
+        "batch": "incremental",
+        "stage": "extract",
+        "status": "SUCCESS",
+        "elapsed_seconds": 0.0787,
+        "summary": {
+          "parquet_tables": 25,
+          "source_files": 5,
+          "raw_records": 23235
+        }
+      },
+      {
+        "batch": "incremental",
+        "stage": "transform",
+        "status": "SUCCESS",
+        "elapsed_seconds": 0.1064,
+        "summary": {
+          "standardized_tables": 11,
+          "changed_sales": 182,
+          "changed_ads": 5,
+          "changed_samples": 1,
+          "dirty_groups_dates": 19
+        }
+      },
+      {
+        "batch": "incremental",
+        "stage": "load",
+        "status": "SUCCESS",
+        "elapsed_seconds": 1.4332,
+        "summary": {
+          "loaded_rows": {
+            "Dim_Date": 395,
+            "Dim_Product": 140,
+            "Dim_Creator": 9,
+            "Dim_Ad_Campaign": 3,
+            "Dim_Voucher": 4,
+            "Dim_Cost_Basis": 2,
+            "Fact_Sales_Order_Item": 182,
+            "Fact_Ads_Daily": 5,
+            "Fact_Free_Sample": 1,
+            "Fact_Business_Target_Monthly": 13,
+            "Mart_Product_Group_Daily_Performance": 19
+          },
+          "total_loaded": 773,
+          "sales_fact_rows": 4382
+        }
+      },
+      {
+        "batch": "incremental",
+        "stage": "validate",
+        "status": "SUCCESS",
+        "elapsed_seconds": 0.0668,
+        "summary": {
+          "batch": "incremental",
+          "checks": 54,
+          "passed": 54,
+          "failed": 0,
+          "source_paid_item_count": 4382,
+          "warehouse_sales_item_count": 4382,
+          "er1_net_revenue": 1332877.67,
+          "er2_net_revenue": 1332877.67,
+          "monthly_kpis": [
+            {
+              "month": "2025-11",
+              "gross": 84612.0,
+              "net": 81745.27,
+              "profit": 31053.39,
+              "protection": "PASS"
+            },
+            {
+              "month": "2025-12",
+              "gross": 94470.0,
+              "net": 90953.4,
+              "profit": 33286.06,
+              "protection": "PASS"
+            },
+            {
+              "month": "2026-01",
+              "gross": 99221.0,
+              "net": 96997.64,
+              "profit": 37124.79,
+              "protection": "PASS"
+            },
+            {
+              "month": "2026-02",
+              "gross": 65250.0,
+              "net": 61939.15,
+              "profit": 21598.87,
+              "protection": "PASS"
+            },
+            {
+              "month": "2026-03",
+              "gross": 79389.0,
+              "net": 77332.4,
+              "profit": 28553.84,
+              "protection": "PASS"
+            },
+            {
+              "month": "2026-04",
+              "gross": 78452.0,
+              "net": 74559.53,
+              "profit": 27468.94,
+              "protection": "PASS"
+            },
+            {
+              "month": "2026-05",
+              "gross": 85391.0,
+              "net": 82161.88,
+              "profit": 30418.7,
+              "protection": "PASS"
+            },
+            {
+              "month": "2026-06",
+              "gross": 91712.0,
+              "net": 88495.48,
+              "profit": 33379.92,
+              "protection": "PASS"
+            },
+            {
+              "month": "2026-07",
+              "gross": 92272.0,
+              "net": 89175.58,
+              "profit": 33041.79,
+              "protection": "PASS"
+            },
+            {
+              "month": "2026-08",
+              "gross": 81272.0,
+              "net": 79116.8,
+              "profit": 29784.47,
+              "protection": "PASS"
+            },
+            {
+              "month": "2026-09",
+              "gross": 81589.0,
+              "net": 78043.89,
+              "profit": 28115.94,
+              "protection": "PASS"
+            },
+            {
+              "month": "2026-10",
+              "gross": 382973.0,
+              "net": 367288.3,
+              "profit": 144992.33,
+              "protection": "PASS"
+            },
+            {
+              "month": "2026-11",
+              "gross": 69096.0,
+              "net": 65068.35,
+              "profit": 25540.79,
+              "protection": "PASS"
+            }
+          ],
+          "lineage": {
+            "traced_items": 8,
+            "file": "output/ml_history_ci/main/reports/lineage_incremental.csv"
+          }
+        }
+      }
+    ],
+    "lineage_sample": [
+      {
+        "Batch_Inspected": "incremental",
+        "Source_Order_Item_ID": "H20251101-PG01-001-I1",
+        "Source": "source/initial/Fact_Order_Items.csv",
+        "ER1_Order_ID": "H20251101-PG01-001",
+        "ER1_SKU_ID": "PG01-GR-S",
+        "ER1_Net_Revenue": 398.0,
+        "Lake_Raw": "lake/raw/initial/Fact_Order_Items.parquet",
+        "Lake_Standardized": "lake/standardized/initial/Fact_Sales_Order_Item.parquet",
+        "ER2_Sales_Item_ID": "H20251101-PG01-001-I1",
+        "ER2_Net_Revenue": 398.0,
+        "Sales_Date_Key": 20251101,
+        "Product_Group_ID": "PG01",
+        "Mart_Group_Daily_Revenue": 398.0,
+        "Monthly_KPI_Year_Month": "2025-11",
+        "Note": "This line CONTRIBUTES to group/day Mart, not a one-to-one KPI row"
+      },
+      {
+        "Batch_Inspected": "incremental",
+        "Source_Order_Item_ID": "H20251101-PG02-001-I1",
+        "Source": "source/initial/Fact_Order_Items.csv",
+        "ER1_Order_ID": "H20251101-PG02-001",
+        "ER1_SKU_ID": "PG02-RE-XL",
+        "ER1_Net_Revenue": 229.0,
+        "Lake_Raw": "lake/raw/initial/Fact_Order_Items.parquet",
+        "Lake_Standardized": "lake/standardized/initial/Fact_Sales_Order_Item.parquet",
+        "ER2_Sales_Item_ID": "H20251101-PG02-001-I1",
+        "ER2_Net_Revenue": 229.0,
+        "Sales_Date_Key": 20251101,
+        "Product_Group_ID": "PG02",
+        "Mart_Group_Daily_Revenue": 458.0,
+        "Monthly_KPI_Year_Month": "2025-11",
+        "Note": "This line CONTRIBUTES to group/day Mart, not a one-to-one KPI row"
+      },
+      {
+        "Batch_Inspected": "incremental",
+        "Source_Order_Item_ID": "H20251101-PG02-002-I1",
+        "Source": "source/initial/Fact_Order_Items.csv",
+        "ER1_Order_ID": "H20251101-PG02-002",
+        "ER1_SKU_ID": "PG02-WH-M",
+        "ER1_Net_Revenue": 229.0,
+        "Lake_Raw": "lake/raw/initial/Fact_Order_Items.parquet",
+        "Lake_Standardized": "lake/standardized/initial/Fact_Sales_Order_Item.parquet",
+        "ER2_Sales_Item_ID": "H20251101-PG02-002-I1",
+        "ER2_Net_Revenue": 229.0,
+        "Sales_Date_Key": 20251101,
+        "Product_Group_ID": "PG02",
+        "Mart_Group_Daily_Revenue": 458.0,
+        "Monthly_KPI_Year_Month": "2025-11",
+        "Note": "This line CONTRIBUTES to group/day Mart, not a one-to-one KPI row"
+      },
+      {
+        "Batch_Inspected": "incremental",
+        "Source_Order_Item_ID": "H20251101-PG03-001-I1",
+        "Source": "source/initial/Fact_Order_Items.csv",
+        "ER1_Order_ID": "H20251101-PG03-001",
+        "ER1_SKU_ID": "PG03-RE-L",
+        "ER1_Net_Revenue": 279.0,
+        "Lake_Raw": "lake/raw/initial/Fact_Order_Items.parquet",
+        "Lake_Standardized": "lake/standardized/initial/Fact_Sales_Order_Item.parquet",
+        "ER2_Sales_Item_ID": "H20251101-PG03-001-I1",
+        "ER2_Net_Revenue": 279.0,
+        "Sales_Date_Key": 20251101,
+        "Product_Group_ID": "PG03",
+        "Mart_Group_Daily_Revenue": 558.0,
+        "Monthly_KPI_Year_Month": "2025-11",
+        "Note": "This line CONTRIBUTES to group/day Mart, not a one-to-one KPI row"
+      },
+      {
+        "Batch_Inspected": "incremental",
+        "Source_Order_Item_ID": "H20251101-PG03-002-I1",
+        "Source": "source/initial/Fact_Order_Items.csv",
+        "ER1_Order_ID": "H20251101-PG03-002",
+        "ER1_SKU_ID": "PG03-NA-L",
+        "ER1_Net_Revenue": 279.0,
+        "Lake_Raw": "lake/raw/initial/Fact_Order_Items.parquet",
+        "Lake_Standardized": "lake/standardized/initial/Fact_Sales_Order_Item.parquet",
+        "ER2_Sales_Item_ID": "H20251101-PG03-002-I1",
+        "ER2_Net_Revenue": 279.0,
+        "Sales_Date_Key": 20251101,
+        "Product_Group_ID": "PG03",
+        "Mart_Group_Daily_Revenue": 558.0,
+        "Monthly_KPI_Year_Month": "2025-11",
+        "Note": "This line CONTRIBUTES to group/day Mart, not a one-to-one KPI row"
+      },
+      {
+        "Batch_Inspected": "incremental",
+        "Source_Order_Item_ID": "H20251101-PG04-001-I1",
+        "Source": "source/initial/Fact_Order_Items.csv",
+        "ER1_Order_ID": "H20251101-PG04-001",
+        "ER1_SKU_ID": "PG04-NA-S",
+        "ER1_Net_Revenue": 189.0,
+        "Lake_Raw": "lake/raw/initial/Fact_Order_Items.parquet",
+        "Lake_Standardized": "lake/standardized/initial/Fact_Sales_Order_Item.parquet",
+        "ER2_Sales_Item_ID": "H20251101-PG04-001-I1",
+        "ER2_Net_Revenue": 189.0,
+        "Sales_Date_Key": 20251101,
+        "Product_Group_ID": "PG04",
+        "Mart_Group_Daily_Revenue": 378.0,
+        "Monthly_KPI_Year_Month": "2025-11",
+        "Note": "This line CONTRIBUTES to group/day Mart, not a one-to-one KPI row"
+      },
+      {
+        "Batch_Inspected": "incremental",
+        "Source_Order_Item_ID": "H20251101-PG04-002-I1",
+        "Source": "source/initial/Fact_Order_Items.csv",
+        "ER1_Order_ID": "H20251101-PG04-002",
+        "ER1_SKU_ID": "PG04-GR-S",
+        "ER1_Net_Revenue": 189.0,
+        "Lake_Raw": "lake/raw/initial/Fact_Order_Items.parquet",
+        "Lake_Standardized": "lake/standardized/initial/Fact_Sales_Order_Item.parquet",
+        "ER2_Sales_Item_ID": "H20251101-PG04-002-I1",
+        "ER2_Net_Revenue": 189.0,
+        "Sales_Date_Key": 20251101,
+        "Product_Group_ID": "PG04",
+        "Mart_Group_Daily_Revenue": 378.0,
+        "Monthly_KPI_Year_Month": "2025-11",
+        "Note": "This line CONTRIBUTES to group/day Mart, not a one-to-one KPI row"
+      },
+      {
+        "Batch_Inspected": "incremental",
+        "Source_Order_Item_ID": "H20251101-PG05-001-I1",
+        "Source": "source/initial/Fact_Order_Items.csv",
+        "ER1_Order_ID": "H20251101-PG05-001",
+        "ER1_SKU_ID": "PG05-RE-XL",
+        "ER1_Net_Revenue": 259.0,
+        "Lake_Raw": "lake/raw/initial/Fact_Order_Items.parquet",
+        "Lake_Standardized": "lake/standardized/initial/Fact_Sales_Order_Item.parquet",
+        "ER2_Sales_Item_ID": "H20251101-PG05-001-I1",
+        "ER2_Net_Revenue": 259.0,
+        "Sales_Date_Key": 20251101,
+        "Product_Group_ID": "PG05",
+        "Mart_Group_Daily_Revenue": 518.0,
+        "Monthly_KPI_Year_Month": "2025-11",
+        "Note": "This line CONTRIBUTES to group/day Mart, not a one-to-one KPI row"
+      }
+    ],
+    "physical_warehouse_tables": 11,
+    "physical_warehouse_table_names": [
+      "Dim_Ad_Campaign",
+      "Dim_Cost_Basis",
+      "Dim_Creator",
+      "Dim_Date",
+      "Dim_Product",
+      "Dim_Voucher",
+      "Fact_Ads_Daily",
+      "Fact_Business_Target_Monthly",
+      "Fact_Free_Sample",
+      "Fact_Sales_Order_Item",
+      "Mart_Product_Group_Daily_Performance"
+    ],
+    "ads_fact_to_mart_difference": 0.0,
+    "error_recovery_in_history_run": "NOT_EXECUTED_IN_THIS_RUN"
+  },
+  "business": {
+    "months": [
+      {
+        "month": "2025-11",
+        "gross_reference_sales": 84612.0,
+        "net_revenue": 81745.27,
+        "contribution_profit": 31053.39,
+        "revenue_target": 50000.0,
+        "revenue_achievement_pct": 163.49,
+        "profit_protection_rate_pct": 36.7,
+        "minimum_profit_protection_rate": 0.1,
+        "profit_protection_status": "PASS",
+        "profit_data_status": "COMPLETE",
+        "target_status": "OK"
+      },
+      {
+        "month": "2025-12",
+        "gross_reference_sales": 94470.0,
+        "net_revenue": 90953.4,
+        "contribution_profit": 33286.06,
+        "revenue_target": 52000.0,
+        "revenue_achievement_pct": 174.91,
+        "profit_protection_rate_pct": 35.23,
+        "minimum_profit_protection_rate": 0.1,
+        "profit_protection_status": "PASS",
+        "profit_data_status": "COMPLETE",
+        "target_status": "OK"
+      },
+      {
+        "month": "2026-01",
+        "gross_reference_sales": 99221.0,
+        "net_revenue": 96997.64,
+        "contribution_profit": 37124.79,
+        "revenue_target": 54000.0,
+        "revenue_achievement_pct": 179.63,
+        "profit_protection_rate_pct": 37.42,
+        "minimum_profit_protection_rate": 0.1,
+        "profit_protection_status": "PASS",
+        "profit_data_status": "COMPLETE",
+        "target_status": "OK"
+      },
+      {
+        "month": "2026-02",
+        "gross_reference_sales": 65250.0,
+        "net_revenue": 61939.15,
+        "contribution_profit": 21598.87,
+        "revenue_target": 56000.0,
+        "revenue_achievement_pct": 110.61,
+        "profit_protection_rate_pct": 33.1,
+        "minimum_profit_protection_rate": 0.1,
+        "profit_protection_status": "PASS",
+        "profit_data_status": "COMPLETE",
+        "target_status": "OK"
+      },
+      {
+        "month": "2026-03",
+        "gross_reference_sales": 79389.0,
+        "net_revenue": 77332.4,
+        "contribution_profit": 28553.84,
+        "revenue_target": 50000.0,
+        "revenue_achievement_pct": 154.66,
+        "profit_protection_rate_pct": 35.97,
+        "minimum_profit_protection_rate": 0.1,
+        "profit_protection_status": "PASS",
+        "profit_data_status": "COMPLETE",
+        "target_status": "OK"
+      },
+      {
+        "month": "2026-04",
+        "gross_reference_sales": 78452.0,
+        "net_revenue": 74559.53,
+        "contribution_profit": 27468.94,
+        "revenue_target": 52000.0,
+        "revenue_achievement_pct": 143.38,
+        "profit_protection_rate_pct": 35.01,
+        "minimum_profit_protection_rate": 0.1,
+        "profit_protection_status": "PASS",
+        "profit_data_status": "COMPLETE",
+        "target_status": "OK"
+      },
+      {
+        "month": "2026-05",
+        "gross_reference_sales": 85391.0,
+        "net_revenue": 82161.88,
+        "contribution_profit": 30418.7,
+        "revenue_target": 54000.0,
+        "revenue_achievement_pct": 152.15,
+        "profit_protection_rate_pct": 35.62,
+        "minimum_profit_protection_rate": 0.1,
+        "profit_protection_status": "PASS",
+        "profit_data_status": "COMPLETE",
+        "target_status": "OK"
+      },
+      {
+        "month": "2026-06",
+        "gross_reference_sales": 91712.0,
+        "net_revenue": 88495.48,
+        "contribution_profit": 33379.92,
+        "revenue_target": 56000.0,
+        "revenue_achievement_pct": 158.03,
+        "profit_protection_rate_pct": 36.4,
+        "minimum_profit_protection_rate": 0.1,
+        "profit_protection_status": "PASS",
+        "profit_data_status": "COMPLETE",
+        "target_status": "OK"
+      },
+      {
+        "month": "2026-07",
+        "gross_reference_sales": 92272.0,
+        "net_revenue": 89175.58,
+        "contribution_profit": 33041.79,
+        "revenue_target": 50000.0,
+        "revenue_achievement_pct": 178.35,
+        "profit_protection_rate_pct": 35.81,
+        "minimum_profit_protection_rate": 0.1,
+        "profit_protection_status": "PASS",
+        "profit_data_status": "COMPLETE",
+        "target_status": "OK"
+      },
+      {
+        "month": "2026-08",
+        "gross_reference_sales": 81272.0,
+        "net_revenue": 79116.8,
+        "contribution_profit": 29784.47,
+        "revenue_target": 52000.0,
+        "revenue_achievement_pct": 152.15,
+        "profit_protection_rate_pct": 36.65,
+        "minimum_profit_protection_rate": 0.1,
+        "profit_protection_status": "PASS",
+        "profit_data_status": "COMPLETE",
+        "target_status": "OK"
+      },
+      {
+        "month": "2026-09",
+        "gross_reference_sales": 81589.0,
+        "net_revenue": 78043.89,
+        "contribution_profit": 28115.94,
+        "revenue_target": 54000.0,
+        "revenue_achievement_pct": 144.53,
+        "profit_protection_rate_pct": 34.46,
+        "minimum_profit_protection_rate": 0.1,
+        "profit_protection_status": "PASS",
+        "profit_data_status": "COMPLETE",
+        "target_status": "OK"
+      },
+      {
+        "month": "2026-10",
+        "gross_reference_sales": 382973.0,
+        "net_revenue": 367288.3,
+        "contribution_profit": 144992.33,
+        "revenue_target": 110000.0,
+        "revenue_achievement_pct": 333.9,
+        "profit_protection_rate_pct": 37.86,
+        "minimum_profit_protection_rate": 0.1,
+        "profit_protection_status": "PASS",
+        "profit_data_status": "COMPLETE",
+        "target_status": "OK"
+      },
+      {
+        "month": "2026-11",
+        "gross_reference_sales": 69096.0,
+        "net_revenue": 65068.35,
+        "contribution_profit": 25540.79,
+        "revenue_target": 120000.0,
+        "revenue_achievement_pct": 54.22,
+        "profit_protection_rate_pct": 36.96,
+        "minimum_profit_protection_rate": 0.1,
+        "profit_protection_status": "PASS",
+        "profit_data_status": "COMPLETE",
+        "target_status": "OK"
+      }
+    ],
+    "groups": [
+      {
+        "month": "2025-11",
+        "product_group_id": "PG01",
+        "product_group_name": "คอกลม",
+        "gross_reference_sales": 13532.0,
+        "net_revenue": 12833.51,
+        "ads_cost": 799.74,
+        "campaign_reduction": 698.49,
+        "contribution_profit": 4632.33
+      },
+      {
+        "month": "2025-11",
+        "product_group_id": "PG02",
+        "product_group_name": "คอวี",
+        "gross_reference_sales": 14427.0,
+        "net_revenue": 14037.7,
+        "ads_cost": 813.73,
+        "campaign_reduction": 389.3,
+        "contribution_profit": 5206.97
+      },
+      {
+        "month": "2025-11",
+        "product_group_id": "PG03",
+        "product_group_name": "คอเต่า",
+        "gross_reference_sales": 17019.0,
+        "net_revenue": 16265.7,
+        "ads_cost": 696.23,
+        "campaign_reduction": 753.3,
+        "contribution_profit": 6358.0
+      },
+      {
+        "month": "2025-11",
+        "product_group_id": "PG04",
+        "product_group_name": "Crop",
+        "gross_reference_sales": 16065.0,
+        "net_revenue": 16065.0,
+        "ads_cost": 826.53,
+        "campaign_reduction": 0.0,
+        "contribution_profit": 5912.25
+      },
+      {
+        "month": "2025-11",
+        "product_group_id": "PG05",
+        "product_group_name": "Oversize",
+        "gross_reference_sales": 23569.0,
+        "net_revenue": 22543.36,
+        "ads_cost": 734.79,
+        "campaign_reduction": 1025.64,
+        "contribution_profit": 8943.84
+      },
+      {
+        "month": "2025-12",
+        "product_group_id": "PG01",
+        "product_group_name": "คอกลม",
+        "gross_reference_sales": 15124.0,
+        "net_revenue": 14795.65,
+        "ads_cost": 935.04,
+        "campaign_reduction": 328.35,
+        "contribution_profit": 5395.66
+      },
+      {
+        "month": "2025-12",
+        "product_group_id": "PG02",
+        "product_group_name": "คอวี",
+        "gross_reference_sales": 14427.0,
+        "net_revenue": 14323.95,
+        "ads_cost": 982.73,
+        "campaign_reduction": 103.05,
+        "contribution_profit": 5303.46
+      },
+      {
+        "month": "2025-12",
+        "product_group_id": "PG03",
+        "product_group_name": "คอเต่า",
+        "gross_reference_sales": 23157.0,
+        "net_revenue": 22147.02,
+        "ads_cost": 1102.4,
+        "campaign_reduction": 1009.98,
+        "contribution_profit": 8258.56
+      },
+      {
+        "month": "2025-12",
+        "product_group_id": "PG04",
+        "product_group_name": "Crop",
+        "gross_reference_sales": 18711.0,
+        "net_revenue": 17894.52,
+        "ads_cost": 947.93,
+        "campaign_reduction": 816.48,
+        "contribution_profit": 5944.85
+      },
+      {
+        "month": "2025-12",
+        "product_group_id": "PG05",
+        "product_group_name": "Oversize",
+        "gross_reference_sales": 23051.0,
+        "net_revenue": 21792.26,
+        "ads_cost": 837.09,
+        "campaign_reduction": 1258.74,
+        "contribution_profit": 8383.53
+      },
+      {
+        "month": "2026-01",
+        "product_group_id": "PG01",
+        "product_group_name": "คอกลม",
+        "gross_reference_sales": 15323.0,
+        "net_revenue": 14737.94,
+        "ads_cost": 1191.17,
+        "campaign_reduction": 585.06,
+        "contribution_profit": 5120.96
+      },
+      {
+        "month": "2026-01",
+        "product_group_id": "PG02",
+        "product_group_name": "คอวี",
+        "gross_reference_sales": 21755.0,
+        "net_revenue": 21388.6,
+        "ads_cost": 1023.52,
+        "campaign_reduction": 366.4,
+        "contribution_profit": 8343.59
+      },
+      {
+        "month": "2026-01",
+        "product_group_id": "PG03",
+        "product_group_name": "คอเต่า",
+        "gross_reference_sales": 20367.0,
+        "net_revenue": 20367.0,
+        "ads_cost": 678.65,
+        "campaign_reduction": 0.0,
+        "contribution_profit": 8464.85
+      },
+      {
+        "month": "2026-01",
+        "product_group_id": "PG04",
+        "product_group_name": "Crop",
+        "gross_reference_sales": 15876.0,
+        "net_revenue": 15184.26,
+        "ads_cost": 1061.64,
+        "campaign_reduction": 691.74,
+        "contribution_profit": 5142.6
+      },
+      {
+        "month": "2026-01",
+        "product_group_id": "PG05",
+        "product_group_name": "Oversize",
+        "gross_reference_sales": 25900.0,
+        "net_revenue": 25319.84,
+        "ads_cost": 925.7,
+        "campaign_reduction": 580.16,
+        "contribution_profit": 10052.79
+      },
+      {
+        "month": "2026-02",
+        "product_group_id": "PG01",
+        "product_group_name": "คอกลม",
+        "gross_reference_sales": 11542.0,
+        "net_revenue": 11136.04,
+        "ads_cost": 921.96,
+        "campaign_reduction": 405.96,
+        "contribution_profit": 3740.17
+      },
+      {
+        "month": "2026-02",
+        "product_group_id": "PG02",
+        "product_group_name": "คอวี",
+        "gross_reference_sales": 12824.0,
+        "net_revenue": 12164.48,
+        "ads_cost": 1004.3,
+        "campaign_reduction": 659.52,
+        "contribution_profit": 4098.79
+      },
+      {
+        "month": "2026-02",
+        "product_group_id": "PG03",
+        "product_group_name": "คอเต่า",
+        "gross_reference_sales": 16461.0,
+        "net_revenue": 15146.91,
+        "ads_cost": 827.16,
+        "campaign_reduction": 1314.09,
+        "contribution_profit": 5527.23
+      },
+      {
+        "month": "2026-02",
+        "product_group_id": "PG04",
+        "product_group_name": "Crop",
+        "gross_reference_sales": 8883.0,
+        "net_revenue": 8656.2,
+        "ads_cost": 819.72,
+        "campaign_reduction": 226.8,
+        "contribution_profit": 2775.08
+      },
+      {
+        "month": "2026-02",
+        "product_group_id": "PG05",
+        "product_group_name": "Oversize",
+        "gross_reference_sales": 15540.0,
+        "net_revenue": 14835.52,
+        "ads_cost": 834.95,
+        "campaign_reduction": 704.48,
+        "contribution_profit": 5457.6
+      },
+      {
+        "month": "2026-03",
+        "product_group_id": "PG01",
+        "product_group_name": "คอกลม",
+        "gross_reference_sales": 13532.0,
+        "net_revenue": 12907.14,
+        "ads_cost": 967.56,
+        "campaign_reduction": 624.86,
+        "contribution_profit": 4457.48
+      },
+      {
+        "month": "2026-03",
+        "product_group_id": "PG02",
+        "product_group_name": "คอวี",
+        "gross_reference_sales": 16030.0,
+        "net_revenue": 15801.0,
+        "ads_cost": 820.85,
+        "campaign_reduction": 229.0,
+        "contribution_profit": 6039.86
+      },
+      {
+        "month": "2026-03",
+        "product_group_id": "PG03",
+        "product_group_name": "คอเต่า",
+        "gross_reference_sales": 19251.0,
+        "net_revenue": 18860.4,
+        "ads_cost": 908.75,
+        "campaign_reduction": 390.6,
+        "contribution_profit": 7216.46
+      },
+      {
+        "month": "2026-03",
+        "product_group_id": "PG04",
+        "product_group_name": "Crop",
+        "gross_reference_sales": 11151.0,
+        "net_revenue": 10924.2,
+        "ads_cost": 1024.21,
+        "campaign_reduction": 226.8,
+        "contribution_profit": 3476.74
+      },
+      {
+        "month": "2026-03",
+        "product_group_id": "PG05",
+        "product_group_name": "Oversize",
+        "gross_reference_sales": 19425.0,
+        "net_revenue": 18839.66,
+        "ads_cost": 979.6,
+        "campaign_reduction": 585.34,
+        "contribution_profit": 7363.3
+      },
+      {
+        "month": "2026-04",
+        "product_group_id": "PG01",
+        "product_group_name": "คอกลม",
+        "gross_reference_sales": 13333.0,
+        "net_revenue": 12527.05,
+        "ads_cost": 939.28,
+        "campaign_reduction": 805.95,
+        "contribution_profit": 4304.55
+      },
+      {
+        "month": "2026-04",
+        "product_group_id": "PG02",
+        "product_group_name": "คอวี",
+        "gross_reference_sales": 16946.0,
+        "net_revenue": 15997.94,
+        "ads_cost": 714.87,
+        "campaign_reduction": 948.06,
+        "contribution_profit": 5950.3
+      },
+      {
+        "month": "2026-04",
+        "product_group_id": "PG03",
+        "product_group_name": "คอเต่า",
+        "gross_reference_sales": 19809.0,
+        "net_revenue": 18743.22,
+        "ads_cost": 837.9,
+        "campaign_reduction": 1065.78,
+        "contribution_profit": 7236.94
+      },
+      {
+        "month": "2026-04",
+        "product_group_id": "PG04",
+        "product_group_name": "Crop",
+        "gross_reference_sales": 11529.0,
+        "net_revenue": 10844.82,
+        "ads_cost": 689.59,
+        "campaign_reduction": 684.18,
+        "contribution_profit": 3644.14
+      },
+      {
+        "month": "2026-04",
+        "product_group_id": "PG05",
+        "product_group_name": "Oversize",
+        "gross_reference_sales": 16835.0,
+        "net_revenue": 16446.5,
+        "ads_cost": 874.56,
+        "campaign_reduction": 388.5,
+        "contribution_profit": 6333.01
+      },
+      {
+        "month": "2026-05",
+        "product_group_id": "PG01",
+        "product_group_name": "คอกลม",
+        "gross_reference_sales": 13731.0,
+        "net_revenue": 13394.69,
+        "ads_cost": 927.14,
+        "campaign_reduction": 336.31,
+        "contribution_profit": 4771.07
+      },
+      {
+        "month": "2026-05",
+        "product_group_id": "PG02",
+        "product_group_name": "คอวี",
+        "gross_reference_sales": 15343.0,
+        "net_revenue": 15233.08,
+        "ads_cost": 876.89,
+        "campaign_reduction": 109.92,
+        "contribution_profit": 5796.42
+      },
+      {
+        "month": "2026-05",
+        "product_group_id": "PG03",
+        "product_group_name": "คอเต่า",
+        "gross_reference_sales": 22878.0,
+        "net_revenue": 21131.46,
+        "ads_cost": 933.41,
+        "campaign_reduction": 1746.54,
+        "contribution_profit": 7791.27
+      },
+      {
+        "month": "2026-05",
+        "product_group_id": "PG04",
+        "product_group_name": "Crop",
+        "gross_reference_sales": 15309.0,
+        "net_revenue": 14855.4,
+        "ads_cost": 847.2,
+        "campaign_reduction": 453.6,
+        "contribution_profit": 5335.22
+      },
+      {
+        "month": "2026-05",
+        "product_group_id": "PG05",
+        "product_group_name": "Oversize",
+        "gross_reference_sales": 18130.0,
+        "net_revenue": 17547.25,
+        "ads_cost": 765.74,
+        "campaign_reduction": 582.75,
+        "contribution_profit": 6724.72
+      },
+      {
+        "month": "2026-06",
+        "product_group_id": "PG01",
+        "product_group_name": "คอกลม",
+        "gross_reference_sales": 14726.0,
+        "net_revenue": 14099.15,
+        "ads_cost": 762.21,
+        "campaign_reduction": 626.85,
+        "contribution_profit": 5159.12
+      },
+      {
+        "month": "2026-06",
+        "product_group_id": "PG02",
+        "product_group_name": "คอวี",
+        "gross_reference_sales": 17175.0,
+        "net_revenue": 16625.4,
+        "ads_cost": 679.55,
+        "campaign_reduction": 549.6,
+        "contribution_profit": 6365.1
+      },
+      {
+        "month": "2026-06",
+        "product_group_id": "PG03",
+        "product_group_name": "คอเต่า",
+        "gross_reference_sales": 28458.0,
+        "net_revenue": 27927.9,
+        "ads_cost": 775.26,
+        "campaign_reduction": 530.1,
+        "contribution_profit": 11333.58
+      },
+      {
+        "month": "2026-06",
+        "product_group_id": "PG04",
+        "product_group_name": "Crop",
+        "gross_reference_sales": 11151.0,
+        "net_revenue": 10521.63,
+        "ads_cost": 873.57,
+        "campaign_reduction": 629.37,
+        "contribution_profit": 3221.04
+      },
+      {
+        "month": "2026-06",
+        "product_group_id": "PG05",
+        "product_group_name": "Oversize",
+        "gross_reference_sales": 20202.0,
+        "net_revenue": 19321.4,
+        "ads_cost": 1008.8,
+        "campaign_reduction": 880.6,
+        "contribution_profit": 7301.08
+      },
+      {
+        "month": "2026-07",
+        "product_group_id": "PG01",
+        "product_group_name": "คอกลม",
+        "gross_reference_sales": 12935.0,
+        "net_revenue": 12338.0,
+        "ads_cost": 997.1,
+        "campaign_reduction": 597.0,
+        "contribution_profit": 4158.25
+      },
+      {
+        "month": "2026-07",
+        "product_group_id": "PG02",
+        "product_group_name": "คอวี",
+        "gross_reference_sales": 21297.0,
+        "net_revenue": 20861.9,
+        "ads_cost": 895.51,
+        "campaign_reduction": 435.1,
+        "contribution_profit": 8278.02
+      },
+      {
+        "month": "2026-07",
+        "product_group_id": "PG03",
+        "product_group_name": "คอเต่า",
+        "gross_reference_sales": 24552.0,
+        "net_revenue": 24245.1,
+        "ads_cost": 908.36,
+        "campaign_reduction": 306.9,
+        "contribution_profit": 9621.12
+      },
+      {
+        "month": "2026-07",
+        "product_group_id": "PG04",
+        "product_group_name": "Crop",
+        "gross_reference_sales": 15876.0,
+        "net_revenue": 15040.62,
+        "ads_cost": 992.81,
+        "campaign_reduction": 835.38,
+        "contribution_profit": 5027.19
+      },
+      {
+        "month": "2026-07",
+        "product_group_id": "PG05",
+        "product_group_name": "Oversize",
+        "gross_reference_sales": 17612.0,
+        "net_revenue": 16689.96,
+        "ads_cost": 987.14,
+        "campaign_reduction": 922.04,
+        "contribution_profit": 5957.21
+      },
+      {
+        "month": "2026-08",
+        "product_group_id": "PG01",
+        "product_group_name": "คอกลม",
+        "gross_reference_sales": 15323.0,
+        "net_revenue": 15084.2,
+        "ads_cost": 896.85,
+        "campaign_reduction": 238.8,
+        "contribution_profit": 5731.94
+      },
+      {
+        "month": "2026-08",
+        "product_group_id": "PG02",
+        "product_group_name": "คอวี",
+        "gross_reference_sales": 15801.0,
+        "net_revenue": 15801.0,
+        "ads_cost": 955.65,
+        "campaign_reduction": 0.0,
+        "contribution_profit": 6175.01
+      },
+      {
+        "month": "2026-08",
+        "product_group_id": "PG03",
+        "product_group_name": "คอเต่า",
+        "gross_reference_sales": 19530.0,
+        "net_revenue": 18400.05,
+        "ads_cost": 749.04,
+        "campaign_reduction": 1129.95,
+        "contribution_profit": 6954.0
+      },
+      {
+        "month": "2026-08",
+        "product_group_id": "PG04",
+        "product_group_name": "Crop",
+        "gross_reference_sales": 9639.0,
+        "net_revenue": 9279.9,
+        "ads_cost": 825.99,
+        "campaign_reduction": 359.1,
+        "contribution_profit": 2792.48
+      },
+      {
+        "month": "2026-08",
+        "product_group_id": "PG05",
+        "product_group_name": "Oversize",
+        "gross_reference_sales": 20979.0,
+        "net_revenue": 20551.65,
+        "ads_cost": 945.84,
+        "campaign_reduction": 427.35,
+        "contribution_profit": 8131.04
+      },
+      {
+        "month": "2026-09",
+        "product_group_id": "PG01",
+        "product_group_name": "คอกลม",
+        "gross_reference_sales": 15522.0,
+        "net_revenue": 14351.88,
+        "ads_cost": 1071.23,
+        "campaign_reduction": 1170.12,
+        "contribution_profit": 4795.72
+      },
+      {
+        "month": "2026-09",
+        "product_group_id": "PG02",
+        "product_group_name": "คอวี",
+        "gross_reference_sales": 12824.0,
+        "net_revenue": 12384.32,
+        "ads_cost": 799.93,
+        "campaign_reduction": 439.68,
+        "contribution_profit": 4485.25
+      },
+      {
+        "month": "2026-09",
+        "product_group_id": "PG03",
+        "product_group_name": "คอเต่า",
+        "gross_reference_sales": 19251.0,
+        "net_revenue": 18397.26,
+        "ads_cost": 926.54,
+        "campaign_reduction": 853.74,
+        "contribution_profit": 6857.72
+      },
+      {
+        "month": "2026-09",
+        "product_group_id": "PG04",
+        "product_group_name": "Crop",
+        "gross_reference_sales": 11718.0,
+        "net_revenue": 11400.48,
+        "ads_cost": 800.79,
+        "campaign_reduction": 317.52,
+        "contribution_profit": 3761.55
+      },
+      {
+        "month": "2026-09",
+        "product_group_id": "PG05",
+        "product_group_name": "Oversize",
+        "gross_reference_sales": 22274.0,
+        "net_revenue": 21509.95,
+        "ads_cost": 1080.32,
+        "campaign_reduction": 764.05,
+        "contribution_profit": 8215.7
+      },
+      {
+        "month": "2026-10",
+        "product_group_id": "PG01",
+        "product_group_name": "คอกลม",
+        "gross_reference_sales": 66466.0,
+        "net_revenue": 62825.07,
+        "ads_cost": 227.0,
+        "campaign_reduction": 2274.0,
+        "contribution_profit": 25429.59
+      },
+      {
+        "month": "2026-10",
+        "product_group_id": "PG02",
+        "product_group_name": "คอวี",
+        "gross_reference_sales": 87249.0,
+        "net_revenue": 84257.68,
+        "ads_cost": 297.0,
+        "campaign_reduction": 2010.0,
+        "contribution_profit": 33862.83
+      },
+      {
+        "month": "2026-10",
+        "product_group_id": "PG03",
+        "product_group_name": "คอเต่า",
+        "gross_reference_sales": 95418.0,
+        "net_revenue": 91182.86,
+        "ads_cost": 148.0,
+        "campaign_reduction": 2516.0,
+        "contribution_profit": 35726.44
+      },
+      {
+        "month": "2026-10",
+        "product_group_id": "PG04",
+        "product_group_name": "Crop",
+        "gross_reference_sales": 58212.0,
+        "net_revenue": 56272.5,
+        "ads_cost": 224.0,
+        "campaign_reduction": 1512.0,
+        "contribution_profit": 21157.06
+      },
+      {
+        "month": "2026-10",
+        "product_group_id": "PG05",
+        "product_group_name": "Oversize",
+        "gross_reference_sales": 75628.0,
+        "net_revenue": 72750.19,
+        "ads_cost": 243.0,
+        "campaign_reduction": 714.0,
+        "contribution_profit": 28816.41
+      },
+      {
+        "month": "2026-11",
+        "product_group_id": "PG01",
+        "product_group_name": "คอกลม",
+        "gross_reference_sales": 10348.0,
+        "net_revenue": 9258.71,
+        "ads_cost": 0.0,
+        "campaign_reduction": 728.0,
+        "contribution_profit": 3412.2
+      },
+      {
+        "month": "2026-11",
+        "product_group_id": "PG02",
+        "product_group_name": "คอวี",
+        "gross_reference_sales": 13969.0,
+        "net_revenue": 13804.61,
+        "ads_cost": 18.0,
+        "campaign_reduction": 0.0,
+        "contribution_profit": 5696.91
+      },
+      {
+        "month": "2026-11",
+        "product_group_id": "PG03",
+        "product_group_name": "คอเต่า",
+        "gross_reference_sales": 13671.0,
+        "net_revenue": 13458.02,
+        "ads_cost": 0.0,
+        "campaign_reduction": 0.0,
+        "contribution_profit": 5626.87
+      },
+      {
+        "month": "2026-11",
+        "product_group_id": "PG04",
+        "product_group_name": "Crop",
+        "gross_reference_sales": 15309.0,
+        "net_revenue": 15201.79,
+        "ads_cost": 0.0,
+        "campaign_reduction": 0.0,
+        "contribution_profit": 6128.68
+      },
+      {
+        "month": "2026-11",
+        "product_group_id": "PG05",
+        "product_group_name": "Oversize",
+        "gross_reference_sales": 15799.0,
+        "net_revenue": 13345.22,
+        "ads_cost": 18.0,
+        "campaign_reduction": 2074.0,
+        "contribution_profit": 4676.13
+      }
+    ],
+    "shop_profit_protection_basis": "CONTRIBUTION_PROFIT_DIVIDED_BY_GROSS_REFERENCE_SALES",
+    "revenue_target_basis": "MONTHLY_NET_REVENUE_DIVIDED_BY_REVENUE_TARGET"
+  },
+  "ml": {
+    "backtest": {
+      "model_version": "weekly_sales_lightgbm_demo_v1",
+      "data": "SYNTHETIC_EDUCATIONAL_NOT_TIKTOK",
+      "fidelity": "RETROSPECTIVE_LATEST_DWH",
+      "model_use": "DEMO_ONLY_NOT_PRODUCTION",
+      "dataset_rows": 215,
+      "weeks": 43,
+      "groups": 5,
+      "dataset_hash_sha256": "29f66dd89aa900ee334de016e72f606f30020bc245f7e6f94b4dc2d470c460c6",
+      "weekly_grain": "Monday-Sunday x Product Group",
+      "forecast_asof": "Previous Sunday",
+      "validation_folds": [
+        "May",
+        "June",
+        "July"
+      ],
+      "selected_by_validation": "LightGBM Marketing",
+      "validation_model_comparison": [
+        {
+          "model": "Last Week Naive",
+          "validation_group_wape_pct": 36.086,
+          "folds": 3
+        },
+        {
+          "model": "LightGBM History",
+          "validation_group_wape_pct": 28.808,
+          "folds": 3
+        },
+        {
+          "model": "LightGBM Marketing",
+          "validation_group_wape_pct": 26.275,
+          "folds": 3
+        }
+      ],
+      "final_test_window": [
+        "2026-08-03",
+        "2026-09-27"
+      ],
+      "final_test_comparison": [
+        {
+          "model": "Last Week Naive",
+          "group_wape_pct": 44.834,
+          "shop_wape_pct": 25.606,
+          "group_mae_thb_per_week": 1622.25,
+          "shop_mae_thb_per_week": 4632.56,
+          "group_bias_pct": 0.772,
+          "shop_bias_pct": 0.772,
+          "test_group_weeks": 40,
+          "test_shop_weeks": 8,
+          "group_target_20pct": false,
+          "shop_target_15pct": false
+        },
+        {
+          "model": "LightGBM History",
+          "group_wape_pct": 35.591,
+          "shop_wape_pct": 16.862,
+          "group_mae_thb_per_week": 1287.8,
+          "shop_mae_thb_per_week": 3050.7,
+          "group_bias_pct": 1.022,
+          "shop_bias_pct": 1.022,
+          "test_group_weeks": 40,
+          "test_shop_weeks": 8,
+          "group_target_20pct": false,
+          "shop_target_15pct": false
+        },
+        {
+          "model": "LightGBM Marketing",
+          "group_wape_pct": 34.421,
+          "shop_wape_pct": 16.468,
+          "group_mae_thb_per_week": 1245.49,
+          "shop_mae_thb_per_week": 2979.39,
+          "group_bias_pct": 6.369,
+          "shop_bias_pct": 6.369,
+          "test_group_weeks": 40,
+          "test_shop_weeks": 8,
+          "group_target_20pct": false,
+          "shop_target_15pct": false
+        }
+      ],
+      "targets": {
+        "group_wape_pct": 20.0,
+        "shop_wape_pct": 15.0
+      },
+      "test_not_used_for_model_selection": true,
+      "limits": [
+        "Plans have synthetic recorded-at timestamps; not evidence of actual decisions",
+        "Current warehouse snapshots may contain retrospective backfilled updates",
+        "Models learn association, not incremental causal effect of Ads/Discount",
+        "Do not set, overwrite or fake WAPE. Scores are computed from actual holdout"
+      ]
+    },
+    "registry": {
+      "model_version": "weekly_sales_lightgbm_demo_v1",
+      "selected_model": "LightGBM Marketing",
+      "models_available": [
+        "LightGBM History",
+        "LightGBM Marketing"
+      ],
+      "group_encoding": {
+        "PG01": 0,
+        "PG02": 1,
+        "PG03": 2,
+        "PG04": 3,
+        "PG05": 4
+      },
+      "train_cutoff_week_end": "2026-08-02",
+      "feature_columns": [
+        "product_group_code",
+        "week_of_year",
+        "week_month",
+        "revenue_last_week",
+        "revenue_two_weeks_ago",
+        "revenue_mean_4weeks",
+        "revenue_std_4weeks",
+        "historical_ads_last_week",
+        "historical_discount_last_week",
+        "planned_ads_week",
+        "planned_discount_mean_week",
+        "planned_campaign_days"
+      ],
+      "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+      "selected_by": "rolling_validation_group_wape",
+      "model_approval": "DEMO_ONLY"
+    },
+    "monitoring": {
+      "status": "MONITORED",
+      "monitoring_mode": "OFFLINE_REPLAY_AFTER_ACTUALS_NOT_LIVE",
+      "forecast_week": "2026-09-21",
+      "model_version": "weekly_sales_lightgbm_demo_v1",
+      "selected_model": "LightGBM Marketing",
+      "serving_artifact": "output/ml_history_ci/main/reports/ml_weekly/weekly_marketing_model.txt",
+      "served_group_predictions": 5,
+      "group_week_score": {
+        "samples": 5,
+        "mae_thb_per_week": 1548.51,
+        "wape_pct": 55.781,
+        "bias_pct": 47.128,
+        "actual_revenue_thb": 13880.26,
+        "predicted_revenue_thb": 20421.72,
+        "absolute_error_sum_thb": 7742.53
+      },
+      "shop_week_score": {
+        "samples": 1,
+        "mae_thb_per_week": 6541.46,
+        "wape_pct": 47.128,
+        "bias_pct": 47.128,
+        "actual_revenue_thb": 13880.26,
+        "predicted_revenue_thb": 20421.72,
+        "absolute_error_sum_thb": 6541.46
+      },
+      "alerts": [
+        "GROUP_WAPE_EXCEEDS_DEMO_TARGET_20PCT",
+        "SHOP_WAPE_EXCEEDS_DEMO_TARGET_15PCT"
+      ],
+      "feature_history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+      "production_approval": "NOT_APPROVED"
+    },
+    "model_selection": [
+      {
+        "model": "LightGBM Marketing",
+        "validation_group_wape_pct": 26.275,
+        "folds": 3
+      },
+      {
+        "model": "LightGBM History",
+        "validation_group_wape_pct": 28.808,
+        "folds": 3
+      },
+      {
+        "model": "Last Week Naive",
+        "validation_group_wape_pct": 36.086,
+        "folds": 3
+      }
+    ],
+    "test_metrics": [
+      {
+        "model": "Last Week Naive",
+        "group_wape_pct": 44.834,
+        "shop_wape_pct": 25.606,
+        "group_mae_thb_per_week": 1622.25,
+        "shop_mae_thb_per_week": 4632.56,
+        "group_bias_pct": 0.772,
+        "shop_bias_pct": 0.772,
+        "test_group_weeks": 40,
+        "test_shop_weeks": 8,
+        "group_target_20pct": false,
+        "shop_target_15pct": false
+      },
+      {
+        "model": "LightGBM History",
+        "group_wape_pct": 35.591,
+        "shop_wape_pct": 16.862,
+        "group_mae_thb_per_week": 1287.8,
+        "shop_mae_thb_per_week": 3050.7,
+        "group_bias_pct": 1.022,
+        "shop_bias_pct": 1.022,
+        "test_group_weeks": 40,
+        "test_shop_weeks": 8,
+        "group_target_20pct": false,
+        "shop_target_15pct": false
+      },
+      {
+        "model": "LightGBM Marketing",
+        "group_wape_pct": 34.421,
+        "shop_wape_pct": 16.468,
+        "group_mae_thb_per_week": 1245.49,
+        "shop_mae_thb_per_week": 2979.39,
+        "group_bias_pct": 6.369,
+        "shop_bias_pct": 6.369,
+        "test_group_weeks": 40,
+        "test_shop_weeks": 8,
+        "group_target_20pct": false,
+        "shop_target_15pct": false
+      }
+    ],
+    "test_by_group": [
+      {
+        "model": "Last Week Naive",
+        "product_group_id": "PG01",
+        "samples": 8,
+        "mae_thb_per_week": 2434.76,
+        "wape_pct": 72.013,
+        "bias_pct": -0.736,
+        "actual_revenue_thb": 27048.08,
+        "predicted_revenue_thb": 26849.08,
+        "absolute_error_sum_thb": 19478.12
+      },
+      {
+        "model": "Last Week Naive",
+        "product_group_id": "PG02",
+        "samples": 8,
+        "mae_thb_per_week": 1428.96,
+        "wape_pct": 44.54,
+        "bias_pct": 9.065,
+        "actual_revenue_thb": 25666.32,
+        "predicted_revenue_thb": 27992.96,
+        "absolute_error_sum_thb": 11431.68
+      },
+      {
+        "model": "Last Week Naive",
+        "product_group_id": "PG03",
+        "samples": 8,
+        "mae_thb_per_week": 1313.39,
+        "wape_pct": 31.412,
+        "bias_pct": 4.17,
+        "actual_revenue_thb": 33449.31,
+        "predicted_revenue_thb": 34844.31,
+        "absolute_error_sum_thb": 10507.14
+      },
+      {
+        "model": "Last Week Naive",
+        "product_group_id": "PG04",
+        "samples": 8,
+        "mae_thb_per_week": 570.78,
+        "wape_pct": 23.589,
+        "bias_pct": -10.154,
+        "actual_revenue_thb": 19357.38,
+        "predicted_revenue_thb": 17391.78,
+        "absolute_error_sum_thb": 4566.24
+      },
+      {
+        "model": "Last Week Naive",
+        "product_group_id": "PG05",
+        "samples": 8,
+        "mae_thb_per_week": 2363.38,
+        "wape_pct": 48.217,
+        "bias_pct": -1.123,
+        "actual_revenue_thb": 39212.6,
+        "predicted_revenue_thb": 38772.3,
+        "absolute_error_sum_thb": 18907.0
+      },
+      {
+        "model": "LightGBM History",
+        "product_group_id": "PG01",
+        "samples": 8,
+        "mae_thb_per_week": 1299.36,
+        "wape_pct": 38.431,
+        "bias_pct": -7.208,
+        "actual_revenue_thb": 27048.08,
+        "predicted_revenue_thb": 25098.47,
+        "absolute_error_sum_thb": 10394.89
+      },
+      {
+        "model": "LightGBM History",
+        "product_group_id": "PG02",
+        "samples": 8,
+        "mae_thb_per_week": 1210.37,
+        "wape_pct": 37.726,
+        "bias_pct": 14.637,
+        "actual_revenue_thb": 25666.32,
+        "predicted_revenue_thb": 29423.17,
+        "absolute_error_sum_thb": 9682.94
+      },
+      {
+        "model": "LightGBM History",
+        "product_group_id": "PG03",
+        "samples": 8,
+        "mae_thb_per_week": 937.76,
+        "wape_pct": 22.428,
+        "bias_pct": 4.926,
+        "actual_revenue_thb": 33449.31,
+        "predicted_revenue_thb": 35097.14,
+        "absolute_error_sum_thb": 7502.07
+      },
+      {
+        "model": "LightGBM History",
+        "product_group_id": "PG04",
+        "samples": 8,
+        "mae_thb_per_week": 1150.37,
+        "wape_pct": 47.542,
+        "bias_pct": 38.38,
+        "actual_revenue_thb": 19357.38,
+        "predicted_revenue_thb": 26786.7,
+        "absolute_error_sum_thb": 9202.97
+      },
+      {
+        "model": "LightGBM History",
+        "product_group_id": "PG05",
+        "samples": 8,
+        "mae_thb_per_week": 1841.12,
+        "wape_pct": 37.562,
+        "bias_pct": -23.985,
+        "actual_revenue_thb": 39212.6,
+        "predicted_revenue_thb": 29807.26,
+        "absolute_error_sum_thb": 14728.96
+      },
+      {
+        "model": "LightGBM Marketing",
+        "product_group_id": "PG01",
+        "samples": 8,
+        "mae_thb_per_week": 1490.12,
+        "wape_pct": 44.073,
+        "bias_pct": 5.05,
+        "actual_revenue_thb": 27048.08,
+        "predicted_revenue_thb": 28414.02,
+        "absolute_error_sum_thb": 11920.99
+      },
+      {
+        "model": "LightGBM Marketing",
+        "product_group_id": "PG02",
+        "samples": 8,
+        "mae_thb_per_week": 1172.3,
+        "wape_pct": 36.54,
+        "bias_pct": 23.822,
+        "actual_revenue_thb": 25666.32,
+        "predicted_revenue_thb": 31780.52,
+        "absolute_error_sum_thb": 9378.36
+      },
+      {
+        "model": "LightGBM Marketing",
+        "product_group_id": "PG03",
+        "samples": 8,
+        "mae_thb_per_week": 979.51,
+        "wape_pct": 23.427,
+        "bias_pct": 8.868,
+        "actual_revenue_thb": 33449.31,
+        "predicted_revenue_thb": 36415.66,
+        "absolute_error_sum_thb": 7836.05
+      },
+      {
+        "model": "LightGBM Marketing",
+        "product_group_id": "PG04",
+        "samples": 8,
+        "mae_thb_per_week": 918.36,
+        "wape_pct": 37.954,
+        "bias_pct": 27.811,
+        "actual_revenue_thb": 19357.38,
+        "predicted_revenue_thb": 24740.77,
+        "absolute_error_sum_thb": 7346.88
+      },
+      {
+        "model": "LightGBM Marketing",
+        "product_group_id": "PG05",
+        "samples": 8,
+        "mae_thb_per_week": 1667.14,
+        "wape_pct": 34.012,
+        "bias_pct": -16.862,
+        "actual_revenue_thb": 39212.6,
+        "predicted_revenue_thb": 32600.72,
+        "absolute_error_sum_thb": 13337.12
+      }
+    ],
+    "test_predictions": [
+      {
+        "as_of_date": "2026-08-02",
+        "forecast_week_start": "2026-08-03",
+        "forecast_week_end": "2026-08-09",
+        "product_group_id": "PG01",
+        "actual_net_revenue_week": 2547.2,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 1990.0,
+        "model": "Last Week Naive",
+        "error_thb": -557.2
+      },
+      {
+        "as_of_date": "2026-08-02",
+        "forecast_week_start": "2026-08-03",
+        "forecast_week_end": "2026-08-09",
+        "product_group_id": "PG02",
+        "actual_net_revenue_week": 4809.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3664.0,
+        "model": "Last Week Naive",
+        "error_thb": -1145.0
+      },
+      {
+        "as_of_date": "2026-08-02",
+        "forecast_week_start": "2026-08-03",
+        "forecast_week_end": "2026-08-09",
+        "product_group_id": "PG03",
+        "actual_net_revenue_week": 5231.25,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 4464.0,
+        "model": "Last Week Naive",
+        "error_thb": -767.25
+      },
+      {
+        "as_of_date": "2026-08-02",
+        "forecast_week_start": "2026-08-03",
+        "forecast_week_end": "2026-08-09",
+        "product_group_id": "PG04",
+        "actual_net_revenue_week": 1946.7,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 1512.0,
+        "model": "Last Week Naive",
+        "error_thb": -434.7
+      },
+      {
+        "as_of_date": "2026-08-02",
+        "forecast_week_start": "2026-08-03",
+        "forecast_week_end": "2026-08-09",
+        "product_group_id": "PG05",
+        "actual_net_revenue_week": 4234.65,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3367.0,
+        "model": "Last Week Naive",
+        "error_thb": -867.65
+      },
+      {
+        "as_of_date": "2026-08-09",
+        "forecast_week_start": "2026-08-10",
+        "forecast_week_end": "2026-08-16",
+        "product_group_id": "PG01",
+        "actual_net_revenue_week": 4378.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 2547.2,
+        "model": "Last Week Naive",
+        "error_thb": -1830.8
+      },
+      {
+        "as_of_date": "2026-08-09",
+        "forecast_week_start": "2026-08-10",
+        "forecast_week_end": "2026-08-16",
+        "product_group_id": "PG02",
+        "actual_net_revenue_week": 1832.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 4809.0,
+        "model": "Last Week Naive",
+        "error_thb": 2977.0
+      },
+      {
+        "as_of_date": "2026-08-09",
+        "forecast_week_start": "2026-08-10",
+        "forecast_week_end": "2026-08-16",
+        "product_group_id": "PG03",
+        "actual_net_revenue_week": 3069.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 5231.25,
+        "model": "Last Week Naive",
+        "error_thb": 2162.25
+      },
+      {
+        "as_of_date": "2026-08-09",
+        "forecast_week_start": "2026-08-10",
+        "forecast_week_end": "2026-08-16",
+        "product_group_id": "PG04",
+        "actual_net_revenue_week": 2079.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 1946.7,
+        "model": "Last Week Naive",
+        "error_thb": -132.3
+      },
+      {
+        "as_of_date": "2026-08-09",
+        "forecast_week_start": "2026-08-10",
+        "forecast_week_end": "2026-08-16",
+        "product_group_id": "PG05",
+        "actual_net_revenue_week": 6475.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 4234.65,
+        "model": "Last Week Naive",
+        "error_thb": -2240.35
+      },
+      {
+        "as_of_date": "2026-08-16",
+        "forecast_week_start": "2026-08-17",
+        "forecast_week_end": "2026-08-23",
+        "product_group_id": "PG01",
+        "actual_net_revenue_week": 2587.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 4378.0,
+        "model": "Last Week Naive",
+        "error_thb": 1791.0
+      },
+      {
+        "as_of_date": "2026-08-16",
+        "forecast_week_start": "2026-08-17",
+        "forecast_week_end": "2026-08-23",
+        "product_group_id": "PG02",
+        "actual_net_revenue_week": 4580.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 1832.0,
+        "model": "Last Week Naive",
+        "error_thb": -2748.0
+      },
+      {
+        "as_of_date": "2026-08-16",
+        "forecast_week_start": "2026-08-17",
+        "forecast_week_end": "2026-08-23",
+        "product_group_id": "PG03",
+        "actual_net_revenue_week": 4240.8,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3069.0,
+        "model": "Last Week Naive",
+        "error_thb": -1171.8
+      },
+      {
+        "as_of_date": "2026-08-16",
+        "forecast_week_start": "2026-08-17",
+        "forecast_week_end": "2026-08-23",
+        "product_group_id": "PG04",
+        "actual_net_revenue_week": 2608.2,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 2079.0,
+        "model": "Last Week Naive",
+        "error_thb": -529.2
+      },
+      {
+        "as_of_date": "2026-08-16",
+        "forecast_week_start": "2026-08-17",
+        "forecast_week_end": "2026-08-23",
+        "product_group_id": "PG05",
+        "actual_net_revenue_week": 5180.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 6475.0,
+        "model": "Last Week Naive",
+        "error_thb": 1295.0
+      },
+      {
+        "as_of_date": "2026-08-23",
+        "forecast_week_start": "2026-08-24",
+        "forecast_week_end": "2026-08-30",
+        "product_group_id": "PG01",
+        "actual_net_revenue_week": 4378.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 2587.0,
+        "model": "Last Week Naive",
+        "error_thb": -1791.0
+      },
+      {
+        "as_of_date": "2026-08-23",
+        "forecast_week_start": "2026-08-24",
+        "forecast_week_end": "2026-08-30",
+        "product_group_id": "PG02",
+        "actual_net_revenue_week": 3206.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 4580.0,
+        "model": "Last Week Naive",
+        "error_thb": 1374.0
+      },
+      {
+        "as_of_date": "2026-08-23",
+        "forecast_week_start": "2026-08-24",
+        "forecast_week_end": "2026-08-30",
+        "product_group_id": "PG03",
+        "actual_net_revenue_week": 3627.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 4240.8,
+        "model": "Last Week Naive",
+        "error_thb": 613.8
+      },
+      {
+        "as_of_date": "2026-08-23",
+        "forecast_week_start": "2026-08-24",
+        "forecast_week_end": "2026-08-30",
+        "product_group_id": "PG04",
+        "actual_net_revenue_week": 1512.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 2608.2,
+        "model": "Last Week Naive",
+        "error_thb": 1096.2
+      },
+      {
+        "as_of_date": "2026-08-23",
+        "forecast_week_start": "2026-08-24",
+        "forecast_week_end": "2026-08-30",
+        "product_group_id": "PG05",
+        "actual_net_revenue_week": 2849.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 5180.0,
+        "model": "Last Week Naive",
+        "error_thb": 2331.0
+      },
+      {
+        "as_of_date": "2026-08-30",
+        "forecast_week_start": "2026-08-31",
+        "forecast_week_end": "2026-09-06",
+        "product_group_id": "PG01",
+        "actual_net_revenue_week": 2714.36,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 4378.0,
+        "model": "Last Week Naive",
+        "error_thb": 1663.64
+      },
+      {
+        "as_of_date": "2026-08-30",
+        "forecast_week_start": "2026-08-31",
+        "forecast_week_end": "2026-09-06",
+        "product_group_id": "PG02",
+        "actual_net_revenue_week": 3865.52,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3206.0,
+        "model": "Last Week Naive",
+        "error_thb": -659.52
+      },
+      {
+        "as_of_date": "2026-08-30",
+        "forecast_week_start": "2026-08-31",
+        "forecast_week_end": "2026-09-06",
+        "product_group_id": "PG03",
+        "actual_net_revenue_week": 4369.14,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3627.0,
+        "model": "Last Week Naive",
+        "error_thb": -742.14
+      },
+      {
+        "as_of_date": "2026-08-30",
+        "forecast_week_start": "2026-08-31",
+        "forecast_week_end": "2026-09-06",
+        "product_group_id": "PG04",
+        "actual_net_revenue_week": 1512.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 1512.0,
+        "model": "Last Week Naive",
+        "error_thb": 0.0
+      },
+      {
+        "as_of_date": "2026-08-30",
+        "forecast_week_start": "2026-08-31",
+        "forecast_week_end": "2026-09-06",
+        "product_group_id": "PG05",
+        "actual_net_revenue_week": 4921.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 2849.0,
+        "model": "Last Week Naive",
+        "error_thb": -2072.0
+      },
+      {
+        "as_of_date": "2026-09-06",
+        "forecast_week_start": "2026-09-07",
+        "forecast_week_end": "2026-09-13",
+        "product_group_id": "PG01",
+        "actual_net_revenue_week": 1297.48,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 2714.36,
+        "model": "Last Week Naive",
+        "error_thb": 1416.88
+      },
+      {
+        "as_of_date": "2026-09-06",
+        "forecast_week_start": "2026-09-07",
+        "forecast_week_end": "2026-09-13",
+        "product_group_id": "PG02",
+        "actual_net_revenue_week": 3416.68,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3865.52,
+        "model": "Last Week Naive",
+        "error_thb": 448.84
+      },
+      {
+        "as_of_date": "2026-09-06",
+        "forecast_week_start": "2026-09-07",
+        "forecast_week_end": "2026-09-13",
+        "product_group_id": "PG03",
+        "actual_net_revenue_week": 3984.12,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 4369.14,
+        "model": "Last Week Naive",
+        "error_thb": 385.02
+      },
+      {
+        "as_of_date": "2026-09-06",
+        "forecast_week_start": "2026-09-07",
+        "forecast_week_end": "2026-09-13",
+        "product_group_id": "PG04",
+        "actual_net_revenue_week": 3213.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 1512.0,
+        "model": "Last Week Naive",
+        "error_thb": -1701.0
+      },
+      {
+        "as_of_date": "2026-09-06",
+        "forecast_week_start": "2026-09-07",
+        "forecast_week_end": "2026-09-13",
+        "product_group_id": "PG05",
+        "actual_net_revenue_week": 3626.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 4921.0,
+        "model": "Last Week Naive",
+        "error_thb": 1295.0
+      },
+      {
+        "as_of_date": "2026-09-13",
+        "forecast_week_start": "2026-09-14",
+        "forecast_week_end": "2026-09-20",
+        "product_group_id": "PG01",
+        "actual_net_revenue_week": 6957.04,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 1297.48,
+        "model": "Last Week Naive",
+        "error_thb": -5659.56
+      },
+      {
+        "as_of_date": "2026-09-13",
+        "forecast_week_start": "2026-09-14",
+        "forecast_week_end": "2026-09-20",
+        "product_group_id": "PG02",
+        "actual_net_revenue_week": 2619.76,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3416.68,
+        "model": "Last Week Naive",
+        "error_thb": 796.92
+      },
+      {
+        "as_of_date": "2026-09-13",
+        "forecast_week_start": "2026-09-14",
+        "forecast_week_end": "2026-09-20",
+        "product_group_id": "PG03",
+        "actual_net_revenue_week": 5859.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3984.12,
+        "model": "Last Week Naive",
+        "error_thb": -1874.88
+      },
+      {
+        "as_of_date": "2026-09-13",
+        "forecast_week_start": "2026-09-14",
+        "forecast_week_end": "2026-09-20",
+        "product_group_id": "PG04",
+        "actual_net_revenue_week": 3008.88,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3213.0,
+        "model": "Last Week Naive",
+        "error_thb": 204.12
+      },
+      {
+        "as_of_date": "2026-09-13",
+        "forecast_week_start": "2026-09-14",
+        "forecast_week_end": "2026-09-20",
+        "product_group_id": "PG05",
+        "actual_net_revenue_week": 8119.65,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3626.0,
+        "model": "Last Week Naive",
+        "error_thb": -4493.65
+      },
+      {
+        "as_of_date": "2026-09-20",
+        "forecast_week_start": "2026-09-21",
+        "forecast_week_end": "2026-09-27",
+        "product_group_id": "PG01",
+        "actual_net_revenue_week": 2189.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 6957.04,
+        "model": "Last Week Naive",
+        "error_thb": 4768.04
+      },
+      {
+        "as_of_date": "2026-09-20",
+        "forecast_week_start": "2026-09-21",
+        "forecast_week_end": "2026-09-27",
+        "product_group_id": "PG02",
+        "actual_net_revenue_week": 1337.36,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 2619.76,
+        "model": "Last Week Naive",
+        "error_thb": 1282.4
+      },
+      {
+        "as_of_date": "2026-09-20",
+        "forecast_week_start": "2026-09-21",
+        "forecast_week_end": "2026-09-27",
+        "product_group_id": "PG03",
+        "actual_net_revenue_week": 3069.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 5859.0,
+        "model": "Last Week Naive",
+        "error_thb": 2790.0
+      },
+      {
+        "as_of_date": "2026-09-20",
+        "forecast_week_start": "2026-09-21",
+        "forecast_week_end": "2026-09-27",
+        "product_group_id": "PG04",
+        "actual_net_revenue_week": 3477.6,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3008.88,
+        "model": "Last Week Naive",
+        "error_thb": -468.72
+      },
+      {
+        "as_of_date": "2026-09-20",
+        "forecast_week_start": "2026-09-21",
+        "forecast_week_end": "2026-09-27",
+        "product_group_id": "PG05",
+        "actual_net_revenue_week": 3807.3,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 8119.65,
+        "model": "Last Week Naive",
+        "error_thb": 4312.35
+      },
+      {
+        "as_of_date": "2026-08-02",
+        "forecast_week_start": "2026-08-03",
+        "forecast_week_end": "2026-08-09",
+        "product_group_id": "PG01",
+        "actual_net_revenue_week": 2547.2,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3409.285734942,
+        "model": "LightGBM History",
+        "error_thb": 862.085734942
+      },
+      {
+        "as_of_date": "2026-08-02",
+        "forecast_week_start": "2026-08-03",
+        "forecast_week_end": "2026-08-09",
+        "product_group_id": "PG02",
+        "actual_net_revenue_week": 4809.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 5512.3781679971,
+        "model": "LightGBM History",
+        "error_thb": 703.3781679971
+      },
+      {
+        "as_of_date": "2026-08-02",
+        "forecast_week_start": "2026-08-03",
+        "forecast_week_end": "2026-08-09",
+        "product_group_id": "PG03",
+        "actual_net_revenue_week": 5231.25,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 4465.8473189426,
+        "model": "LightGBM History",
+        "error_thb": -765.4026810574
+      },
+      {
+        "as_of_date": "2026-08-02",
+        "forecast_week_start": "2026-08-03",
+        "forecast_week_end": "2026-08-09",
+        "product_group_id": "PG04",
+        "actual_net_revenue_week": 1946.7,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 2564.4426760844,
+        "model": "LightGBM History",
+        "error_thb": 617.7426760844
+      },
+      {
+        "as_of_date": "2026-08-02",
+        "forecast_week_start": "2026-08-03",
+        "forecast_week_end": "2026-08-09",
+        "product_group_id": "PG05",
+        "actual_net_revenue_week": 4234.65,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3276.8708883122,
+        "model": "LightGBM History",
+        "error_thb": -957.7791116878
+      },
+      {
+        "as_of_date": "2026-08-09",
+        "forecast_week_start": "2026-08-10",
+        "forecast_week_end": "2026-08-16",
+        "product_group_id": "PG01",
+        "actual_net_revenue_week": 4378.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 4001.8817624729,
+        "model": "LightGBM History",
+        "error_thb": -376.1182375271
+      },
+      {
+        "as_of_date": "2026-08-09",
+        "forecast_week_start": "2026-08-10",
+        "forecast_week_end": "2026-08-16",
+        "product_group_id": "PG02",
+        "actual_net_revenue_week": 1832.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 4640.9246280742,
+        "model": "LightGBM History",
+        "error_thb": 2808.9246280742
+      },
+      {
+        "as_of_date": "2026-08-09",
+        "forecast_week_start": "2026-08-10",
+        "forecast_week_end": "2026-08-16",
+        "product_group_id": "PG03",
+        "actual_net_revenue_week": 3069.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3789.2340742012,
+        "model": "LightGBM History",
+        "error_thb": 720.2340742012
+      },
+      {
+        "as_of_date": "2026-08-09",
+        "forecast_week_start": "2026-08-10",
+        "forecast_week_end": "2026-08-16",
+        "product_group_id": "PG04",
+        "actual_net_revenue_week": 2079.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3441.61199109,
+        "model": "LightGBM History",
+        "error_thb": 1362.61199109
+      },
+      {
+        "as_of_date": "2026-08-09",
+        "forecast_week_start": "2026-08-10",
+        "forecast_week_end": "2026-08-16",
+        "product_group_id": "PG05",
+        "actual_net_revenue_week": 6475.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3582.3876024106,
+        "model": "LightGBM History",
+        "error_thb": -2892.6123975894
+      },
+      {
+        "as_of_date": "2026-08-16",
+        "forecast_week_start": "2026-08-17",
+        "forecast_week_end": "2026-08-23",
+        "product_group_id": "PG01",
+        "actual_net_revenue_week": 2587.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3037.1414105514,
+        "model": "LightGBM History",
+        "error_thb": 450.1414105514
+      },
+      {
+        "as_of_date": "2026-08-16",
+        "forecast_week_start": "2026-08-17",
+        "forecast_week_end": "2026-08-23",
+        "product_group_id": "PG02",
+        "actual_net_revenue_week": 4580.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 2937.5413578358,
+        "model": "LightGBM History",
+        "error_thb": -1642.4586421642
+      },
+      {
+        "as_of_date": "2026-08-16",
+        "forecast_week_start": "2026-08-17",
+        "forecast_week_end": "2026-08-23",
+        "product_group_id": "PG03",
+        "actual_net_revenue_week": 4240.8,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 5202.540824319,
+        "model": "LightGBM History",
+        "error_thb": 961.740824319
+      },
+      {
+        "as_of_date": "2026-08-16",
+        "forecast_week_start": "2026-08-17",
+        "forecast_week_end": "2026-08-23",
+        "product_group_id": "PG04",
+        "actual_net_revenue_week": 2608.2,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3127.0422951819,
+        "model": "LightGBM History",
+        "error_thb": 518.8422951819
+      },
+      {
+        "as_of_date": "2026-08-16",
+        "forecast_week_start": "2026-08-17",
+        "forecast_week_end": "2026-08-23",
+        "product_group_id": "PG05",
+        "actual_net_revenue_week": 5180.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 2990.5491213489,
+        "model": "LightGBM History",
+        "error_thb": -2189.4508786511
+      },
+      {
+        "as_of_date": "2026-08-23",
+        "forecast_week_start": "2026-08-24",
+        "forecast_week_end": "2026-08-30",
+        "product_group_id": "PG01",
+        "actual_net_revenue_week": 4378.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 2466.6619359381,
+        "model": "LightGBM History",
+        "error_thb": -1911.3380640619
+      },
+      {
+        "as_of_date": "2026-08-23",
+        "forecast_week_start": "2026-08-24",
+        "forecast_week_end": "2026-08-30",
+        "product_group_id": "PG02",
+        "actual_net_revenue_week": 3206.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3560.906524627,
+        "model": "LightGBM History",
+        "error_thb": 354.906524627
+      },
+      {
+        "as_of_date": "2026-08-23",
+        "forecast_week_start": "2026-08-24",
+        "forecast_week_end": "2026-08-30",
+        "product_group_id": "PG03",
+        "actual_net_revenue_week": 3627.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 5327.4537995538,
+        "model": "LightGBM History",
+        "error_thb": 1700.4537995538
+      },
+      {
+        "as_of_date": "2026-08-23",
+        "forecast_week_start": "2026-08-24",
+        "forecast_week_end": "2026-08-30",
+        "product_group_id": "PG04",
+        "actual_net_revenue_week": 1512.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3849.8123518265,
+        "model": "LightGBM History",
+        "error_thb": 2337.8123518265
+      },
+      {
+        "as_of_date": "2026-08-23",
+        "forecast_week_start": "2026-08-24",
+        "forecast_week_end": "2026-08-30",
+        "product_group_id": "PG05",
+        "actual_net_revenue_week": 2849.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3700.1087788678,
+        "model": "LightGBM History",
+        "error_thb": 851.1087788678
+      },
+      {
+        "as_of_date": "2026-08-30",
+        "forecast_week_start": "2026-08-31",
+        "forecast_week_end": "2026-09-06",
+        "product_group_id": "PG01",
+        "actual_net_revenue_week": 2714.36,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 2697.1525002068,
+        "model": "LightGBM History",
+        "error_thb": -17.2074997932
+      },
+      {
+        "as_of_date": "2026-08-30",
+        "forecast_week_start": "2026-08-31",
+        "forecast_week_end": "2026-09-06",
+        "product_group_id": "PG02",
+        "actual_net_revenue_week": 3865.52,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 2544.9352997505,
+        "model": "LightGBM History",
+        "error_thb": -1320.5847002495
+      },
+      {
+        "as_of_date": "2026-08-30",
+        "forecast_week_start": "2026-08-31",
+        "forecast_week_end": "2026-09-06",
+        "product_group_id": "PG03",
+        "actual_net_revenue_week": 4369.14,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3729.5099951512,
+        "model": "LightGBM History",
+        "error_thb": -639.6300048488
+      },
+      {
+        "as_of_date": "2026-08-30",
+        "forecast_week_start": "2026-08-31",
+        "forecast_week_end": "2026-09-06",
+        "product_group_id": "PG04",
+        "actual_net_revenue_week": 1512.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3275.2540979815,
+        "model": "LightGBM History",
+        "error_thb": 1763.2540979815
+      },
+      {
+        "as_of_date": "2026-08-30",
+        "forecast_week_start": "2026-08-31",
+        "forecast_week_end": "2026-09-06",
+        "product_group_id": "PG05",
+        "actual_net_revenue_week": 4921.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3328.9458376591,
+        "model": "LightGBM History",
+        "error_thb": -1592.0541623409
+      },
+      {
+        "as_of_date": "2026-09-06",
+        "forecast_week_start": "2026-09-07",
+        "forecast_week_end": "2026-09-13",
+        "product_group_id": "PG01",
+        "actual_net_revenue_week": 1297.48,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 2589.4960866825,
+        "model": "LightGBM History",
+        "error_thb": 1292.0160866825
+      },
+      {
+        "as_of_date": "2026-09-06",
+        "forecast_week_start": "2026-09-07",
+        "forecast_week_end": "2026-09-13",
+        "product_group_id": "PG02",
+        "actual_net_revenue_week": 3416.68,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3459.945354069,
+        "model": "LightGBM History",
+        "error_thb": 43.265354069
+      },
+      {
+        "as_of_date": "2026-09-06",
+        "forecast_week_start": "2026-09-07",
+        "forecast_week_end": "2026-09-13",
+        "product_group_id": "PG03",
+        "actual_net_revenue_week": 3984.12,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3997.8594757271,
+        "model": "LightGBM History",
+        "error_thb": 13.7394757271
+      },
+      {
+        "as_of_date": "2026-09-06",
+        "forecast_week_start": "2026-09-07",
+        "forecast_week_end": "2026-09-13",
+        "product_group_id": "PG04",
+        "actual_net_revenue_week": 3213.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3498.6242176732,
+        "model": "LightGBM History",
+        "error_thb": 285.6242176732
+      },
+      {
+        "as_of_date": "2026-09-06",
+        "forecast_week_start": "2026-09-07",
+        "forecast_week_end": "2026-09-13",
+        "product_group_id": "PG05",
+        "actual_net_revenue_week": 3626.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 4453.8009336587,
+        "model": "LightGBM History",
+        "error_thb": 827.8009336587
+      },
+      {
+        "as_of_date": "2026-09-13",
+        "forecast_week_start": "2026-09-14",
+        "forecast_week_end": "2026-09-20",
+        "product_group_id": "PG01",
+        "actual_net_revenue_week": 6957.04,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3089.453003303,
+        "model": "LightGBM History",
+        "error_thb": -3867.586996697
+      },
+      {
+        "as_of_date": "2026-09-13",
+        "forecast_week_start": "2026-09-14",
+        "forecast_week_end": "2026-09-20",
+        "product_group_id": "PG02",
+        "actual_net_revenue_week": 2619.76,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3258.5798057389,
+        "model": "LightGBM History",
+        "error_thb": 638.8198057389
+      },
+      {
+        "as_of_date": "2026-09-13",
+        "forecast_week_start": "2026-09-14",
+        "forecast_week_end": "2026-09-20",
+        "product_group_id": "PG03",
+        "actual_net_revenue_week": 5859.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 4336.9094713378,
+        "model": "LightGBM History",
+        "error_thb": -1522.0905286622
+      },
+      {
+        "as_of_date": "2026-09-13",
+        "forecast_week_start": "2026-09-14",
+        "forecast_week_end": "2026-09-20",
+        "product_group_id": "PG04",
+        "actual_net_revenue_week": 3008.88,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 4439.1378978931,
+        "model": "LightGBM History",
+        "error_thb": 1430.2578978931
+      },
+      {
+        "as_of_date": "2026-09-13",
+        "forecast_week_start": "2026-09-14",
+        "forecast_week_end": "2026-09-20",
+        "product_group_id": "PG05",
+        "actual_net_revenue_week": 8119.65,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3684.3967355535,
+        "model": "LightGBM History",
+        "error_thb": -4435.2532644465
+      },
+      {
+        "as_of_date": "2026-09-20",
+        "forecast_week_start": "2026-09-21",
+        "forecast_week_end": "2026-09-27",
+        "product_group_id": "PG01",
+        "actual_net_revenue_week": 2189.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3807.3989908601,
+        "model": "LightGBM History",
+        "error_thb": 1618.3989908601
+      },
+      {
+        "as_of_date": "2026-09-20",
+        "forecast_week_start": "2026-09-21",
+        "forecast_week_end": "2026-09-27",
+        "product_group_id": "PG02",
+        "actual_net_revenue_week": 1337.36,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3507.9612481854,
+        "model": "LightGBM History",
+        "error_thb": 2170.6012481854
+      },
+      {
+        "as_of_date": "2026-09-20",
+        "forecast_week_start": "2026-09-21",
+        "forecast_week_end": "2026-09-27",
+        "product_group_id": "PG03",
+        "actual_net_revenue_week": 3069.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 4247.782847515,
+        "model": "LightGBM History",
+        "error_thb": 1178.782847515
+      },
+      {
+        "as_of_date": "2026-09-20",
+        "forecast_week_start": "2026-09-21",
+        "forecast_week_end": "2026-09-27",
+        "product_group_id": "PG04",
+        "actual_net_revenue_week": 3477.6,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 2590.7773861637,
+        "model": "LightGBM History",
+        "error_thb": -886.8226138363
+      },
+      {
+        "as_of_date": "2026-09-20",
+        "forecast_week_start": "2026-09-21",
+        "forecast_week_end": "2026-09-27",
+        "product_group_id": "PG05",
+        "actual_net_revenue_week": 3807.3,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 4790.2021755077,
+        "model": "LightGBM History",
+        "error_thb": 982.9021755077
+      },
+      {
+        "as_of_date": "2026-08-02",
+        "forecast_week_start": "2026-08-03",
+        "forecast_week_end": "2026-08-09",
+        "product_group_id": "PG01",
+        "actual_net_revenue_week": 2547.2,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3900.607151218,
+        "model": "LightGBM Marketing",
+        "error_thb": 1353.407151218
+      },
+      {
+        "as_of_date": "2026-08-02",
+        "forecast_week_start": "2026-08-03",
+        "forecast_week_end": "2026-08-09",
+        "product_group_id": "PG02",
+        "actual_net_revenue_week": 4809.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 5350.4948461782,
+        "model": "LightGBM Marketing",
+        "error_thb": 541.4948461782
+      },
+      {
+        "as_of_date": "2026-08-02",
+        "forecast_week_start": "2026-08-03",
+        "forecast_week_end": "2026-08-09",
+        "product_group_id": "PG03",
+        "actual_net_revenue_week": 5231.25,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 4650.1384639854,
+        "model": "LightGBM Marketing",
+        "error_thb": -581.1115360146
+      },
+      {
+        "as_of_date": "2026-08-02",
+        "forecast_week_start": "2026-08-03",
+        "forecast_week_end": "2026-08-09",
+        "product_group_id": "PG04",
+        "actual_net_revenue_week": 1946.7,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 2860.8798770837,
+        "model": "LightGBM Marketing",
+        "error_thb": 914.1798770837
+      },
+      {
+        "as_of_date": "2026-08-02",
+        "forecast_week_start": "2026-08-03",
+        "forecast_week_end": "2026-08-09",
+        "product_group_id": "PG05",
+        "actual_net_revenue_week": 4234.65,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 4014.3145034881,
+        "model": "LightGBM Marketing",
+        "error_thb": -220.3354965119
+      },
+      {
+        "as_of_date": "2026-08-09",
+        "forecast_week_start": "2026-08-10",
+        "forecast_week_end": "2026-08-16",
+        "product_group_id": "PG01",
+        "actual_net_revenue_week": 4378.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 4050.7873086985,
+        "model": "LightGBM Marketing",
+        "error_thb": -327.2126913015
+      },
+      {
+        "as_of_date": "2026-08-09",
+        "forecast_week_start": "2026-08-10",
+        "forecast_week_end": "2026-08-16",
+        "product_group_id": "PG02",
+        "actual_net_revenue_week": 1832.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 5122.740352689,
+        "model": "LightGBM Marketing",
+        "error_thb": 3290.740352689
+      },
+      {
+        "as_of_date": "2026-08-09",
+        "forecast_week_start": "2026-08-10",
+        "forecast_week_end": "2026-08-16",
+        "product_group_id": "PG03",
+        "actual_net_revenue_week": 3069.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3703.5484726756,
+        "model": "LightGBM Marketing",
+        "error_thb": 634.5484726756
+      },
+      {
+        "as_of_date": "2026-08-09",
+        "forecast_week_start": "2026-08-10",
+        "forecast_week_end": "2026-08-16",
+        "product_group_id": "PG04",
+        "actual_net_revenue_week": 2079.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3181.2907964577,
+        "model": "LightGBM Marketing",
+        "error_thb": 1102.2907964577
+      },
+      {
+        "as_of_date": "2026-08-09",
+        "forecast_week_start": "2026-08-10",
+        "forecast_week_end": "2026-08-16",
+        "product_group_id": "PG05",
+        "actual_net_revenue_week": 6475.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 4006.7188820837,
+        "model": "LightGBM Marketing",
+        "error_thb": -2468.2811179163
+      },
+      {
+        "as_of_date": "2026-08-16",
+        "forecast_week_start": "2026-08-17",
+        "forecast_week_end": "2026-08-23",
+        "product_group_id": "PG01",
+        "actual_net_revenue_week": 2587.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3130.2730851487,
+        "model": "LightGBM Marketing",
+        "error_thb": 543.2730851487
+      },
+      {
+        "as_of_date": "2026-08-16",
+        "forecast_week_start": "2026-08-17",
+        "forecast_week_end": "2026-08-23",
+        "product_group_id": "PG02",
+        "actual_net_revenue_week": 4580.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3988.701944863,
+        "model": "LightGBM Marketing",
+        "error_thb": -591.298055137
+      },
+      {
+        "as_of_date": "2026-08-16",
+        "forecast_week_start": "2026-08-17",
+        "forecast_week_end": "2026-08-23",
+        "product_group_id": "PG03",
+        "actual_net_revenue_week": 4240.8,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 6227.5598933573,
+        "model": "LightGBM Marketing",
+        "error_thb": 1986.7598933573
+      },
+      {
+        "as_of_date": "2026-08-16",
+        "forecast_week_start": "2026-08-17",
+        "forecast_week_end": "2026-08-23",
+        "product_group_id": "PG04",
+        "actual_net_revenue_week": 2608.2,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3058.4666221305,
+        "model": "LightGBM Marketing",
+        "error_thb": 450.2666221305
+      },
+      {
+        "as_of_date": "2026-08-16",
+        "forecast_week_start": "2026-08-17",
+        "forecast_week_end": "2026-08-23",
+        "product_group_id": "PG05",
+        "actual_net_revenue_week": 5180.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 2488.9358904788,
+        "model": "LightGBM Marketing",
+        "error_thb": -2691.0641095212
+      },
+      {
+        "as_of_date": "2026-08-23",
+        "forecast_week_start": "2026-08-24",
+        "forecast_week_end": "2026-08-30",
+        "product_group_id": "PG01",
+        "actual_net_revenue_week": 4378.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 2336.3916236149,
+        "model": "LightGBM Marketing",
+        "error_thb": -2041.6083763851
+      },
+      {
+        "as_of_date": "2026-08-23",
+        "forecast_week_start": "2026-08-24",
+        "forecast_week_end": "2026-08-30",
+        "product_group_id": "PG02",
+        "actual_net_revenue_week": 3206.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3696.5987901048,
+        "model": "LightGBM Marketing",
+        "error_thb": 490.5987901048
+      },
+      {
+        "as_of_date": "2026-08-23",
+        "forecast_week_start": "2026-08-24",
+        "forecast_week_end": "2026-08-30",
+        "product_group_id": "PG03",
+        "actual_net_revenue_week": 3627.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 5053.6193092142,
+        "model": "LightGBM Marketing",
+        "error_thb": 1426.6193092142
+      },
+      {
+        "as_of_date": "2026-08-23",
+        "forecast_week_start": "2026-08-24",
+        "forecast_week_end": "2026-08-30",
+        "product_group_id": "PG04",
+        "actual_net_revenue_week": 1512.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3752.2042148935,
+        "model": "LightGBM Marketing",
+        "error_thb": 2240.2042148935
+      },
+      {
+        "as_of_date": "2026-08-23",
+        "forecast_week_start": "2026-08-24",
+        "forecast_week_end": "2026-08-30",
+        "product_group_id": "PG05",
+        "actual_net_revenue_week": 2849.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3623.3749562818,
+        "model": "LightGBM Marketing",
+        "error_thb": 774.3749562818
+      },
+      {
+        "as_of_date": "2026-08-30",
+        "forecast_week_start": "2026-08-31",
+        "forecast_week_end": "2026-09-06",
+        "product_group_id": "PG01",
+        "actual_net_revenue_week": 2714.36,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3392.8032528059,
+        "model": "LightGBM Marketing",
+        "error_thb": 678.4432528059
+      },
+      {
+        "as_of_date": "2026-08-30",
+        "forecast_week_start": "2026-08-31",
+        "forecast_week_end": "2026-09-06",
+        "product_group_id": "PG02",
+        "actual_net_revenue_week": 3865.52,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 2824.7358085415,
+        "model": "LightGBM Marketing",
+        "error_thb": -1040.7841914585
+      },
+      {
+        "as_of_date": "2026-08-30",
+        "forecast_week_start": "2026-08-31",
+        "forecast_week_end": "2026-09-06",
+        "product_group_id": "PG03",
+        "actual_net_revenue_week": 4369.14,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 4085.5401384184,
+        "model": "LightGBM Marketing",
+        "error_thb": -283.5998615816
+      },
+      {
+        "as_of_date": "2026-08-30",
+        "forecast_week_start": "2026-08-31",
+        "forecast_week_end": "2026-09-06",
+        "product_group_id": "PG04",
+        "actual_net_revenue_week": 1512.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 2686.5459823487,
+        "model": "LightGBM Marketing",
+        "error_thb": 1174.5459823487
+      },
+      {
+        "as_of_date": "2026-08-30",
+        "forecast_week_start": "2026-08-31",
+        "forecast_week_end": "2026-09-06",
+        "product_group_id": "PG05",
+        "actual_net_revenue_week": 4921.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 4176.2895919727,
+        "model": "LightGBM Marketing",
+        "error_thb": -744.7104080273
+      },
+      {
+        "as_of_date": "2026-09-06",
+        "forecast_week_start": "2026-09-07",
+        "forecast_week_end": "2026-09-13",
+        "product_group_id": "PG01",
+        "actual_net_revenue_week": 1297.48,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3421.6843122103,
+        "model": "LightGBM Marketing",
+        "error_thb": 2124.2043122103
+      },
+      {
+        "as_of_date": "2026-09-06",
+        "forecast_week_start": "2026-09-07",
+        "forecast_week_end": "2026-09-13",
+        "product_group_id": "PG02",
+        "actual_net_revenue_week": 3416.68,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3596.5212590561,
+        "model": "LightGBM Marketing",
+        "error_thb": 179.8412590561
+      },
+      {
+        "as_of_date": "2026-09-06",
+        "forecast_week_start": "2026-09-07",
+        "forecast_week_end": "2026-09-13",
+        "product_group_id": "PG03",
+        "actual_net_revenue_week": 3984.12,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3601.008389768,
+        "model": "LightGBM Marketing",
+        "error_thb": -383.111610232
+      },
+      {
+        "as_of_date": "2026-09-06",
+        "forecast_week_start": "2026-09-07",
+        "forecast_week_end": "2026-09-13",
+        "product_group_id": "PG04",
+        "actual_net_revenue_week": 3213.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 2831.788584645,
+        "model": "LightGBM Marketing",
+        "error_thb": -381.211415355
+      },
+      {
+        "as_of_date": "2026-09-06",
+        "forecast_week_start": "2026-09-07",
+        "forecast_week_end": "2026-09-13",
+        "product_group_id": "PG05",
+        "actual_net_revenue_week": 3626.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 4941.4601345408,
+        "model": "LightGBM Marketing",
+        "error_thb": 1315.4601345408
+      },
+      {
+        "as_of_date": "2026-09-13",
+        "forecast_week_start": "2026-09-14",
+        "forecast_week_end": "2026-09-20",
+        "product_group_id": "PG01",
+        "actual_net_revenue_week": 6957.04,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 4048.3363192974,
+        "model": "LightGBM Marketing",
+        "error_thb": -2908.7036807026
+      },
+      {
+        "as_of_date": "2026-09-13",
+        "forecast_week_start": "2026-09-14",
+        "forecast_week_end": "2026-09-20",
+        "product_group_id": "PG02",
+        "actual_net_revenue_week": 2619.76,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3291.5648411356,
+        "model": "LightGBM Marketing",
+        "error_thb": 671.8048411356
+      },
+      {
+        "as_of_date": "2026-09-13",
+        "forecast_week_start": "2026-09-14",
+        "forecast_week_end": "2026-09-20",
+        "product_group_id": "PG03",
+        "actual_net_revenue_week": 5859.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 4671.9754547624,
+        "model": "LightGBM Marketing",
+        "error_thb": -1187.0245452376
+      },
+      {
+        "as_of_date": "2026-09-13",
+        "forecast_week_start": "2026-09-14",
+        "forecast_week_end": "2026-09-20",
+        "product_group_id": "PG04",
+        "actual_net_revenue_week": 3008.88,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3492.5316641888,
+        "model": "LightGBM Marketing",
+        "error_thb": 483.6516641888
+      },
+      {
+        "as_of_date": "2026-09-13",
+        "forecast_week_start": "2026-09-14",
+        "forecast_week_end": "2026-09-20",
+        "product_group_id": "PG05",
+        "actual_net_revenue_week": 8119.65,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 4269.5419391417,
+        "model": "LightGBM Marketing",
+        "error_thb": -3850.1080608583
+      },
+      {
+        "as_of_date": "2026-09-20",
+        "forecast_week_start": "2026-09-21",
+        "forecast_week_end": "2026-09-27",
+        "product_group_id": "PG01",
+        "actual_net_revenue_week": 2189.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 4133.141768682,
+        "model": "LightGBM Marketing",
+        "error_thb": 1944.141768682
+      },
+      {
+        "as_of_date": "2026-09-20",
+        "forecast_week_start": "2026-09-21",
+        "forecast_week_end": "2026-09-27",
+        "product_group_id": "PG02",
+        "actual_net_revenue_week": 1337.36,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 3909.1578308096,
+        "model": "LightGBM Marketing",
+        "error_thb": 2571.7978308096
+      },
+      {
+        "as_of_date": "2026-09-20",
+        "forecast_week_start": "2026-09-21",
+        "forecast_week_end": "2026-09-27",
+        "product_group_id": "PG03",
+        "actual_net_revenue_week": 3069.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 4422.2701571588,
+        "model": "LightGBM Marketing",
+        "error_thb": 1353.2701571588
+      },
+      {
+        "as_of_date": "2026-09-20",
+        "forecast_week_start": "2026-09-21",
+        "forecast_week_end": "2026-09-27",
+        "product_group_id": "PG04",
+        "actual_net_revenue_week": 3477.6,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 2877.0665400684,
+        "model": "LightGBM Marketing",
+        "error_thb": -600.5334599316
+      },
+      {
+        "as_of_date": "2026-09-20",
+        "forecast_week_start": "2026-09-21",
+        "forecast_week_end": "2026-09-27",
+        "product_group_id": "PG05",
+        "actual_net_revenue_week": 3807.3,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "predicted_net_revenue_week": 5080.0873486563,
+        "model": "LightGBM Marketing",
+        "error_thb": 1272.7873486563
+      }
+    ],
+    "validation_folds": [
+      {
+        "fold": "May",
+        "model": "Last Week Naive",
+        "train_rows": 105,
+        "validation_rows": 20,
+        "group_wape_pct": 27.829,
+        "shop_wape_pct": 16.454,
+        "group_mae_thb_week": 1030.49,
+        "absolute_error_sum_thb": 20609.72,
+        "actual_revenue_thb": 74057.88
+      },
+      {
+        "fold": "May",
+        "model": "LightGBM History",
+        "train_rows": 105,
+        "validation_rows": 20,
+        "group_wape_pct": 23.741,
+        "shop_wape_pct": 11.086,
+        "group_mae_thb_week": 879.11,
+        "absolute_error_sum_thb": 17582.29,
+        "actual_revenue_thb": 74057.88
+      },
+      {
+        "fold": "May",
+        "model": "LightGBM Marketing",
+        "train_rows": 105,
+        "validation_rows": 20,
+        "group_wape_pct": 20.67,
+        "shop_wape_pct": 10.549,
+        "group_mae_thb_week": 765.4,
+        "absolute_error_sum_thb": 15308.06,
+        "actual_revenue_thb": 74057.88
+      },
+      {
+        "fold": "June",
+        "model": "Last Week Naive",
+        "train_rows": 130,
+        "validation_rows": 20,
+        "group_wape_pct": 39.374,
+        "shop_wape_pct": 12.226,
+        "group_mae_thb_week": 1619.87,
+        "absolute_error_sum_thb": 32397.41,
+        "actual_revenue_thb": 82281.48
+      },
+      {
+        "fold": "June",
+        "model": "LightGBM History",
+        "train_rows": 130,
+        "validation_rows": 20,
+        "group_wape_pct": 29.349,
+        "shop_wape_pct": 5.128,
+        "group_mae_thb_week": 1207.44,
+        "absolute_error_sum_thb": 24148.76,
+        "actual_revenue_thb": 82281.48
+      },
+      {
+        "fold": "June",
+        "model": "LightGBM Marketing",
+        "train_rows": 130,
+        "validation_rows": 20,
+        "group_wape_pct": 25.829,
+        "shop_wape_pct": 8.112,
+        "group_mae_thb_week": 1062.64,
+        "absolute_error_sum_thb": 21252.84,
+        "actual_revenue_thb": 82281.48
+      },
+      {
+        "fold": "July",
+        "model": "Last Week Naive",
+        "train_rows": 150,
+        "validation_rows": 20,
+        "group_wape_pct": 40.007,
+        "shop_wape_pct": 18.092,
+        "group_mae_thb_week": 1739.83,
+        "absolute_error_sum_thb": 34796.57,
+        "actual_revenue_thb": 86975.58
+      },
+      {
+        "fold": "July",
+        "model": "LightGBM History",
+        "train_rows": 150,
+        "validation_rows": 20,
+        "group_wape_pct": 32.611,
+        "shop_wape_pct": 16.105,
+        "group_mae_thb_week": 1418.19,
+        "absolute_error_sum_thb": 28363.74,
+        "actual_revenue_thb": 86975.58
+      },
+      {
+        "fold": "July",
+        "model": "LightGBM Marketing",
+        "train_rows": 150,
+        "validation_rows": 20,
+        "group_wape_pct": 31.468,
+        "shop_wape_pct": 14.109,
+        "group_mae_thb_week": 1368.47,
+        "absolute_error_sum_thb": 27369.43,
+        "actual_revenue_thb": 86975.58
+      }
+    ],
+    "feature_importance": [
+      {
+        "feature": "revenue_mean_4weeks",
+        "gain": 1080496939.0
+      },
+      {
+        "feature": "planned_ads_week",
+        "gain": 589697415.8984375
+      },
+      {
+        "feature": "revenue_last_week",
+        "gain": 553008138.796875
+      },
+      {
+        "feature": "revenue_std_4weeks",
+        "gain": 496428835.6300049
+      },
+      {
+        "feature": "product_group_code",
+        "gain": 406531740.0
+      },
+      {
+        "feature": "historical_ads_last_week",
+        "gain": 392501334.0
+      },
+      {
+        "feature": "week_of_year",
+        "gain": 306205168.0
+      },
+      {
+        "feature": "revenue_two_weeks_ago",
+        "gain": 241326714.0
+      },
+      {
+        "feature": "historical_discount_last_week",
+        "gain": 238650606.0
+      },
+      {
+        "feature": "week_month",
+        "gain": 206848500.0
+      },
+      {
+        "feature": "planned_discount_mean_week",
+        "gain": 146674153.6953125
+      },
+      {
+        "feature": "planned_campaign_days",
+        "gain": 88398080.0
+      }
+    ],
+    "feature_count": 215,
+    "feature_preview": [
+      {
+        "as_of_date": "2025-11-30",
+        "forecast_week_start": "2025-12-01",
+        "product_group_id": "PG01",
+        "revenue_last_week": 3184.0,
+        "revenue_mean_4weeks": 2909.8775,
+        "historical_ads_last_week": 179.06,
+        "planned_ads_week": 254.0,
+        "planned_discount_mean_week": 0.0428571429,
+        "actual_net_revenue_week": 2626.8,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH"
+      },
+      {
+        "as_of_date": "2025-11-30",
+        "forecast_week_start": "2025-12-01",
+        "product_group_id": "PG02",
+        "revenue_last_week": 2977.0,
+        "revenue_mean_4weeks": 3337.675,
+        "historical_ads_last_week": 294.65,
+        "planned_ads_week": 243.0,
+        "planned_discount_mean_week": 0.0,
+        "actual_net_revenue_week": 3893.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH"
+      },
+      {
+        "as_of_date": "2025-11-30",
+        "forecast_week_start": "2025-12-01",
+        "product_group_id": "PG03",
+        "revenue_last_week": 4185.0,
+        "revenue_mean_4weeks": 3578.175,
+        "historical_ads_last_week": 130.79,
+        "planned_ads_week": 249.0,
+        "planned_discount_mean_week": 0.0428571429,
+        "actual_net_revenue_week": 4017.6,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH"
+      },
+      {
+        "as_of_date": "2025-11-30",
+        "forecast_week_start": "2025-12-01",
+        "product_group_id": "PG04",
+        "revenue_last_week": 3024.0,
+        "revenue_mean_4weeks": 3827.25,
+        "historical_ads_last_week": 184.12,
+        "planned_ads_week": 177.0,
+        "planned_discount_mean_week": 0.0,
+        "actual_net_revenue_week": 3213.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH"
+      },
+      {
+        "as_of_date": "2025-11-30",
+        "forecast_week_start": "2025-12-01",
+        "product_group_id": "PG05",
+        "revenue_last_week": 2590.0,
+        "revenue_mean_4weeks": 5376.84,
+        "historical_ads_last_week": 160.17,
+        "planned_ads_week": 187.0,
+        "planned_discount_mean_week": 0.0,
+        "actual_net_revenue_week": 2331.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH"
+      },
+      {
+        "as_of_date": "2025-12-07",
+        "forecast_week_start": "2025-12-08",
+        "product_group_id": "PG01",
+        "revenue_last_week": 2626.8,
+        "revenue_mean_4weeks": 3016.84,
+        "historical_ads_last_week": 222.61,
+        "planned_ads_week": 298.0,
+        "planned_discount_mean_week": 0.0285714286,
+        "actual_net_revenue_week": 5691.4,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH"
+      },
+      {
+        "as_of_date": "2025-12-07",
+        "forecast_week_start": "2025-12-08",
+        "product_group_id": "PG02",
+        "revenue_last_week": 3893.0,
+        "revenue_mean_4weeks": 3595.3,
+        "historical_ads_last_week": 228.03,
+        "planned_ads_week": 238.0,
+        "planned_discount_mean_week": 0.0,
+        "actual_net_revenue_week": 1603.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH"
+      },
+      {
+        "as_of_date": "2025-12-07",
+        "forecast_week_start": "2025-12-08",
+        "product_group_id": "PG03",
+        "revenue_last_week": 4017.6,
+        "revenue_mean_4weeks": 3919.95,
+        "historical_ads_last_week": 229.71,
+        "planned_ads_week": 253.0,
+        "planned_discount_mean_week": 0.0285714286,
+        "actual_net_revenue_week": 6110.1,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH"
+      },
+      {
+        "as_of_date": "2025-12-07",
+        "forecast_week_start": "2025-12-08",
+        "product_group_id": "PG04",
+        "revenue_last_week": 3213.0,
+        "revenue_mean_4weeks": 3543.75,
+        "historical_ads_last_week": 169.91,
+        "planned_ads_week": 312.0,
+        "planned_discount_mean_week": 0.0,
+        "actual_net_revenue_week": 6237.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH"
+      },
+      {
+        "as_of_date": "2025-12-07",
+        "forecast_week_start": "2025-12-08",
+        "product_group_id": "PG05",
+        "revenue_last_week": 2331.0,
+        "revenue_mean_4weeks": 4198.39,
+        "historical_ads_last_week": 171.8,
+        "planned_ads_week": 129.0,
+        "planned_discount_mean_week": 0.0,
+        "actual_net_revenue_week": 5698.0,
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH"
+      }
+    ],
+    "serving_predictions": [
+      {
+        "as_of_date": "2026-09-20",
+        "forecast_week_start": "2026-09-21",
+        "forecast_week_end": "2026-09-27",
+        "product_group_id": "PG01",
+        "source_run_id": "synthetic_warehouse_v1",
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "selected_model": "LightGBM Marketing",
+        "model_version": "weekly_sales_lightgbm_demo_v1",
+        "predicted_net_revenue_week": 4133.141768682
+      },
+      {
+        "as_of_date": "2026-09-20",
+        "forecast_week_start": "2026-09-21",
+        "forecast_week_end": "2026-09-27",
+        "product_group_id": "PG02",
+        "source_run_id": "synthetic_warehouse_v1",
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "selected_model": "LightGBM Marketing",
+        "model_version": "weekly_sales_lightgbm_demo_v1",
+        "predicted_net_revenue_week": 3909.1578308096
+      },
+      {
+        "as_of_date": "2026-09-20",
+        "forecast_week_start": "2026-09-21",
+        "forecast_week_end": "2026-09-27",
+        "product_group_id": "PG03",
+        "source_run_id": "synthetic_warehouse_v1",
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "selected_model": "LightGBM Marketing",
+        "model_version": "weekly_sales_lightgbm_demo_v1",
+        "predicted_net_revenue_week": 4422.2701571588
+      },
+      {
+        "as_of_date": "2026-09-20",
+        "forecast_week_start": "2026-09-21",
+        "forecast_week_end": "2026-09-27",
+        "product_group_id": "PG04",
+        "source_run_id": "synthetic_warehouse_v1",
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "selected_model": "LightGBM Marketing",
+        "model_version": "weekly_sales_lightgbm_demo_v1",
+        "predicted_net_revenue_week": 2877.0665400684
+      },
+      {
+        "as_of_date": "2026-09-20",
+        "forecast_week_start": "2026-09-21",
+        "forecast_week_end": "2026-09-27",
+        "product_group_id": "PG05",
+        "source_run_id": "synthetic_warehouse_v1",
+        "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
+        "selected_model": "LightGBM Marketing",
+        "model_version": "weekly_sales_lightgbm_demo_v1",
+        "predicted_net_revenue_week": 5080.0873486563
+      }
+    ]
+  },
+  "scenario": {
+    "mode": "PLANNING_INPUT_ONLY_NO_COUNTERFACTUAL_FORECAST",
+    "reference_week": "2026-09-21",
+    "reference_plans": [
+      {
+        "product_group_id": "PG01",
+        "planned_ads_week": 138,
+        "planned_discount_mean_week": 0.0514285714
+      },
+      {
+        "product_group_id": "PG02",
+        "planned_ads_week": 238,
+        "planned_discount_mean_week": 0.0228571429
+      },
+      {
+        "product_group_id": "PG03",
+        "planned_ads_week": 201,
+        "planned_discount_mean_week": 0.0
+      },
+      {
+        "product_group_id": "PG04",
+        "planned_ads_week": 205,
+        "planned_discount_mean_week": 0.0342857143
+      },
+      {
+        "product_group_id": "PG05",
+        "planned_ads_week": 238,
+        "planned_discount_mean_week": 0.0142857143
+      }
+    ],
+    "ads_budget_control": "PRODUCT_GROUP_WEEK",
+    "discount_control": "PRODUCT_GROUP_WEEK",
+    "warning": "Changing a plan in this static demo does NOT calculate sales uplift, Contribution Profit or a causal prediction."
+  }
+}

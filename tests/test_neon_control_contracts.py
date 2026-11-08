@@ -32,3 +32,11 @@ def test_archiving_cannot_rewrite_existing_neon_source():
     assert "NEW_NEON_SNAPSHOT_AND_OFFLINE_WAREHOUSE_RECONSTRUCTION" in source
     assert 'original_run1_parquet_available": False' in source
     assert "pipeline_artifacts" in source
+
+
+def test_web_status_binds_live_artifact_and_count_queries_in_correct_order():
+    source=(ROOT/"api"/"neon-status.js").read_text(encoding="utf-8")
+    assert "const [state,runs,files,counts]=await Promise.all([" in source
+    assert "archived_files:files" in source
+    assert "counts:counts[0]" in source
+    assert "r.cycle_number=d.cycle_number" in source

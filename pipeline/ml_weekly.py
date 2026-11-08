@@ -158,9 +158,9 @@ def build_weekly_dataset(
         raise ValueError("No training weeks")
     if result.duplicated(["scenario_id", "product_group_id", "forecast_week_start"]).any():
         raise AssertionError("Duplicate week x Product Group")
-    if result[NUMERIC_INPUTS + ("actual_net_revenue_week",)].isnull().any().any():
+    if result[list(NUMERIC_INPUTS) + ["actual_net_revenue_week"]].isnull().any().any():
         raise AssertionError("Missing ML features or labels")
-    if result[NUMERIC_INPUTS + ("actual_net_revenue_week",)].lt(0).any().any():
+    if result[list(NUMERIC_INPUTS) + ["actual_net_revenue_week"]].lt(0).any().any():
         raise AssertionError("Negative weekly data")
     if result.training_ready.any():
         raise AssertionError("Retrospective data cannot be auto-PIT-approved")

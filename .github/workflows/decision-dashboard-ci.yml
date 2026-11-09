@@ -9,6 +9,7 @@ on:
       - 'vercel.json'
       - '.github/workflows/decision-dashboard-ci.yml'
       - 'api/**'
+      - 'lib/**'
       - 'pipeline/ci_lab_stage.py'
       - 'pipeline/ci_lab_batch.py'
       - 'pipeline/ci_lab_export.py'
@@ -85,7 +86,7 @@ jobs:
           node --check api/lab-oidc.js
           node --check api/lab-batch.js
           node --check api/lab-batch-result.js
-          node --check api/lab-warehouse-download.js
+          node --check lib/lab-warehouse-download.js
           node --check api/lab-error.js
           node --check api/lab-reset.js
           python -m py_compile pipeline/oidc_lab_auth.py pipeline/publish_lab_result.py

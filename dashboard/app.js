@@ -1362,7 +1362,7 @@
     if(state.batchRun.status==="success"&&state.batchRun.batch===state.notebookBatch){
       const summary=state.batchRun.result;
       const download=node("a","button button-outline","↓ ดาวน์โหลด Warehouse ครบทุกตาราง (ZIP/CSV)");
-      download.href="/api/lab-warehouse-download?run_id="+encodeURIComponent(state.batchRun.runId);
+      download.href="/api/lab-batch-result?download=warehouse&run_id="+encodeURIComponent(state.batchRun.runId);
       root.append(box("lab-result",node("h3","lab-subheading","สรุปผล Run นี้"),
         small("ผ่านครบ 5 ขั้น · ใช้เวลา "+money(summary?.elapsed_seconds,1)+" วินาที"),
         small("ออเดอร์ก่อนรัน "+money(summary?.orders_before)+" → หลังรัน "+

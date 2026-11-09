@@ -1,5 +1,6 @@
 /** Read the immutable completed result, never a live database mutation. */
 import { unzipSync, strFromU8 } from "fflate";
+import warehouseDownload from "../lib/lab-warehouse-download.js";
 const REPO="KankaweeK356/tiktok-shop-pipeline-demo";
 const REF="feature/classroom-demo-evidence-foundation";
 async function github(path,raw=false){
@@ -11,6 +12,7 @@ async function github(path,raw=false){
   return raw?new Uint8Array(await response.arrayBuffer()):response.json();
 }
 export default async function handler(req,res){
+  if(req.query?.download==="warehouse")return warehouseDownload(req,res);
   res.setHeader("Cache-Control","no-store");
   if(req.method!=="GET")return res.status(405).json({error:"GET only"});
   if(!process.env.CLASSROOM_GITHUB_TOKEN)return res.status(503).json({error:"Lab ยังไม่พร้อม"});

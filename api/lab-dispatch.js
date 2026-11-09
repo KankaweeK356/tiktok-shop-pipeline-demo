@@ -36,11 +36,25 @@ export default async function handler(req,res){
     return json(res,405,{error:"GET/POST only"});
   const configured=Boolean(process.env.CLASSROOM_GITHUB_TOKEN &&
     process.env.CLASSROOM_LAB_ADMIN_KEY &&
-    process.env.CLASSROOM_NEON_READONLY_URL);
+    process.env.CLASSROOM_LAB_NEON_URL);
   if(req.method==="GET"){
     const workflow_url="https://github.com/"+REPO+"/actions/workflows/"+WORKFLOW;
-    if(!req.query?.stage)return json(res,200,{ready:configured,mode:configured?
-      "REAL_GITHUB_ACTIONS":"READ_ONLY_EVIDENCE_ONLY",workflow_url});
+    if(!req.query?.stage){
+      let lab={branch:"classroom-step-lab",phase:"UNKNOWN",cycle:null,orders:null};
+      if(process.env.CLASSROOM_LAB_NEON_URL){
+        try{
+          const sql=neon(process.env.CLASSROOM_LAB_NEON_URL);
+          const [state,counts]=await Promise.all([
+            sql.query("SELECT phase,cycle_number FROM demo_control.dataset_state WHERE dataset_key='classroom'"),
+            sql.query('SELECT COUNT(*)::int AS n FROM demo_er1."Fact_Orders"')
+          ]);
+          lab={branch:"classroom-step-lab",phase:state[0]?.phase||"UNKNOWN",
+               cycle:state[0]?.cycle_number||null,orders:counts[0]?.n??null};
+        }catch(_error){/* No write and no credentials in response. */}
+      }
+      return json(res,200,{ready:configured,mode:configured?
+        "REAL_GITHUB_ACTIONS":"READ_ONLY_EVIDENCE_ONLY",workflow_url,lab});
+    }
     if(!configured||!safeEquals(req.headers["x-classroom-admin-key"],
                                 process.env.CLASSROOM_LAB_ADMIN_KEY))
       return json(res,403,{error:"ไม่มีสิทธิ์ดูผลการรัน"});
@@ -77,7 +91,7 @@ export default async function handler(req,res){
   if((batch==="initial" && index===0)!==(previous==="0"))
     return json(res,409,{error:"Run Initial Ingest เริ่มที่ 0; Step ถัดไปต้องใช้ Run ID ของขั้นก่อน"});
   try{
-    const sql=neon(process.env.CLASSROOM_NEON_READONLY_URL);
+    const sql=neon(process.env.CLASSROOM_LAB_NEON_URL);
     const rows=await sql.query("SELECT phase FROM demo_control.dataset_state WHERE dataset_key='classroom'");
     const expected=batch==="initial"?"EMPTY":"RUN1_READY";
     if(rows[0]?.phase!==expected)

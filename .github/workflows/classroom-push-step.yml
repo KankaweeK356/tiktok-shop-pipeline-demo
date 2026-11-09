@@ -8,7 +8,7 @@ on:
       - '.github/lab-command.json'
 
 permissions:
-  contents: read
+  contents: write
   actions: read
   id-token: write
 
@@ -66,6 +66,21 @@ jobs:
           STAGE: ${{ steps.command.outputs.stage }}
           BATCH: ${{ steps.command.outputs.batch }}
         run: python -m pipeline.ci_lab_stage --batch "$BATCH" --stage "$STAGE"
+      - name: Save verified small input/output example to versioned Dashboard data
+        run: python -m pipeline.publish_lab_result
+      - name: Commit source-backed Lab example to review branch (no secrets)
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add dashboard/data/lab_manifest.json dashboard/data/lab_steps/
+          git diff --cached --quiet || git commit -m "data(lab): publish real ${{ steps.command.outputs.batch }} ${{ steps.command.outputs.stage }} worker evidence"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:feature/classroom-demo-evidence-foundation; then exit 0; fi
+            git fetch origin feature/classroom-demo-evidence-foundation
+            git rebase origin/feature/classroom-demo-evidence-foundation
+          done
+          echo "Failed to publish real stage evidence after conflict retry" >&2
+          exit 1
       - name: Preserve stage workspace for next GitHub run
         if: always()
         uses: actions/upload-artifact@v4

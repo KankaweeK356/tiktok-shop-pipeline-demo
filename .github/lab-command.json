@@ -1,7 +1,7 @@
 {
   "batch": "incremental",
-  "stage": "extract",
-  "previous_run_id": "42578675952",
+  "stage": "transform",
+  "previous_run_id": "42578795156",
   "purpose": "NEON_CLASSROOM_STEP_LAB_PROOF",
-  "note": "Run2 Stage2: read Neon source and create Raw Parquet in recovered GitHub runner workspace"
+  "note": "Run2 Stage3: actual incremental standardized transformation with late updates and source Delta"
 }

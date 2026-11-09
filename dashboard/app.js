@@ -2,7 +2,7 @@
 (function () {
   "use strict";
   const $ = s => document.querySelector(s);
-  const state = { data:null, evidence:null, evidenceLayer:"source", evidenceTable:"", neonStatus:"not_loaded", neonTables:[], neonTable:"", neonData:null, neonError:"", neonRunStatus:null, neonArtifactType:"ALL", labStage:0, labTable:"Fact_Orders", labResults:{}, labBusy:false, labError:"", labLog:[], realReady:false, realConfigChecked:false, realLabPhase:"UNKNOWN", realLabOrders:null, realBatch:"initial", realStageIndex:0, realPreviousRunId:"", realRunId:null, realStatus:"", realUrl:"", realError:"", realStartedAt:"", realAdminKey:"", errorCase:"E01", errorReplayed:false, errorLabOpen:false, view:"business", month:"", group:"ALL", sku:"", skuSort:"lowest_margin", model:"", week:"", replay:false, rows:[] };
+  const state = { data:null, evidence:null, evidenceLayer:"source", evidenceTable:"", neonStatus:"not_loaded", neonTables:[], neonTable:"", neonData:null, neonError:"", neonRunStatus:null, neonArtifactType:"ALL", labStage:0, labTable:"Fact_Orders", labResults:{}, labBusy:false, labError:"", labLog:[], realReady:false, realConfigChecked:false, realLabPhase:"UNKNOWN", realLabOrders:null, realBatch:"initial", realStageIndex:0, realPreviousRunId:"", realRunId:null, realStatus:"", realUrl:"", realError:"", realStartedAt:"", realAdminKey:"", realEvidence:null, savedLabManifest:null, savedLabReceipt:null, savedLabSelected:"", savedLabLoading:false, errorCase:"E01", errorReplayed:false, errorLabOpen:false, view:"business", month:"", group:"ALL", sku:"", skuSort:"lowest_margin", model:"", week:"", replay:false, rows:[] };
   const names = {
     business:["ภาพรวมธุรกิจ","ยอดขาย กำไร และ KPI ของร้านเสื้อผ้าผู้หญิง","ภาพรวมธุรกิจ"],
     pipeline:["ทดสอบการนำเข้าข้อมูล","เส้นทางข้อมูลจากต้นทางถึงคลังข้อมูลและหลักฐานการตรวจสอบ","การนำเข้าข้อมูล"],
@@ -743,7 +743,7 @@
     content.append(notice("รันใน Neon Branch classroom-step-lab แยกจาก demo-pipeline ที่มี 900 ออเดอร์ และจาก Analytics · ส่งต่อ Checkpoint/Workspace ผ่าน GitHub Artifact"));
     if(!state.realConfigChecked)content.append(small("กำลังตรวจสิทธิ์การสั่งงาน…"));
     else if(!state.realReady)content.append(notice(
-      "ยังไม่เปิดระบบสั่งงานจริง: ต้องมี CLASSROOM_GITHUB_TOKEN และ CLASSROOM_LAB_ADMIN_KEY ใน Vercel กับ NEON_LAB_DATABASE_URL ใน GitHub Secrets (ใช้ Branch classroom-step-lab เท่านั้น)",true));
+      "ยังไม่เปิดปุ่มสั่ง GitHub จากหน้าเว็บ: ต้องมี CLASSROOM_GITHUB_TOKEN และ CLASSROOM_LAB_ADMIN_KEY เฉพาะฝั่ง Vercel เท่านั้น · การเชื่อม Worker กับ Neon ผ่าน OIDC สำเร็จแล้ว ไม่ต้องเพิ่ม GitHub Neon Secret",true));
     const phase=state.realLabPhase;
     const expected=state.realBatch==="initial"?"EMPTY":"RUN1_READY";
     if(phase!==expected)content.append(notice(
@@ -806,6 +806,74 @@
       content));
   }
 
+  async function loadSavedLabEvidence(){
+    try{
+      const response=await fetch("./data/lab_manifest.json",{cache:"no-cache"});
+      if(response.ok){
+        const manifest=await response.json();
+        if(manifest.schema_version==="real_lab_steps_v1" &&
+           manifest.data_classification==="SYNTHETIC_EDUCATIONAL_NOT_TIKTOK")
+          state.savedLabManifest=manifest;
+      }
+    }catch(_error){/* No completed real step snapshots yet. */}
+    if(state.view==="pipeline")renderPipeline();
+  }
+
+  async function selectSavedLabStage(item){
+    state.savedLabSelected=item.batch+"/"+item.stage;
+    state.savedLabLoading=true;renderPipeline();
+    try{
+      const result=await fetch(item.file,{cache:"no-cache"});
+      if(!result.ok)throw Error("HTTP "+result.status);
+      const data=await result.json();
+      if(data.evidence?.mode!=="REAL_GITHUB_ACTIONS_STAGE" ||
+         data.source_type!=="SYNTHETIC_EDUCATIONAL_NOT_TIKTOK" ||
+         data.batch!==item.batch||data.stage!==item.stage)
+        throw Error("Provenance ของผลรันไม่ถูกต้อง");
+      state.savedLabReceipt=data;
+    }catch(error){
+      state.savedLabReceipt=null;
+      state.labError="ไม่สามารถอ่านตัวอย่างจาก GitHub Run จริงได้: "+error.message;
+    }
+    state.savedLabLoading=false;renderPipeline();
+  }
+
+  function renderSavedLab(root){
+    const manifest=state.savedLabManifest;
+    const body=contentArea();
+    body.append(notice("ผลส่วนนี้มาจากการรัน Python + Neon จริงใน GitHub Actions คนละ Job พร้อมตัวอย่างแถวที่ Worker บันทึกไว้ ไม่ใช่การสร้าง ETL ใหม่เมื่อคลิกดู"));
+    if(!manifest?.runs?.length){
+      body.append(small("ยังไม่มีผล Step ที่เผยแพร่เป็น Data Snapshot จาก GitHub Worker"));
+    }else{
+      const options=box("lab-steps");
+      manifest.runs.forEach(entry=>{
+        const selected=state.savedLabSelected===entry.batch+"/"+entry.stage;
+        const btn=node("button","lab-step"+(selected?" lab-active":""));
+        btn.type="button";btn.disabled=state.savedLabLoading;
+        btn.append(node("span","lab-step-number",
+          String(LAB_STEPS.findIndex(x=>x.id===entry.stage)+1).padStart(2,"0")),
+          box("lab-step-text",
+            node("strong","",(entry.batch==="initial"?"Initial":"Incremental")+" · "+
+              (LAB_STEPS.find(x=>x.id===entry.stage)?.title||entry.stage)),
+            small("GitHub Run #"+entry.run_id)),
+          node("span","lab-step-state",selected?"กำลังแสดง":"ดูผลจริง"));
+        btn.addEventListener("click",()=>selectSavedLabStage(entry));
+        options.append(btn);
+      });
+      body.append(options);
+      if(state.savedLabLoading)body.append(small("กำลังโหลดผลลัพธ์จาก Worker…"));
+      else if(state.savedLabReceipt && manifest.runs.some(entry=>
+          entry.run_id===state.savedLabReceipt.git_run_id))
+        body.append(renderLabResult(state.savedLabReceipt.evidence));
+      if(state.savedLabReceipt?.git_run_id)
+        body.append(link("เปิด Log ของ GitHub Run นี้",
+          "https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/actions/runs/"+
+          state.savedLabReceipt.git_run_id));
+    }
+    root.append(panel("ผลประมวลผลจริงทีละ Step · ใช้สาธิตกับอาจารย์",
+      "เลือก Step เพื่อดู Input, Output ตัวอย่างแถว และผลตรวจสอบจาก Python Worker จริง",body));
+  }
+
   function renderPipeline(){
     const root=$("#app");root.replaceChildren();
     const live=state.neonRunStatus;
@@ -821,6 +889,7 @@
         node("strong","",summary?.phase||"กำลังอ่านสถานะ"),
         small(summary?"รอบข้อมูล "+summary.cycle_number+" · "+money(live.counts.orders)+" ออเดอร์":"กำลังเชื่อม Neon")));
     root.append(hero);
+    renderSavedLab(root);
     renderRealRunner(root);
     root.append(notice("ส่วนตรวจหลักฐานด้านล่างเป็น Read-only Verification ไม่ใช่ ETL ใหม่; ใช้ Execute Real ETL Step ด้านบนเท่านั้นเมื่อมีสิทธิ์และสถานะฐานข้อมูลพร้อม"));
     root.append(node("h3","lab-subheading","ตรวจหลักฐานจากการรันที่ผ่านมา (Read-only Verification)"));
@@ -997,6 +1066,7 @@
     render();
     if(value==="pipeline" && state.neonStatus==="not_loaded")loadNeonEvidence();
     if(value==="pipeline" && !state.realConfigChecked)loadRealCapabilities();
+    if(value==="pipeline" && state.savedLabManifest===null)loadSavedLabEvidence();
   }
   function exportCsv(){
     const rows=state.rows;if(!rows.length)return;

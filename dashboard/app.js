@@ -137,6 +137,7 @@
         groupProtection===null?"":groupProtection<benchmarkPct?"metric-bad":"metric-good")
     ];
     const root=$("#app");root.replaceChildren();
+    root.append(notice("แหล่งข้อมูล Business Dashboard: DuckDB Snapshot ของชุด Historical ML จำลอง · แยกจาก Neon demo-pipeline ในหน้า Lab จึงห้ามนำยอดสองหน้ามารวมกัน",true));
     root.append(notice(allShop?
       "เป้ากำไรขั้นต่ำ "+pct(benchmarkPct,0)+" ของยอดขายอ้างอิงราคาเต็ม (Gross Reference Sales) · กำไรทั้งร้านหัก Ads / Sample / Claim แล้ว":
       "อัตรากำไรกลุ่มเทียบเกณฑ์ร้าน "+pct(benchmarkPct,0)+" เพื่อคัดกรองกลุ่มที่น่าตรวจ ไม่ใช่การอนุมัติผ่านเป้าราย SKU"));

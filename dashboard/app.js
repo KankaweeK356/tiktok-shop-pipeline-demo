@@ -668,6 +668,10 @@
       state.realLabOrders=data.lab?.orders??null;
       if(!state.realPreviousRunId&&data.lab?.resume_run_id)
         state.realPreviousRunId=String(data.lab.resume_run_id);
+      if(data.lab?.resume_batch&&data.lab?.resume_stage){
+        state.resumeBatch=data.lab.resume_batch;
+        state.resumeStageIndex=LAB_STEPS.findIndex(step=>step.id===data.lab.resume_stage);
+      }else{state.resumeBatch="";state.resumeStageIndex=-1;}
     }catch(_error){state.realReady=false;}
     state.realConfigChecked=true;
     if(state.view==="pipeline")renderPipeline();
@@ -685,17 +689,11 @@
       state.autoBatch="";
       renderPipeline();return;
     }
-    if(!state.realAdminKey){
-      state.realAdminKey=window.prompt("รหัสผู้ควบคุม Pipeline (Admin Key จาก Vercel Settings) — ไม่ส่งเข้า ChatGPT")||"";
-    }
-    if(!state.realAdminKey){state.realError="ยังไม่ได้กรอกรหัสผู้ควบคุม";
-      state.autoBatch="";renderPipeline();return;}
     state.realError="";state.realStatus="submitting";
     renderPipeline();
     try{
       const response=await fetch("/api/lab-dispatch",{
-        method:"POST",headers:{"Content-Type":"application/json",
-          "X-Classroom-Admin-Key":state.realAdminKey},
+        method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({stage,batch,previous_run_id:prior})
       });
       const result=await response.json();
@@ -709,7 +707,6 @@
     }catch(error){
       state.realStatus="failure";state.realError=error.message||"สั่งรันไม่ได้";
       state.autoBatch="";
-      if(state.realError.includes("สิทธิ์"))state.realAdminKey="";
       renderPipeline();
     }
   }
@@ -723,8 +720,7 @@
       const url="/api/lab-dispatch?"+new URLSearchParams({
         stage,batch,previous_run_id:String(prior),since:state.realStartedAt
       });
-      const response=await fetch(url,{headers:{
-        "X-Classroom-Admin-Key":state.realAdminKey},cache:"no-store"});
+      const response=await fetch(url,{cache:"no-store"});
       const data=await response.json();
       if(!response.ok)throw Error(data.error||"ติดตามงานไม่ได้");
       if(data.found){
@@ -736,7 +732,7 @@
             state.realPreviousRunId=String(data.run_id);
             try{
               const evidenceResponse=await fetch("/api/lab-real-result?run_id="+encodeURIComponent(data.run_id),{
-                headers:{"X-Classroom-Admin-Key":state.realAdminKey},cache:"no-store"});
+                cache:"no-store"});
               const receipt=await evidenceResponse.json();
               if(evidenceResponse.ok&&receipt.mode==="REAL_GITHUB_ACTIONS_STAGE")
                 state.realEvidence=receipt.receipt;
@@ -1005,6 +1001,14 @@
   function runWholeBatch(){
     const batch=state.notebookBatch;
     if(state.autoBatch||!state.realReady)return;
+    if(state.resumeBatch===batch&&state.resumeStageIndex>=0){
+      state.autoBatch=batch;state.realBatch=batch;
+      state.realStageIndex=state.resumeStageIndex;
+      state.notebookStage=LAB_STEPS[state.realStageIndex].id;
+      state.realStatus="";state.realEvidence=null;state.realStartedAt="";
+      state.realError="";state.resumeBatch="";
+      renderPipeline();dispatchRealStep();return;
+    }
     if(state.realStatus==="failure"&&state.realBatch===batch){
       state.autoBatch=batch;state.realStatus="";state.realError="";
       state.realEvidence=null;state.realStartedAt="";
@@ -1132,23 +1136,18 @@
     const expectedBatchPhase=state.notebookBatch==="initial"?"EMPTY":"RUN1_READY";
     const canStartBatch=state.realReady&&phase===expectedBatchPhase&&
       (state.notebookBatch==="initial"||/^[1-9][0-9]{0,18}$/.test(state.realPreviousRunId));
-    if(canStartBatch&&!state.realAdminKey){
-      const keyField=node("label","field");
-      const keyInput=node("input");keyInput.type="password";
-      keyInput.autocomplete="off";keyInput.placeholder="รหัสจาก Vercel Settings";
-      keyInput.addEventListener("input",()=>{state.realAdminKey=keyInput.value;});
-      keyField.append(node("span","","รหัสผู้ควบคุมการรัน · กรอกครั้งเดียว"),keyInput);
-      root.append(keyField);
-    }
-    const resuming=state.realStatus==="failure"&&state.realBatch===state.notebookBatch;
+    const resuming=state.resumeBatch===state.notebookBatch&&state.resumeStageIndex>=0||
+      state.realStatus==="failure"&&state.realBatch===state.notebookBatch;
+    const resumeIndex=state.resumeBatch===state.notebookBatch?
+      state.resumeStageIndex:state.realStageIndex;
     const batchAction=node("button","button button-primary",state.autoBatch===state.notebookBatch?
       "กำลังรัน "+(state.notebookBatch==="initial"?"Run 1":"Run 2")+" ทั้งรอบ…":
-      resuming?"▶ ลองรันต่อจากขั้นที่ "+(state.realStageIndex+1):
+      resuming?"▶ รันต่อจากขั้นที่ "+(resumeIndex+1):
       "▶ รัน "+(state.notebookBatch==="initial"?"Run 1":"Run 2")+" ทั้งรอบ");
     batchAction.type="button";batchAction.disabled=!canStartBatch||Boolean(state.autoBatch);
     batchAction.addEventListener("click",runWholeBatch);root.append(batchAction);
     if(!canStartBatch)root.append(small(!state.realReady?
-      "ยังขาดสิทธิ์สั่งงานใน Vercel":phase!==expectedBatchPhase?
+      "ระบบสั่งงานยังไม่พร้อม":phase!==expectedBatchPhase?
       "รอบนี้ต้องรอสถานะ Lab "+expectedBatchPhase+" (ตอนนี้ "+phase+")":
       "ต้องให้ Run 1 ผ่านครบก่อน จึงเริ่ม Run 2 ได้"));
     root.append(node("p","notebook-caption","กด Run หนึ่งครั้ง ระบบจะวิ่งครบทุกขั้น แล้วเปิดดูผลของแต่ละขั้นเมื่อเสร็จ"));
@@ -1178,7 +1177,8 @@
         const expected=state.notebookBatch==="initial"?"EMPTY":"RUN1_READY";
         const previousReady=index===0&&state.notebookBatch==="initial"||
           /^(?:[1-9][0-9]{0,18})$/.test(state.realPreviousRunId);
-        const canRun=state.realReady&&state.realLabPhase===expected&&previousReady;
+        const canRun=state.realReady&&state.realLabPhase===expected&&previousReady&&
+          (state.resumeBatch!==state.notebookBatch||index===state.resumeStageIndex);
         const selectedLive=state.realBatch===state.notebookBatch&&state.realStageIndex===index;
         const liveBusy=selectedLive&&["submitting","queued","in_progress"].includes(state.realStatus);
         const real=node("button","button button-outline",liveBusy?"กำลังรันขั้นนี้…":"รันเฉพาะขั้นนี้");

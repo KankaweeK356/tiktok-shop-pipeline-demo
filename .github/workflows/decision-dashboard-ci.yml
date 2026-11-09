@@ -12,6 +12,10 @@ on:
       - 'pipeline/ci_lab_stage.py'
       - '.github/workflows/classroom-real-step.yml'
       - 'tests/test_real_lab.py'
+      - 'tests/test_lab_publisher.py'
+      - 'pipeline/publish_lab_result.py'
+      - 'pipeline/oidc_lab_auth.py'
+      - '.github/workflows/classroom-push-step.yml'
       - 'pipeline/ci_neon_run.py'
       - 'pipeline/neon_control.py'
       - 'pipeline/neon_reset.py'
@@ -60,7 +64,7 @@ jobs:
       - name: Export Data Explorer evidence from generated local-engine pipeline
         run: python -c "from pathlib import Path; from pipeline.classroom_evidence import export_classroom_evidence; export_classroom_evidence(Path('output/ml_history_ci/main'),Path('dashboard/data/classroom_evidence.json'))"
       - name: Verify Neon source adapter contracts without cloud credentials
-        run: python -m pytest -q tests/test_neon_source.py tests/test_neon_control_contracts.py tests/test_real_lab.py
+        run: python -m pytest -q tests/test_neon_source.py tests/test_neon_control_contracts.py tests/test_real_lab.py tests/test_lab_publisher.py
       - name: Test KPIs provenance, interactive Lab and security
         run: python -m pytest -q tests/test_dashboard.py tests/test_pipeline_lab.py
       - name: Validate frontend JavaScript and Vercel config
@@ -72,6 +76,8 @@ jobs:
           node --check api/lab-step.js
           node --check api/lab-dispatch.js
           node --check api/lab-real-result.js
+          node --check api/lab-oidc.js
+          python -m py_compile pipeline/oidc_lab_auth.py pipeline/publish_lab_result.py
           python -c "import json;from pathlib import Path; p=json.loads(Path('vercel.json').read_text()); assert p['outputDirectory']=='dashboard'; assert Path('dashboard/data/report.json').is_file()"
       - name: Commit generated snapshot for the static frontend
         if: github.event_name == 'pull_request'

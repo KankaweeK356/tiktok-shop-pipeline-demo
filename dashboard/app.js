@@ -51,6 +51,7 @@
         const spec=formats[key]||{};
         const td=node("td",spec.align||"");
         if(spec.kind==="status")td.append(statusLabel(row[key]));
+        else if(spec.kind==="risk")td.append(node("span","status "+(row[key]==="RISK"?"status-fail":"status-pending"),row[key]==="RISK"?"เสี่ยงต่ำกว่าเป้า":row[key]==="CHECK"?"รอต้นทุนกลุ่ม":"ข้อมูลไม่พอ"));
         else if(spec.kind==="money")td.textContent=money(row[key],spec.digits||0);
         else if(spec.kind==="percent")td.textContent=pct(row[key],spec.digits===undefined?1:spec.digits);
         else td.textContent=row[key]===null||row[key]===undefined?"—":String(row[key]);
@@ -107,6 +108,14 @@
     const shown=state.group==="ALL"?all:all.filter(x=>x.product_group_id===state.group);
     const total=key=>shown.reduce((sum,x)=>sum+Number(x[key]||0),0);
     const rowIncomplete=shown.some(x=>x.contribution_profit===null);
+    // The 10% policy is read from ER1 business target via the existing monthly Warehouse KPI.
+    // Denominator is full-price Gross Reference Sales, not Net Revenue.
+    const benchmarkPct=m.minimum_profit_protection_rate===null?null:
+      100*Number(m.minimum_profit_protection_rate);
+    const groupGross=total("gross_reference_sales");
+    const groupContribution=rowIncomplete?null:total("contribution_profit");
+    const groupProtection=groupGross>0&&groupContribution!==null?
+      100*groupContribution/groupGross:null;
     const allShop=state.group==="ALL";
     const metrics=allShop?[
       metric("ยอดขายสุทธิ","฿"+money(m.net_revenue),m.month),
@@ -116,12 +125,16 @@
     ]:[
       metric("ยอดขายสุทธิของกลุ่ม","฿"+money(total("net_revenue")),state.group+" · "+m.month),
       metric("ยอดขายก่อนส่วนลด","฿"+money(total("gross_reference_sales")),"ก่อนหักส่วนลด"),
-      metric("ค่าโฆษณา","฿"+money(total("ads_cost")),"จาก Group Daily Mart"),
-      metric("กำไรกลุ่มสินค้า",rowIncomplete?"—":"฿"+money(total("contribution_profit")),"ไม่ใช่ Profit Protection Gate")
+      metric("กำไรกลุ่มสินค้า",rowIncomplete?"—":"฿"+money(total("contribution_profit")),"หัก Ads / Sample / Claim"),
+      metric("อัตรากำไรกลุ่ม (%)",pct(groupProtection),
+        "เกณฑ์ร้าน "+pct(benchmarkPct,0)+" · "+(groupProtection===null?"ข้อมูลไม่ครบ":
+          "Gap "+(groupProtection>=benchmarkPct?"+":"")+money(groupProtection-benchmarkPct,1)+" pp"),
+        groupProtection===null?"":groupProtection<benchmarkPct?"metric-bad":"metric-good")
     ];
     const root=$("#app");root.replaceChildren();
-    root.append(notice(allShop?"Revenue Target และ Profit Protection ประเมินระดับทั้งร้านต่อเดือน ไม่ใช่ราย Product Group":
-      "เลือกดูรายกลุ่ม: ไม่ใช้ Revenue Target และ Profit Protection Gate ของทั้งร้านตัดสินรายกลุ่ม"));
+    root.append(notice(allShop?
+      "เป้ากำไรขั้นต่ำ "+pct(benchmarkPct,0)+" ของยอดขายอ้างอิงราคาเต็ม (Gross Reference Sales) · กำไรทั้งร้านหัก Ads / Sample / Claim แล้ว":
+      "อัตรากำไรกลุ่มเทียบเกณฑ์ร้าน "+pct(benchmarkPct,0)+" เพื่อคัดกรองกลุ่มที่น่าตรวจ ไม่ใช่การอนุมัติผ่านเป้าราย SKU"));
     root.append(add(box("metrics"),...metrics));
     const monthChart=node("div","mini-chart");
     const max=Math.max(1,...months.map(x=>Number(x.net_revenue)));
@@ -146,17 +159,36 @@
     // Existing DuckDB Sales Fact x Product Dimension; no ad-spend allocation to SKU.
     const skuRows=(d.business.sku_performance||[]).filter(x=>
       x.month===m.month && (state.group==="ALL"||x.product_group_id===state.group)
-    ).sort((a,b)=>Number(b.net_revenue)-Number(a.net_revenue));
+    ).map(x=>{
+      const gross=Number(x.gross_reference_sales);
+      const profit=x.contribution_before_group_costs;
+      const margin=profit===null||profit===undefined||!Number.isFinite(Number(profit))||
+        !(gross>0)?null:100*Number(profit)/gross;
+      const gap=margin===null||benchmarkPct===null?null:margin-benchmarkPct;
+      return {...x,
+        pre_group_protection_pct:margin,
+        protection_gap_pp:gap===null?"—":(gap>=0?"+":"")+money(gap,1)+" pp",
+        profit_risk:gap===null?"NO_DATA":gap<0?"RISK":"CHECK"};
+    }).sort((a,b)=>{
+      const risk=x=>x.profit_risk==="RISK"?0:x.profit_risk==="NO_DATA"?1:2;
+      return risk(a)-risk(b)||Number(b.net_revenue)-Number(a.net_revenue);
+    });
     if(skuRows.length){
       const choices=[["","เลือก SKU เพื่อดูรายละเอียด"],...skuRows.map(x=>
         [x.sku_id, (x.sku_name||x.sku_id)+" · "+(x.color||"")+" / "+(x.size||"")+" ("+x.sku_id+")"]
       )];
       if(!skuRows.some(x=>x.sku_id===state.sku))state.sku="";
       const picker=chooseField("เจาะลึกสินค้า (SKU)",choices,state.sku,v=>{state.sku=v;renderBusiness()});
-      const skuCols=[["sku_id","รหัส SKU"],["sku_name","สินค้า"],["color","สี"],["size","ไซซ์"],
-        ["quantity","จำนวนชิ้น"],["net_revenue","ยอดขายสุทธิ"],["contribution_before_group_costs","กำไรก่อนค่าใช้จ่ายระดับกลุ่ม"]];
-      const skuFmt={quantity:{align:"text-right"},net_revenue:{kind:"money",align:"text-right"},
-        contribution_before_group_costs:{kind:"money",align:"text-right"}};
+      const skuCols=[["sku_id","รหัส SKU"],["sku_name","สินค้า"],
+        ["net_revenue","ยอดขายสุทธิ"],["gross_reference_sales","ยอดราคาเต็ม"],
+        ["contribution_before_group_costs","กำไรก่อนต้นทุนกลุ่ม"],
+        ["pre_group_protection_pct","Margin ก่อนต้นทุนกลุ่ม"],
+        ["protection_gap_pp","Gap จาก 10%"],["profit_risk","สถานะ"]];
+      const skuFmt={net_revenue:{kind:"money",align:"text-right"},
+        gross_reference_sales:{kind:"money",align:"text-right"},
+        contribution_before_group_costs:{kind:"money",align:"text-right"},
+        pre_group_protection_pct:{kind:"percent",align:"text-right"},
+        protection_gap_pp:{align:"text-right"},profit_risk:{kind:"risk"}};
       const selected=skuRows.find(x=>x.sku_id===state.sku);
       const detail=selected?box("scenario-results",
         box("",fashionThumb(),small("รหัส SKU "+selected.sku_id+" · "+title(selected.product_group_id)),
@@ -165,13 +197,23 @@
             " · ส่วนลด Voucher ฿"+money(selected.voucher_discount)),
           small("ค่าธรรมเนียม ฿"+money(selected.platform_cost)+" · ค่าจัดส่ง ฿"+money(selected.fulfillment_cost)+
             " · ค่านายหน้า ฿"+money(selected.affiliate_cost)),
-          small("กำไรก่อน Ads / Sample / Claim ฿"+money(selected.contribution_before_group_costs))),
-        notice("กำไร SKU นี้ยังไม่ได้หักโฆษณาและต้นทุนระดับกลุ่ม ไม่ใช่กำไรสุทธิหลังค่าโฆษณา")
-      ):small("เลือก SKU ด้านบนเพื่อดูแยกยอดขาย ส่วนลด ต้นทุน และค่านายหน้า");
-      root.append(panel("วิเคราะห์รายสินค้า · Product Group → SKU",
-        "อ่านจาก Fact_Sales_Order_Item และ Dim_Product ไม่แก้โครงสร้าง Warehouse",
-        contentArea(picker,detail,dataTable(skuCols,skuRows.slice(0,20),skuFmt),
-          small("เรียงยอดขายมากไปน้อย แสดง 20 SKU แรกของช่วงที่เลือก · เลือก SKU ด้านบนเพื่อดูตัวอื่นได้"))));
+          small("กำไรก่อน Ads / Sample / Claim ฿"+money(selected.contribution_before_group_costs)),
+          node("strong","accent-number","Margin "+pct(selected.pre_group_protection_pct)+" · เกณฑ์ "+pct(benchmarkPct,0)),
+          small("Gap "+selected.protection_gap_pp+" · "+(selected.profit_risk==="RISK"?
+            "เสี่ยงต่ำกว่าเกณฑ์ตั้งแต่ก่อนหัก Ads":
+            selected.profit_risk==="CHECK"?"ต้องตรวจต้นทุนกลุ่มเพิ่มเติม":"ไม่สามารถคำนวณได้"))),
+        notice("สูตร SKU = กำไรก่อน Ads / Sample / Claim ÷ ยอดขายอ้างอิงราคาเต็ม × 100 · เทียบเส้นอ้างอิง "+pct(benchmarkPct,0)+
+          " · ต้นทุนระดับกลุ่มไม่ถูกกระจายลง SKU จึงยังสรุปว่า SKU ผ่านเกณฑ์กำไรจริงไม่ได้",true)
+      ):small("เลือก SKU ด้านบนเพื่อดูแยกยอดขาย ส่วนลด ต้นทุน กำไร % และ Gap");
+      root.append(panel("วิเคราะห์กำไรต่อ SKU · เป้าหมาย 10%",
+        "ใช้เกณฑ์จริงจาก Ref_Business_Target ของเดือนที่เลือก · คำนวณบนยอดราคาเต็ม ไม่ใช่ Net Revenue",
+        contentArea(
+          box("lab-meta",
+            statusLabel("READY"),
+            small("เสี่ยงต่ำกว่าเส้นอ้างอิง: "+money(skuRows.filter(x=>x.profit_risk==="RISK").length)+" SKU"),
+            small("ต้องตรวจต้นทุนระดับกลุ่ม: "+money(skuRows.filter(x=>x.profit_risk==="CHECK").length)+" SKU")),
+          picker,detail,dataTable(skuCols,skuRows.slice(0,30),skuFmt),
+          small("เรียงสินค้าที่เสี่ยงขึ้นก่อน · แสดง 30 SKU แรก · เลือก SKU ด้านบนดูรายละเอียดทุกตัวได้"))));
     }
     const adsRows=(d.business.ads_campaigns||[]).filter(x=>
       x.month===m.month && (state.group==="ALL"||x.product_group_id===state.group)
@@ -199,10 +241,27 @@
       node("div","callout","สูตร KPI: Revenue Achievement = Net Revenue ÷ Revenue Target; Profit Protection = Contribution Profit ÷ Gross Reference Sales (ยอดก่อนส่วนลด) ทั้งสองเป็น KPI ของทั้งร้านต่อเดือน")
     );
     root.append(panel("KPI Governance · Monthly View","อ่านจาก View_Shop_Monthly_KPI จริง",gov,link("ER2 Schema",d.links.schema)));
-    const cols=[["product_group_id","Product Group"],["net_revenue","Net Revenue"],["gross_reference_sales","ยอดขายก่อนส่วนลด"],["ads_cost","ค่าโฆษณา"],["campaign_reduction","Campaign Reduction"],["contribution_profit","กำไรหลังต้นทุนที่เกี่ยวข้อง"]];
+    const groupRows=shown.map(x=>{
+      const rate=x.contribution_profit===null||Number(x.gross_reference_sales)<=0?
+        null:100*Number(x.contribution_profit)/Number(x.gross_reference_sales);
+      return {...x,group_margin_pct:rate,
+        group_gap_pp:rate===null||benchmarkPct===null?"—":
+          (rate>=benchmarkPct?"+":"")+money(rate-benchmarkPct,1)+" pp",
+        group_risk:rate===null?"NO_DATA":rate<benchmarkPct?"RISK":"CHECK"};
+    });
+    const cols=[["product_group_id","Product Group"],["net_revenue","ยอดขายสุทธิ"],
+      ["gross_reference_sales","ยอดราคาเต็ม"],["ads_cost","ค่าโฆษณา"],
+      ["contribution_profit","กำไรหลังต้นทุน"],["group_margin_pct","Margin %"],
+      ["group_gap_pp","Gap จาก 10%"],["group_risk","เทียบเกณฑ์"]];
     const fmt={};
-    cols.slice(1).forEach(x=>fmt[x[0]]={kind:"money",align:"text-right"});
-    root.append(panel("ผลการดำเนินงานแยกกลุ่มสินค้า","Grain = Month × Group · ไม่ JOIN Ads ซ้ำกับ SKU",dataTable(cols,shown,fmt)));
+    for(const x of ["net_revenue","gross_reference_sales","ads_cost","contribution_profit"])
+      fmt[x]={kind:"money",align:"text-right"};
+    fmt.group_margin_pct={kind:"percent",align:"text-right"};
+    fmt.group_gap_pp={align:"text-right"};
+    fmt.group_risk={kind:"risk"};
+    root.append(panel("ผลการดำเนินงานแยกกลุ่มสินค้า",
+      "Profit Protection ใช้ Contribution Profit ÷ Gross Reference Sales · เกณฑ์ร้าน "+pct(benchmarkPct,0)+" · ไม่กระจาย Ads ลง SKU",
+      dataTable(cols,groupRows,fmt)));
     renderScenario(root);
     state.rows=shown;
   }

@@ -7,6 +7,13 @@
       "run_id": "42578675952",
       "executed_at": "2026-11-09T07:20:38.070918+00:00",
       "file": "./data/lab_steps/incremental_ingest.json"
+    },
+    {
+      "batch": "incremental",
+      "stage": "extract",
+      "run_id": "42578795156",
+      "executed_at": "2026-11-09T07:21:43.489207+00:00",
+      "file": "./data/lab_steps/incremental_extract.json"
     }
   ],
   "source": "REAL_GITHUB_ACTIONS_SEPARATE_STAGES",

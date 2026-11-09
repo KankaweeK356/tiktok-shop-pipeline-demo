@@ -1,7 +1,7 @@
 {
   "batch": "initial",
-  "stage": "transform",
-  "previous_run_id": "42577477581",
+  "stage": "load",
+  "previous_run_id": "42577582992",
   "purpose": "NEON_CLASSROOM_STEP_LAB_PROOF",
-  "note": "Stage 3: transform Raw into standardized delta with actual existing pipeline business rules"
+  "note": "Stage 4: load validated standardized delta into actual DuckDB Warehouse"
 }

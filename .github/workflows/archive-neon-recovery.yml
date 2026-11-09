@@ -1,0 +1,47 @@
+name: Archive Neon Raw and Rebuilt Warehouse - Non Destructive
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/classroom-demo-evidence-foundation
+    paths:
+      - 'pipeline/archive_recovery.py'
+      - '.github/workflows/archive-neon-recovery.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: classroom-neon-recovery-cycle-1
+  cancel-in-progress: false
+
+jobs:
+  save-historical-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      NEON_DEMO_DATABASE_URL: ${{ secrets.NEON_DEMO_DATABASE_URL }}
+      CLASSROOM_STORAGE_SIGNER_URL: https://tiktok-shop-mlops-dashboard-git-feature-classroom-dea39b-newja.vercel.app/api/storage-presign
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: Install processing and Neon dependencies
+        run: python -m pip install -r requirements-neon.txt
+      - name: Test source adapter and schema
+        run: python -m pytest -q tests/test_neon_source.py tests/test_neon_schema.py
+      - name: Rebuild offline Warehouse and snapshot current Neon Raw
+        run: python -m pipeline.archive_recovery
+      - name: Keep recovery manifest independent of permanent storage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: neon-recovery-verification
+          path: output/recovered_cloud/reports/cloud_recovery_manifest.json
+          if-no-files-found: warn
+          retention-days: 14

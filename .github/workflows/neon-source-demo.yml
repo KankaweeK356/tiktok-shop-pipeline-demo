@@ -1,0 +1,42 @@
+name: Neon Source - Real Initial Incremental and Replay
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: neon-classroom-demo-exclusive
+  cancel-in-progress: false
+
+jobs:
+  verify-live-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      NEON_DEMO_DATABASE_URL: ${{ secrets.NEON_DEMO_DATABASE_URL }}
+    steps:
+      - name: Checkout verified pipeline
+        uses: actions/checkout@v4
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: Install Neon and actual Warehouse dependencies
+        run: python -m pip install -r requirements-neon.txt
+      - name: Check adapter and schema contracts
+        run: python -m pytest -q tests/test_neon_source.py tests/test_neon_schema.py
+      - name: Verify source Database to Raw Lake Warehouse using real Neon
+        run: python -m pipeline.ci_neon_run
+      - name: Preserve stage evidence, database validation and Parquet files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: neon-classroom-pipeline-evidence
+          path: |
+            output/neon_demo/reports/
+            output/neon_demo/lake/
+          if-no-files-found: warn
+          retention-days: 7

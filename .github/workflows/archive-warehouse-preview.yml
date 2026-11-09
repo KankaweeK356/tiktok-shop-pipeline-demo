@@ -1,0 +1,35 @@
+name: Publish Archived DuckDB Table Previews for Classroom Lab
+
+on:
+  push:
+    branches:
+      - feature/classroom-demo-evidence-foundation
+    paths:
+      - 'pipeline/archive_warehouse_preview.py'
+      - '.github/workflows/archive-warehouse-preview.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: classroom-neon-recovery-cycle-1
+  cancel-in-progress: false
+
+jobs:
+  publish-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NEON_DEMO_DATABASE_URL: ${{ secrets.NEON_DEMO_DATABASE_URL }}
+      CLASSROOM_STORAGE_SIGNER_URL: https://tiktok-shop-mlops-dashboard-git-feature-classroom-dea39b-newja.vercel.app/api/storage-presign
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: Install verified warehouse and database drivers
+        run: python -m pip install -r requirements-neon.txt
+      - name: Verify original archived DuckDB and publish source-backed previews
+        run: python -m pipeline.archive_warehouse_preview

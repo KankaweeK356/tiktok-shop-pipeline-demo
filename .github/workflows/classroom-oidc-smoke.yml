@@ -1,0 +1,40 @@
+name: Classroom OIDC Lab Connectivity - Read Only Smoke
+
+on:
+  push:
+    branches:
+      - feature/classroom-demo-evidence-foundation
+    paths:
+      - '.github/workflows/classroom-oidc-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  verify-oidc-lab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Exchange signed GitHub OIDC identity for isolated Neon Lab role
+        run: python -m pipeline.oidc_lab_auth
+      - name: Verify isolated source is EMPTY, read-only smoke (no mutations)
+        run: |
+          python -m pip install 'psycopg[binary]>=3.2,<4'
+          python - <<'PY'
+          import os
+          import psycopg
+          with psycopg.connect(os.environ["NEON_DEMO_DATABASE_URL"]) as db:
+              with db.cursor() as c:
+                  c.execute('SELECT count(*) FROM demo_er1."Fact_Orders"')
+                  count = c.fetchone()[0]
+                  c.execute("SELECT phase FROM demo_control.dataset_state WHERE dataset_key='classroom'")
+                  state = c.fetchone()[0]
+          assert count == 0 and state == "EMPTY", (count,state)
+          print("OIDC token validated. Isolated Neon Lab is EMPTY and readable. No writes performed.")
+          PY

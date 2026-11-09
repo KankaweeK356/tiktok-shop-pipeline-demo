@@ -1,0 +1,78 @@
+{
+  "schema_version": "real_lab_steps_v1",
+  "runs": [
+    {
+      "batch": "incremental",
+      "stage": "ingest",
+      "run_id": "42578675952",
+      "executed_at": "2026-11-09T07:20:38.070918+00:00",
+      "file": "./data/lab_steps/incremental_ingest.json"
+    },
+    {
+      "batch": "incremental",
+      "stage": "extract",
+      "run_id": "42578795156",
+      "executed_at": "2026-11-09T07:21:43.489207+00:00",
+      "file": "./data/lab_steps/incremental_extract.json"
+    },
+    {
+      "batch": "incremental",
+      "stage": "transform",
+      "run_id": "42578895723",
+      "executed_at": "2026-11-09T07:22:38.635740+00:00",
+      "file": "./data/lab_steps/incremental_transform.json"
+    },
+    {
+      "batch": "incremental",
+      "stage": "load",
+      "run_id": "42578987490",
+      "executed_at": "2026-11-09T07:23:31.569894+00:00",
+      "file": "./data/lab_steps/incremental_load.json"
+    },
+    {
+      "batch": "incremental",
+      "stage": "validate",
+      "run_id": "42579096668",
+      "executed_at": "2026-11-09T07:24:29.972157+00:00",
+      "file": "./data/lab_steps/incremental_validate.json"
+    },
+    {
+      "batch": "initial",
+      "stage": "ingest",
+      "run_id": "42577340785",
+      "executed_at": "2026-11-09T07:08:24.508644+00:00",
+      "file": "./data/lab_steps/initial_ingest.json"
+    },
+    {
+      "batch": "initial",
+      "stage": "extract",
+      "run_id": "42577477581",
+      "executed_at": "2026-11-09T07:09:43.524527+00:00",
+      "file": "./data/lab_steps/initial_extract.json"
+    },
+    {
+      "batch": "initial",
+      "stage": "transform",
+      "run_id": "42577582992",
+      "executed_at": "2026-11-09T07:10:34.281623+00:00",
+      "file": "./data/lab_steps/initial_transform.json"
+    },
+    {
+      "batch": "initial",
+      "stage": "load",
+      "run_id": "42577671408",
+      "executed_at": "2026-11-09T07:11:35.174802+00:00",
+      "file": "./data/lab_steps/initial_load.json"
+    },
+    {
+      "batch": "initial",
+      "stage": "validate",
+      "run_id": "42577788046",
+      "executed_at": "2026-11-09T07:12:26.707412+00:00",
+      "file": "./data/lab_steps/initial_validate.json"
+    }
+  ],
+  "source": "REAL_GITHUB_ACTIONS_SEPARATE_STAGES",
+  "data_classification": "SYNTHETIC_EDUCATIONAL_NOT_TIKTOK",
+  "lab_branch": "classroom-step-lab"
+}

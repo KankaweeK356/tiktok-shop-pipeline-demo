@@ -1,6 +1,6 @@
 """Reusable per-stage checkpoints, failure audit, manual reset and batch replay guards."""
 from __future__ import annotations
-import json,time,shutil,traceback
+import json,time,shutil,traceback,os
 from datetime import datetime,timezone
 from pathlib import Path
 from .schema import ROOT
@@ -9,6 +9,7 @@ from .lake import extract
 from .transform import transform
 from .warehouse import load
 from .quality import verify,lineage
+from .neon_source import sync_sqlite_to_neon, extract_neon
 
 STAGES=['ingest','extract','transform','load','validate']
 
@@ -42,9 +43,17 @@ def run_batch(workspace:Path,batch='initial',source_root:Path|None=None,inject_e
     state_file=control/f'checkpoint_{batch}.json'
     state=json.loads(state_file.read_text(encoding='utf-8')) if state_file.exists() and resume else {'batch':batch,'completed':[],'metrics':{}}
     source=source_root/batch
+    neon_url=os.environ.get('NEON_DEMO_DATABASE_URL','')
     def task(stage):
-        if stage=='ingest':return ingest(source,workspace/'er1.sqlite',batch,control)
-        if stage=='extract':return extract(source,workspace/'er1.sqlite',workspace/'lake',batch)
+        if stage=='ingest':
+            result=ingest(source,workspace/'er1.sqlite',batch,control)
+            if neon_url:
+                result['neon_sync']=sync_sqlite_to_neon(workspace/'er1.sqlite',neon_url)
+            return result
+        if stage=='extract':
+            return (extract_neon(source,neon_url,workspace/'lake',batch)
+                    if neon_url else
+                    extract(source,workspace/'er1.sqlite',workspace/'lake',batch))
         if stage=='transform':return transform(workspace/'lake',control,batch,inject_error=inject_error)
         if stage=='load':return load(workspace/'lake'/'standardized'/batch,workspace/'er2.duckdb',inject_error=inject_error)
         if stage=='validate':

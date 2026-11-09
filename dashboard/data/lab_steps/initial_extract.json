@@ -1,0 +1,111 @@
+{
+  "batch": "initial",
+  "stage": "extract",
+  "git_run_id": "42577477581",
+  "source_engine": "NEON_POSTGRESQL_CLASSROOM_STEP_LAB",
+  "source_type": "SYNTHETIC_EDUCATIONAL_NOT_TIKTOK",
+  "cycle": 1,
+  "lab_run_id": "4f22d75c-f4a7-4278-b648-376dd3086e22",
+  "evidence": {
+    "classification": "SYNTHETIC_EDUCATIONAL_NOT_TIKTOK",
+    "mode": "REAL_GITHUB_ACTIONS_STAGE",
+    "is_new_etl_run": true,
+    "stage": "extract",
+    "batch": "initial",
+    "executed_at": "2026-11-09T07:09:43.524527+00:00",
+    "success": true,
+    "input": {
+      "label": "Actual source files",
+      "preview": []
+    },
+    "output": {
+      "records": 800,
+      "preview": [
+        {
+          "Order_ID": "OCT00001",
+          "Order_Created_At": "2026-10-31 16:00:00",
+          "Current_Status": "Pending",
+          "Voucher_ID": "V15",
+          "GMV_Total": 189.0,
+          "Voucher_Seller_Cost": 0.0,
+          "Shipping_Fee_Collected": 0.0,
+          "Shipping_Mode": "TikTok_Platform",
+          "Paid_At": null,
+          "Shipped_At": null,
+          "Delivered_At": null,
+          "Cancelled_At": null
+        },
+        {
+          "Order_ID": "OCT00002",
+          "Order_Created_At": "2026-10-31 16:01:00",
+          "Current_Status": "Pending",
+          "Voucher_ID": "V10",
+          "GMV_Total": 189.0,
+          "Voucher_Seller_Cost": 0.0,
+          "Shipping_Fee_Collected": 0.0,
+          "Shipping_Mode": "TikTok_Platform",
+          "Paid_At": null,
+          "Shipped_At": null,
+          "Delivered_At": null,
+          "Cancelled_At": null
+        },
+        {
+          "Order_ID": "OCT00003",
+          "Order_Created_At": "2026-10-31 16:02:00",
+          "Current_Status": "Pending",
+          "Voucher_ID": "V05",
+          "GMV_Total": 225.0,
+          "Voucher_Seller_Cost": 0.0,
+          "Shipping_Fee_Collected": 0.0,
+          "Shipping_Mode": "TikTok_Platform",
+          "Paid_At": null,
+          "Shipped_At": null,
+          "Delivered_At": null,
+          "Cancelled_At": null
+        },
+        {
+          "Order_ID": "OCT00004",
+          "Order_Created_At": "2026-10-31 16:03:00",
+          "Current_Status": "Pending",
+          "Voucher_ID": "V05",
+          "GMV_Total": 185.0,
+          "Voucher_Seller_Cost": 0.0,
+          "Shipping_Fee_Collected": 0.0,
+          "Shipping_Mode": "TikTok_Platform",
+          "Paid_At": null,
+          "Shipped_At": null,
+          "Delivered_At": null,
+          "Cancelled_At": null
+        },
+        {
+          "Order_ID": "OCT00005",
+          "Order_Created_At": "2026-10-31 16:04:00",
+          "Current_Status": "Pending",
+          "Voucher_ID": "V10",
+          "GMV_Total": 185.0,
+          "Voucher_Seller_Cost": 0.0,
+          "Shipping_Fee_Collected": 0.0,
+          "Shipping_Mode": "TikTok_Platform",
+          "Paid_At": null,
+          "Shipped_At": null,
+          "Delivered_At": null,
+          "Cancelled_At": null
+        }
+      ],
+      "origin": "NEW_RAW_PARQUET_FROM_NEON"
+    },
+    "metrics": [
+      {
+        "label": "Output records",
+        "value": 800
+      }
+    ],
+    "checks": [
+      {
+        "label": "Actual orchestrator stage completed",
+        "pass": true
+      }
+    ],
+    "provenance": "NEW_WORKER_OUTPUT_NOT_HISTORICAL_REPLAY"
+  }
+}

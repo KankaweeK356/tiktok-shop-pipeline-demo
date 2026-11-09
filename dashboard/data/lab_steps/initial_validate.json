@@ -1,0 +1,57 @@
+{
+  "batch": "initial",
+  "stage": "validate",
+  "git_run_id": "42577788046",
+  "source_engine": "NEON_POSTGRESQL_CLASSROOM_STEP_LAB",
+  "source_type": "SYNTHETIC_EDUCATIONAL_NOT_TIKTOK",
+  "cycle": 1,
+  "lab_run_id": "4f22d75c-f4a7-4278-b648-376dd3086e22",
+  "evidence": {
+    "classification": "SYNTHETIC_EDUCATIONAL_NOT_TIKTOK",
+    "mode": "REAL_GITHUB_ACTIONS_STAGE",
+    "is_new_etl_run": true,
+    "stage": "validate",
+    "batch": "initial",
+    "executed_at": "2026-11-09T07:12:26.707412+00:00",
+    "success": true,
+    "input": {
+      "label": "Actual source files",
+      "preview": []
+    },
+    "output": {
+      "table": "Validation",
+      "records": 20,
+      "origin": "NEW_FUNCTIONAL_VALIDATION",
+      "preview": [
+        {
+          "check": "Checks",
+          "passed": 20,
+          "failed": 0
+        },
+        {
+          "check": "Paid items",
+          "source": 973,
+          "warehouse": 973
+        },
+        {
+          "check": "Net revenue",
+          "source": 354704.9,
+          "warehouse": 354704.9
+        }
+      ]
+    },
+    "metrics": [
+      {
+        "label": "Output records",
+        "value": 20
+      }
+    ],
+    "checks": [
+      {
+        "label": "Actual orchestrator stage completed",
+        "pass": true
+      }
+    ],
+    "provenance": "NEW_WORKER_OUTPUT_NOT_HISTORICAL_REPLAY"
+  }
+}

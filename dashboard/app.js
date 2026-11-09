@@ -1075,10 +1075,21 @@
               renderLabResult(receipt.evidence)));
             body.append(link("ดูการรันและ Log บน GitHub", "https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/actions/runs/"+receipt.git_run_id));
           }else{
-            const open=node("button","button button-primary","ดูผลขั้นนี้");open.type="button";
+            const open=node("button","button button-outline","ดูผลที่รันไว้แล้ว");open.type="button";
             open.addEventListener("click",()=>selectSavedLabStage(entry));body.append(open);
           }
         }else body.append(notice("ยังไม่มีหลักฐานของขั้นนี้ในชุดที่เลือก",true));
+        const expected=state.notebookBatch==="initial"?"EMPTY":"RUN1_READY";
+        const canRun=state.realReady&&state.realLabPhase===expected;
+        const real=node("button","button button-primary","รันขั้นนี้จริงผ่าน GitHub Actions");
+        real.type="button";real.disabled=!canRun;
+        real.addEventListener("click",()=>{
+          state.realBatch=state.notebookBatch;state.realStageIndex=index;
+          state.pipelineTab="operate";renderPipeline();
+        });body.append(real);
+        if(!canRun)body.append(small(state.realLabPhase==="RUN2_READY"?
+          "ชุดนี้รันครบสองรอบแล้ว การรันใหม่ต้องเตรียม Lab ว่างก่อน; ข้อมูลเดิมยังอยู่ครบ":
+          "รันจริงได้เมื่อ Lab อยู่สถานะ "+expected+" และสิทธิ์ผู้ควบคุมพร้อม"));
         if(id==="ingest")body.append(small("ขั้นนี้ sync ข้อมูลธุรกิจ 25 ตาราง; ตัวอย่างแถวด้านบนเป็นเพียง Fact_Orders ไม่ใช่ตารางทั้งหมด"),
           link("เปิด classroom-step-lab ใน Neon Console",
             "https://console.neon.tech/app/projects/hidden-leaf-09169842/branches/br-nameless-truth-bex5d1wp?database=tiktok_demo"));

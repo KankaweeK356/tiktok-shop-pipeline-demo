@@ -21,6 +21,13 @@
       "run_id": "42578895723",
       "executed_at": "2026-11-09T07:22:38.635740+00:00",
       "file": "./data/lab_steps/incremental_transform.json"
+    },
+    {
+      "batch": "incremental",
+      "stage": "load",
+      "run_id": "42578987490",
+      "executed_at": "2026-11-09T07:23:31.569894+00:00",
+      "file": "./data/lab_steps/incremental_load.json"
     }
   ],
   "source": "REAL_GITHUB_ACTIONS_SEPARATE_STAGES",

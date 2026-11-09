@@ -37,10 +37,33 @@ export default async function handler(req,res){
   const configured=Boolean(process.env.CLASSROOM_GITHUB_TOKEN &&
     process.env.CLASSROOM_LAB_ADMIN_KEY &&
     process.env.CLASSROOM_NEON_READONLY_URL);
-  if(req.method==="GET")
-    return json(res,200,{ready:configured,mode:configured?
-      "REAL_GITHUB_ACTIONS":"READ_ONLY_EVIDENCE_ONLY",
-      workflow_url:"https://github.com/"+REPO+"/actions/workflows/"+WORKFLOW});
+  if(req.method==="GET"){
+    const workflow_url="https://github.com/"+REPO+"/actions/workflows/"+WORKFLOW;
+    if(!req.query?.stage)return json(res,200,{ready:configured,mode:configured?
+      "REAL_GITHUB_ACTIONS":"READ_ONLY_EVIDENCE_ONLY",workflow_url});
+    if(!configured||!safeEquals(req.headers["x-classroom-admin-key"],
+                                process.env.CLASSROOM_LAB_ADMIN_KEY))
+      return json(res,403,{error:"ไม่มีสิทธิ์ดูผลการรัน"});
+    const stage=req.query.stage,batch=req.query.batch,previous=String(req.query.previous_run_id||"");
+    const since=Date.parse(String(req.query.since||""));
+    if(!STAGES.includes(stage)||!["initial","incremental"].includes(batch)||
+       !/^(0|[1-9][0-9]{0,18})$/.test(previous)||!Number.isFinite(since))
+      return json(res,400,{error:"ข้อมูลติดตาม Workflow ไม่ถูกต้อง"});
+    try{
+      const data=await github("/actions/workflows/"+WORKFLOW+
+        "/runs?branch="+encodeURIComponent(REF)+"&event=workflow_dispatch&per_page=30");
+      const label="Classroom ETL "+batch+" / "+stage+" / previous "+previous;
+      const match=(data.workflow_runs||[]).find(run=>
+        run.display_title===label&&Date.parse(run.created_at)>=since-10000);
+      return json(res,200,{found:Boolean(match),
+        run_id:match?.id||null,status:match?.status||"queued",
+        conclusion:match?.conclusion||null,url:match?.html_url||workflow_url,
+        evidence_mode:"REAL_GITHUB_WORKFLOW"});
+    }catch(error){
+      console.error("Lab status lookup failed",error.message);
+      return json(res,503,{error:"อ่านสถานะ GitHub Actions ไม่สำเร็จ"});
+    }
+  }
   if(!configured)
     return json(res,503,{error:"ยังไม่เปิดสิทธิ์สั่งรัน GitHub Actions จากหน้าเว็บ; ใช้โหมดตรวจหลักฐานได้ก่อน"});
   if(!safeEquals(req.headers["x-classroom-admin-key"],

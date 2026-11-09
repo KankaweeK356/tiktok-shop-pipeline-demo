@@ -2,7 +2,7 @@
 (function () {
   "use strict";
   const $ = s => document.querySelector(s);
-  const state = { data:null, evidence:null, evidenceLayer:"source", evidenceTable:"", neonStatus:"not_loaded", neonTables:[], neonTable:"", neonData:null, neonError:"", neonRunStatus:null, neonArtifactType:"ALL", view:"business", month:"", group:"ALL", sku:"", model:"", week:"", replay:false, rows:[] };
+  const state = { data:null, evidence:null, evidenceLayer:"source", evidenceTable:"", neonStatus:"not_loaded", neonTables:[], neonTable:"", neonData:null, neonError:"", neonRunStatus:null, neonArtifactType:"ALL", labStage:0, labTable:"Fact_Orders", labResults:{}, labBusy:false, labError:"", labLog:[], view:"business", month:"", group:"ALL", sku:"", model:"", week:"", replay:false, rows:[] };
   const names = {
     business:["ภาพรวมธุรกิจ","ยอดขาย กำไร และ KPI ของร้านเสื้อผ้าผู้หญิง","ภาพรวมธุรกิจ"],
     pipeline:["ทดสอบการนำเข้าข้อมูล","เส้นทางข้อมูลจากต้นทางถึงคลังข้อมูลและหลักฐานการตรวจสอบ","การนำเข้าข้อมูล"],
@@ -404,57 +404,201 @@
       "โครงสร้างตาราง ตัวอย่างข้อมูล และจำนวนรายการที่ Query จากฐานข้อมูล ณ ขณะนั้น",wrap));
   }
 
+  // Educational step runner. Only read-only queries / archive verification are authorized.
+  // A real new ETL cycle needs a separate authenticated GitHub Actions dispatcher.
+  const LAB_STEPS=[
+    {id:"ingest",title:"Ingest",path:"CSV → Neon PostgreSQL",
+      why:"ตรวจว่าข้อมูลต้นทางถูกนำเข้าครบ และแสดงตัวอย่างแถวจริงจากฐานข้อมูล",
+      input:"ER1 Source Database + ตารางที่เลือก",process:"ตรวจ 25 ตาราง / Schema / จำนวนแถว",
+      output:"Neon table rows + ตัวอย่าง 5 รายการ",
+      note:"ตรวจผลของการนำเข้าเดิม ไม่ได้ INSERT ข้อมูลใหม่"},
+    {id:"extract",title:"Extract",path:"Neon → Private Raw Parquet",
+      why:"เปิดไฟล์ Raw Parquet จาก Object Storage แล้วเทียบกับข้อมูลใน Neon",
+      input:"Neon Source + Parquet ใน Private Bucket",process:"อ่าน Parquet metadata และตรวจจำนวน Records",
+      output:"จำนวน Rows + ตารางข้อมูล Raw ตัวอย่าง",
+      note:"ตรวจ Snapshot ที่จัดเก็บ ไม่สร้างไฟล์ใหม่"},
+    {id:"transform",title:"Transform",path:"Raw → Standardized",
+      why:"เห็นความแตกต่างก่อนและหลังแปลงรายการออเดอร์เป็นรายการขายที่ชำระแล้ว",
+      input:"Raw Fact_Order_Items",process:"อ่าน Standardized และเทียบ Paid Items จาก Neon",
+      output:"Before / After + จำนวนรายการเปรียบเทียบ",
+      note:"เล่นซ้ำหลักฐาน Transform เดิม ไม่คำนวณหรือเขียน Parquet ใหม่"},
+    {id:"load",title:"Load",path:"Standardized → DuckDB Warehouse",
+      why:"ยืนยันว่าไฟล์ Warehouse มีอยู่จริงและผลโหลด Sales Fact ตรงกับข้อมูลก่อนโหลด",
+      input:"Standardized Sales Fact",process:"ตรวจไฟล์ DuckDB จริงและผล Load ใน Validation Report",
+      output:"ขนาดไฟล์ Warehouse และจำนวน Sales Fact",
+      note:"ไม่ได้ Query ตาราง DuckDB ใหม่; ใช้รายงานยืนยันผลจากงานที่ผ่านแล้ว"},
+    {id:"validate",title:"Validate",path:"Neon ↔ Warehouse",
+      why:"คำนวณ Paid Items และ Net Revenue จาก Neon อีกครั้งเพื่อเทียบ Warehouse",
+      input:"ข้อมูล Neon ปัจจุบัน + Warehouse Validation Report",
+      process:"SQL Reconciliation + Compare counts + Compare Net Revenue",
+      output:"PASS/FAIL ของยอดและจำนวนรายการ + Gap",
+      note:"เป็นการตรวจยอดใหม่ ไม่ใช่ ETL ใหม่"}
+  ];
+
+  async function runLabStage(){
+    const index=state.labStage;
+    if(state.labBusy||index>0&&!state.labResults[LAB_STEPS[index-1].id]?.success)return;
+    const def=LAB_STEPS[index];
+    state.labBusy=true;state.labError="";
+    const started=Date.now();
+    state.labLog=[{at:new Date().toISOString(),stage:def.title,detail:"เริ่มตรวจหลักฐาน",result:"RUNNING"},...state.labLog].slice(0,14);
+    renderPipeline();
+    try{
+      const args=new URLSearchParams({stage:def.id});
+      if(index<2)args.set("table",state.labTable);
+      const response=await fetch("/api/lab-step?"+args.toString(),{cache:"no-store"});
+      const payload=await response.json();
+      if(!response.ok)throw Error(payload.error||"HTTP "+response.status);
+      if(payload.mode!=="READ_ONLY_EVIDENCE_REPLAY"||
+         payload.classification!=="SYNTHETIC_EDUCATIONAL_NOT_TIKTOK")
+        throw Error("ผลรันไม่ได้ระบุที่มาของหลักฐานอย่างถูกต้อง");
+      if(!payload.success)throw Error("พบข้อมูลไม่ตรงกันใน Step นี้; โปรดดูผลตรวจ");
+      state.labResults[def.id]=payload;
+      state.labLog.unshift({at:payload.executed_at,stage:def.title,
+        detail:"ตรวจจริงจาก Neon / Private Storage · "+Math.round(Date.now()-started)+" ms",
+        result:"PASS"});
+      state.rows=payload.output?.preview||[];
+    }catch(e){
+      state.labError=e.message||"ไม่สามารถตรวจหลักฐานได้";
+      state.labLog.unshift({at:new Date().toISOString(),stage:def.title,
+        detail:state.labError,result:"ERROR"});
+    }
+    state.labBusy=false;
+    state.labLog=state.labLog.filter(x=>x.result!=="RUNNING").slice(0,14);
+    renderPipeline();
+  }
+
+  function renderLabResult(result){
+    if(!result)return box("lab-placeholder",
+      node("span","lab-placeholder-icon","▷"),
+      node("strong","","ยังไม่ตรวจ Step นี้"),
+      small("กด Run Step เพื่อให้ Server อ่านข้อมูลจริงและแสดงผลลัพธ์พร้อมตัวอย่าง"));
+    const wrap=box("lab-result");
+    wrap.append(box("lab-meta",
+      statusLabel(result.success?"PASS":"FAIL"),
+      small("ตรวจล่าสุด "+new Intl.DateTimeFormat("th-TH",{timeZone:"Asia/Bangkok",
+        hour:"2-digit",minute:"2-digit",second:"2-digit"}).format(new Date(result.executed_at))),
+      small("อ้างอิง GitHub Run #"+result.historical_run)));
+    if(result.metrics?.length){
+      wrap.append(box("lab-metrics",...result.metrics.map(m=>
+        box("lab-stat",small(m.label),
+          node("strong","",typeof m.value==="number"?money(m.value,m.unit==="THB"?2:0):String(m.value)),
+          small(m.unit||"")))));
+    }
+    const summary=box("lab-checks");
+    result.checks.forEach(item=>summary.append(box("lab-check",
+      node("span","lab-check-icon "+(item.pass?"lab-ok":"lab-fail"),item.pass?"✓":"!"),
+      small(item.label),statusLabel(item.pass?"PASS":"FAIL"))));
+    wrap.append(summary);
+    const input=result.input;
+    if(input?.preview?.length){
+      const columns=Object.keys(input.preview[0]).slice(0,6).map(key=>[key,key]);
+      wrap.append(node("h3","lab-subheading","Input · ตัวอย่างก่อนประมวลผล"),
+        dataTable(columns,input.preview));
+    }
+    if(result.output?.preview?.length){
+      const columns=Object.keys(result.output.preview[0]).slice(0,7).map(key=>[key,key]);
+      wrap.append(node("h3","lab-subheading",
+        "Output · ตัวอย่างผลลัพธ์จาก "+(result.output.origin||"หลักฐานจริง")),
+        dataTable(columns,result.output.preview));
+    }else if(result.output?.note){
+      wrap.append(notice(result.output.note,true));
+    }
+    if(result.output?.file){
+      wrap.append(small("ไฟล์หลักฐาน: "+result.output.file.split("/").pop()));
+    }
+    wrap.append(node("div","lab-provenance",
+      "ชนิดผลลัพธ์: "+result.provenance+" · READ-ONLY EVIDENCE REPLAY"));
+    return wrap;
+  }
+
   function renderPipeline(){
-    const p=state.data.pipeline,meta=p.history.source||{};
     const root=$("#app");root.replaceChildren();
-    root.append(notice("ข้อมูล Neon ด้านบนเป็นสถานะสดจาก PostgreSQL ส่วนแผนภาพและ KPI ของ Batch ด้านล่างเป็น Snapshot การทดสอบ SQLite/DuckDB แยกกัน",true));
-    renderNeonExplorer(root);
-    root.append(add(box("metrics"),
-      metric("ฐานข้อมูลต้นทาง · SQLite","25 ตาราง","OLTP Schema"),
-      metric("คลังข้อมูล · DuckDB",money(p.physical_warehouse_tables)+" ตาราง","ตารางข้อมูลจริง"),
-      metric("Initial Validation",p.initial.passed+"/"+p.initial.checks,"Functional Checks","metric-good"),
-      metric("Incremental Validation",p.incremental.passed+"/"+p.incremental.checks,"Functional Checks","metric-good")));
-    const name={ingest:"Database",extract:"Landing/Raw",transform:"Standardize",load:"Warehouse",validate:"Reconcile"};
-    const flow=node("div","flow-grid");
-    p.stages.forEach((stage,i)=>{
-      flow.append(box("flow-node"+(stage.status==="SUCCESS"?" is-complete":""),
-        small(stage.batch.toUpperCase()+" · "+(i%5+1)+"/5","flow-number"),
-        node("strong","",name[stage.stage]||stage.stage),
-        small(stage.status+" · "+money(stage.elapsed_seconds,2)+" sec")));
+    const live=state.neonRunStatus;
+    const summary=live?.state;
+    const hero=box("lab-hero",
+      box("lab-hero-main",
+        node("span","lab-kicker","INTERACTIVE PIPELINE LAB · SOURCE-BACKED"),
+        node("h2","lab-heading","กดตรวจทีละขั้น เห็นข้อมูลก่อนและหลัง"),
+        node("p","lab-description",
+          "ทดลองแบบ Colab: เลือก Step → Run → ดู Input, Process, Output และผล PASS/FAIL จาก Neon และไฟล์บน Cloud จริง")),
+      box("lab-hero-aside",
+        node("span","lab-hero-tag","โหมดปลอดภัย · ตรวจซ้ำหลักฐานจริง"),
+        node("strong","",summary?.phase||"กำลังอ่านสถานะ"),
+        small(summary?"รอบข้อมูล "+summary.cycle_number+" · "+money(live.counts.orders)+" ออเดอร์":"กำลังเชื่อม Neon")));
+    root.append(hero);
+    root.append(notice("Run Step จะเรียก API เพื่ออ่านและตรวจข้อมูลจริงทุกครั้ง แต่ไม่สั่ง GitHub Actions ทำ Ingest/Transform/Load ใหม่ และไม่แก้ 900 ออเดอร์เดิม · การเริ่ม Pipeline รอบใหม่ต้องมีระบบสั่งงานที่ยืนยันสิทธิ์ผู้ใช้"));
+    const progress=box("lab-steps");
+    LAB_STEPS.forEach((def,i)=>{
+      const result=state.labResults[def.id];
+      const canOpen=i===0||Boolean(state.labResults[LAB_STEPS[i-1].id]?.success);
+      const action=node("button","lab-step"+(i===state.labStage?" lab-active":"")+
+        (result?.success?" lab-complete":""));
+      action.type="button";action.disabled=!canOpen||state.labBusy;
+      action.append(
+        node("span","lab-step-number",result?.success?"✓":String(i+1).padStart(2,"0")),
+        box("lab-step-text",node("strong","",def.title),small(def.path)),
+        node("span","lab-step-state",result?.success?"ผ่านแล้ว":canOpen?"เลือกขั้นตอน":"รอขั้นก่อน"));
+      action.addEventListener("click",()=>{state.labStage=i;state.labError="";renderPipeline();});
+      progress.append(action);
     });
-    root.append(panel("เส้นทางการประมวลผลข้อมูล","Initial และ Incremental จาก Batch ที่ตรวจสอบจริง",
-      contentArea(flow,node("div","flow-divider"),
-        box("pipeline-meta",small("Historical Orders: "+money(meta.historical_orders)),
-          small("Ads Records: "+money(meta.historical_ads_rows)),
-          small("Marketing Plans: "+money(meta.marketing_plan_rows)),
-          small("Synthetic Seed: "+meta.seed))),
-      link("GitHub Pipeline CI",state.data.links.pipeline)));
-    const checks=[
-      {check:"Functional · Initial",measure:p.initial.passed+"/"+p.initial.checks,result:p.initial.failed?"FAIL":"PASS"},
-      {check:"Functional · Incremental",measure:p.incremental.passed+"/"+p.incremental.checks,result:p.incremental.failed?"FAIL":"PASS"},
-      {check:"Sales ER1 vs Warehouse",measure:money(p.incremental.source_paid_item_count)+" vs "+money(p.incremental.warehouse_sales_item_count),result:p.incremental.source_paid_item_count===p.incremental.warehouse_sales_item_count?"PASS":"FAIL"},
-      {check:"Net Revenue ER1 vs Warehouse",measure:"฿"+money(p.incremental.er1_net_revenue,2)+" vs ฿"+money(p.incremental.er2_net_revenue,2),result:Math.abs(p.incremental.er1_net_revenue-p.incremental.er2_net_revenue)<.02?"PASS":"FAIL"},
-      {check:"Ads Fact vs Mart Gap",measure:"฿"+money(p.ads_fact_to_mart_difference,2),result:Math.abs(p.ads_fact_to_mart_difference)<.02?"PASS":"FAIL"},
-      {check:"Error Recovery · Historical Batch",measure:"ไม่ได้ทดสอบใน Run นี้",result:"NOT_RUN"}
-    ];
-    const assets=contentArea(
-      ...[["Source","Synthetic CSV"],["ER1","SQLite · 25 Tables"],["Data Lake","Landing / Raw / Standardized"],["ER2","DuckDB · "+p.physical_warehouse_tables+" Tables"],["Features","Offline Weekly Parquet"],["Recovery","ตรวจเพิ่มเติมใน Pipeline CI เดิม"]].map(([k,v])=>
-        box("listline",node("span","",k),node("strong","",v))),
-      node("div","callout","ข้อมูลเป็น Snapshot ของ GitHub Actions ไม่ได้เช็กสถานะเซิร์ฟเวอร์แบบ Live"));
-    root.append(box("two-col",
-      panel("ตรวจสอบความถูกต้องของข้อมูล","ผลที่ตรวจจาก Database และ Warehouse",dataTable([["check","Check"],["measure","Measured"],["result","Status"]],checks,{result:{kind:"status"}})),
-      panel("ชุดข้อมูลและการกำกับข้อมูล","ไม่เพิ่มตาราง ML ใน ER1/ER2",assets)));
-    renderEvidenceExplorer(root);
-    const line=(p.lineage_sample||[]).map(x=>({
-      item:x.Source_Order_Item_ID,source:x.Source,
-      er1:x.ER1_Net_Revenue,dwh:x.ER2_Net_Revenue,
-      group:x.Product_Group_ID,date:x.Sales_Date_Key
-    }));
-    root.append(panel("ติดตามที่มาของรายการขาย","Trace จาก Source → SQLite → DuckDB",
-      dataTable([["item","Item ID"],["source","Source"],["er1","ER1 Net"],["dwh","DWH Net"],["group","Group"],["date","Date Key"]],line,
-        {er1:{kind:"money",digits:2},dwh:{kind:"money",digits:2}}),
-      link("Repository Evidence",state.data.links.repo)));
-    state.rows=checks;
+    root.append(progress);
+    const def=LAB_STEPS[state.labStage];
+    const completed=state.labResults[def.id];
+    const unlocked=state.labStage===0||Boolean(state.labResults[LAB_STEPS[state.labStage-1].id]?.success);
+    const main=contentArea();
+    main.append(node("div","lab-step-caption","STEP "+String(state.labStage+1).padStart(2,"0")+" / 05"),
+      node("h3","lab-step-detail-title",def.title+" — "+def.path),
+      node("p","lab-description",def.why));
+    if(state.labStage<2 && state.neonTables.length){
+      const options=state.neonTables.map(x=>[x,x]);
+      if(!state.neonTables.includes(state.labTable))state.labTable="Fact_Orders";
+      main.append(chooseField("เลือก Source Table ที่ต้องการตรวจ",options,state.labTable,val=>{
+        state.labTable=val;
+        // Each table is its own evidence check. Change invalidates downstream.
+        state.labResults={};state.labStage=0;state.labLog=[];
+        renderPipeline();
+      }));
+    }
+    const io=box("lab-io");
+    io.append(
+      box("lab-io-card",node("span","lab-io-label","01 · INPUT"),node("strong","",def.input)),
+      box("lab-io-card",node("span","lab-io-label","02 · PROCESS"),node("strong","",def.process)),
+      box("lab-io-card",node("span","lab-io-label","03 · OUTPUT"),node("strong","",def.output)));
+    main.append(io,node("p","lab-footnote",def.note));
+    const actionRow=box("lab-actions");
+    const run=node("button","button button-primary",state.labBusy?"กำลังตรวจข้อมูล…":
+      (completed?"↻ Run Step "+(state.labStage+1)+" อีกครั้ง":"▶ Run Step "+(state.labStage+1)));
+    run.type="button";
+    run.disabled=!unlocked||state.labBusy||state.neonStatus!=="ready";
+    run.addEventListener("click",runLabStage);
+    actionRow.append(run);
+    if(completed?.success&&state.labStage<4){
+      const next=node("button","button button-outline","Step ถัดไป →");
+      next.type="button";next.addEventListener("click",()=>{state.labStage++;renderPipeline();});
+      actionRow.append(next);
+    }
+    main.append(actionRow);
+    if(!unlocked)main.append(notice("ต้อง Run Step ก่อนหน้าให้ผ่านก่อน จึงจะตรวจ Step นี้ได้",true));
+    if(state.neonStatus==="error")main.append(notice(state.neonError||"อ่าน Neon ไม่สำเร็จ",true));
+    if(state.labError)main.append(notice(state.labError+" · สามารถกด Run Step อีกครั้งเพื่อ Retry ได้",true));
+    main.append(node("h3","lab-subheading","ผลการตรวจสอบ"),renderLabResult(completed));
+    root.append(panel("ทดลองขั้นตอนที่ "+(state.labStage+1),"คลิก Run แล้วระบบจะประมวลผลแบบอ่านอย่างเดียวจากแหล่งข้อมูลจริง",main));
+    if(state.labLog.length)root.append(panel("Execution Log ของการทดลองครั้งนี้",
+      "กิจกรรมจากการกดในหน้าเว็บ ไม่ใช่ Log ย้อนหลังของ GitHub Worker",
+      dataTable([["at","เวลา (UTC)"],["stage","Step"],["result","ผล"],["detail","รายละเอียด"]],
+        state.labLog,{result:{kind:"status"}})));
+    const detail=node("details","lab-reference");
+    const trigger=node("summary","","เปิดดู Data Explorer / รายชื่อไฟล์ / หลักฐาน GitHub");
+    detail.append(trigger);
+    const explorer=box("lab-reference-body");
+    renderNeonExplorer(explorer);renderEvidenceExplorer(explorer);
+    detail.append(explorer);
+    root.append(detail);
+    root.append(box("lab-links",
+      link("การรัน Neon Pipeline จริงที่ผ่าน GitHub Actions","https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/actions/runs/42487488684"),
+      link("หลักฐาน Cloud Storage ที่ตรวจครบ 64 ไฟล์","https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/actions/runs/42488944625")));
+    state.rows=completed?.output?.preview||[];
   }
 
   function renderML(){

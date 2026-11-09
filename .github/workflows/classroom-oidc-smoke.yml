@@ -1,3 +1,4 @@
+# Read-only check of the isolated EMPTY lab after binding a new Neon branch.
 name: Classroom OIDC Lab Connectivity - Read Only Smoke
 
 on:
@@ -38,3 +39,4 @@ jobs:
           assert count == 0 and state == "EMPTY", (count,state)
           print("OIDC token validated. Isolated Neon Lab is EMPTY and readable. No writes performed.")
           PY
+

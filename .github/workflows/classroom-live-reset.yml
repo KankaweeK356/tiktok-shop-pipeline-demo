@@ -1,0 +1,38 @@
+name: Classroom Live Lab - Start New Cycle
+
+on:
+  workflow_dispatch:
+    inputs:
+      expected_cycle:
+        description: Current lab cycle; prevents clearing a changed lab
+        required: true
+        type: string
+
+run-name: "Classroom lab reset / cycle ${{ inputs.expected_cycle }}"
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: neon-classroom-demo-exclusive
+  cancel-in-progress: false
+
+jobs:
+  reset-lab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - run: python -m pip install -r requirements-neon.txt
+      - name: Obtain isolated lab credential through GitHub OIDC
+        run: python -m pipeline.oidc_lab_auth
+      - name: Clear only the 25 lab database tables for a new cycle
+        env:
+          RESET_CYCLE: ${{ inputs.expected_cycle }}
+        run: python -m pipeline.neon_reset --confirm RESET-DEMO-DATA --expected-cycle "$RESET_CYCLE" --reason "Operator requested a new classroom run after Run 2"
+

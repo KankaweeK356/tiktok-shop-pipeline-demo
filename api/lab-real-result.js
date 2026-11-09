@@ -19,7 +19,8 @@ export default async function handler(req,res){
   if(!/^[1-9][0-9]{0,18}$/.test(id))return res.status(400).json({error:"Invalid run id"});
   try{
     const run=await api("/actions/runs/"+id);
-    if(run.head_branch!==REF||run.name!=="Classroom Real Pipeline - One Step"||
+    if(run.head_branch!==REF||run.path!==".github/workflows/classroom-real-step.yml"||
+      run.event!=="workflow_dispatch"||
       run.conclusion!=="success")return res.status(409).json({error:"งานนี้ไม่ใช่ Step ที่ผ่านบน Branch เป้าหมาย"});
     const catalog=await api("/actions/runs/"+id+"/artifacts?per_page=30");
     const artifact=(catalog.artifacts||[]).find(x=>x.name==="classroom-lab-result"&&!x.expired);

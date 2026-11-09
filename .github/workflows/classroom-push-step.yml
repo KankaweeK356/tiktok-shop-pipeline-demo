@@ -1,0 +1,84 @@
+name: Classroom Real Pipeline - GitHub Plugin Step
+
+on:
+  push:
+    branches:
+      - feature/classroom-demo-evidence-foundation
+    paths:
+      - '.github/lab-command.json'
+
+permissions:
+  contents: read
+  actions: read
+  id-token: write
+
+concurrency:
+  group: neon-classroom-demo-exclusive
+  cancel-in-progress: false
+
+jobs:
+  execute-one-step:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: Parse and strictly validate versioned GitHub command
+        id: command
+        run: |
+          python - <<'PY'
+          import json,os,re
+          from pathlib import Path
+          d=json.loads(Path(".github/lab-command.json").read_text())
+          stage=d.get("stage");batch=d.get("batch")
+          previous=str(d.get("previous_run_id",""))
+          steps=("ingest","extract","transform","load","validate")
+          if stage not in steps or batch not in ("initial","incremental"):
+              raise RuntimeError("Unrecognized stage/batch")
+          if not re.fullmatch(r"(0|[1-9][0-9]{0,18})",previous):
+              raise RuntimeError("Invalid previous run ID")
+          if (batch=="initial" and stage=="ingest")!=(previous=="0"):
+              raise RuntimeError("Only initial ingest may start without prior artifact")
+          output=os.environ["GITHUB_OUTPUT"]
+          with open(output,"a",encoding="utf-8") as f:
+              f.write(f"batch={batch}\nstage={stage}\nprevious={previous}\n")
+          print("Validated classroom lab command",batch,stage,"previous",previous)
+          PY
+      - name: Restore last successful stage workspace
+        if: ${{ steps.command.outputs.previous != '0' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: classroom-lab-workspace
+          path: output/classroom_lab
+          run-id: ${{ steps.command.outputs.previous }}
+          github-token: ${{ github.token }}
+      - name: Obtain LAB-only Neon connection via signed GitHub OIDC
+        run: python -m pipeline.oidc_lab_auth
+      - name: Install unchanged ETL and DuckDB pipeline dependencies
+        run: python -m pip install -r requirements-neon.txt
+      - name: Execute ONE real Python/Neon pipeline stage
+        env:
+          STAGE: ${{ steps.command.outputs.stage }}
+          BATCH: ${{ steps.command.outputs.batch }}
+        run: python -m pipeline.ci_lab_stage --batch "$BATCH" --stage "$STAGE"
+      - name: Preserve stage workspace for next GitHub run
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: classroom-lab-workspace
+          path: output/classroom_lab/
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Preserve actual step Input/Output report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: classroom-lab-result
+          path: output/classroom_lab/last_step_result.json
+          if-no-files-found: warn
+          retention-days: 7

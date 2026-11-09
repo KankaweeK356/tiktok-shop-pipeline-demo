@@ -120,5 +120,5 @@
 .notebook-cell-title{flex:1;min-width:0}.notebook-cell-title strong{display:block;font-size:16px;margin-bottom:4px}.notebook-cell-title .small{line-height:1.5}
 .notebook-cell-state{font-size:12px;color:#347c50;white-space:nowrap}.notebook-cell-body{border-top:1px solid #eee1e4;padding:16px 18px 20px;display:flex;flex-direction:column;gap:12px}
 .notebook-output{padding:15px;border-radius:10px;background:#f4f8f3}.notebook-output>strong{color:#347c50}.notebook-output .table-wrap{background:#fff}
+.table-name-button{border:0;background:transparent;padding:0;color:var(--red);font:inherit;font-weight:700;cursor:pointer;text-align:left}.table-name-button:hover,.table-name-button:focus-visible{text-decoration:underline}
 @media(max-width:760px){.notebook-runs{grid-template-columns:1fr}.notebook-cell-state{display:none}.notebook-intro .lab-heading{font-size:19px}}
-

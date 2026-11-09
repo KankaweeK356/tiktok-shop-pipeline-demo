@@ -37,6 +37,8 @@ def reset_source(database_url: str, *, confirmation: str,
             if not current or current[1] != expected_cycle:
                 raise RuntimeError("Current data cycle changed; no reset performed")
             previous_phase,current_cycle=current
+            if previous_phase != "RUN2_READY":
+                raise RuntimeError("Run 2 must complete before clearing the classroom lab")
             cur.execute("""
                 SELECT COUNT(*) FROM demo_control.pipeline_runs
                  WHERE dataset_key='classroom' AND cycle_number=%s

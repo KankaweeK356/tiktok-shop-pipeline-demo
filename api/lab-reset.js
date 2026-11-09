@@ -1,12 +1,9 @@
 /** Explicit new-cycle request for the isolated classroom lab only. */
-import { timingSafeEqual } from "node:crypto";
 import { neon } from "@neondatabase/serverless";
 
 const repo="KankaweeK356/tiktok-shop-pipeline-demo";
 const ref="feature/classroom-demo-evidence-foundation";
 const workflow="classroom-live-reset.yml";
-const equals=(a,b)=>{const x=Buffer.from(a||""),y=Buffer.from(b||"");
-  return x.length>=20&&x.length===y.length&&timingSafeEqual(x,y);};
 async function github(path,method="GET",body){
   const response=await fetch("https://api.github.com/repos/"+repo+path,{
     method,headers:{Authorization:"Bearer "+process.env.CLASSROOM_GITHUB_TOKEN,
@@ -19,9 +16,8 @@ async function github(path,method="GET",body){
 export default async function handler(req,res){
   res.setHeader("Cache-Control","no-store");
   if(!["GET","POST"].includes(req.method))return res.status(405).json({error:"GET/POST only"});
-  if(!process.env.CLASSROOM_GITHUB_TOKEN||!process.env.CLASSROOM_LAB_NEON_URL||
-     !equals(req.headers["x-classroom-admin-key"],process.env.CLASSROOM_LAB_ADMIN_KEY))
-    return res.status(403).json({error:"ไม่มีสิทธิ์จัดการรอบข้อมูล"});
+  if(!process.env.CLASSROOM_GITHUB_TOKEN||!process.env.CLASSROOM_LAB_NEON_URL)
+    return res.status(503).json({error:"Lab ยังไม่พร้อม"});
   try{
     if(req.method==="GET"){
       const cycle=String(req.query?.cycle||"");
@@ -44,6 +40,8 @@ export default async function handler(req,res){
     const [state]=await sql.query("SELECT phase,cycle_number FROM demo_control.dataset_state WHERE dataset_key='classroom'");
     if(state?.phase!=="RUN2_READY"||Number(state.cycle_number)!==expected_cycle)
       return res.status(409).json({error:"เคลียร์ได้เมื่อ Run 2 จบ และรอบข้อมูลยังตรงกันเท่านั้น"});
+    const active=await sql.query("SELECT COUNT(*)::int AS n FROM demo_control.pipeline_runs WHERE dataset_key='classroom' AND status IN ('RUNNING','QUEUED')");
+    if(active[0]?.n)return res.status(409).json({error:"มี Run กำลังทำงาน เคลียร์ไม่ได้"});
     await github("/actions/workflows/"+workflow+"/dispatches","POST",{
       ref,inputs:{expected_cycle:String(expected_cycle)}});
     return res.status(202).json({accepted:true,cycle:expected_cycle,
@@ -53,4 +51,3 @@ export default async function handler(req,res){
     return res.status(503).json({error:"สั่งงาน Lab ไม่สำเร็จ กรุณาดูสถานะ GitHub Actions"});
   }
 }
-

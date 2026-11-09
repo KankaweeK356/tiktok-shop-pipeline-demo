@@ -154,4 +154,3 @@ export default async function handler(req,res){
     return json(res,503,{error:"ยังไม่สามารถสั่ง GitHub Actions ได้ ("+error.message+")"});
   }
 }
-

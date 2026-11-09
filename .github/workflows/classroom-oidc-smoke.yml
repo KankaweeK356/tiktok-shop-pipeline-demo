@@ -39,4 +39,3 @@ jobs:
           assert count == 0 and state == "EMPTY", (count,state)
           print("OIDC token validated. Isolated Neon Lab is EMPTY and readable. No writes performed.")
           PY
-

@@ -54,22 +54,30 @@ def _real_step_evidence(workspace: Path,batch: str,stage: str) -> dict:
             count=db.execute('SELECT COUNT(*) FROM "Fact_Orders"').fetchone()[0]
             cursor=db.execute('SELECT * FROM "Fact_Orders" LIMIT 5')
             cols=[x[0] for x in cursor.description]
+            table_previews={}
+            for table in _ordered_source_tables():
+                sample=db.execute('SELECT * FROM "'+table.name+'" LIMIT 5')
+                names=[column[0] for column in sample.description]
+                table_previews[table.name]=[dict(zip(names,row)) for row in sample.fetchall()]
             output={"table":"Fact_Orders","records":count,"origin":"NEW_NEON_INGEST",
                     "preview":[dict(zip(cols,row)) for row in cursor.fetchall()],
+                    "table_previews":table_previews,
                     "tables":[{"name":t.name,"rows":db.execute(
                         'SELECT COUNT(*) FROM "'+t.name+'"').fetchone()[0]}
                         for t in _ordered_source_tables()]}
     elif stage=="extract":
+        paths=sorted((workspace/"lake"/"raw"/batch).glob("*.parquet"))
         output={**parquet_result(workspace/"lake"/"raw"/batch/"Fact_Orders.parquet"),
                 "origin":"NEW_RAW_PARQUET_FROM_NEON",
-                "tables":[{"name":p.stem,"rows":parquet_result(p)["records"]}
-                    for p in sorted((workspace/"lake"/"raw"/batch).glob("*.parquet"))]}
+                "tables":[{"name":p.stem,"rows":parquet_result(p)["records"]} for p in paths],
+                "table_previews":{p.stem:parquet_result(p)["preview"] for p in paths}}
     elif stage=="transform":
         input_data=parquet_result(workspace/"lake"/"raw"/batch/"Fact_Order_Items.parquet")
+        paths=sorted((workspace/"lake"/"standardized"/batch).glob("*.parquet"))
         output={**parquet_result(workspace/"lake"/"standardized"/batch/"Fact_Sales_Order_Item.parquet"),
                 "origin":"NEW_STANDARDIZED_DELTA",
-                "tables":[{"name":p.stem,"rows":parquet_result(p)["records"]}
-                    for p in sorted((workspace/"lake"/"standardized"/batch).glob("*.parquet"))]}
+                "tables":[{"name":p.stem,"rows":parquet_result(p)["records"]} for p in paths],
+                "table_previews":{p.stem:parquet_result(p)["preview"] for p in paths}}
     elif stage=="load":
         input_data=parquet_result(workspace/"lake"/"standardized"/batch/"Fact_Sales_Order_Item.parquet")
         with duckdb.connect(str(workspace/"er2.duckdb"),read_only=True) as db:
@@ -78,9 +86,11 @@ def _real_step_evidence(workspace: Path,batch: str,stage: str) -> dict:
             tables=[name for (name,) in db.execute("SHOW TABLES").fetchall()]
             table_counts=[{"name":name,"rows":db.execute('SELECT COUNT(*) FROM "'+name+'"').fetchone()[0]}
                 for name in tables]
+            table_previews={name:json.loads(db.execute('SELECT * FROM "'+name+'" LIMIT 5').df()
+                .to_json(orient="records",date_format="iso")) for name in tables}
         output={"table":"Fact_Sales_Order_Item","records":count,"origin":"NEW_DUCKDB_WAREHOUSE",
                 "preview":json.loads(frame.to_json(orient="records",date_format="iso")),
-                "tables":table_counts}
+                "tables":table_counts,"table_previews":table_previews}
     else:
         report=json.loads((workspace/"reports"/("functional_"+batch+".json")).read_text())
         output={"table":"Validation","records":report.get("checks"),
@@ -176,4 +186,3 @@ def main():
 
 if __name__=="__main__":
     main()
-

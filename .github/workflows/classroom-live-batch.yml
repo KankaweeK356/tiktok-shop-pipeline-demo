@@ -1,0 +1,123 @@
+name: Classroom Live Lab - Complete Run
+
+on:
+  workflow_dispatch:
+    inputs:
+      batch:
+        description: Run 1 initial or Run 2 incremental
+        required: true
+        type: choice
+        options: [initial, incremental]
+      previous_run_id:
+        description: Successful Run 1 ID for incremental, 0 for initial
+        required: true
+        type: string
+
+run-name: "Classroom complete ${{ inputs.batch }} / previous ${{ inputs.previous_run_id }}"
+
+permissions:
+  contents: read
+  actions: read
+  id-token: write
+
+concurrency:
+  group: neon-classroom-demo-exclusive
+  cancel-in-progress: false
+
+jobs:
+  complete-run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: Restore previous workspace when needed
+        if: ${{ inputs.previous_run_id != '0' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: classroom-lab-workspace
+          path: output/classroom_lab
+          run-id: ${{ inputs.previous_run_id }}
+          github-token: ${{ github.token }}
+      - name: Obtain isolated lab credential
+        run: python -m pipeline.oidc_lab_auth
+      - name: Install pipeline dependencies
+        run: python -m pip install -r requirements-neon.txt
+      - name: "1 Source to Database"
+        env:
+          BATCH: ${{ inputs.batch }}
+        run: python -m pipeline.ci_lab_batch --batch "$BATCH" --stage ingest
+      - uses: actions/upload-artifact@v4
+        with:
+          name: classroom-stage-ingest
+          path: output/classroom_lab/last_step_result.json
+          retention-days: 30
+      - name: "2 Database to Data Lake"
+        env:
+          BATCH: ${{ inputs.batch }}
+        run: python -m pipeline.ci_lab_batch --batch "$BATCH" --stage extract
+      - uses: actions/upload-artifact@v4
+        with:
+          name: classroom-stage-extract
+          path: output/classroom_lab/last_step_result.json
+          retention-days: 30
+      - name: "3 Standardize Data Lake"
+        env:
+          BATCH: ${{ inputs.batch }}
+        run: python -m pipeline.ci_lab_batch --batch "$BATCH" --stage transform
+      - uses: actions/upload-artifact@v4
+        with:
+          name: classroom-stage-transform
+          path: output/classroom_lab/last_step_result.json
+          retention-days: 30
+      - name: "4 Data Lake to Warehouse"
+        env:
+          BATCH: ${{ inputs.batch }}
+        run: python -m pipeline.ci_lab_batch --batch "$BATCH" --stage load
+      - uses: actions/upload-artifact@v4
+        with:
+          name: classroom-stage-load
+          path: output/classroom_lab/last_step_result.json
+          retention-days: 30
+      - name: Export all Warehouse tables as CSV
+        run: python -m pipeline.ci_lab_export
+      - name: "5 Validate whole run"
+        env:
+          BATCH: ${{ inputs.batch }}
+        run: python -m pipeline.ci_lab_batch --batch "$BATCH" --stage validate
+      - uses: actions/upload-artifact@v4
+        with:
+          name: classroom-stage-validate
+          path: output/classroom_lab/last_step_result.json
+          retention-days: 30
+      - name: Summarize run
+        env:
+          BATCH: ${{ inputs.batch }}
+        run: python -m pipeline.ci_lab_batch --batch "$BATCH" --finalize
+      - name: Preserve workspace for Run 2
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: classroom-lab-workspace
+          path: output/classroom_lab/
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Publish run results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: classroom-batch-result
+          path: output/classroom_lab/batch_result.json
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Publish complete Warehouse CSV
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: classroom-warehouse-csv
+          path: output/classroom_lab/warehouse_csv.zip
+          if-no-files-found: error
+          retention-days: 30

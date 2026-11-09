@@ -39,4 +39,3 @@ export default async function handler(req, res) {
     return res.status(503).json({error:"อ่านข้อมูล Lab ไม่สำเร็จ"});
   }
 }
-

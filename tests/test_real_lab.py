@@ -39,23 +39,43 @@ def test_frontend_labels_real_execution_distinct_from_readonly_replay():
     s=(ROOT/"dashboard"/"app.js").read_text(encoding="utf-8")
     assert "REAL_GITHUB_ACTIONS_STAGE" in s
     assert "READ_ONLY_EVIDENCE_REPLAY" in s
-    assert '"/api/lab-dispatch"' in s
-    assert '"/api/lab-real-result?run_id="' in s
-    assert "Execute Real ETL Step" in s
+    assert '"/api/lab-batch"' in s
+    assert '"/api/lab-batch-result?run_id="' in s
+    assert "รันต่อจากขั้นที่ผิดพลาด" in s
     assert "pre_group_shortfall_thb" in s
     assert "gross*benchmarkPct/100" in s
 
 
-def test_dispatch_requires_server_side_token_and_admin_authorization():
-    s=(ROOT/"api"/"lab-dispatch.js").read_text(encoding="utf-8")
+def test_complete_run_dispatch_keeps_token_server_side_and_checks_phase():
+    s=(ROOT/"api"/"lab-batch.js").read_text(encoding="utf-8")
     assert "CLASSROOM_GITHUB_TOKEN" in s
-    assert "CLASSROOM_LAB_ADMIN_KEY" in s
-    assert "timingSafeEqual" in s
+    assert "CLASSROOM_LAB_ADMIN_KEY" not in s
     assert "workflow_dispatch" in s
     assert "REF=" in s
-    assert 'rows[0]?.phase!==expected' in s
-    assert 'return json(res,409' in s
+    assert 'state[0]?.phase!==expected' in s
+    assert 'res.status(409)' in s
     assert "RESET-DEMO-DATA" not in s
+
+
+def test_complete_run_has_five_stages_and_immutable_results():
+    worker=(ROOT/"pipeline"/"ci_lab_batch.py").read_text(encoding="utf-8")
+    ast.parse(worker)
+    workflow=(ROOT/".github"/"workflows"/"classroom-live-batch.yml").read_text(encoding="utf-8")
+    for stage in ("ingest", "extract", "transform", "load", "validate"):
+        assert f"--stage {stage}" in workflow
+        assert f"classroom-stage-{stage}" in workflow
+    assert "classroom-warehouse-csv" in workflow
+    assert "actions/download-artifact@v4" in workflow
+    assert "--finalize" in workflow
+    assert "no_duplicate_sales_items" in worker
+
+
+def test_reset_button_does_not_request_browser_password():
+    ui=(ROOT/"dashboard"/"app.js").read_text(encoding="utf-8")
+    api=(ROOT/"api"/"lab-reset.js").read_text(encoding="utf-8")
+    assert 'window.prompt("รหัสผู้ควบคุม' not in ui
+    assert 'x-classroom-admin-key' not in api.lower()
+    assert 'state?.phase!=="RUN2_READY"' in api
 
 
 def test_worker_output_is_from_real_rows_not_example_constants():
@@ -85,8 +105,8 @@ def test_sequential_stage_execution_is_checkpointed_and_replays_without_change(t
 
 
 def test_actual_lab_isolated_from_protected_900_order_demo():
-    web=(ROOT/"api"/"lab-dispatch.js").read_text(encoding="utf-8")
-    workflow=(ROOT/".github"/"workflows"/"classroom-real-step.yml").read_text(encoding="utf-8")
+    web=(ROOT/"api"/"lab-batch.js").read_text(encoding="utf-8")
+    workflow=(ROOT/".github"/"workflows"/"classroom-live-batch.yml").read_text(encoding="utf-8")
     assert "CLASSROOM_LAB_NEON_URL" in web
     assert "CLASSROOM_NEON_READONLY_URL" not in web
     assert "secrets.NEON_LAB_DATABASE_URL" not in workflow

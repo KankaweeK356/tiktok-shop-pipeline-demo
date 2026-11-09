@@ -1,7 +1,7 @@
 {
-  "batch": "initial",
-  "stage": "validate",
-  "previous_run_id": "42577671408",
+  "batch": "incremental",
+  "stage": "ingest",
+  "previous_run_id": "42577788046",
   "purpose": "NEON_CLASSROOM_STEP_LAB_PROOF",
-  "note": "Stage 5: run actual source-to-warehouse reconciliation and mark RUN1_READY only if all checks pass"
+  "note": "Run2 Stage1: ingest new source + late updates into isolated Neon Lab, preserving Initial workspace and verified dataset"
 }

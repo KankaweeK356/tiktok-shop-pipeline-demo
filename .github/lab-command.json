@@ -1,0 +1,7 @@
+{
+  "batch": "initial",
+  "stage": "ingest",
+  "previous_run_id": "0",
+  "purpose": "NEON_CLASSROOM_STEP_LAB_PROOF",
+  "note": "Read source CSV and ingest ONLY isolated classroom-step-lab Neon branch via GitHub Actions OIDC; no reset of protected demo."
+}

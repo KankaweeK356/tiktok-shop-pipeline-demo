@@ -2,10 +2,10 @@
 (function () {
   "use strict";
   const $ = s => document.querySelector(s);
-  const state = { data:null, evidence:null, evidenceLayer:"source", evidenceTable:"", neonStatus:"not_loaded", neonTables:[], neonTable:"", neonData:null, neonError:"", neonRunStatus:null, neonArtifactType:"ALL", labStage:0, labTable:"Fact_Orders", labResults:{}, labBusy:false, labError:"", labLog:[], realReady:false, realConfigChecked:false, realLabPhase:"UNKNOWN", realLabOrders:null, realBatch:"initial", realStageIndex:0, realPreviousRunId:"", realRunId:null, realStatus:"", realUrl:"", realError:"", realStartedAt:"", realAdminKey:"", realEvidence:null, savedLabManifest:null, savedLabReceipt:null, savedLabSelected:"", savedLabLoading:false, errorCase:"E01", errorReplayed:false, errorLabOpen:false, view:"business", month:"", group:"ALL", sku:"", skuSort:"lowest_margin", model:"", week:"", replay:false, rows:[] };
+  const state = { data:null, evidence:null, evidenceLayer:"source", evidenceTable:"", neonStatus:"not_loaded", neonTables:[], neonTable:"", neonData:null, neonError:"", neonRunStatus:null, neonArtifactType:"ALL", labStage:0, labTable:"Fact_Orders", labResults:{}, labBusy:false, labError:"", labLog:[], realReady:false, realConfigChecked:false, realLabPhase:"UNKNOWN", realLabOrders:null, realBatch:"initial", realStageIndex:0, realPreviousRunId:"", realRunId:null, realStatus:"", realUrl:"", realError:"", realStartedAt:"", realAdminKey:"", realEvidence:null, savedLabManifest:null, savedLabReceipt:null, savedLabSelected:"", savedLabLoading:false, pipelineTab:"flow", notebookBatch:"initial", notebookStage:"ingest", labNeon:null, labNeonTable:null, labNeonBusy:false, labNeonError:"", errorCase:"E01", errorReplayed:false, errorLabOpen:false, view:"business", month:"", group:"ALL", sku:"", skuSort:"lowest_margin", model:"", week:"", replay:false, rows:[] };
   const names = {
     business:["ภาพรวมธุรกิจ","ยอดขาย กำไร และ KPI ของร้านเสื้อผ้าผู้หญิง","ภาพรวมธุรกิจ"],
-    pipeline:["ทดสอบการนำเข้าข้อมูล","เส้นทางข้อมูลจากต้นทางถึงคลังข้อมูลและหลักฐานการตรวจสอบ","การนำเข้าข้อมูล"],
+    pipeline:["Test Pipeline","จาก Source ผ่าน Database และ Data Lake สู่ Warehouse","Test Pipeline"],
     ml:["พยากรณ์ยอดขาย","ผลทำนายเทียบยอดขายจริงและความน่าเชื่อถือของโมเดล","พยากรณ์ยอดขาย"]
   };
   const groups=["PG01","PG02","PG03","PG04","PG05"];
@@ -874,7 +874,7 @@
       "เลือก Step เพื่อดู Input, Output ตัวอย่างแถว และผลตรวจสอบจาก Python Worker จริง",body));
   }
 
-  function renderPipeline(){
+  function renderLegacyPipeline(){
     const root=$("#app");root.replaceChildren();
     const live=state.neonRunStatus;
     const summary=live?.state;
@@ -965,6 +965,130 @@
       link("การรัน Neon Pipeline จริงที่ผ่าน GitHub Actions","https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/actions/runs/42487488684"),
       link("หลักฐาน Cloud Storage ที่ตรวจครบ 64 ไฟล์","https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/actions/runs/42488944625")));
     state.rows=completed?.output?.preview||[];
+  }
+
+  const NOTEBOOK_STAGES=[
+    ["ingest","Source → Database","นำข้อมูลจำลองเข้าฐานข้อมูลต้นทาง และ sync 25 ตารางไป Neon"],
+    ["extract","Database → Data Lake","บันทึก Landing และ Raw Parquet จากข้อมูลในฐานข้อมูล"],
+    ["transform","Data Lake · จัดรูปข้อมูล","แปลง Raw เป็น Standardized และตรวจเงื่อนไขข้อมูล"],
+    ["load","Data Lake → Warehouse","โหลดข้อมูลที่เปลี่ยนไปยัง DuckDB และปรับ Mart"],
+    ["validate","ตรวจผลทั้งเส้นทาง","เทียบจำนวนและยอดระหว่างฐานข้อมูลต้นทางกับ Warehouse"]
+  ];
+  async function loadLabNeon(schema="",table=""){
+    if(state.labNeonBusy)return;
+    state.labNeonBusy=true;state.labNeonError="";renderPipeline();
+    try{
+      const query=table?"?"+new URLSearchParams({schema,table}):"";
+      const response=await fetch("/api/lab-neon-evidence"+query,{cache:"no-store"});
+      const data=await response.json();
+      if(!response.ok||!data.connected)throw Error(data.error||"อ่าน Neon ไม่สำเร็จ");
+      if(table)state.labNeonTable=data;else state.labNeon=data;
+    }catch(error){state.labNeonError=error.message||"อ่าน Neon ไม่สำเร็จ";}
+    state.labNeonBusy=false;renderPipeline();
+  }
+  function renderPipeline(){
+    const root=$("#app");root.replaceChildren();
+    const tabs=box("notebook-tabs");
+    [["flow","ขั้นตอนการรัน"],["neon","Neon Database"],["files","Data Lake และ Warehouse"],
+      ["errors","ทดสอบข้อผิดพลาด"],["operate","สั่งรันจริง"]].forEach(([id,label])=>{
+      const button=node("button","notebook-tab"+(state.pipelineTab===id?" is-active":""),label);
+      button.type="button";button.setAttribute("aria-pressed",String(state.pipelineTab===id));
+      button.addEventListener("click",()=>{state.pipelineTab=id;renderPipeline();
+        if(id==="neon"&&!state.labNeon)loadLabNeon();});tabs.append(button);
+    });
+    root.append(tabs);
+    if(state.pipelineTab==="neon"){
+      root.append(notice("ข้อมูลสดจาก branch classroom-step-lab · Database tiktok_demo · อ่านอย่างเดียว"));
+      root.append(link("เปิด classroom-step-lab ใน Neon Console (ต้องมีสิทธิ์)",
+        "https://console.neon.tech/app/projects/hidden-leaf-09169842/branches/br-nameless-truth-bex5d1wp?database=tiktok_demo"));
+      if(state.labNeonBusy)root.append(small("กำลังอ่านรายชื่อตาราง…"));
+      if(state.labNeonError)root.append(notice(state.labNeonError,true));
+      const tables=state.labNeon?.tables||[];
+      if(tables.length){
+        root.append(small("demo_er1 · "+tables.filter(x=>x.table_schema==="demo_er1").length+
+          " ตารางธุรกิจ | demo_control · "+tables.filter(x=>x.table_schema==="demo_control").length+" ตารางควบคุม"));
+        root.append(chooseField("เลือกตารางจริงใน Neon",[["","— เลือกตาราง —"],...tables.map(x=>
+          [x.table_schema+"."+x.table_name,x.table_schema+" · "+x.table_name])],
+          state.labNeonTable?state.labNeonTable.schema+"."+state.labNeonTable.table:"",value=>{
+            const [schema,table]=value.split(".");if(table)loadLabNeon(schema,table);
+          }));
+      }
+      if(state.labNeonTable){
+        const d=state.labNeonTable;
+        root.append(node("h3","lab-subheading",d.schema+"."+d.table+" · "+money(d.row_count)+" แถว"));
+        root.append(dataTable([["column_name","คอลัมน์"],["data_type","ชนิดข้อมูล"]],d.columns));
+        root.append(node("h3","lab-subheading","ตัวอย่างข้อมูล 5 แถวแรก"));
+        root.append(dataTable(d.columns.slice(0,8).map(x=>[x.column_name,x.column_name]),d.preview_rows));
+      }return;
+    }
+    if(state.pipelineTab==="files"){
+      root.append(notice("Data Lake เก็บ Landing / Raw / Standardized; DuckDB Warehouse เป็นไฟล์จาก GitHub Worker ไม่ใช่ตารางใน Neon"));
+      renderEvidenceExplorer(root);return;
+    }
+    if(state.pipelineTab==="errors"){
+      root.append(node("h2","lab-heading","ทดสอบข้อผิดพลาดและการกู้คืน"));
+      root.append(notice("เปิดดูหลักฐาน Fail → Fix → Retry จากชุดทดสอบแยก กรณีนี้ไม่สั่งฉีด Error ใหม่ลง Neon"));
+      state.errorLabOpen=true;renderErrorRecoveryLab(root);return;
+    }
+    if(state.pipelineTab==="operate"){
+      root.append(notice("การสั่งรันจริงต้องใช้สิทธิ์ผู้ควบคุมและสถานะ Lab ที่ถูกต้อง ขณะนี้ชุดข้อมูลผ่าน Run 2 แล้ว"));
+      renderRealRunner(root);return;
+    }
+    const phase=state.realLabPhase;
+    root.append(box("notebook-intro",
+      node("h2","lab-heading","Source → Database → Data Lake → Warehouse"),
+      node("p","lab-description","แต่ละ Run เดินครบทั้งเส้นทาง Run 2 เติมและอัปเดตข้อมูลต่อจาก Run 1"),
+      small(phase==="RUN2_READY"?"ชุดปัจจุบัน: Run 1 และ Run 2 เสร็จแล้ว · "+money(state.realLabOrders)+" ออเดอร์":
+        "สถานะ Lab: "+(phase==="UNKNOWN"?"กำลังตรวจสอบ":phase))));
+    const batchPicker=box("notebook-runs");
+    [["initial","Run 1 · ข้อมูลตั้งต้น","800 ออเดอร์"],
+      ["incremental","Run 2 · เติมข้อมูลต่อ","800 → 900 ออเดอร์"]].forEach(([id,label,detail])=>{
+      const button=node("button","notebook-run"+(state.notebookBatch===id?" is-active":""));
+      button.type="button";button.setAttribute("aria-pressed",String(state.notebookBatch===id));
+      button.append(node("strong","",label),small(detail));
+      button.addEventListener("click",()=>{state.notebookBatch=id;state.notebookStage="ingest";
+        state.savedLabReceipt=null;state.savedLabSelected="";renderPipeline();});batchPicker.append(button);
+    });root.append(batchPicker);
+    root.append(node("p","notebook-caption","เลือกขั้นด้านล่างเพื่อเปิด Input และผลลัพธ์ที่บันทึกจากการรันจริง"));
+    const entries=state.savedLabManifest?.runs?.filter(x=>x.batch===state.notebookBatch)||[];
+    NOTEBOOK_STAGES.forEach(([id,title,description],index)=>{
+      const entry=entries.find(x=>x.stage===id),active=state.notebookStage===id;
+      const cell=node("section","notebook-cell"+(active?" is-open":""));
+      const head=node("button","notebook-cell-head");head.type="button";
+      head.setAttribute("aria-expanded",String(active));
+      head.append(node("span","notebook-number",String(index+1)),
+        box("notebook-cell-title",node("strong","",title),small(description)),
+        node("span","notebook-cell-state",entry?"ผ่านแล้ว · ดูผล":"ยังไม่มีหลักฐาน"));
+      head.addEventListener("click",()=>{
+        state.notebookStage=id;state.savedLabReceipt=null;renderPipeline();
+        if(entry)selectSavedLabStage(entry);
+      });cell.append(head);
+      if(active){
+        const body=box("notebook-cell-body");
+        body.append(small("Input: "+(index===0?"Source CSV ชุด "+(state.notebookBatch==="initial"?"ตั้งต้น":"ข้อมูลใหม่"):
+          index===1?"25 ตารางใน Neon":index===2?"Raw Parquet":index===3?"Standardized Parquet":"Database และ Warehouse")));
+        if(entry){
+          if(state.savedLabLoading)body.append(small("กำลังอ่านผลที่บันทึกไว้…"));
+          else if(state.savedLabReceipt?.batch===state.notebookBatch&&state.savedLabReceipt?.stage===id){
+            const receipt=state.savedLabReceipt;
+            body.append(box("notebook-output",node("strong","","ผลลัพธ์จากขั้นนี้ · ผ่านแล้ว"),
+              renderLabResult(receipt.evidence)));
+            body.append(link("ดูการรันและ Log บน GitHub", "https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/actions/runs/"+receipt.git_run_id));
+          }else{
+            const open=node("button","button button-primary","ดูผลขั้นนี้");open.type="button";
+            open.addEventListener("click",()=>selectSavedLabStage(entry));body.append(open);
+          }
+        }else body.append(notice("ยังไม่มีหลักฐานของขั้นนี้ในชุดที่เลือก",true));
+        if(id==="ingest")body.append(small("ขั้นนี้ sync ข้อมูลธุรกิจ 25 ตาราง; ตัวอย่างแถวด้านบนเป็นเพียง Fact_Orders ไม่ใช่ตารางทั้งหมด"),
+          link("เปิด classroom-step-lab ใน Neon Console",
+            "https://console.neon.tech/app/projects/hidden-leaf-09169842/branches/br-nameless-truth-bex5d1wp?database=tiktok_demo"));
+        if(id==="extract")body.append(small("การตรวจความครบถ้วนระหว่าง Database กับ Raw ใช้จำนวนตารางและไฟล์ manifest"));
+        if(id==="validate")body.append(small("ผลตรวจท้ายรอบเทียบ Paid Items และ Net Revenue ระหว่างฐานข้อมูลต้นทางกับ Warehouse"));
+        cell.append(body);
+      }
+      root.append(cell);
+    });
+    root.append(notice("ต้องการเริ่ม Run 1 ใหม่ต้องเตรียม Lab ว่างแยกต่างหาก; หน้านี้ไม่มีคำสั่งเคลียร์ข้อมูลอัตโนมัติ"));
   }
 
   function renderML(){
@@ -1136,3 +1260,4 @@
   }
   init();
 })();
+

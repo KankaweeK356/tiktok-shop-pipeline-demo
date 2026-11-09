@@ -19,6 +19,7 @@ import psycopg
 from .orchestrator import STAGES, run_batch
 from .neon_control import begin_run, complete_run
 from .schema import ROOT
+from .neon_source import _ordered_source_tables
 
 STATE_PATH = ROOT / "output" / "classroom_lab" / "lab_session.json"
 
@@ -46,26 +47,40 @@ def _real_step_evidence(workspace: Path,batch: str,stage: str) -> dict:
     input_data={"label":"Actual source files","preview":[]}
     output={"origin":"GITHUB_WORKER_ACTUAL","preview":[]}
     if stage=="ingest":
+        source_dir=ROOT/"source"/batch
+        input_data={"label":"Source CSV", "files":[p.name for p in sorted(source_dir.glob("*.csv"))],
+                    "preview":[]}
         with sqlite3.connect(workspace/"er1.sqlite") as db:
             count=db.execute('SELECT COUNT(*) FROM "Fact_Orders"').fetchone()[0]
             cursor=db.execute('SELECT * FROM "Fact_Orders" LIMIT 5')
             cols=[x[0] for x in cursor.description]
             output={"table":"Fact_Orders","records":count,"origin":"NEW_NEON_INGEST",
-                    "preview":[dict(zip(cols,row)) for row in cursor.fetchall()]}
+                    "preview":[dict(zip(cols,row)) for row in cursor.fetchall()],
+                    "tables":[{"name":t.name,"rows":db.execute(
+                        'SELECT COUNT(*) FROM "'+t.name+'"').fetchone()[0]}
+                        for t in _ordered_source_tables()]}
     elif stage=="extract":
         output={**parquet_result(workspace/"lake"/"raw"/batch/"Fact_Orders.parquet"),
-                "origin":"NEW_RAW_PARQUET_FROM_NEON"}
+                "origin":"NEW_RAW_PARQUET_FROM_NEON",
+                "tables":[{"name":p.stem,"rows":parquet_result(p)["records"]}
+                    for p in sorted((workspace/"lake"/"raw"/batch).glob("*.parquet"))]}
     elif stage=="transform":
         input_data=parquet_result(workspace/"lake"/"raw"/batch/"Fact_Order_Items.parquet")
         output={**parquet_result(workspace/"lake"/"standardized"/batch/"Fact_Sales_Order_Item.parquet"),
-                "origin":"NEW_STANDARDIZED_DELTA"}
+                "origin":"NEW_STANDARDIZED_DELTA",
+                "tables":[{"name":p.stem,"rows":parquet_result(p)["records"]}
+                    for p in sorted((workspace/"lake"/"standardized"/batch).glob("*.parquet"))]}
     elif stage=="load":
         input_data=parquet_result(workspace/"lake"/"standardized"/batch/"Fact_Sales_Order_Item.parquet")
         with duckdb.connect(str(workspace/"er2.duckdb"),read_only=True) as db:
             frame=db.execute('SELECT * FROM "Fact_Sales_Order_Item" LIMIT 5').df()
             count=db.execute('SELECT COUNT(*) FROM "Fact_Sales_Order_Item"').fetchone()[0]
+            tables=[name for (name,) in db.execute("SHOW TABLES").fetchall()]
+            table_counts=[{"name":name,"rows":db.execute('SELECT COUNT(*) FROM "'+name+'"').fetchone()[0]}
+                for name in tables]
         output={"table":"Fact_Sales_Order_Item","records":count,"origin":"NEW_DUCKDB_WAREHOUSE",
-                "preview":json.loads(frame.to_json(orient="records",date_format="iso"))}
+                "preview":json.loads(frame.to_json(orient="records",date_format="iso")),
+                "tables":table_counts}
     else:
         report=json.loads((workspace/"reports"/("functional_"+batch+".json")).read_text())
         output={"table":"Validation","records":report.get("checks"),
@@ -153,3 +168,4 @@ def main():
 
 if __name__=="__main__":
     main()
+

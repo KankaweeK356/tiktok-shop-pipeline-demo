@@ -2,7 +2,7 @@
 (function () {
   "use strict";
   const $ = s => document.querySelector(s);
-  const state = { data:null, evidence:null, evidenceLayer:"source", evidenceTable:"", neonStatus:"not_loaded", neonTables:[], neonTable:"", neonData:null, neonError:"", neonRunStatus:null, neonArtifactType:"ALL", labStage:0, labTable:"Fact_Orders", labResults:{}, labBusy:false, labError:"", labLog:[], errorCase:"E01", errorReplayed:false, view:"business", month:"", group:"ALL", sku:"", skuSort:"lowest_margin", model:"", week:"", replay:false, rows:[] };
+  const state = { data:null, evidence:null, evidenceLayer:"source", evidenceTable:"", neonStatus:"not_loaded", neonTables:[], neonTable:"", neonData:null, neonError:"", neonRunStatus:null, neonArtifactType:"ALL", labStage:0, labTable:"Fact_Orders", labResults:{}, labBusy:false, labError:"", labLog:[], errorCase:"E01", errorReplayed:false, errorLabOpen:false, view:"business", month:"", group:"ALL", sku:"", skuSort:"lowest_margin", model:"", week:"", replay:false, rows:[] };
   const names = {
     business:["ภาพรวมธุรกิจ","ยอดขาย กำไร และ KPI ของร้านเสื้อผ้าผู้หญิง","ภาพรวมธุรกิจ"],
     pipeline:["ทดสอบการนำเข้าข้อมูล","เส้นทางข้อมูลจากต้นทางถึงคลังข้อมูลและหลักฐานการตรวจสอบ","การนำเข้าข้อมูล"],
@@ -594,6 +594,8 @@
 
   function renderErrorRecoveryLab(root){
     const details=node("details","lab-reference");
+    details.open=state.errorLabOpen;
+    details.addEventListener("toggle",()=>{state.errorLabOpen=details.open;});
     details.append(node("summary","","Error Recovery Lab · 6 กรณี (เปิดดูผล Fail → Fix → Retry)"));
     const body=box("lab-reference-body");
     body.append(notice("ส่วนนี้ Replay หลักฐานการทดสอบ Error จาก Python/SQLite Runner ที่ผ่านแล้ว ไม่ได้ฉีด Error ลง Neon ที่มี 900 ออเดอร์",true));

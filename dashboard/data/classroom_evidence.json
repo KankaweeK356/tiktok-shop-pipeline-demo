@@ -2,7 +2,7 @@
   "classification": "SYNTHETIC_EDUCATIONAL_NOT_TIKTOK",
   "runner": "github_actions_or_local_python",
   "source_engine": "SQLITE_NOT_NEON",
-  "snapshot_at_utc": "2026-11-09T03:41:03.658579+00:00",
+  "snapshot_at_utc": "2026-11-09T04:00:56.197966+00:00",
   "layers": {
     "source": [
       {
@@ -8412,7 +8412,7 @@
             "Claim_Cost": 0.0,
             "Contribution_Profit": 160.51,
             "Data_Cost_Basis": "MOCK_ACTUAL_WITH_POLICY_FEE",
-            "Calculated_At": "2026-11-09T03:40:22"
+            "Calculated_At": "2026-11-09T04:00:20"
           },
           {
             "Date_Key": 20251101,
@@ -8431,7 +8431,7 @@
             "Claim_Cost": 0.0,
             "Contribution_Profit": 201.2,
             "Data_Cost_Basis": "MOCK_ACTUAL_WITH_POLICY_FEE",
-            "Calculated_At": "2026-11-09T03:40:22"
+            "Calculated_At": "2026-11-09T04:00:20"
           },
           {
             "Date_Key": 20251101,
@@ -8450,7 +8450,7 @@
             "Claim_Cost": 0.0,
             "Contribution_Profit": 203.86,
             "Data_Cost_Basis": "MOCK_ACTUAL_WITH_POLICY_FEE",
-            "Calculated_At": "2026-11-09T03:40:22"
+            "Calculated_At": "2026-11-09T04:00:20"
           },
           {
             "Date_Key": 20251101,
@@ -8469,7 +8469,7 @@
             "Claim_Cost": 0.0,
             "Contribution_Profit": 156.86,
             "Data_Cost_Basis": "MOCK_ACTUAL_WITH_POLICY_FEE",
-            "Calculated_At": "2026-11-09T03:40:22"
+            "Calculated_At": "2026-11-09T04:00:20"
           },
           {
             "Date_Key": 20251101,
@@ -8488,7 +8488,7 @@
             "Claim_Cost": 0.0,
             "Contribution_Profit": 185.09,
             "Data_Cost_Basis": "MOCK_ACTUAL_WITH_POLICY_FEE",
-            "Calculated_At": "2026-11-09T03:40:22"
+            "Calculated_At": "2026-11-09T04:00:20"
           }
         ]
       },
@@ -8516,6 +8516,25 @@
           "Target_Status"
         ],
         "preview": [
+          {
+            "Year_Month": "2026-07",
+            "Month_Start_Date_Key": 20260701,
+            "Gross_Reference_Sales": 92272.0,
+            "Net_Revenue": 89175.58,
+            "Contribution_Profit": 33041.79,
+            "Revenue_Target": 50000.0,
+            "Minimum_Profit_Protection_Rate": 0.1,
+            "Revenue_Gap": 39175.58,
+            "Revenue_Achievement_Pct": 178.35,
+            "Profit_Margin_Pct": 37.05,
+            "Profit_Protection_Required": 9227.2,
+            "Profit_Protection_Rate_Pct": 35.81,
+            "Profit_Protection_Gap_Pp": 25.81,
+            "Profit_Protection_Headroom": 23814.59,
+            "Profit_Protection_Status": "PASS",
+            "Profit_Data_Status": "COMPLETE",
+            "Target_Status": "OK"
+          },
           {
             "Year_Month": "2025-12",
             "Month_Start_Date_Key": 20251201,
@@ -8569,25 +8588,6 @@
             "Profit_Protection_Rate_Pct": 36.65,
             "Profit_Protection_Gap_Pp": 26.65,
             "Profit_Protection_Headroom": 21657.27,
-            "Profit_Protection_Status": "PASS",
-            "Profit_Data_Status": "COMPLETE",
-            "Target_Status": "OK"
-          },
-          {
-            "Year_Month": "2026-07",
-            "Month_Start_Date_Key": 20260701,
-            "Gross_Reference_Sales": 92272.0,
-            "Net_Revenue": 89175.58,
-            "Contribution_Profit": 33041.79,
-            "Revenue_Target": 50000.0,
-            "Minimum_Profit_Protection_Rate": 0.1,
-            "Revenue_Gap": 39175.58,
-            "Revenue_Achievement_Pct": 178.35,
-            "Profit_Margin_Pct": 37.05,
-            "Profit_Protection_Required": 9227.2,
-            "Profit_Protection_Rate_Pct": 35.81,
-            "Profit_Protection_Gap_Pp": 25.81,
-            "Profit_Protection_Headroom": 23814.59,
             "Profit_Protection_Status": "PASS",
             "Profit_Data_Status": "COMPLETE",
             "Target_Status": "OK"
@@ -8742,7 +8742,7 @@
         ],
         "metrics": {
           "ingest": {
-            "elapsed_seconds": 3.3622,
+            "elapsed_seconds": 2.7412,
             "result": {
               "input_records": 13821,
               "modified_orders": 3552,
@@ -8750,7 +8750,7 @@
             }
           },
           "extract": {
-            "elapsed_seconds": 0.2194,
+            "elapsed_seconds": 0.1768,
             "result": {
               "parquet_tables": 25,
               "source_files": 21,
@@ -8758,7 +8758,7 @@
             }
           },
           "transform": {
-            "elapsed_seconds": 0.3962,
+            "elapsed_seconds": 0.3052,
             "result": {
               "standardized_tables": 11,
               "changed_sales": 4212,
@@ -8768,7 +8768,7 @@
             }
           },
           "load": {
-            "elapsed_seconds": 36.5306,
+            "elapsed_seconds": 31.1155,
             "result": {
               "loaded_rows": {
                 "Dim_Date": 395,
@@ -8788,7 +8788,7 @@
             }
           },
           "validate": {
-            "elapsed_seconds": 0.1201,
+            "elapsed_seconds": 0.1071,
             "result": {
               "batch": "initial",
               "checks": 53,
@@ -9015,7 +9015,7 @@
         ],
         "metrics": {
           "ingest": {
-            "elapsed_seconds": 0.1695,
+            "elapsed_seconds": 0.1452,
             "result": {
               "input_records": 402,
               "modified_orders": 132,
@@ -9023,7 +9023,7 @@
             }
           },
           "extract": {
-            "elapsed_seconds": 0.1333,
+            "elapsed_seconds": 0.1175,
             "result": {
               "parquet_tables": 25,
               "source_files": 5,
@@ -9031,7 +9031,7 @@
             }
           },
           "transform": {
-            "elapsed_seconds": 0.1986,
+            "elapsed_seconds": 0.1632,
             "result": {
               "standardized_tables": 11,
               "changed_sales": 182,
@@ -9041,7 +9041,7 @@
             }
           },
           "load": {
-            "elapsed_seconds": 2.2598,
+            "elapsed_seconds": 1.9084,
             "result": {
               "loaded_rows": {
                 "Dim_Date": 395,
@@ -9061,7 +9061,7 @@
             }
           },
           "validate": {
-            "elapsed_seconds": 0.1006,
+            "elapsed_seconds": 0.0874,
             "result": {
               "batch": "incremental",
               "checks": 54,
@@ -9365,42 +9365,42 @@
           "error_code": "E01_INTEGRITY",
           "detail": "E01_INTEGRITY: Fact_Order_Items: FOREIGN KEY constraint failed; row={'Order_Item_ID': 'OCT00001-I1', 'Source_Order_Item_ID': 'OCT00001-I1', 'Order_ID': 'OCT00001', 'SKU_ID': 'SKU_DOES_NOT_EXIST', 'Quantity': 1, 'Creator_ID': 'CR04', 'Campaign_ID': None, 'Base_Unit_Price_At_Sale': None, '",
           "elapsed_seconds": 0.1157,
-          "at": "2026-11-09T03:40:44.532899+00:00"
+          "at": "2026-11-09T04:00:38.898814+00:00"
         },
         {
           "batch": "initial",
           "stage": "ingest",
           "status": "SUCCESS",
-          "elapsed_seconds": 0.131,
-          "at": "2026-11-09T03:40:44.664902+00:00"
+          "elapsed_seconds": 0.1075,
+          "at": "2026-11-09T04:00:39.007328+00:00"
         },
         {
           "batch": "initial",
           "stage": "extract",
           "status": "SUCCESS",
-          "elapsed_seconds": 0.068,
-          "at": "2026-11-09T03:40:44.733074+00:00"
+          "elapsed_seconds": 0.0576,
+          "at": "2026-11-09T04:00:39.065148+00:00"
         },
         {
           "batch": "initial",
           "stage": "transform",
           "status": "SUCCESS",
-          "elapsed_seconds": 0.0923,
-          "at": "2026-11-09T03:40:44.825632+00:00"
+          "elapsed_seconds": 0.0751,
+          "at": "2026-11-09T04:00:39.140722+00:00"
         },
         {
           "batch": "initial",
           "stage": "load",
           "status": "SUCCESS",
-          "elapsed_seconds": 2.3745,
-          "at": "2026-11-09T03:40:47.200626+00:00"
+          "elapsed_seconds": 2.1417,
+          "at": "2026-11-09T04:00:41.282982+00:00"
         },
         {
           "batch": "initial",
           "stage": "validate",
           "status": "SUCCESS",
-          "elapsed_seconds": 0.0599,
-          "at": "2026-11-09T03:40:47.260955+00:00"
+          "elapsed_seconds": 0.0533,
+          "at": "2026-11-09T04:00:41.336781+00:00"
         }
       ],
       "quarantine_receipts": [
@@ -9457,43 +9457,43 @@
           "status": "FAILED",
           "error_code": "E02_MISSING_SOURCE",
           "detail": "E02_MISSING_SOURCE: Fact_Orders.csv",
-          "elapsed_seconds": 0.0329,
-          "at": "2026-11-09T03:40:47.321693+00:00"
+          "elapsed_seconds": 0.0555,
+          "at": "2026-11-09T04:00:41.413366+00:00"
         },
         {
           "batch": "initial",
           "stage": "ingest",
           "status": "SUCCESS",
-          "elapsed_seconds": 0.1314,
-          "at": "2026-11-09T03:40:47.453903+00:00"
+          "elapsed_seconds": 0.1293,
+          "at": "2026-11-09T04:00:41.543370+00:00"
         },
         {
           "batch": "initial",
           "stage": "extract",
           "status": "SUCCESS",
-          "elapsed_seconds": 0.051,
-          "at": "2026-11-09T03:40:47.505119+00:00"
+          "elapsed_seconds": 0.0413,
+          "at": "2026-11-09T04:00:41.584808+00:00"
         },
         {
           "batch": "initial",
           "stage": "transform",
           "status": "SUCCESS",
-          "elapsed_seconds": 0.0708,
-          "at": "2026-11-09T03:40:47.576212+00:00"
+          "elapsed_seconds": 0.0559,
+          "at": "2026-11-09T04:00:41.640993+00:00"
         },
         {
           "batch": "initial",
           "stage": "load",
           "status": "SUCCESS",
-          "elapsed_seconds": 2.2906,
-          "at": "2026-11-09T03:40:49.867322+00:00"
+          "elapsed_seconds": 1.9886,
+          "at": "2026-11-09T04:00:43.630148+00:00"
         },
         {
           "batch": "initial",
           "stage": "validate",
           "status": "SUCCESS",
-          "elapsed_seconds": 0.0605,
-          "at": "2026-11-09T03:40:49.928349+00:00"
+          "elapsed_seconds": 0.0524,
+          "at": "2026-11-09T04:00:43.683060+00:00"
         }
       ],
       "quarantine_receipts": [
@@ -9552,22 +9552,22 @@
           "batch": "initial",
           "stage": "ingest",
           "status": "SUCCESS",
-          "elapsed_seconds": 0.1642,
-          "at": "2026-11-09T03:40:55.611301+00:00"
+          "elapsed_seconds": 0.2253,
+          "at": "2026-11-09T04:00:48.905412+00:00"
         },
         {
           "batch": "initial",
           "stage": "extract",
           "status": "SUCCESS",
-          "elapsed_seconds": 0.0513,
-          "at": "2026-11-09T03:40:55.662793+00:00"
+          "elapsed_seconds": 0.0403,
+          "at": "2026-11-09T04:00:48.945879+00:00"
         },
         {
           "batch": "initial",
           "stage": "transform",
           "status": "SUCCESS",
-          "elapsed_seconds": 0.0717,
-          "at": "2026-11-09T03:40:55.734792+00:00"
+          "elapsed_seconds": 0.0559,
+          "at": "2026-11-09T04:00:49.002121+00:00"
         },
         {
           "batch": "initial",
@@ -9575,22 +9575,22 @@
           "status": "FAILED",
           "error_code": "L01_INJECTED_FAILURE",
           "detail": "L01_INJECTED_FAILURE: Warehouse load interrupted after Sales upserts; ROLLBACK expected",
-          "elapsed_seconds": 0.7862,
-          "at": "2026-11-09T03:40:56.521078+00:00"
+          "elapsed_seconds": 0.8204,
+          "at": "2026-11-09T04:00:49.822639+00:00"
         },
         {
           "batch": "initial",
           "stage": "load",
           "status": "SUCCESS",
-          "elapsed_seconds": 2.3041,
-          "at": "2026-11-09T03:40:58.826499+00:00"
+          "elapsed_seconds": 2.0046,
+          "at": "2026-11-09T04:00:51.828555+00:00"
         },
         {
           "batch": "initial",
           "stage": "validate",
           "status": "SUCCESS",
-          "elapsed_seconds": 0.0608,
-          "at": "2026-11-09T03:40:58.887771+00:00"
+          "elapsed_seconds": 0.0541,
+          "at": "2026-11-09T04:00:51.883150+00:00"
         }
       ],
       "quarantine_receipts": [
@@ -9637,71 +9637,71 @@
           "batch": "initial",
           "stage": "ingest",
           "status": "SUCCESS",
-          "elapsed_seconds": 0.156,
-          "at": "2026-11-09T03:40:59.072501+00:00"
+          "elapsed_seconds": 0.2264,
+          "at": "2026-11-09T04:00:52.130753+00:00"
         },
         {
           "batch": "initial",
           "stage": "extract",
           "status": "SUCCESS",
-          "elapsed_seconds": 0.0523,
-          "at": "2026-11-09T03:40:59.125027+00:00"
+          "elapsed_seconds": 0.0406,
+          "at": "2026-11-09T04:00:52.171566+00:00"
         },
         {
           "batch": "initial",
           "stage": "transform",
           "status": "SUCCESS",
-          "elapsed_seconds": 0.072,
-          "at": "2026-11-09T03:40:59.197349+00:00"
+          "elapsed_seconds": 0.0579,
+          "at": "2026-11-09T04:00:52.229837+00:00"
         },
         {
           "batch": "initial",
           "stage": "load",
           "status": "SUCCESS",
-          "elapsed_seconds": 2.2986,
-          "at": "2026-11-09T03:41:01.496428+00:00"
+          "elapsed_seconds": 2.0432,
+          "at": "2026-11-09T04:00:54.273642+00:00"
         },
         {
           "batch": "initial",
           "stage": "validate",
           "status": "SUCCESS",
-          "elapsed_seconds": 0.0604,
-          "at": "2026-11-09T03:41:01.557270+00:00"
+          "elapsed_seconds": 0.0539,
+          "at": "2026-11-09T04:00:54.328115+00:00"
         },
         {
           "batch": "incremental",
           "stage": "ingest",
           "status": "SUCCESS",
-          "elapsed_seconds": 0.044,
-          "at": "2026-11-09T03:41:01.601588+00:00"
+          "elapsed_seconds": 0.0886,
+          "at": "2026-11-09T04:00:54.417050+00:00"
         },
         {
           "batch": "incremental",
           "stage": "extract",
           "status": "SUCCESS",
-          "elapsed_seconds": 0.0493,
-          "at": "2026-11-09T03:41:01.651111+00:00"
+          "elapsed_seconds": 0.0404,
+          "at": "2026-11-09T04:00:54.457656+00:00"
         },
         {
           "batch": "incremental",
           "stage": "transform",
           "status": "SUCCESS",
-          "elapsed_seconds": 0.0714,
-          "at": "2026-11-09T03:41:01.722830+00:00"
+          "elapsed_seconds": 0.057,
+          "at": "2026-11-09T04:00:54.514954+00:00"
         },
         {
           "batch": "incremental",
           "stage": "load",
           "status": "SUCCESS",
-          "elapsed_seconds": 1.017,
-          "at": "2026-11-09T03:41:02.740338+00:00"
+          "elapsed_seconds": 0.8998,
+          "at": "2026-11-09T04:00:55.415301+00:00"
         },
         {
           "batch": "incremental",
           "stage": "validate",
           "status": "SUCCESS",
-          "elapsed_seconds": 0.0613,
-          "at": "2026-11-09T03:41:02.802095+00:00"
+          "elapsed_seconds": 0.0547,
+          "at": "2026-11-09T04:00:55.470632+00:00"
         }
       ],
       "quarantine_receipts": [],
@@ -9751,15 +9751,15 @@
           "batch": "initial",
           "stage": "ingest",
           "status": "SUCCESS",
-          "elapsed_seconds": 0.1618,
-          "at": "2026-11-09T03:40:50.118538+00:00"
+          "elapsed_seconds": 0.1563,
+          "at": "2026-11-09T04:00:43.860442+00:00"
         },
         {
           "batch": "initial",
           "stage": "extract",
           "status": "SUCCESS",
-          "elapsed_seconds": 0.0522,
-          "at": "2026-11-09T03:40:50.170978+00:00"
+          "elapsed_seconds": 0.0404,
+          "at": "2026-11-09T04:00:43.901053+00:00"
         },
         {
           "batch": "initial",
@@ -9767,29 +9767,29 @@
           "status": "FAILED",
           "error_code": "T01_VOUCHER",
           "detail": "T01_VOUCHER: OCT00025-I1: allocated 598.0, sales 597",
-          "elapsed_seconds": 0.0576,
-          "at": "2026-11-09T03:40:50.228678+00:00"
+          "elapsed_seconds": 0.0443,
+          "at": "2026-11-09T04:00:43.945442+00:00"
         },
         {
           "batch": "initial",
           "stage": "transform",
           "status": "SUCCESS",
-          "elapsed_seconds": 0.0719,
-          "at": "2026-11-09T03:40:50.301631+00:00"
+          "elapsed_seconds": 0.0558,
+          "at": "2026-11-09T04:00:44.002273+00:00"
         },
         {
           "batch": "initial",
           "stage": "load",
           "status": "SUCCESS",
-          "elapsed_seconds": 2.3209,
-          "at": "2026-11-09T03:40:52.622989+00:00"
+          "elapsed_seconds": 1.9755,
+          "at": "2026-11-09T04:00:45.978302+00:00"
         },
         {
           "batch": "initial",
           "stage": "validate",
           "status": "SUCCESS",
-          "elapsed_seconds": 0.0596,
-          "at": "2026-11-09T03:40:52.683071+00:00"
+          "elapsed_seconds": 0.0529,
+          "at": "2026-11-09T04:00:46.031744+00:00"
         }
       ],
       "quarantine_receipts": [
@@ -9847,15 +9847,15 @@
           "batch": "initial",
           "stage": "ingest",
           "status": "SUCCESS",
-          "elapsed_seconds": 0.1616,
-          "at": "2026-11-09T03:40:52.872686+00:00"
+          "elapsed_seconds": 0.163,
+          "at": "2026-11-09T04:00:46.215774+00:00"
         },
         {
           "batch": "initial",
           "stage": "extract",
           "status": "SUCCESS",
-          "elapsed_seconds": 0.0514,
-          "at": "2026-11-09T03:40:52.924273+00:00"
+          "elapsed_seconds": 0.0408,
+          "at": "2026-11-09T04:00:46.256703+00:00"
         },
         {
           "batch": "initial",
@@ -9863,29 +9863,29 @@
           "status": "FAILED",
           "error_code": "T02_CAMPAIGN_OVERLAP",
           "detail": "T02_CAMPAIGN_OVERLAP: PG01 campaigns overlap",
-          "elapsed_seconds": 0.0462,
-          "at": "2026-11-09T03:40:52.970594+00:00"
+          "elapsed_seconds": 0.0355,
+          "at": "2026-11-09T04:00:46.292287+00:00"
         },
         {
           "batch": "initial",
           "stage": "transform",
           "status": "SUCCESS",
-          "elapsed_seconds": 0.0703,
-          "at": "2026-11-09T03:40:53.041908+00:00"
+          "elapsed_seconds": 0.0551,
+          "at": "2026-11-09T04:00:46.348509+00:00"
         },
         {
           "batch": "initial",
           "stage": "load",
           "status": "SUCCESS",
-          "elapsed_seconds": 2.3153,
-          "at": "2026-11-09T03:40:55.357777+00:00"
+          "elapsed_seconds": 2.2559,
+          "at": "2026-11-09T04:00:48.605016+00:00"
         },
         {
           "batch": "initial",
           "stage": "validate",
           "status": "SUCCESS",
-          "elapsed_seconds": 0.0608,
-          "at": "2026-11-09T03:40:55.419002+00:00"
+          "elapsed_seconds": 0.0534,
+          "at": "2026-11-09T04:00:48.658978+00:00"
         }
       ],
       "quarantine_receipts": [

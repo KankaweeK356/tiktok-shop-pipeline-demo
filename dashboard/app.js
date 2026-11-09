@@ -1007,7 +1007,7 @@
       if(tables.length){
         root.append(small("demo_er1 · "+tables.filter(x=>x.table_schema==="demo_er1").length+
           " ตารางธุรกิจ | demo_control · "+tables.filter(x=>x.table_schema==="demo_control").length+" ตารางควบคุม"));
-        root.append(chooseField("เลือกตารางจริงใน Neon",[["","— เลือกตาราง —"],...tables.map(x=>
+        root.append(chooseField("เลือกตารางธุรกิจใน Neon",[["","— เลือกตาราง —"],...tables.filter(x=>x.table_schema==="demo_er1").map(x=>
           [x.table_schema+"."+x.table_name,x.table_schema+" · "+x.table_name])],
           state.labNeonTable?state.labNeonTable.schema+"."+state.labNeonTable.table:"",value=>{
             const [schema,table]=value.split(".");if(table)loadLabNeon(schema,table);

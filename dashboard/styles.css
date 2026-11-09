@@ -101,3 +101,24 @@
   .lab-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
   .lab-step{padding:11px 9px}.lab-step-number{width:28px;height:28px}}
 @media(max-width:370px){.lab-steps,.lab-metrics{grid-template-columns:1fr}}
+
+/* Test Pipeline: two complete runs, each with an ordered, readable result trail. */
+.notebook-tabs{display:flex;gap:5px;overflow-x:auto;border-bottom:1px solid #eadde0;margin-bottom:24px}
+.notebook-tab{flex:none;padding:12px 15px;border:0;border-bottom:3px solid transparent;background:transparent;color:#756872;font:inherit;font-size:13px;cursor:pointer}
+.notebook-tab.is-active{color:#9c526a;border-bottom-color:#b96d83;font-weight:750}
+.notebook-intro{padding:6px 0 18px}.notebook-intro .lab-heading{font-size:23px;margin:0 0 5px}
+.notebook-intro .lab-description{font-size:14px}.notebook-intro .small{color:#347c50;margin-top:9px}
+.notebook-runs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:5px 0 21px}
+.notebook-run{padding:15px 18px;text-align:left;border-radius:12px;border:1px solid #e7dce0;background:#fff;cursor:pointer;font:inherit;color:#4b3d43}
+.notebook-run.is-active{border-color:#b96d83;background:#fff5f7;box-shadow:0 0 0 2px #f6e4e9}
+.notebook-run strong{display:block;font-size:15px;margin-bottom:4px}.notebook-caption{font-size:13px;color:#756872;margin:0 0 13px}
+.notebook-cell{position:relative;border:1px solid #e9dfe1;background:#fff;border-radius:13px;margin:0 0 11px 24px}
+.notebook-cell:before{content:"";position:absolute;left:-19px;top:34px;bottom:-47px;border-left:2px solid #e7d7dc}
+.notebook-cell:last-of-type:before{display:none}.notebook-cell.is-open{border-color:#c790a1;background:#fffafa}
+.notebook-cell-head{display:flex;align-items:center;gap:13px;width:100%;padding:16px 18px;text-align:left;border:0;background:transparent;color:#4b3d43;font:inherit;cursor:pointer}
+.notebook-number{display:grid;place-items:center;flex:none;width:31px;height:31px;border-radius:50%;background:#b96d83;color:#fff;font-size:13px;font-weight:800}
+.notebook-cell-title{flex:1;min-width:0}.notebook-cell-title strong{display:block;font-size:16px;margin-bottom:4px}.notebook-cell-title .small{line-height:1.5}
+.notebook-cell-state{font-size:12px;color:#347c50;white-space:nowrap}.notebook-cell-body{border-top:1px solid #eee1e4;padding:16px 18px 20px;display:flex;flex-direction:column;gap:12px}
+.notebook-output{padding:15px;border-radius:10px;background:#f4f8f3}.notebook-output>strong{color:#347c50}.notebook-output .table-wrap{background:#fff}
+@media(max-width:760px){.notebook-runs{grid-template-columns:1fr}.notebook-cell-state{display:none}.notebook-intro .lab-heading{font-size:19px}}
+

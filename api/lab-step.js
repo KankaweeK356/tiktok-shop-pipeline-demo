@@ -134,7 +134,27 @@ export default async function handler(req,res){
       out.output=source;
       out.metrics=[{label:"ตาราง ER1",value:Number(all[0].n),unit:"ตาราง"},{label:"แถวใน "+table,value:source.records,unit:"รายการ"}];
       out.checks=[{label:"ER1 มีครบ 25 ตาราง",pass:Number(all[0].n)===25}];
-      out.provenance="LIVE_NEON_SOURCE_CHECK_NOT_FRESH_INGEST";
+      if(table==="Fact_Orders"){
+        const backfill=await sql.query(`SELECT run_type,result_summary->>'source_orders' AS source_orders,
+                    result_summary->>'backfill_type' AS provenance
+               FROM demo_control.pipeline_runs
+              WHERE cycle_number=1 AND run_type IN ('RUN1','RUN2') AND status='SUCCEEDED'
+              ORDER BY run_type`);
+        const run1=backfill.find(x=>x.run_type==="RUN1");
+        const run2=backfill.find(x=>x.run_type==="RUN2");
+        if(run1?.source_orders&&run2?.source_orders&&
+           run1.provenance==="HISTORICAL_EVIDENCE_IMPORT"&&
+           run2.provenance==="HISTORICAL_EVIDENCE_IMPORT"){
+          out.metrics.push(
+            {label:"Run 1 (รายงานย้อนหลัง)",value:Number(run1.source_orders),unit:"ออเดอร์"},
+            {label:"Run 2 (รายงานย้อนหลัง)",value:Number(run2.source_orders),unit:"ออเดอร์"});
+          out.checks.push({label:"ยอด Run 2 ในรายงานตรงกับ Neon ปัจจุบัน",
+            pass:Number(run2.source_orders)===source.records});
+          out.historical_transition={run1_orders:Number(run1.source_orders),
+            run2_orders:Number(run2.source_orders),origin:"IMPORTED_HISTORICAL_REPORT"};
+        }
+      }
+      out.provenance="LIVE_NEON_SOURCE_CHECK_WITH_HISTORICAL_RUN_COMPARISON_NOT_FRESH_INGEST";
     } else if(stage==="extract"){
       const table=typeof req.query?.table==="string"?req.query.table:DEFAULT_SOURCE;
       // Only permit tables that exist in Neon before composing the fixed archive filename.

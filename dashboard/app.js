@@ -51,7 +51,12 @@
         const spec=formats[key]||{};
         const td=node("td",spec.align||"");
         if(spec.kind==="status")td.append(statusLabel(row[key]));
-        else if(spec.kind==="risk")td.append(node("span","status "+(row[key]==="RISK"?"status-fail":"status-pending"),row[key]==="RISK"?"เสี่ยงต่ำกว่าเป้า":row[key]==="CHECK"?"รอต้นทุนกลุ่ม":"ข้อมูลไม่พอ"));
+        else if(spec.kind==="risk"){
+          const code=row[key],bad=["RISK","GROUP_BELOW"].includes(code);
+          td.append(node("span","status "+(bad?"status-fail":code==="GROUP_ABOVE"?"status-pass":"status-pending"),
+            code==="RISK"?"เสี่ยงต่ำกว่าเป้า":code==="CHECK"?"รอต้นทุนกลุ่ม":
+            code==="GROUP_BELOW"?"ต่ำกว่าเกณฑ์ร้าน":code==="GROUP_ABOVE"?"ถึงเกณฑ์ร้าน":"ข้อมูลไม่พอ"));
+        }
         else if(spec.kind==="money")td.textContent=money(row[key],spec.digits||0);
         else if(spec.kind==="percent")td.textContent=pct(row[key],spec.digits===undefined?1:spec.digits);
         else td.textContent=row[key]===null||row[key]===undefined?"—":String(row[key]);
@@ -247,7 +252,7 @@
       return {...x,group_margin_pct:rate,
         group_gap_pp:rate===null||benchmarkPct===null?"—":
           (rate>=benchmarkPct?"+":"")+money(rate-benchmarkPct,1)+" pp",
-        group_risk:rate===null?"NO_DATA":rate<benchmarkPct?"RISK":"CHECK"};
+        group_risk:rate===null||benchmarkPct===null?"NO_DATA":rate<benchmarkPct?"GROUP_BELOW":"GROUP_ABOVE"};
     });
     const cols=[["product_group_id","Product Group"],["net_revenue","ยอดขายสุทธิ"],
       ["gross_reference_sales","ยอดราคาเต็ม"],["ads_cost","ค่าโฆษณา"],

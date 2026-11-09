@@ -707,7 +707,7 @@
       renderPipeline();
       window.setTimeout(checkRealRun,4000);
     }catch(error){
-      state.realStatus="";state.realError=error.message||"สั่งรันไม่ได้";
+      state.realStatus="failure";state.realError=error.message||"สั่งรันไม่ได้";
       state.autoBatch="";
       if(state.realError.includes("สิทธิ์"))state.realAdminKey="";
       renderPipeline();
@@ -1005,6 +1005,11 @@
   function runWholeBatch(){
     const batch=state.notebookBatch;
     if(state.autoBatch||!state.realReady)return;
+    if(state.realStatus==="failure"&&state.realBatch===batch){
+      state.autoBatch=batch;state.realStatus="";state.realError="";
+      state.realEvidence=null;state.realStartedAt="";
+      renderPipeline();dispatchRealStep();return;
+    }
     if(batch==="initial")state.realPreviousRunId="";
     state.autoBatch=batch;state.realBatch=batch;state.realStageIndex=0;
     state.notebookStage="ingest";state.realStatus="";state.realEvidence=null;
@@ -1127,8 +1132,18 @@
     const expectedBatchPhase=state.notebookBatch==="initial"?"EMPTY":"RUN1_READY";
     const canStartBatch=state.realReady&&phase===expectedBatchPhase&&
       (state.notebookBatch==="initial"||/^[1-9][0-9]{0,18}$/.test(state.realPreviousRunId));
+    if(canStartBatch&&!state.realAdminKey){
+      const keyField=node("label","field");
+      const keyInput=node("input");keyInput.type="password";
+      keyInput.autocomplete="off";keyInput.placeholder="รหัสจาก Vercel Settings";
+      keyInput.addEventListener("input",()=>{state.realAdminKey=keyInput.value;});
+      keyField.append(node("span","","รหัสผู้ควบคุมการรัน · กรอกครั้งเดียว"),keyInput);
+      root.append(keyField);
+    }
+    const resuming=state.realStatus==="failure"&&state.realBatch===state.notebookBatch;
     const batchAction=node("button","button button-primary",state.autoBatch===state.notebookBatch?
       "กำลังรัน "+(state.notebookBatch==="initial"?"Run 1":"Run 2")+" ทั้งรอบ…":
+      resuming?"▶ ลองรันต่อจากขั้นที่ "+(state.realStageIndex+1):
       "▶ รัน "+(state.notebookBatch==="initial"?"Run 1":"Run 2")+" ทั้งรอบ");
     batchAction.type="button";batchAction.disabled=!canStartBatch||Boolean(state.autoBatch);
     batchAction.addEventListener("click",runWholeBatch);root.append(batchAction);
@@ -1137,6 +1152,8 @@
       "รอบนี้ต้องรอสถานะ Lab "+expectedBatchPhase+" (ตอนนี้ "+phase+")":
       "ต้องให้ Run 1 ผ่านครบก่อน จึงเริ่ม Run 2 ได้"));
     root.append(node("p","notebook-caption","กด Run หนึ่งครั้ง ระบบจะวิ่งครบทุกขั้น แล้วเปิดดูผลของแต่ละขั้นเมื่อเสร็จ"));
+    const runState={submitting:"กำลังส่งคำสั่ง",queued:"รอ GitHub เริ่ม",
+      in_progress:"กำลังประมวลผล",success:"เสร็จแล้ว",failure:"ไม่สำเร็จ"};
     const entries=state.savedLabManifest?.runs?.filter(x=>x.batch===state.notebookBatch)||[];
     NOTEBOOK_STAGES.forEach(([id,title,description],index)=>{
       const entry=entries.find(x=>x.stage===id),active=state.notebookStage===id;
@@ -1149,7 +1166,7 @@
       head.append(node("span","notebook-number",String(index+1)),
         box("notebook-cell-title",node("strong","",title),small(description)),
         node("span","notebook-cell-state",savedResult?"รอบนี้เสร็จแล้ว":runningNow?
-          "กำลังรัน":entry?"มีหลักฐานจากรอบก่อน":"รอรัน"));
+          "กำลังรัน":"รอรัน"));
       head.addEventListener("click",()=>{
         state.notebookStage=id;state.savedLabReceipt=null;renderPipeline();
       });cell.append(head);
@@ -1174,7 +1191,7 @@
           dispatchRealStep();
         });body.append(real);
         if(selectedLive&&state.realStatus){
-          body.append(small("สถานะการรันจริง: "+state.realStatus+
+          body.append(small("สถานะการรัน: "+(runState[state.realStatus]||state.realStatus)+
             (state.realRunId?" · GitHub Run #"+state.realRunId:"")));
           if(liveBusy){
             const refresh=node("button","button button-outline","ตรวจสถานะการรัน");
@@ -1193,7 +1210,7 @@
         if(entry){
           const history=node("details","notebook-history");
           history.open=state.savedLabReceipt?.batch===state.notebookBatch&&state.savedLabReceipt?.stage===id;
-          history.append(node("summary","","ดูผลรอบก่อน (หลักฐานที่บันทึกไว้)"));
+          history.append(node("summary","","ดูตัวอย่างจาก Lab เดิม (ไม่ใช่ผลรอบนี้)"));
           const historyBody=box("notebook-history-body");
           if(state.savedLabLoading)historyBody.append(small("กำลังอ่านผลรอบก่อน…"));
           else if(state.savedLabReceipt?.batch===state.notebookBatch&&state.savedLabReceipt?.stage===id){

@@ -2,7 +2,7 @@
 (function () {
   "use strict";
   const $ = s => document.querySelector(s);
-  const state = { data:null, evidence:null, evidenceLayer:"source", evidenceTable:"", neonStatus:"not_loaded", neonTables:[], neonTable:"", neonData:null, neonError:"", neonRunStatus:null, neonArtifactType:"ALL", labStage:0, labTable:"Fact_Orders", labResults:{}, labBusy:false, labError:"", labLog:[], realReady:false, realConfigChecked:false, realLabPhase:"UNKNOWN", realLabCycle:null, realLabOrders:null, realBatch:"initial", realStageIndex:0, realPreviousRunId:"", realRunId:null, realStatus:"", realUrl:"", realError:"", realStartedAt:"", realAdminKey:"", realEvidence:null, resetStatus:"", resetSince:"", resetUrl:"", resetError:"", savedLabManifest:null, savedLabReceipt:null, savedLabSelected:"", savedLabLoading:false, pipelineTab:"flow", notebookBatch:"initial", notebookStage:"ingest", labNeon:null, labNeonTable:null, labNeonBusy:false, labNeonError:"", errorCase:"E01", errorReplayed:false, errorLabOpen:false, view:"business", month:"", group:"ALL", sku:"", skuSort:"lowest_margin", model:"", week:"", replay:false, rows:[] };
+  const state = { data:null, evidence:null, evidenceLayer:"source", evidenceTable:"", neonStatus:"not_loaded", neonTables:[], neonTable:"", neonData:null, neonError:"", neonRunStatus:null, neonArtifactType:"ALL", labStage:0, labTable:"Fact_Orders", labResults:{}, labBusy:false, labError:"", labLog:[], realReady:false, realConfigChecked:false, realLabPhase:"UNKNOWN", realLabCycle:null, realLabOrders:null, realBatch:"initial", realStageIndex:0, realPreviousRunId:"", realRunId:null, realStatus:"", realUrl:"", realError:"", realStartedAt:"", realAdminKey:"", realEvidence:null, autoBatch:"", batchResults:{initial:{},incremental:{}}, resetStatus:"", resetSince:"", resetUrl:"", resetError:"", savedLabManifest:null, savedLabReceipt:null, savedLabSelected:"", savedLabLoading:false, pipelineTab:"flow", notebookBatch:"initial", notebookStage:"ingest", labNeon:null, labNeonTable:null, labNeonBusy:false, labNeonError:"", errorCase:"E01", errorReplayed:false, errorLabOpen:false, view:"business", month:"", group:"ALL", sku:"", skuSort:"lowest_margin", model:"", week:"", replay:false, rows:[] };
   const names = {
     business:["ภาพรวมธุรกิจ","ยอดขาย กำไร และ KPI ของร้านเสื้อผ้าผู้หญิง","ภาพรวมธุรกิจ"],
     pipeline:["Test Pipeline","จาก Source ผ่าน Database และ Data Lake สู่ Warehouse","Test Pipeline"],
@@ -666,6 +666,8 @@
       state.realLabPhase=data.lab?.phase||"UNKNOWN";
       state.realLabCycle=data.lab?.cycle??null;
       state.realLabOrders=data.lab?.orders??null;
+      if(!state.realPreviousRunId&&data.lab?.resume_run_id)
+        state.realPreviousRunId=String(data.lab.resume_run_id);
     }catch(_error){state.realReady=false;}
     state.realConfigChecked=true;
     if(state.view==="pipeline")renderPipeline();
@@ -680,12 +682,14 @@
     if(!/^(0|[1-9][0-9]{0,18})$/.test(prior)||prior==="0"&&
        !(batch==="initial"&&state.realStageIndex===0)){
       state.realError="กรุณาใส่ GitHub Run ID ของขั้นที่ผ่านก่อนหน้า";
+      state.autoBatch="";
       renderPipeline();return;
     }
     if(!state.realAdminKey){
       state.realAdminKey=window.prompt("รหัสผู้ควบคุม Pipeline (Admin Key จาก Vercel Settings) — ไม่ส่งเข้า ChatGPT")||"";
     }
-    if(!state.realAdminKey){state.realError="ยังไม่ได้กรอกรหัสผู้ควบคุม";renderPipeline();return;}
+    if(!state.realAdminKey){state.realError="ยังไม่ได้กรอกรหัสผู้ควบคุม";
+      state.autoBatch="";renderPipeline();return;}
     state.realError="";state.realStatus="submitting";
     renderPipeline();
     try{
@@ -704,6 +708,7 @@
       window.setTimeout(checkRealRun,4000);
     }catch(error){
       state.realStatus="";state.realError=error.message||"สั่งรันไม่ได้";
+      state.autoBatch="";
       if(state.realError.includes("สิทธิ์"))state.realAdminKey="";
       renderPipeline();
     }
@@ -737,14 +742,28 @@
                 state.realEvidence=receipt.receipt;
               else state.realError=receipt.error||"ไม่สามารถอ่าน Output จาก Worker";
             }catch(err){state.realError=err.message||"อ่าน Artifact ไม่สำเร็จ";}
+            if(!state.realEvidence)state.autoBatch="";
           }
+          if(state.realStatus==="failure")state.autoBatch="";
         }
+      }
+      if(state.realStatus==="success"&&state.realEvidence){
+        state.batchResults[batch][stage]={evidence:state.realEvidence,url:state.realUrl,
+          runId:data.run_id};
       }
       renderPipeline();
       if(["queued","in_progress"].includes(state.realStatus))
         window.setTimeout(checkRealRun,4000);
+      if(state.autoBatch===batch&&state.realStatus==="success"&&state.realEvidence){
+        if(state.realStageIndex<LAB_STEPS.length-1){
+          state.realStageIndex++;state.notebookStage=LAB_STEPS[state.realStageIndex].id;
+          state.realStatus="";state.realEvidence=null;state.realStartedAt="";
+          window.setTimeout(dispatchRealStep,500);
+        }else state.autoBatch="";
+      }
       if(state.realStatus==="success"&&stage==="validate")loadRealCapabilities();
-    }catch(error){state.realError=error.message||"ไม่สามารถตรวจสถานะได้";renderPipeline();}
+    }catch(error){state.realError=error.message||"ไม่สามารถตรวจสถานะได้";
+      state.autoBatch="";renderPipeline();}
   }
 
   function renderRealRunner(root){
@@ -983,6 +1002,16 @@
     ["load","Data Lake → Warehouse","โหลดข้อมูลที่เปลี่ยนไปยัง DuckDB และปรับ Mart"],
     ["validate","ตรวจผลทั้งเส้นทาง","เทียบจำนวนและยอดระหว่างฐานข้อมูลต้นทางกับ Warehouse"]
   ];
+  function runWholeBatch(){
+    const batch=state.notebookBatch;
+    if(state.autoBatch||!state.realReady)return;
+    if(batch==="initial")state.realPreviousRunId="";
+    state.autoBatch=batch;state.realBatch=batch;state.realStageIndex=0;
+    state.notebookStage="ingest";state.realStatus="";state.realEvidence=null;
+    state.realStartedAt="";state.realError="";
+    state.batchResults[batch]={};
+    renderPipeline();dispatchRealStep();
+  }
   async function requestNewCycle(){
     if(!state.realReady||state.realLabPhase!=="RUN2_READY"||!state.realLabCycle)return;
     const confirmation=window.prompt("พิมพ์ RESET-DEMO-DATA เพื่อเคลียร์เฉพาะข้อมูลใน Lab นี้และเริ่มรอบใหม่");
@@ -1095,16 +1124,32 @@
       button.addEventListener("click",()=>{state.notebookBatch=id;state.notebookStage="ingest";
         state.savedLabReceipt=null;state.savedLabSelected="";renderPipeline();});batchPicker.append(button);
     });root.append(batchPicker);
-    root.append(node("p","notebook-caption","กดรันทีละขั้น แล้วดูผลที่เกิดจากการกดครั้งนี้เมื่อขั้นนั้นเสร็จ"));
+    const expectedBatchPhase=state.notebookBatch==="initial"?"EMPTY":"RUN1_READY";
+    const canStartBatch=state.realReady&&phase===expectedBatchPhase&&
+      (state.notebookBatch==="initial"||/^[1-9][0-9]{0,18}$/.test(state.realPreviousRunId));
+    const batchAction=node("button","button button-primary",state.autoBatch===state.notebookBatch?
+      "กำลังรัน "+(state.notebookBatch==="initial"?"Run 1":"Run 2")+" ทั้งรอบ…":
+      "▶ รัน "+(state.notebookBatch==="initial"?"Run 1":"Run 2")+" ทั้งรอบ");
+    batchAction.type="button";batchAction.disabled=!canStartBatch||Boolean(state.autoBatch);
+    batchAction.addEventListener("click",runWholeBatch);root.append(batchAction);
+    if(!canStartBatch)root.append(small(!state.realReady?
+      "ยังขาดสิทธิ์สั่งงานใน Vercel":phase!==expectedBatchPhase?
+      "รอบนี้ต้องรอสถานะ Lab "+expectedBatchPhase+" (ตอนนี้ "+phase+")":
+      "ต้องให้ Run 1 ผ่านครบก่อน จึงเริ่ม Run 2 ได้"));
+    root.append(node("p","notebook-caption","กด Run หนึ่งครั้ง ระบบจะวิ่งครบทุกขั้น แล้วเปิดดูผลของแต่ละขั้นเมื่อเสร็จ"));
     const entries=state.savedLabManifest?.runs?.filter(x=>x.batch===state.notebookBatch)||[];
     NOTEBOOK_STAGES.forEach(([id,title,description],index)=>{
       const entry=entries.find(x=>x.stage===id),active=state.notebookStage===id;
       const cell=node("section","notebook-cell"+(active?" is-open":""));
       const head=node("button","notebook-cell-head");head.type="button";
       head.setAttribute("aria-expanded",String(active));
+      const savedResult=state.batchResults[state.notebookBatch]?.[id];
+      const runningNow=state.autoBatch===state.notebookBatch&&
+        state.realStageIndex===index;
       head.append(node("span","notebook-number",String(index+1)),
         box("notebook-cell-title",node("strong","",title),small(description)),
-        node("span","notebook-cell-state",entry?"มีหลักฐานจากรอบก่อน":"ยังไม่มีหลักฐาน"));
+        node("span","notebook-cell-state",savedResult?"รอบนี้เสร็จแล้ว":runningNow?
+          "กำลังรัน":entry?"มีหลักฐานจากรอบก่อน":"รอรัน"));
       head.addEventListener("click",()=>{
         state.notebookStage=id;state.savedLabReceipt=null;renderPipeline();
       });cell.append(head);
@@ -1119,8 +1164,8 @@
         const canRun=state.realReady&&state.realLabPhase===expected&&previousReady;
         const selectedLive=state.realBatch===state.notebookBatch&&state.realStageIndex===index;
         const liveBusy=selectedLive&&["submitting","queued","in_progress"].includes(state.realStatus);
-        const real=node("button","button button-primary",liveBusy?"กำลังรันขั้นนี้…":"▶ รันขั้นนี้");
-        real.type="button";real.disabled=!canRun||liveBusy;
+        const real=node("button","button button-outline",liveBusy?"กำลังรันขั้นนี้…":"รันเฉพาะขั้นนี้");
+        real.type="button";real.disabled=!canRun||liveBusy||Boolean(state.autoBatch);
         real.addEventListener("click",()=>{
           if(state.realBatch!==state.notebookBatch||state.realStageIndex!==index){
             state.realBatch=state.notebookBatch;state.realStageIndex=index;
@@ -1135,12 +1180,12 @@
             const refresh=node("button","button button-outline","ตรวจสถานะการรัน");
             refresh.type="button";refresh.addEventListener("click",checkRealRun);body.append(refresh);
           }
-          if(state.realStatus==="success"&&state.realEvidence)
-            body.append(box("notebook-output",node("strong","","ผลจากการรันครั้งนี้"),
-              renderLabResult(state.realEvidence)));
           if(state.realError)body.append(notice(state.realError,true));
           if(state.realUrl)body.append(link("เปิด GitHub Actions และ Log",state.realUrl));
         }
+        if(savedResult)body.append(box("notebook-output",
+          node("strong","","ผลจากการรันครั้งนี้"),renderLabResult(savedResult.evidence),
+          link("ดู Log ของขั้นนี้",savedResult.url)));
         if(!canRun)body.append(small(!state.realReady?
           "ยังสั่งรันไม่ได้: ต้องเปิดสิทธิ์ GitHub Actions และ Admin Key ใน Vercel ก่อน":
           state.realLabPhase!==expected?"ขั้นนี้ต้องรอ Lab สถานะ "+expected+" (ตอนนี้ "+state.realLabPhase+")":

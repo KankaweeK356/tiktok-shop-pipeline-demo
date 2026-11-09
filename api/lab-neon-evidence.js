@@ -19,7 +19,7 @@ export default async function handler(req, res) {
     );
     const schema = String(req.query?.schema || "demo_er1");
     const table = String(req.query?.table || "");
-    if (!table) return res.status(200).json({connected:true,branch:"classroom-step-lab",
+    if (!table) return res.status(200).json({connected:true,branch:"classroom-live-run-lab",
       database:"tiktok_demo",tables:rows});
     if (schema !== "demo_er1" || !safeName(table) ||
         !rows.some(row => row.table_schema === schema && row.table_name === table))
@@ -30,7 +30,7 @@ export default async function handler(req, res) {
       sql.query("SELECT COUNT(*)::int AS n FROM " + quoted),
       sql.query("SELECT column_name, data_type FROM information_schema.columns WHERE table_schema=$1 AND table_name=$2 ORDER BY ordinal_position",[schema,table])
     ]);
-    return res.status(200).json({connected:true,branch:"classroom-step-lab",
+    return res.status(200).json({connected:true,branch:"classroom-live-run-lab",
       database:"tiktok_demo",schema,table,row_count:count[0]?.n??0,columns,
       preview_rows:sample.map(row=>Object.fromEntries(Object.entries(row).map(
         ([key,value])=>[key,printable(value)])))});

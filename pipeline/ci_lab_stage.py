@@ -21,7 +21,7 @@ from .neon_control import begin_run, complete_run, fail_run
 from .schema import ROOT
 from .neon_source import _ordered_source_tables
 
-STATE_PATH = ROOT / "output" / "classroom_lab" / "lab_session.json"
+STATE_PATH = Path(os.getenv("CLASSROOM_WORKSPACE", str(ROOT / "output" / "classroom_lab"))) / "lab_session.json"
 
 
 def _phase(db_url: str) -> tuple[str, int]:
@@ -45,7 +45,7 @@ def _real_step_evidence(workspace: Path,batch: str,stage: str) -> dict:
         frame=next(file.iter_batches(batch_size=5)).to_pandas() if n else pd.DataFrame()
         return {"records":n,"preview":json.loads(frame.to_json(orient="records",date_format="iso"))}
     input_data={"label":"Actual source files","preview":[]}
-    output={"origin":"GITHUB_WORKER_ACTUAL","preview":[]}
+    output={"origin":"VERCEL_WORKER_ACTUAL" if os.getenv("VERCEL") else "GITHUB_WORKER_ACTUAL","preview":[]}
     if stage=="ingest":
         source_dir=ROOT/"source"/batch
         input_data={"label":"Source CSV", "files":[p.name for p in sorted(source_dir.glob("*.csv"))],
@@ -101,7 +101,8 @@ def _real_step_evidence(workspace: Path,batch: str,stage: str) -> dict:
                     {"check":"Net revenue","source":report.get("er1_net_revenue"),
                      "warehouse":report.get("er2_net_revenue")}]}
     return {"classification":"SYNTHETIC_EDUCATIONAL_NOT_TIKTOK",
-        "mode":"REAL_GITHUB_ACTIONS_STAGE","is_new_etl_run":True,"stage":stage,"batch":batch,
+        "mode":"REAL_VERCEL_STAGE" if os.getenv("VERCEL") else "REAL_GITHUB_ACTIONS_STAGE",
+        "is_new_etl_run":True,"stage":stage,"batch":batch,
         "executed_at":pd.Timestamp.utcnow().isoformat(),
         "success":True,"input":input_data,"output":output,
         "metrics":[{"label":"Output records","value":output.get("records",0)}],
@@ -163,7 +164,7 @@ def run_stage(stage: str, batch: str) -> dict:
     STATE_PATH.write_text(json.dumps(data,indent=2,ensure_ascii=False),encoding="utf-8")
     receipt = {
       "classification":"SYNTHETIC_EDUCATIONAL_NOT_TIKTOK",
-      "execution":"GITHUB_ACTIONS_REAL_PIPELINE_STAGE",
+      "execution":"VERCEL_REAL_PIPELINE_STAGE" if os.getenv("VERCEL") else "GITHUB_ACTIONS_REAL_PIPELINE_STAGE",
       "stage":stage,"batch":batch,"cycle":cycle,"run_id":data["run_id"],
       "result":result,
       "checkpoint":str(workspace/"lake"/"control"/f"checkpoint_{batch}.json"),

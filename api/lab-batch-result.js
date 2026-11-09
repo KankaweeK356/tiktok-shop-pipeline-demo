@@ -1,8 +1,19 @@
 /** Read the immutable completed result, never a live database mutation. */
 import { unzipSync, strFromU8 } from "fflate";
+import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import warehouseDownload from "../lib/lab-warehouse-download.js";
 const REPO="KankaweeK356/tiktok-shop-pipeline-demo";
 const REF="feature/classroom-demo-evidence-foundation";
+const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+async function stored(id,name){
+  const client=new S3Client({region:process.env.CLASSROOM_STORAGE_REGION||"auto",
+    endpoint:process.env.CLASSROOM_STORAGE_ENDPOINT,
+    credentials:{accessKeyId:process.env.CLASSROOM_STORAGE_KEY_ID,
+      secretAccessKey:process.env.CLASSROOM_STORAGE_SECRET}});
+  const item=await client.send(new GetObjectCommand({
+    Bucket:process.env.CLASSROOM_STORAGE_BUCKET,Key:`vercel-lab/results/${id}/${name}`}));
+  return Buffer.from(await item.Body.transformToByteArray());
+}
 async function github(path,raw=false){
   const response=await fetch("https://api.github.com/repos/"+REPO+path,{
     headers:{Authorization:"Bearer "+process.env.CLASSROOM_GITHUB_TOKEN,
@@ -12,12 +23,32 @@ async function github(path,raw=false){
   return raw?new Uint8Array(await response.arrayBuffer()):response.json();
 }
 export default async function handler(req,res){
-  if(req.query?.download==="warehouse")return warehouseDownload(req,res);
   res.setHeader("Cache-Control","no-store");
   if(req.method!=="GET")return res.status(405).json({error:"GET only"});
-  if(!process.env.CLASSROOM_GITHUB_TOKEN)return res.status(503).json({error:"Lab ยังไม่พร้อม"});
   const id=String(req.query?.run_id||"");
   const stage=String(req.query?.stage||"");
+  if(uuid.test(id)){
+    if(stage&&!["ingest","extract","transform","load","validate"].includes(stage))
+      return res.status(400).json({error:"Step ไม่ถูกต้อง"});
+    try{
+      if(req.query?.download==="warehouse"){
+        const data=await stored(id,"warehouse.zip");
+        res.setHeader("Content-Type","application/zip");
+        res.setHeader("Content-Disposition",`attachment; filename="classroom-warehouse-${id}.zip"`);
+        return res.status(200).send(data);
+      }
+      const result=JSON.parse((await stored(id,stage?stage+".json":"batch.json")).toString("utf8"));
+      if(stage)return res.status(200).json({run_id:id,stage,evidence:result.evidence});
+      if(result.status!=="SUCCESS"||result.stages?.length!==5)
+        return res.status(409).json({error:"ผล Run ไม่ครบ"});
+      return res.status(200).json({run_id:id,result});
+    }catch(error){
+      console.error("Stored Vercel result failed",error?.name);
+      return res.status(404).json({error:"ยังไม่พบผล Run บน Vercel"});
+    }
+  }
+  if(req.query?.download==="warehouse")return warehouseDownload(req,res);
+  if(!process.env.CLASSROOM_GITHUB_TOKEN)return res.status(503).json({error:"Lab ยังไม่พร้อม"});
   if(!/^[1-9][0-9]{0,18}$/.test(id))return res.status(400).json({error:"Run ID ไม่ถูกต้อง"});
   if(stage&&!(["ingest","extract","transform","load","validate"].includes(stage)))
     return res.status(400).json({error:"Step ไม่ถูกต้อง"});

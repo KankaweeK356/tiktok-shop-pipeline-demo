@@ -17,7 +17,7 @@ from pathlib import Path
 import psycopg
 
 from .orchestrator import STAGES, run_batch
-from .neon_control import begin_run, complete_run
+from .neon_control import begin_run, complete_run, fail_run
 from .schema import ROOT
 from .neon_source import _ordered_source_tables
 
@@ -133,7 +133,15 @@ def run_stage(stage: str, batch: str) -> dict:
             raise RuntimeError("Workspace batch/cycle mismatch")
         if data.get("last_completed")!=STAGES[index-1]:
             raise RuntimeError("Step order violated; expected "+STAGES[index-1])
-    result=run_batch(workspace,batch,stop_after=stage)
+    try:
+        result=run_batch(workspace,batch,stop_after=stage)
+    except Exception as error:
+        # A failed first stage has no saved session to resume. Release the
+        # Neon run lock so a corrected Source can start a fresh attempt.
+        if stage=="ingest":
+            fail_run(db_url,data["run_id"],"RUN1" if batch=="initial" else "RUN2",
+                     workspace,error)
+        raise
     if stage!="validate" and result.get("status")!="PARTIAL":
         raise RuntimeError("Unexpected state: intermediate step must be PARTIAL")
     if stage=="validate":

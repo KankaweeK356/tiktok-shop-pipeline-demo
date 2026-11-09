@@ -28,6 +28,13 @@
       "run_id": "42578987490",
       "executed_at": "2026-11-09T07:23:31.569894+00:00",
       "file": "./data/lab_steps/incremental_load.json"
+    },
+    {
+      "batch": "incremental",
+      "stage": "validate",
+      "run_id": "42579096668",
+      "executed_at": "2026-11-09T07:24:29.972157+00:00",
+      "file": "./data/lab_steps/incremental_validate.json"
     }
   ],
   "source": "REAL_GITHUB_ACTIONS_SEPARATE_STAGES",

@@ -1,0 +1,93 @@
+name: Backfill Actual Initial Step Evidence - Once
+
+on:
+  push:
+    branches:
+      - feature/classroom-demo-evidence-foundation
+    paths:
+      - '.github/workflows/classroom-backfill-initial.yml'
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: classroom-lab-evidence-publisher
+  cancel-in-progress: false
+
+jobs:
+  archive-initial-stage-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Restore validated historical Initial ingest result
+        uses: actions/download-artifact@v4
+        with:
+          name: classroom-lab-result
+          path: .stage-artifacts/ingest
+          run-id: 42577340785
+          github-token: ${{ github.token }}
+      - name: Restore validated historical Initial extract result
+        uses: actions/download-artifact@v4
+        with:
+          name: classroom-lab-result
+          path: .stage-artifacts/extract
+          run-id: 42577477581
+          github-token: ${{ github.token }}
+      - name: Restore validated historical Initial transform result
+        uses: actions/download-artifact@v4
+        with:
+          name: classroom-lab-result
+          path: .stage-artifacts/transform
+          run-id: 42577582992
+          github-token: ${{ github.token }}
+      - name: Restore validated historical Initial load result
+        uses: actions/download-artifact@v4
+        with:
+          name: classroom-lab-result
+          path: .stage-artifacts/load
+          run-id: 42577671408
+          github-token: ${{ github.token }}
+      - name: Restore validated historical Initial validate result
+        uses: actions/download-artifact@v4
+        with:
+          name: classroom-lab-result
+          path: .stage-artifacts/validate
+          run-id: 42577788046
+          github-token: ${{ github.token }}
+      - name: Validate original runs and publish five real Initial examples
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          from pipeline import publish_lab_result
+          runs=[["ingest","42577340785"],["extract","42577477581"],["transform","42577582992"],["load","42577671408"],["validate","42577788046"]]
+          dest=Path("output/classroom_lab/last_step_result.json")
+          dest.parent.mkdir(parents=True,exist_ok=True)
+          for stage,original_run in runs:
+              path=Path(".stage-artifacts")/stage/"last_step_result.json"
+              report=json.loads(path.read_text(encoding="utf-8"))
+              if report.get("batch")!="initial" or report.get("stage")!=stage:
+                  raise RuntimeError("Archived evidence does not match checked Initial Stage")
+              if report.get("execution")!="GITHUB_ACTIONS_REAL_PIPELINE_STAGE":
+                  raise RuntimeError("Not actual GitHub Worker evidence")
+              dest.write_text(json.dumps(report,ensure_ascii=False),encoding="utf-8")
+              os.environ["GITHUB_RUN_ID"]=original_run
+              publish_lab_result.main()
+          PY
+      - name: Commit source-backed historical Initial stage previews
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add dashboard/data/lab_manifest.json dashboard/data/lab_steps/
+          git diff --cached --quiet || git commit -m "data(lab): show five real Initial stage outputs on Vercel"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:feature/classroom-demo-evidence-foundation; then exit 0; fi
+            git fetch origin feature/classroom-demo-evidence-foundation
+            git rebase origin/feature/classroom-demo-evidence-foundation
+          done
+          exit 1

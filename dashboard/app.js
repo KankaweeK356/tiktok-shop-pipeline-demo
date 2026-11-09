@@ -516,8 +516,15 @@
       if(payload.mode!=="READ_ONLY_EVIDENCE_REPLAY"||
          payload.classification!=="SYNTHETIC_EDUCATIONAL_NOT_TIKTOK")
         throw Error("ผลรันไม่ได้ระบุที่มาของหลักฐานอย่างถูกต้อง");
-      if(!payload.success)throw Error("พบข้อมูลไม่ตรงกันใน Step นี้; โปรดดูผลตรวจ");
       state.labResults[def.id]=payload;
+      if(!payload.success){
+        state.labError="พบผลตรวจ FAIL ใน Step นี้ ดูรายการที่ไม่ผ่านแล้วกด Retry ได้";
+        state.labLog.unshift({at:payload.executed_at,stage:def.title,
+          detail:payload.checks.filter(x=>!x.pass).map(x=>x.label).join(" · "),result:"FAIL"});
+        state.rows=payload.output?.preview||[];
+        state.labBusy=false;state.labLog=state.labLog.filter(x=>x.result!=="RUNNING").slice(0,14);
+        renderPipeline();return;
+      }
       state.labLog.unshift({at:payload.executed_at,stage:def.title,
         detail:"ตรวจจริงจาก Neon / Private Storage · "+Math.round(Date.now()-started)+" ms",
         result:"PASS"});

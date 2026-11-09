@@ -1,9 +1,7 @@
 /** Read only real stage output artifact from a completed verified Actions run. */
-import { timingSafeEqual } from "node:crypto";
 import { unzipSync, strFromU8 } from "fflate";
 const REPO="KankaweeK356/tiktok-shop-pipeline-demo";
 const REF="feature/classroom-demo-evidence-foundation";
-const compare=(a,b)=>{const x=Buffer.from(a||""),y=Buffer.from(b||"");return x.length>=20&&x.length===y.length&&timingSafeEqual(x,y)};
 async function api(url,raw=false){
   const response=await fetch("https://api.github.com/repos/"+REPO+url,{
     headers:{"Authorization":"Bearer "+process.env.CLASSROOM_GITHUB_TOKEN,
@@ -15,9 +13,8 @@ async function api(url,raw=false){
 export default async function handler(req,res){
   res.setHeader("Cache-Control","no-store");
   if(req.method!=="GET")return res.status(405).json({error:"GET only"});
-  if(!process.env.CLASSROOM_GITHUB_TOKEN||
-     !compare(req.headers["x-classroom-admin-key"],process.env.CLASSROOM_LAB_ADMIN_KEY))
-    return res.status(403).json({error:"ไม่มีสิทธิ์อ่านข้อมูลการประมวลผล"});
+  if(!process.env.CLASSROOM_GITHUB_TOKEN)
+    return res.status(503).json({error:"ยังอ่านผลการรันไม่ได้"});
   const id=String(req.query?.run_id||"");
   if(!/^[1-9][0-9]{0,18}$/.test(id))return res.status(400).json({error:"Invalid run id"});
   try{
@@ -45,3 +42,4 @@ export default async function handler(req,res){
     return res.status(503).json({error:"ไม่สามารถอ่านผลลัพธ์จริงจาก GitHub ได้"});
   }
 }
+

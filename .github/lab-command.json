@@ -1,7 +1,7 @@
 {
   "batch": "initial",
-  "stage": "ingest",
-  "previous_run_id": "0",
+  "stage": "extract",
+  "previous_run_id": "42577340785",
   "purpose": "NEON_CLASSROOM_STEP_LAB_PROOF",
-  "note": "Read source CSV and ingest ONLY isolated classroom-step-lab Neon branch via GitHub Actions OIDC; no reset of protected demo."
+  "note": "Stage 2: extract all 25 real current Neon source tables to Raw Parquet; preserve prior workspace"
 }

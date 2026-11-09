@@ -27,7 +27,7 @@ jobs:
       - name: Install actual DuckDB and PyArrow
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
+          python -m pip install -r requirements-ci.txt
           python -c "import duckdb, pyarrow; print(duckdb.__version__, pyarrow.__version__)"
 
       - name: Regression tests
@@ -54,3 +54,4 @@ jobs:
             output/performance/performance_summary.csv
           if-no-files-found: warn
           retention-days: 14
+

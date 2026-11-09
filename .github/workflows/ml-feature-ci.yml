@@ -22,6 +22,7 @@ jobs:
           python-version: '3.13'
           cache: pip
       - name: Install project dependencies
-        run: python -m pip install -r requirements.txt
+        run: python -m pip install -r requirements-ci.txt
       - name: Verify feature builder and DuckDB adapter
         run: python -m pytest -q tests/test_ml_features.py
+

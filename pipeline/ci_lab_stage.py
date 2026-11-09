@@ -9,6 +9,9 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sqlite3
+import pandas as pd
+import duckdb
 from pathlib import Path
 
 import psycopg
@@ -28,6 +31,57 @@ def _phase(db_url: str) -> tuple[str, int]:
     if not value:
         raise RuntimeError("Neon demo control state is unavailable")
     return value
+
+
+
+def _real_step_evidence(workspace: Path,batch: str,stage: str) -> dict:
+    """Actual first five rows and measured record count, not fabricated examples."""
+    def parquet_result(path):
+        import pyarrow.parquet as pq
+        if not path.is_file(): return {"records":0,"preview":[]}
+        file=pq.ParquetFile(path)
+        n=file.metadata.num_rows
+        frame=next(file.iter_batches(batch_size=5)).to_pandas() if n else pd.DataFrame()
+        return {"records":n,"preview":json.loads(frame.to_json(orient="records",date_format="iso"))}
+    input_data={"label":"Actual source files","preview":[]}
+    output={"origin":"GITHUB_WORKER_ACTUAL","preview":[]}
+    if stage=="ingest":
+        with sqlite3.connect(workspace/"er1.sqlite") as db:
+            count=db.execute('SELECT COUNT(*) FROM "Fact_Orders"').fetchone()[0]
+            cursor=db.execute('SELECT * FROM "Fact_Orders" LIMIT 5')
+            cols=[x[0] for x in cursor.description]
+            output={"table":"Fact_Orders","records":count,"origin":"NEW_NEON_INGEST",
+                    "preview":[dict(zip(cols,row)) for row in cursor.fetchall()]}
+    elif stage=="extract":
+        output={**parquet_result(workspace/"lake"/"raw"/batch/"Fact_Orders.parquet"),
+                "origin":"NEW_RAW_PARQUET_FROM_NEON"}
+    elif stage=="transform":
+        input_data=parquet_result(workspace/"lake"/"raw"/batch/"Fact_Order_Items.parquet")
+        output={**parquet_result(workspace/"lake"/"standardized"/batch/"Fact_Sales_Order_Item.parquet"),
+                "origin":"NEW_STANDARDIZED_DELTA"}
+    elif stage=="load":
+        input_data=parquet_result(workspace/"lake"/"standardized"/batch/"Fact_Sales_Order_Item.parquet")
+        with duckdb.connect(str(workspace/"er2.duckdb"),read_only=True) as db:
+            frame=db.execute('SELECT * FROM "Fact_Sales_Order_Item" LIMIT 5').df()
+            count=db.execute('SELECT COUNT(*) FROM "Fact_Sales_Order_Item"').fetchone()[0]
+        output={"table":"Fact_Sales_Order_Item","records":count,"origin":"NEW_DUCKDB_WAREHOUSE",
+                "preview":json.loads(frame.to_json(orient="records",date_format="iso"))}
+    else:
+        report=json.loads((workspace/"reports"/("functional_"+batch+".json")).read_text())
+        output={"table":"Validation","records":report.get("checks"),
+                "origin":"NEW_FUNCTIONAL_VALIDATION",
+                "preview":[{"check":"Checks","passed":report.get("passed"),"failed":report.get("failed")},
+                    {"check":"Paid items","source":report.get("source_paid_item_count"),
+                     "warehouse":report.get("warehouse_sales_item_count")},
+                    {"check":"Net revenue","source":report.get("er1_net_revenue"),
+                     "warehouse":report.get("er2_net_revenue")}]}
+    return {"classification":"SYNTHETIC_EDUCATIONAL_NOT_TIKTOK",
+        "mode":"REAL_GITHUB_ACTIONS_STAGE","is_new_etl_run":True,"stage":stage,"batch":batch,
+        "executed_at":pd.Timestamp.utcnow().isoformat(),
+        "success":True,"input":input_data,"output":output,
+        "metrics":[{"label":"Output records","value":output.get("records",0)}],
+        "checks":[{"label":"Actual orchestrator stage completed","pass":True}],
+        "provenance":"NEW_WORKER_OUTPUT_NOT_HISTORICAL_REPLAY"}
 
 
 def run_stage(stage: str, batch: str) -> dict:
@@ -81,6 +135,7 @@ def run_stage(stage: str, batch: str) -> dict:
       "result":result,
       "checkpoint":str(workspace/"lake"/"control"/f"checkpoint_{batch}.json"),
     }
+    receipt["evidence"]=_real_step_evidence(workspace,batch,stage)
     (workspace/"last_step_result.json").write_text(
         json.dumps(receipt,ensure_ascii=False,indent=2,default=str),encoding="utf-8")
     print(json.dumps({k:receipt[k] for k in ("execution","stage","batch","cycle","run_id")},

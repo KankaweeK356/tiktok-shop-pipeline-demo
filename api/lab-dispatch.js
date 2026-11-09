@@ -1,11 +1,9 @@
 /** Dispatch one genuine GitHub Actions pipeline stage. No anonymous writes.
- * The Preview remains READ-ONLY until BOTH server-side secrets are configured:
- * CLASSROOM_GITHUB_TOKEN (fine-grained Actions RW scoped to this repo),
- * CLASSROOM_LAB_ADMIN_KEY (private operator key, not a GitHub credential).
+ * Public demo may run only the next real stage in the isolated Neon lab.
+ * The server keeps the scoped GitHub token; reset remains separately protected.
  *
  * NEVER use this endpoint to reset Neon, and never pass credentials as workflow inputs.
  */
-import { timingSafeEqual } from "node:crypto";
 import { neon } from "@neondatabase/serverless";
 
 const REPO="KankaweeK356/tiktok-shop-pipeline-demo";
@@ -13,10 +11,6 @@ const REF="feature/classroom-demo-evidence-foundation";
 const WORKFLOW="classroom-real-step.yml";
 const STAGES=["ingest","extract","transform","load","validate"];
 const json=(res,code,value)=>res.status(code).json(value);
-const safeEquals=(a,b)=>{
-  const x=Buffer.from(a||""),y=Buffer.from(b||"");
-  return x.length===y.length && x.length>=20 && timingSafeEqual(x,y);
-};
 async function github(route,method="GET",body=null){
   const res=await fetch("https://api.github.com/repos/"+REPO+route,{
     method,
@@ -35,7 +29,6 @@ export default async function handler(req,res){
   if(!["GET","POST"].includes(req.method))
     return json(res,405,{error:"GET/POST only"});
   const configured=Boolean(process.env.CLASSROOM_GITHUB_TOKEN &&
-    process.env.CLASSROOM_LAB_ADMIN_KEY &&
     process.env.CLASSROOM_LAB_NEON_URL && process.env.CLASSROOM_LAB_WRITER_URL);
   if(req.method==="GET"){
     const workflow_url="https://github.com/"+REPO+"/actions/workflows/"+WORKFLOW;
@@ -44,29 +37,50 @@ export default async function handler(req,res){
       if(process.env.CLASSROOM_LAB_NEON_URL){
         try{
           const sql=neon(process.env.CLASSROOM_LAB_NEON_URL);
-          const [state,counts]=await Promise.all([
+          const [state,counts,active]=await Promise.all([
             sql.query("SELECT phase,cycle_number FROM demo_control.dataset_state WHERE dataset_key='classroom'"),
-            sql.query('SELECT COUNT(*)::int AS n FROM demo_er1."Fact_Orders"')
+            sql.query('SELECT COUNT(*)::int AS n FROM demo_er1."Fact_Orders"'),
+            sql.query("SELECT runner_ref,run_type FROM demo_control.pipeline_runs WHERE dataset_key='classroom' AND status='RUNNING' ORDER BY started_at DESC LIMIT 1")
           ]);
           lab={branch:"classroom-live-run-lab",phase:state[0]?.phase||"UNKNOWN",
-               cycle:state[0]?.cycle_number||null,orders:counts[0]?.n??null};
+               cycle:state[0]?.cycle_number||null,orders:counts[0]?.n??null,
+               active_run:active[0]||null};
         }catch(_error){/* No write and no credentials in response. */}
       }
-      if(configured&&lab.phase==="RUN1_READY"){
+      if(configured&&["EMPTY","RUN1_READY"].includes(lab.phase)){
         try{
           const runs=await github("/actions/workflows/"+WORKFLOW+
             "/runs?branch="+encodeURIComponent(REF)+"&event=workflow_dispatch&per_page=50");
-          const last=(runs.workflow_runs||[]).find(run=>run.conclusion==="success"&&
-            run.display_title?.startsWith("Classroom ETL initial / validate / previous "));
-          lab.resume_run_id=last?.id||null;
+          const all=runs.workflow_runs||[];
+          if(lab.active_run?.runner_ref){
+            const root=String(lab.active_run.runner_ref).match(/\/runs\/([1-9][0-9]*)$/)?.[1];
+            const batch=lab.active_run.run_type==="RUN1"?"initial":"incremental";
+            let current=all.find(run=>String(run.id)===root&&run.conclusion==="success");
+            let index=current?0:-1;
+            while(current&&index<STAGES.length-1){
+              const nextStage=STAGES[index+1];
+              const next=all.find(run=>run.conclusion==="success"&&
+                run.display_title?.startsWith("Classroom ETL "+batch+" / "+nextStage+
+                  " / previous "+current.id));
+              if(!next)break;
+              current=next;index++;
+            }
+            if(current&&index<STAGES.length-1){
+              lab.resume_run_id=current.id;lab.resume_stage=STAGES[index+1];
+              lab.resume_batch=batch;
+            }
+          }else if(lab.phase==="RUN1_READY"){
+            const last=all.find(run=>run.conclusion==="success"&&
+              run.display_title?.startsWith("Classroom ETL initial / validate / previous "));
+            lab.resume_run_id=last?.id||null;
+          }
         }catch(_error){lab.resume_run_id=null;}
       }
+      delete lab.active_run;
       return json(res,200,{ready:configured,mode:configured?
         "REAL_GITHUB_ACTIONS":"READ_ONLY_EVIDENCE_ONLY",workflow_url,lab});
     }
-    if(!configured||!safeEquals(req.headers["x-classroom-admin-key"],
-                                process.env.CLASSROOM_LAB_ADMIN_KEY))
-      return json(res,403,{error:"ไม่มีสิทธิ์ดูผลการรัน"});
+    if(!configured)return json(res,503,{error:"Lab ยังไม่พร้อม"});
     const stage=req.query.stage,batch=req.query.batch,previous=String(req.query.previous_run_id||"");
     const since=Date.parse(String(req.query.since||""));
     if(!STAGES.includes(stage)||!["initial","incremental"].includes(batch)||
@@ -89,9 +103,6 @@ export default async function handler(req,res){
   }
   if(!configured)
     return json(res,503,{error:"ยังไม่เปิดสิทธิ์สั่งรัน GitHub Actions จากหน้าเว็บ; ใช้โหมดตรวจหลักฐานได้ก่อน"});
-  if(!safeEquals(req.headers["x-classroom-admin-key"],
-                 process.env.CLASSROOM_LAB_ADMIN_KEY))
-    return json(res,403,{error:"ไม่มีสิทธิ์สั่งรัน Pipeline"});
   const {stage,batch,previous_run_id}=req.body||{};
   if(!STAGES.includes(stage)||!["initial","incremental"].includes(batch)||
      !/^(0|[1-9][0-9]{0,18})$/.test(String(previous_run_id)))
@@ -101,11 +112,20 @@ export default async function handler(req,res){
     return json(res,409,{error:"Run Initial Ingest เริ่มที่ 0; Step ถัดไปต้องใช้ Run ID ของขั้นก่อน"});
   try{
     const sql=neon(process.env.CLASSROOM_LAB_NEON_URL);
-    const rows=await sql.query("SELECT phase FROM demo_control.dataset_state WHERE dataset_key='classroom'");
+    const [rows,active]=await Promise.all([
+      sql.query("SELECT phase FROM demo_control.dataset_state WHERE dataset_key='classroom'"),
+      sql.query("SELECT run_type FROM demo_control.pipeline_runs WHERE dataset_key='classroom' AND status='RUNNING' LIMIT 1")
+    ]);
     const expected=batch==="initial"?"EMPTY":"RUN1_READY";
     if(rows[0]?.phase!==expected)
       return json(res,409,{error:"ข้อมูล Neon อยู่ในสถานะ "+rows[0]?.phase+
         " ไม่อนุญาตเริ่ม "+batch+" ตอนนี้; จะไม่ Reset อัตโนมัติ"});
+    if(index===0&&batch==="initial"&&active.length)
+      return json(res,409,{error:"Run 1 เริ่มแล้ว ให้รันต่อจากขั้นล่าสุด"});
+    if(index===0&&batch==="incremental"&&active.length)
+      return json(res,409,{error:"Run 2 เริ่มแล้ว ให้รันต่อจากขั้นล่าสุด"});
+    if(index>0&&active[0]?.run_type!==(batch==="initial"?"RUN1":"RUN2"))
+      return json(res,409,{error:"ยังไม่มีรอบที่กำลังทำงานสำหรับขั้นนี้"});
     if(previous!=="0"){
       const prior=await github("/actions/runs/"+previous);
       const priorStage=STAGES[index===0?4:index-1];
@@ -115,6 +135,12 @@ export default async function handler(req,res){
          typeof prior.display_title!=="string"||!prior.display_title.startsWith(prefix))
         return json(res,409,{error:"Run ID ก่อนหน้าไม่ใช่ Step ที่ผ่านจาก Branch เดียวกัน"});
     }
+    const title="Classroom ETL "+batch+" / "+stage+" / previous "+previous;
+    const recent=await github("/actions/workflows/"+WORKFLOW+
+      "/runs?branch="+encodeURIComponent(REF)+"&event=workflow_dispatch&per_page=50");
+    if((recent.workflow_runs||[]).some(run=>run.display_title===title&&
+       (run.status!=="completed"||run.conclusion==="success")))
+      return json(res,409,{error:"ขั้นนี้ถูกสั่งรันแล้ว กรุณาตรวจสถานะงานเดิม"});
     await github("/actions/workflows/"+WORKFLOW+"/dispatches","POST",{
       ref:REF,inputs:{stage,batch,previous_run_id:previous}
     });

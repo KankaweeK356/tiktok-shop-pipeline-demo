@@ -764,7 +764,7 @@
           if(state.realStatus==="success"){
             state.realPreviousRunId=String(data.run_id);
             try{
-              const evidenceResponse=await fetch("/api/lab-real-result?run_id="+encodeURIComponent(data.run_id),{
+              const evidenceResponse=await fetch("/api/lab-dispatch?result=1&run_id="+encodeURIComponent(data.run_id),{
                 cache:"no-store"});
               const receipt=await evidenceResponse.json();
               if(evidenceResponse.ok&&receipt.mode==="REAL_GITHUB_ACTIONS_STAGE")
@@ -1572,3 +1572,4 @@
   }
   init();
 })();
+

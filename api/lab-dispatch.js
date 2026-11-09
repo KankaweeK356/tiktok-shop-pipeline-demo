@@ -5,6 +5,7 @@
  * NEVER use this endpoint to reset Neon, and never pass credentials as workflow inputs.
  */
 import { neon } from "@neondatabase/serverless";
+import legacyResult from "../lib/lab-real-result.js";
 
 const REPO="KankaweeK356/tiktok-shop-pipeline-demo";
 const REF="feature/classroom-demo-evidence-foundation";
@@ -24,6 +25,7 @@ async function github(route,method="GET",body=null){
   return res.status===204?null:res.json();
 }
 export default async function handler(req,res){
+  if(req.query?.result==="1")return legacyResult(req,res);
   res.setHeader("Cache-Control","no-store");
   res.setHeader("X-Content-Type-Options","nosniff");
   if(!["GET","POST"].includes(req.method))
@@ -154,3 +156,4 @@ export default async function handler(req,res){
     return json(res,503,{error:"ยังไม่สามารถสั่ง GitHub Actions ได้ ("+error.message+")"});
   }
 }
+

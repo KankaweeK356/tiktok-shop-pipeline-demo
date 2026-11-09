@@ -2,7 +2,7 @@
 (function () {
   "use strict";
   const $ = s => document.querySelector(s);
-  const state = { data:null, evidence:null, evidenceLayer:"source", evidenceTable:"", neonStatus:"not_loaded", neonTables:[], neonTable:"", neonData:null, neonError:"", neonRunStatus:null, neonArtifactType:"ALL", labStage:0, labTable:"Fact_Orders", labResults:{}, labBusy:false, labError:"", labLog:[], errorCase:"E01", errorReplayed:false, view:"business", month:"", group:"ALL", sku:"", model:"", week:"", replay:false, rows:[] };
+  const state = { data:null, evidence:null, evidenceLayer:"source", evidenceTable:"", neonStatus:"not_loaded", neonTables:[], neonTable:"", neonData:null, neonError:"", neonRunStatus:null, neonArtifactType:"ALL", labStage:0, labTable:"Fact_Orders", labResults:{}, labBusy:false, labError:"", labLog:[], errorCase:"E01", errorReplayed:false, view:"business", month:"", group:"ALL", sku:"", skuSort:"lowest_margin", model:"", week:"", replay:false, rows:[] };
   const names = {
     business:["ภาพรวมธุรกิจ","ยอดขาย กำไร และ KPI ของร้านเสื้อผ้าผู้หญิง","ภาพรวมธุรกิจ"],
     pipeline:["ทดสอบการนำเข้าข้อมูล","เส้นทางข้อมูลจากต้นทางถึงคลังข้อมูลและหลักฐานการตรวจสอบ","การนำเข้าข้อมูล"],
@@ -175,8 +175,13 @@
         protection_gap_pp:gap===null?"—":(gap>=0?"+":"")+money(gap,1)+" pp",
         profit_risk:gap===null?"NO_DATA":gap<0?"RISK":"CHECK"};
     }).sort((a,b)=>{
-      const risk=x=>x.profit_risk==="RISK"?0:x.profit_risk==="NO_DATA"?1:2;
-      return risk(a)-risk(b)||Number(b.net_revenue)-Number(a.net_revenue);
+      const risk=x=>x.profit_risk==="RISK"?0:x.profit_risk==="NO_DATA"?2:1;
+      if(state.skuSort==="highest_sales")
+        return Number(b.net_revenue)-Number(a.net_revenue);
+      if(state.skuSort==="lowest_margin")
+        return risk(a)-risk(b)||
+          (a.pre_group_protection_pct??Infinity)-(b.pre_group_protection_pct??Infinity);
+      return Number(b.net_revenue)-Number(a.net_revenue);
     });
     if(skuRows.length){
       const choices=[["","เลือก SKU เพื่อดูรายละเอียด"],...skuRows.map(x=>
@@ -217,8 +222,12 @@
             statusLabel("READY"),
             small("เสี่ยงต่ำกว่าเส้นอ้างอิง: "+money(skuRows.filter(x=>x.profit_risk==="RISK").length)+" SKU"),
             small("ต้องตรวจต้นทุนระดับกลุ่ม: "+money(skuRows.filter(x=>x.profit_risk==="CHECK").length)+" SKU")),
-          picker,detail,dataTable(skuCols,skuRows.slice(0,30),skuFmt),
-          small("เรียงสินค้าที่เสี่ยงขึ้นก่อน · แสดง 30 SKU แรก · เลือก SKU ด้านบนดูรายละเอียดทุกตัวได้"))));
+          box("two-col",picker,chooseField("เรียงลำดับตาราง SKU",
+            [["lowest_margin","Margin ต่ำสุดก่อน"],["highest_sales","ยอดขายสูงสุดก่อน"]],
+            state.skuSort,v=>{state.skuSort=v;renderBusiness();})),
+          detail,dataTable(skuCols,skuRows.slice(0,30),skuFmt),
+          small("แสดง 30 SKU แรก · เปลี่ยนการเรียงลำดับได้ · เลือก SKU ด้านบนดูรายละเอียดทุกตัวได้"))));
+      state.rows=skuRows;
     }
     const adsRows=(d.business.ads_campaigns||[]).filter(x=>
       x.month===m.month && (state.group==="ALL"||x.product_group_id===state.group)
@@ -268,7 +277,7 @@
       "Profit Protection ใช้ Contribution Profit ÷ Gross Reference Sales · เกณฑ์ร้าน "+pct(benchmarkPct,0)+" · ไม่กระจาย Ads ลง SKU",
       dataTable(cols,groupRows,fmt)));
     renderScenario(root);
-    state.rows=shown;
+    if(!skuRows.length)state.rows=groupRows;
   }
 
   function renderScenario(root){

@@ -561,7 +561,7 @@
     if(!result)return box("lab-placeholder",
       node("span","lab-placeholder-icon","▷"),
       node("strong","","ยังไม่ตรวจ Step นี้"),
-      small("กด Run Step เพื่อให้ Server อ่านข้อมูลจริงและแสดงผลลัพธ์พร้อมตัวอย่าง"));
+      small("กดตรวจหลักฐาน เพื่อให้ Server อ่าน Neon และไฟล์เก็บถาวรโดยไม่ประมวลผล ETL ใหม่"));
     const wrap=box("lab-result");
     wrap.append(box("lab-meta",
       statusLabel(result.success?"PASS":"FAIL"),
@@ -875,11 +875,11 @@
       actionRow.append(next);
     }
     main.append(actionRow);
-    if(!unlocked)main.append(notice("ต้อง Run Step ก่อนหน้าให้ผ่านก่อน จึงจะตรวจ Step นี้ได้",true));
+    if(!unlocked)main.append(notice("ต้องตรวจหลักฐาน Step ก่อนหน้าให้ผ่านก่อน",true));
     if(state.neonStatus==="error")main.append(notice(state.neonError||"อ่าน Neon ไม่สำเร็จ",true));
-    if(state.labError)main.append(notice(state.labError+" · สามารถกด Run Step อีกครั้งเพื่อ Retry ได้",true));
+    if(state.labError)main.append(notice(state.labError+" · สามารถตรวจหลักฐาน Step เดิมซ้ำได้",true));
     main.append(node("h3","lab-subheading","ผลการตรวจสอบ"),renderLabResult(completed));
-    root.append(panel("ทดลองขั้นตอนที่ "+(state.labStage+1),"คลิก Run แล้วระบบจะประมวลผลแบบอ่านอย่างเดียวจากแหล่งข้อมูลจริง",main));
+    root.append(panel("ทดลองขั้นตอนที่ "+(state.labStage+1),"ตรวจแหล่งข้อมูลจริงแบบอ่านอย่างเดียว ไม่ใช่การรัน ETL ใหม่",main));
     if(state.labLog.length)root.append(panel("Execution Log ของการทดลองครั้งนี้",
       "กิจกรรมจากการกดในหน้าเว็บ ไม่ใช่ Log ย้อนหลังของ GitHub Worker",
       dataTable([["at","เวลา (UTC)"],["stage","Step"],["result","ผล"],["detail","รายละเอียด"]],

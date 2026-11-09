@@ -2,7 +2,7 @@
 (function () {
   "use strict";
   const $ = s => document.querySelector(s);
-  const state = { data:null, evidence:null, evidenceLayer:"source", evidenceTable:"", neonStatus:"not_loaded", neonTables:[], neonTable:"", neonData:null, neonError:"", neonRunStatus:null, neonArtifactType:"ALL", labStage:0, labTable:"Fact_Orders", labResults:{}, labBusy:false, labError:"", labLog:[], realReady:false, realConfigChecked:false, realBatch:"initial", realStageIndex:0, realPreviousRunId:"", realRunId:null, realStatus:"", realUrl:"", realError:"", realStartedAt:"", realAdminKey:"", errorCase:"E01", errorReplayed:false, errorLabOpen:false, view:"business", month:"", group:"ALL", sku:"", skuSort:"lowest_margin", model:"", week:"", replay:false, rows:[] };
+  const state = { data:null, evidence:null, evidenceLayer:"source", evidenceTable:"", neonStatus:"not_loaded", neonTables:[], neonTable:"", neonData:null, neonError:"", neonRunStatus:null, neonArtifactType:"ALL", labStage:0, labTable:"Fact_Orders", labResults:{}, labBusy:false, labError:"", labLog:[], realReady:false, realConfigChecked:false, realLabPhase:"UNKNOWN", realLabOrders:null, realBatch:"initial", realStageIndex:0, realPreviousRunId:"", realRunId:null, realStatus:"", realUrl:"", realError:"", realStartedAt:"", realAdminKey:"", errorCase:"E01", errorReplayed:false, errorLabOpen:false, view:"business", month:"", group:"ALL", sku:"", skuSort:"lowest_margin", model:"", week:"", replay:false, rows:[] };
   const names = {
     business:["ภาพรวมธุรกิจ","ยอดขาย กำไร และ KPI ของร้านเสื้อผ้าผู้หญิง","ภาพรวมธุรกิจ"],
     pipeline:["ทดสอบการนำเข้าข้อมูล","เส้นทางข้อมูลจากต้นทางถึงคลังข้อมูลและหลักฐานการตรวจสอบ","การนำเข้าข้อมูล"],
@@ -659,6 +659,8 @@
       const response=await fetch("/api/lab-dispatch",{cache:"no-store"});
       const data=await response.json();
       state.realReady=response.ok&&data.ready===true;
+      state.realLabPhase=data.lab?.phase||"UNKNOWN";
+      state.realLabOrders=data.lab?.orders??null;
     }catch(_error){state.realReady=false;}
     state.realConfigChecked=true;
     if(state.view==="pipeline")renderPipeline();
@@ -738,16 +740,17 @@
 
   function renderRealRunner(root){
     const content=box("lab-reference-body");
-    content.append(notice("ส่วนนี้สั่ง GitHub Actions ให้รัน Python Pipeline จริงทีละ Stage และส่งต่อ Workspace ผ่าน Artifact ไม่ใช่การ Replay หลักฐานเก่า"));
+    content.append(notice("รันใน Neon Branch classroom-step-lab แยกจาก demo-pipeline ที่มี 900 ออเดอร์ และจาก Analytics · ส่งต่อ Checkpoint/Workspace ผ่าน GitHub Artifact"));
     if(!state.realConfigChecked)content.append(small("กำลังตรวจสิทธิ์การสั่งงาน…"));
     else if(!state.realReady)content.append(notice(
-      "ยังไม่เปิดระบบสั่งงานจริงบน Vercel Preview: ต้องตั้งค่า CLASSROOM_GITHUB_TOKEN และ CLASSROOM_LAB_ADMIN_KEY ฝั่ง Server เท่านั้น ขณะนี้ใช้โหมดตรวจหลักฐานด้านล่างได้",true));
-    const phase=state.neonRunStatus?.state?.phase;
+      "ยังไม่เปิดระบบสั่งงานจริง: ต้องมี CLASSROOM_GITHUB_TOKEN และ CLASSROOM_LAB_ADMIN_KEY ใน Vercel กับ NEON_LAB_DATABASE_URL ใน GitHub Secrets (ใช้ Branch classroom-step-lab เท่านั้น)",true));
+    const phase=state.realLabPhase;
     const expected=state.realBatch==="initial"?"EMPTY":"RUN1_READY";
     if(phase!==expected)content.append(notice(
       "Neon ปัจจุบันเป็น "+(phase||"ไม่ทราบสถานะ")+
       " · การรัน "+state.realBatch+" ต้องอยู่ในสถานะ "+expected+
-      " เท่านั้น ไม่ Reset หรือเขียนทับ 900 ออเดอร์โดยอัตโนมัติ",true));
+      " เท่านั้น ไม่ Reset หรือเขียนทับข้อมูลใดโดยอัตโนมัติ",true));
+    content.append(small("Neon Lab Status: "+phase+" · ออเดอร์ในพื้นที่ทดลอง: "+money(state.realLabOrders)));
     content.append(box("two-col",
       chooseField("เลือก Batch",
         [["initial","Run 1 · Initial"],["incremental","Run 2 · Incremental"]],

@@ -80,3 +80,13 @@ def test_sequential_stage_execution_is_checkpointed_and_replays_without_change(t
     replay=run_batch(workspace,"initial")
     assert replay["status"]=="SUCCESS"
     assert signature(workspace)==before
+
+
+def test_actual_lab_isolated_from_protected_900_order_demo():
+    web=(ROOT/"api"/"lab-dispatch.js").read_text(encoding="utf-8")
+    workflow=(ROOT/".github"/"workflows"/"classroom-real-step.yml").read_text(encoding="utf-8")
+    assert "CLASSROOM_LAB_NEON_URL" in web
+    assert "CLASSROOM_NEON_READONLY_URL" not in web
+    assert "secrets.NEON_LAB_DATABASE_URL" in workflow
+    assert "secrets.NEON_DEMO_DATABASE_URL" not in workflow
+    assert "RESET-DEMO-DATA" not in workflow

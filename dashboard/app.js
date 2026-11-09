@@ -2,7 +2,7 @@
 (function () {
   "use strict";
   const $ = s => document.querySelector(s);
-  const state = { data:null, evidence:null, evidenceLayer:"source", evidenceTable:"", neonStatus:"not_loaded", neonTables:[], neonTable:"", neonData:null, neonError:"", neonRunStatus:null, neonArtifactType:"ALL", labStage:0, labTable:"Fact_Orders", labResults:{}, labBusy:false, labError:"", labLog:[], view:"business", month:"", group:"ALL", sku:"", model:"", week:"", replay:false, rows:[] };
+  const state = { data:null, evidence:null, evidenceLayer:"source", evidenceTable:"", neonStatus:"not_loaded", neonTables:[], neonTable:"", neonData:null, neonError:"", neonRunStatus:null, neonArtifactType:"ALL", labStage:0, labTable:"Fact_Orders", labResults:{}, labBusy:false, labError:"", labLog:[], errorCase:"E01", errorReplayed:false, view:"business", month:"", group:"ALL", sku:"", model:"", week:"", replay:false, rows:[] };
   const names = {
     business:["ภาพรวมธุรกิจ","ยอดขาย กำไร และ KPI ของร้านเสื้อผ้าผู้หญิง","ภาพรวมธุรกิจ"],
     pipeline:["ทดสอบการนำเข้าข้อมูล","เส้นทางข้อมูลจากต้นทางถึงคลังข้อมูลและหลักฐานการตรวจสอบ","การนำเข้าข้อมูล"],
@@ -583,6 +583,55 @@
     return wrap;
   }
 
+  function renderErrorRecoveryLab(root){
+    const details=node("details","lab-reference");
+    details.append(node("summary","","Error Recovery Lab · 6 กรณี (เปิดดูผล Fail → Fix → Retry)"));
+    const body=box("lab-reference-body");
+    body.append(notice("ส่วนนี้ Replay หลักฐานการทดสอบ Error จาก Python/SQLite Runner ที่ผ่านแล้ว ไม่ได้ฉีด Error ลง Neon ที่มี 900 ออเดอร์",true));
+    const errors=state.evidence?.error_recovery_evidence||[];
+    const labels={
+      E01:"E01 · SKU FK ไม่ถูกต้อง",
+      E02:"E02 · ขาดไฟล์ Source",
+      T01:"T01 · Voucher Rule ผิด",
+      T02:"T02 · Campaign ทับซ้อน",
+      L01:"L01 · Rollback เมื่อโหลดผิดพลาด",
+      L02:"L02 · Replay ไม่เพิ่มยอดซ้ำ"
+    };
+    if(!errors.length){
+      body.append(small("ยังไม่มีไฟล์ผลทดสอบ Error Suite จาก GitHub CI · เมื่อ Workflow ทดสอบครบ 6 กรณีจะปรากฏผลที่นี่"));
+    }else{
+      if(!errors.some(x=>x.case===state.errorCase))state.errorCase=errors[0].case;
+      body.append(chooseField("เลือกกรณีผิดพลาด",errors.map(x=>[x.case,labels[x.case]||x.case]),
+        state.errorCase,v=>{state.errorCase=v;state.errorReplayed=false;renderPipeline();}));
+      const run=node("button","button button-outline","▷ Replay ผลทดสอบ Error + Retry");
+      run.type="button";run.addEventListener("click",()=>{state.errorReplayed=true;renderPipeline();});
+      body.append(run);
+      if(state.errorReplayed){
+        const c=errors.find(x=>x.case===state.errorCase);
+        const detail=(state.evidence.error_case_details||[]).find(x=>x.case_id===state.errorCase);
+        body.append(box("lab-metrics",
+          box("lab-stat",small("Detect"),node("strong","",String(c.detected||"—"))),
+          box("lab-stat",small("Retry from"),node("strong","",c.retry_from||"ไม่มี (Replay สำเร็จ)")),
+          box("lab-stat",small("Result"),statusLabel(c.passed?"PASS":"FAIL"))));
+        body.append(dataTable([["stage","ขั้นตอน"],["before","ก่อนแก้"],["after","หลัง Retry"],
+          ["expected","ผลที่คาดหวัง"]],[c]));
+        if(detail?.stage_events?.length){
+          const events=detail.stage_events.slice(-12).map(e=>({
+            stage:e.stage||"—",status:e.status||"—",code:e.error_code||"—",
+            date:e.at||"—"
+          }));
+          body.append(node("h3","lab-subheading","Stage Log จากการทดสอบจริง"),
+            dataTable([["stage","Step"],["status","ผล"],["code","Error Code"],
+              ["date","บันทึกเวลา"]],events));
+        }
+        if(detail?.detected_error)
+          body.append(small("หลักฐานตอนตรวจพบ: "+String(detail.detected_error.error_code||"—")+
+            " / "+String(detail.detected_error.stage||"—")));
+      }
+    }
+    details.append(body);root.append(details);
+  }
+
   function renderPipeline(){
     const root=$("#app");root.replaceChildren();
     const live=state.neonRunStatus;
@@ -659,6 +708,7 @@
       "กิจกรรมจากการกดในหน้าเว็บ ไม่ใช่ Log ย้อนหลังของ GitHub Worker",
       dataTable([["at","เวลา (UTC)"],["stage","Step"],["result","ผล"],["detail","รายละเอียด"]],
         state.labLog,{result:{kind:"status"}})));
+    renderErrorRecoveryLab(root);
     const detail=node("details","lab-reference");
     const trigger=node("summary","","เปิดดู Data Explorer / รายชื่อไฟล์ / หลักฐาน GitHub");
     detail.append(trigger);

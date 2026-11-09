@@ -1,7 +1,7 @@
 {
   "batch": "initial",
-  "stage": "extract",
-  "previous_run_id": "42577340785",
+  "stage": "transform",
+  "previous_run_id": "42577477581",
   "purpose": "NEON_CLASSROOM_STEP_LAB_PROOF",
-  "note": "Stage 2: extract all 25 real current Neon source tables to Raw Parquet; preserve prior workspace"
+  "note": "Stage 3: transform Raw into standardized delta with actual existing pipeline business rules"
 }

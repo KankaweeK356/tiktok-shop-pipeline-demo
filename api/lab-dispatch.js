@@ -52,6 +52,15 @@ export default async function handler(req,res){
                cycle:state[0]?.cycle_number||null,orders:counts[0]?.n??null};
         }catch(_error){/* No write and no credentials in response. */}
       }
+      if(configured&&lab.phase==="RUN1_READY"){
+        try{
+          const runs=await github("/actions/workflows/"+WORKFLOW+
+            "/runs?branch="+encodeURIComponent(REF)+"&event=workflow_dispatch&per_page=50");
+          const last=(runs.workflow_runs||[]).find(run=>run.conclusion==="success"&&
+            run.display_title?.startsWith("Classroom ETL initial / validate / previous "));
+          lab.resume_run_id=last?.id||null;
+        }catch(_error){lab.resume_run_id=null;}
+      }
       return json(res,200,{ready:configured,mode:configured?
         "REAL_GITHUB_ACTIONS":"READ_ONLY_EVIDENCE_ONLY",workflow_url,lab});
     }

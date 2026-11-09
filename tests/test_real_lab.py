@@ -62,3 +62,21 @@ def test_worker_output_is_from_real_rows_not_example_constants():
     assert '"Fact_Sales_Order_Item" LIMIT 5' in s
     assert "ParquetFile" in s
     assert 'pd.read_csv' not in s or "head" in s
+
+
+def test_sequential_stage_execution_is_checkpointed_and_replays_without_change(tmp_path, monkeypatch):
+    """Actually execute the same Python stages that the one-step worker calls."""
+    from pipeline.orchestrator import STAGES, run_batch
+    from pipeline.demo_tests import signature
+    monkeypatch.delenv("NEON_DEMO_DATABASE_URL", raising=False)
+    workspace=tmp_path/"guided_lab"
+    for index,stage in enumerate(STAGES):
+        response=run_batch(workspace,"initial",stop_after=stage)
+        assert response["status"]==("SUCCESS" if stage=="validate" else "PARTIAL")
+        checkpoint=__import__("json").loads(
+            (workspace/"lake"/"control"/"checkpoint_initial.json").read_text())
+        assert checkpoint["completed"]==STAGES[:index+1]
+    before=signature(workspace)
+    replay=run_batch(workspace,"initial")
+    assert replay["status"]=="SUCCESS"
+    assert signature(workspace)==before

@@ -671,6 +671,20 @@
       if(data.lab?.resume_batch&&data.lab?.resume_stage){
         state.resumeBatch=data.lab.resume_batch;
         state.resumeStageIndex=LAB_STEPS.findIndex(step=>step.id===data.lab.resume_stage);
+        const priorStage=LAB_STEPS[state.resumeStageIndex-1]?.id;
+        if(priorStage&&data.lab.resume_run_id&&
+           !state.batchResults[state.resumeBatch]?.[priorStage]){
+          try{
+            const receiptResponse=await fetch("/api/lab-real-result?run_id="+
+              encodeURIComponent(data.lab.resume_run_id),{cache:"no-store"});
+            const receipt=await receiptResponse.json();
+            if(receiptResponse.ok&&receipt.mode==="REAL_GITHUB_ACTIONS_STAGE")
+              state.batchResults[state.resumeBatch][priorStage]={
+                evidence:receipt.receipt,runId:data.lab.resume_run_id,
+                url:"https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/actions/runs/"+
+                  data.lab.resume_run_id};
+          }catch(_error){/* The live run status remains authoritative. */}
+        }
       }else{state.resumeBatch="";state.resumeStageIndex=-1;}
     }catch(_error){state.realReady=false;}
     state.realConfigChecked=true;
@@ -1204,8 +1218,10 @@
           node("strong","","ผลจากการรันครั้งนี้"),renderLabResult(savedResult.evidence),
           link("ดู Log ของขั้นนี้",savedResult.url)));
         if(!canRun)body.append(small(!state.realReady?
-          "ยังสั่งรันไม่ได้: ต้องเปิดสิทธิ์ GitHub Actions และ Admin Key ใน Vercel ก่อน":
+          "ระบบสั่งงาน GitHub Actions ยังไม่พร้อม":
           state.realLabPhase!==expected?"ขั้นนี้ต้องรอ Lab สถานะ "+expected+" (ตอนนี้ "+state.realLabPhase+")":
+          state.resumeBatch===state.notebookBatch?
+            "รอบนี้เริ่มแล้ว · กดปุ่มรันต่อด้านบนเพื่อทำขั้นถัดไป":
           "ต้องรันขั้นก่อนหน้าให้สำเร็จ เพื่อส่งผลต่อให้ขั้นนี้"));
         if(entry){
           const history=node("details","notebook-history");

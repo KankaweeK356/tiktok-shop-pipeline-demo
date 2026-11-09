@@ -2,7 +2,7 @@
 (function () {
   "use strict";
   const $ = s => document.querySelector(s);
-  const state = { data:null, evidence:null, evidenceLayer:"source", evidenceTable:"", neonStatus:"not_loaded", neonTables:[], neonTable:"", neonData:null, neonError:"", neonRunStatus:null, neonArtifactType:"ALL", labStage:0, labTable:"Fact_Orders", labResults:{}, labBusy:false, labError:"", labLog:[], errorCase:"E01", errorReplayed:false, errorLabOpen:false, view:"business", month:"", group:"ALL", sku:"", skuSort:"lowest_margin", model:"", week:"", replay:false, rows:[] };
+  const state = { data:null, evidence:null, evidenceLayer:"source", evidenceTable:"", neonStatus:"not_loaded", neonTables:[], neonTable:"", neonData:null, neonError:"", neonRunStatus:null, neonArtifactType:"ALL", labStage:0, labTable:"Fact_Orders", labResults:{}, labBusy:false, labError:"", labLog:[], realReady:false, realConfigChecked:false, realBatch:"initial", realStageIndex:0, realPreviousRunId:"", realRunId:null, realStatus:"", realUrl:"", realError:"", realStartedAt:"", realAdminKey:"", errorCase:"E01", errorReplayed:false, errorLabOpen:false, view:"business", month:"", group:"ALL", sku:"", skuSort:"lowest_margin", model:"", week:"", replay:false, rows:[] };
   const names = {
     business:["ภาพรวมธุรกิจ","ยอดขาย กำไร และ KPI ของร้านเสื้อผ้าผู้หญิง","ภาพรวมธุรกิจ"],
     pipeline:["ทดสอบการนำเข้าข้อมูล","เส้นทางข้อมูลจากต้นทางถึงคลังข้อมูลและหลักฐานการตรวจสอบ","การนำเข้าข้อมูล"],
@@ -652,6 +652,141 @@
     details.append(body);root.append(details);
   }
 
+  async function loadRealCapabilities(){
+    try{
+      const response=await fetch("/api/lab-dispatch",{cache:"no-store"});
+      const data=await response.json();
+      state.realReady=response.ok&&data.ready===true;
+    }catch(_error){state.realReady=false;}
+    state.realConfigChecked=true;
+    if(state.view==="pipeline")renderPipeline();
+  }
+
+  async function dispatchRealStep(){
+    if(!state.realReady||state.labBusy||state.realStatus==="queued"||
+       state.realStatus==="in_progress")return;
+    const stage=LAB_STEPS[state.realStageIndex]?.id,batch=state.realBatch;
+    const prior=state.realStageIndex===0&&batch==="initial"?"0":
+      String(state.realPreviousRunId||"").trim();
+    if(!/^(0|[1-9][0-9]{0,18})$/.test(prior)||prior==="0"&&
+       !(batch==="initial"&&state.realStageIndex===0)){
+      state.realError="กรุณาใส่ GitHub Run ID ของขั้นที่ผ่านก่อนหน้า";
+      renderPipeline();return;
+    }
+    if(!state.realAdminKey){
+      state.realAdminKey=window.prompt("รหัสผู้ควบคุม Pipeline (Admin Key จาก Vercel Settings) — ไม่ส่งเข้า ChatGPT")||"";
+    }
+    if(!state.realAdminKey){state.realError="ยังไม่ได้กรอกรหัสผู้ควบคุม";renderPipeline();return;}
+    state.realError="";state.realStatus="submitting";
+    renderPipeline();
+    try{
+      const response=await fetch("/api/lab-dispatch",{
+        method:"POST",headers:{"Content-Type":"application/json",
+          "X-Classroom-Admin-Key":state.realAdminKey},
+        body:JSON.stringify({stage,batch,previous_run_id:prior})
+      });
+      const result=await response.json();
+      if(!response.ok||!result.accepted)
+        throw Error(result.error||"GitHub ไม่รับคำสั่งรัน");
+      state.realStartedAt=new Date().toISOString();
+      state.realStatus="queued";state.realUrl=result.workflow_url;
+      state.realRunId=null;
+      renderPipeline();
+    }catch(error){
+      state.realStatus="";state.realError=error.message||"สั่งรันไม่ได้";
+      if(state.realError.includes("สิทธิ์"))state.realAdminKey="";
+      renderPipeline();
+    }
+  }
+
+  async function checkRealRun(){
+    if(!state.realReady||!state.realStartedAt)return;
+    const stage=LAB_STEPS[state.realStageIndex]?.id,batch=state.realBatch;
+    const prior=state.realStageIndex===0&&batch==="initial"?"0":
+      state.realPreviousRunId;
+    try{
+      const url="/api/lab-dispatch?"+new URLSearchParams({
+        stage,batch,previous_run_id:String(prior),since:state.realStartedAt
+      });
+      const response=await fetch(url,{headers:{
+        "X-Classroom-Admin-Key":state.realAdminKey},cache:"no-store"});
+      const data=await response.json();
+      if(!response.ok)throw Error(data.error||"ติดตามงานไม่ได้");
+      if(data.found){
+        state.realRunId=data.run_id;state.realStatus=data.status;
+        state.realUrl=data.url;
+        if(data.status==="completed"){
+          state.realStatus=data.conclusion==="success"?"success":"failure";
+          if(state.realStatus==="success")state.realPreviousRunId=String(data.run_id);
+        }
+      }
+      renderPipeline();
+    }catch(error){state.realError=error.message||"ไม่สามารถตรวจสถานะได้";renderPipeline();}
+  }
+
+  function renderRealRunner(root){
+    const content=box("lab-reference-body");
+    content.append(notice("ส่วนนี้สั่ง GitHub Actions ให้รัน Python Pipeline จริงทีละ Stage และส่งต่อ Workspace ผ่าน Artifact ไม่ใช่การ Replay หลักฐานเก่า"));
+    if(!state.realConfigChecked)content.append(small("กำลังตรวจสิทธิ์การสั่งงาน…"));
+    else if(!state.realReady)content.append(notice(
+      "ยังไม่เปิดระบบสั่งงานจริงบน Vercel Preview: ต้องตั้งค่า CLASSROOM_GITHUB_TOKEN และ CLASSROOM_LAB_ADMIN_KEY ฝั่ง Server เท่านั้น ขณะนี้ใช้โหมดตรวจหลักฐานด้านล่างได้",true));
+    const phase=state.neonRunStatus?.state?.phase;
+    const expected=state.realBatch==="initial"?"EMPTY":"RUN1_READY";
+    if(phase!==expected)content.append(notice(
+      "Neon ปัจจุบันเป็น "+(phase||"ไม่ทราบสถานะ")+
+      " · การรัน "+state.realBatch+" ต้องอยู่ในสถานะ "+expected+
+      " เท่านั้น ไม่ Reset หรือเขียนทับ 900 ออเดอร์โดยอัตโนมัติ",true));
+    content.append(box("two-col",
+      chooseField("เลือก Batch",
+        [["initial","Run 1 · Initial"],["incremental","Run 2 · Incremental"]],
+        state.realBatch,v=>{state.realBatch=v;state.realStageIndex=0;
+          state.realStatus="";state.realStartedAt="";state.realRunId=null;
+          state.realPreviousRunId="";renderPipeline();}),
+      chooseField("ขั้นตอนที่จะประมวลผล",
+        LAB_STEPS.map((step,i)=>[String(i),String(i+1)+". "+step.title]),
+        String(state.realStageIndex),v=>{state.realStageIndex=Number(v);
+          state.realStatus="";state.realStartedAt="";state.realRunId=null;
+          renderPipeline();})));
+    if(!(state.realBatch==="initial"&&state.realStageIndex===0)){
+      const field=node("label","field");
+      const input=node("input");input.type="text";
+      input.placeholder="Run ID ของ Step ที่เสร็จแล้ว";input.value=state.realPreviousRunId;
+      input.addEventListener("input",()=>{state.realPreviousRunId=input.value.trim();});
+      field.append(node("span","","GitHub Run ID ก่อนหน้า"),input);
+      content.append(field);
+    }
+    content.append(small("ก่อนรัน: "+LAB_STEPS[state.realStageIndex].input+
+      " · หลังรัน: "+LAB_STEPS[state.realStageIndex].output));
+    const controls=box("lab-actions");
+    const run=node("button","button button-primary","▶ Execute Real ETL Step");
+    run.type="button";run.disabled=!state.realReady||phase!==expected||
+      ["queued","in_progress","submitting"].includes(state.realStatus);
+    run.addEventListener("click",dispatchRealStep);controls.append(run);
+    if(state.realStartedAt){
+      const refresh=node("button","button button-outline","↻ เช็ก GitHub Run");
+      refresh.type="button";refresh.addEventListener("click",checkRealRun);
+      controls.append(refresh);
+    }
+    if(state.realStatus==="success"&&state.realStageIndex<4){
+      const next=node("button","button button-outline","เลือก Step ถัดไป →");
+      next.type="button";next.addEventListener("click",()=>{
+        state.realStageIndex++;state.realStatus="";state.realStartedAt="";
+        state.realRunId=null;renderPipeline();
+      });controls.append(next);
+    }
+    content.append(controls);
+    if(state.realError)content.append(notice(state.realError,true));
+    if(state.realStatus)content.append(box("pipeline-meta",
+      small("GitHub status: "+state.realStatus),
+      small("GitHub Run ID: "+(state.realRunId||"กำลังจัดคิว")),
+      small("Step ผ่านได้เมื่อ GitHub workflow conclusion = success เท่านั้น")));
+    if(state.realUrl)content.append(link("เปิด GitHub Actions และดู Log",state.realUrl));
+    content.append(small("Worker ใช้ Workflow: classroom-real-step.yml · ไม่สั่ง Reset และไม่แตะ Analytics"));
+    root.append(panel("รัน ETL จริง · ทีละขั้น",
+      "แยกจากการตรวจหลักฐานย้อนหลัง • ต้องมีสิทธิ์ผู้ควบคุมและสถานะ Neon ที่ถูกต้อง",
+      content));
+  }
+
   function renderPipeline(){
     const root=$("#app");root.replaceChildren();
     const live=state.neonRunStatus;
@@ -661,13 +796,15 @@
         node("span","lab-kicker","INTERACTIVE PIPELINE LAB · SOURCE-BACKED"),
         node("h2","lab-heading","กดตรวจทีละขั้น เห็นข้อมูลก่อนและหลัง"),
         node("p","lab-description",
-          "ทดลองแบบ Colab: เลือก Step → Run → ดู Input, Process, Output และผล PASS/FAIL จาก Neon และไฟล์บน Cloud จริง")),
+          "สองโหมดแยกกัน: สั่งรัน ETL จริงแบบทีละขั้น และตรวจหลักฐานเก่าแบบอ่านอย่างเดียว พร้อม Input → Process → Output")),
       box("lab-hero-aside",
         node("span","lab-hero-tag","โหมดปลอดภัย · ตรวจซ้ำหลักฐานจริง"),
         node("strong","",summary?.phase||"กำลังอ่านสถานะ"),
         small(summary?"รอบข้อมูล "+summary.cycle_number+" · "+money(live.counts.orders)+" ออเดอร์":"กำลังเชื่อม Neon")));
     root.append(hero);
-    root.append(notice("Run Step จะเรียก API เพื่ออ่านและตรวจข้อมูลจริงทุกครั้ง แต่ไม่สั่ง GitHub Actions ทำ Ingest/Transform/Load ใหม่ และไม่แก้ 900 ออเดอร์เดิม · การเริ่ม Pipeline รอบใหม่ต้องมีระบบสั่งงานที่ยืนยันสิทธิ์ผู้ใช้"));
+    renderRealRunner(root);
+    root.append(notice("ส่วนตรวจหลักฐานด้านล่างเป็น Read-only Verification ไม่ใช่ ETL ใหม่; ใช้ Execute Real ETL Step ด้านบนเท่านั้นเมื่อมีสิทธิ์และสถานะฐานข้อมูลพร้อม"));
+    root.append(node("h3","lab-subheading","ตรวจหลักฐานจากการรันที่ผ่านมา (Read-only Verification)"));
     const progress=box("lab-steps");
     LAB_STEPS.forEach((def,i)=>{
       const result=state.labResults[def.id];
@@ -708,7 +845,7 @@
     main.append(io,node("p","lab-footnote",def.note));
     const actionRow=box("lab-actions");
     const run=node("button","button button-primary",state.labBusy?"กำลังตรวจข้อมูล…":
-      (completed?"↻ Run Step "+(state.labStage+1)+" อีกครั้ง":"▶ Run Step "+(state.labStage+1)));
+      (completed?"↻ ตรวจหลักฐาน Step "+(state.labStage+1)+" อีกครั้ง":"▷ ตรวจหลักฐาน Step "+(state.labStage+1)));
     run.type="button";
     run.disabled=!unlocked||state.labBusy||state.neonStatus!=="ready";
     run.addEventListener("click",runLabStage);
@@ -840,6 +977,7 @@
     $("#modelFilterWrap").classList.toggle("hidden",value!=="ml");
     render();
     if(value==="pipeline" && state.neonStatus==="not_loaded")loadNeonEvidence();
+    if(value==="pipeline" && !state.realConfigChecked)loadRealCapabilities();
   }
   function exportCsv(){
     const rows=state.rows;if(!rows.length)return;

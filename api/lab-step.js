@@ -152,13 +152,18 @@ export default async function handler(req,res){
       const stdFile=await archive(sql,"LAKE_STANDARDIZED","lake/standardized/incremental/Fact_Sales_Order_Item.parquet");
       const raw=await parquetPreview(s3,rawFile);
       const std=await parquetPreview(s3,stdFile);
+      const checkpoint=await jsonArchive(s3,await archive(sql,"REPORT","lake/control/checkpoint_incremental.json"));
+      const changed=Number(checkpoint?.metrics?.transform?.result?.changed_sales);
       const totals=await paidTotals(sql);
-      out.input={label:"Raw Fact_Order_Items",records:raw.records,preview:raw.preview,origin:raw.file};
-      out.process=["อ่าน Raw Order Items จากไฟล์ Parquet","อ่าน Standardized Sales Fact จากไฟล์ Parquet","ยืนยันว่า Standardized มีเฉพาะรายการขายที่ชำระแล้ว"];
-      out.output={...std,origin:"VERIFIED_REBUILT_STANDARDIZED_PARQUET"};
-      out.metrics=[{label:"Raw order-item rows",value:raw.records},{label:"Standardized paid items",value:std.records}];
-      out.checks=[{label:"จำนวน Sales Fact เท่ากับ Paid Items ใน Neon",pass:std.records===totals.paid_items}];
-      out.provenance="ARCHIVED_RECONSTRUCTED_TRANSFORM_OUTPUT_NOT_NEW_ETL";
+      out.input={label:"Raw Fact_Order_Items (Snapshot ทั้งหมด)",records:raw.records,preview:raw.preview,origin:raw.file};
+      out.process=["อ่าน Raw Order Items จากไฟล์ Parquet","อ่าน Standardized Delta รอบ Incremental","เทียบจำนวน Changed Sales กับ Checkpoint จริง ไม่เอา Delta ไปเทียบยอดสะสม"];
+      out.output={...std,origin:"REBUILT_INCREMENTAL_STANDARDIZED_DELTA",
+        note:"ไฟล์นี้มีเฉพาะรายการที่เปลี่ยนใน Incremental (Delta) ไม่ใช่ยอดสะสมใน Warehouse"};
+      out.metrics=[{label:"Raw Snapshot ทั้งหมด",value:raw.records},{label:"Changed Sales (Incremental)",value:std.records},
+        {label:"Paid Items สะสมใน Neon",value:totals.paid_items}];
+      out.checks=[{label:"Delta Sales Fact เท่ากับ Checkpoint",pass:Number.isFinite(changed)&&std.records===changed},
+        {label:"Delta ไม่มากกว่ายอด Paid Items สะสม",pass:std.records<=totals.paid_items}];
+      out.provenance="REBUILT_INCREMENTAL_DELTA_VS_ACTUAL_CHECKPOINT";
     } else if(stage==="load"){
       const warehouse=await archive(sql,"WAREHOUSE","er2.duckdb");
       const stdFile=await archive(sql,"LAKE_STANDARDIZED","lake/standardized/incremental/Fact_Sales_Order_Item.parquet");
@@ -170,16 +175,19 @@ export default async function handler(req,res){
       const byteCount=Number(head.ContentLength);
       out.input={label:"Standardized Fact_Sales_Order_Item",records:std.records,
         preview:std.preview};
-      out.process=["ตรวจสอบไฟล์ DuckDB ที่เก็บถาวร","ตรวจขนาดไฟล์จริงกับรายการใน Neon Control","อ่าน Validation Report ของ Warehouse ที่ผ่านก่อนเก็บถาวร"];
+      const totals=await paidTotals(sql);
+      out.process=["ตรวจสอบไฟล์ DuckDB ที่เก็บถาวร","ตรวจขนาดไฟล์จริงกับรายการใน Neon Control",
+        "เทียบ Sales Fact สะสมกับ Paid Items สะสมจาก Neon (ไม่เทียบกับ Incremental Delta)"];
       out.output={table:"Fact_Sales_Order_Item",records:report.warehouse_sales_item_count,
         preview:[],origin:"WAREHOUSE_VERIFIED_BY_ARCHIVED_REPORT",
         file:warehouse.artifact_uri,
-        note:"ตัวอย่างด้านบนมาจาก Standardized; ยังไม่ได้ Query ตาราง DuckDB โดยตรงจาก API"};
+        note:"ตัวอย่าง Input ด้านบนคือ Incremental Delta; Warehouse เก็บยอดสะสมทั้งหมด 1,147 แถว · ยังไม่ได้ Query ตัวอย่างแถว DuckDB ตรงจาก API"};
       out.metrics=[{label:"Warehouse file",value:byteCount,unit:"bytes"},
-        {label:"Sales Fact rows",value:Number(report.warehouse_sales_item_count)}];
+        {label:"Sales Fact สะสม",value:Number(report.warehouse_sales_item_count)},
+        {label:"Incremental Delta",value:std.records}];
       out.checks=[
         {label:"DuckDB file exists and byte count matches archive",pass:byteCount===Number(warehouse.size_bytes)},
-        {label:"Warehouse row count matches standardized",pass:Number(report.warehouse_sales_item_count)===std.records}
+        {label:"Warehouse สะสมเท่ากับ Paid Items ใน Neon",pass:Number(report.warehouse_sales_item_count)===totals.paid_items}
       ];
       out.provenance="REBUILT_DUCKDB_WITH_VERIFIED_ARCHIVE_REPORT";
     } else {

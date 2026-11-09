@@ -171,9 +171,14 @@
       const margin=profit===null||profit===undefined||!Number.isFinite(Number(profit))||
         !(gross>0)?null:100*Number(profit)/gross;
       const gap=margin===null||benchmarkPct===null?null:margin-benchmarkPct;
+      const targetAmount=gross>0&&benchmarkPct!==null?gross*benchmarkPct/100:null;
+      const shortfall=profit===null||targetAmount===null?null:
+        Math.max(0,targetAmount-Number(profit));
       return {...x,
         pre_group_protection_pct:margin,
         protection_gap_pp:gap===null?"—":(gap>=0?"+":"")+money(gap,1)+" pp",
+        target_profit_thb:targetAmount,
+        pre_group_shortfall_thb:shortfall,
         profit_risk:gap===null?"NO_DATA":gap<0?"RISK":"CHECK"};
     }).sort((a,b)=>{
       const risk=x=>x.profit_risk==="RISK"?0:x.profit_risk==="NO_DATA"?2:1;
@@ -194,12 +199,12 @@
         ["net_revenue","ยอดขายสุทธิ"],["gross_reference_sales","ยอดราคาเต็ม"],
         ["contribution_before_group_costs","กำไรก่อนต้นทุนกลุ่ม"],
         ["pre_group_protection_pct","Margin ก่อนต้นทุนกลุ่ม"],
-        ["protection_gap_pp","Gap จาก 10%"],["profit_risk","สถานะ"]];
+        ["protection_gap_pp","Gap จาก 10%"],["pre_group_shortfall_thb","เงินขาดก่อนหักต้นทุนกลุ่ม"],["profit_risk","สถานะ"]];
       const skuFmt={net_revenue:{kind:"money",align:"text-right"},
         gross_reference_sales:{kind:"money",align:"text-right"},
         contribution_before_group_costs:{kind:"money",align:"text-right"},
         pre_group_protection_pct:{kind:"percent",align:"text-right"},
-        protection_gap_pp:{align:"text-right"},profit_risk:{kind:"risk"}};
+        protection_gap_pp:{align:"text-right"},pre_group_shortfall_thb:{kind:"money",align:"text-right"},profit_risk:{kind:"risk"}};
       const selected=skuRows.find(x=>x.sku_id===state.sku);
       const detail=selected?box("scenario-results",
         box("",fashionThumb(),small("รหัส SKU "+selected.sku_id+" · "+title(selected.product_group_id)),
@@ -210,6 +215,8 @@
             " · ค่านายหน้า ฿"+money(selected.affiliate_cost)),
           small("กำไรก่อน Ads / Sample / Claim ฿"+money(selected.contribution_before_group_costs)),
           node("strong","accent-number","Margin "+pct(selected.pre_group_protection_pct)+" · เกณฑ์ "+pct(benchmarkPct,0)),
+          small("กำไรขั้นต่ำที่ต้องเหลือก่อนเทียบต้นทุนกลุ่ม ฿"+money(selected.target_profit_thb)+
+            " · เงินขาดขั้นต่ำที่พบ ฿"+money(selected.pre_group_shortfall_thb)),
           small("Gap "+selected.protection_gap_pp+" · "+(selected.profit_risk==="RISK"?
             "เสี่ยงต่ำกว่าเกณฑ์ตั้งแต่ก่อนหัก Ads":
             selected.profit_risk==="CHECK"?"ต้องตรวจต้นทุนกลุ่มเพิ่มเติม":"ไม่สามารถคำนวณได้"))),
@@ -222,7 +229,8 @@
           box("lab-meta",
             statusLabel("READY"),
             small("เสี่ยงต่ำกว่าเส้นอ้างอิง: "+money(skuRows.filter(x=>x.profit_risk==="RISK").length)+" SKU"),
-            small("ต้องตรวจต้นทุนระดับกลุ่ม: "+money(skuRows.filter(x=>x.profit_risk==="CHECK").length)+" SKU")),
+            small("ต้องตรวจต้นทุนระดับกลุ่ม: "+money(skuRows.filter(x=>x.profit_risk==="CHECK").length)+" SKU"),
+            small("ยอดขาดขั้นต่ำก่อนต้นทุนกลุ่ม ฿"+money(skuRows.reduce((acc,x)=>acc+Number(x.pre_group_shortfall_thb||0),0)))),
           box("two-col",picker,chooseField("เรียงลำดับตาราง SKU",
             [["lowest_margin","Margin ต่ำสุดก่อน"],["highest_sales","ยอดขายสูงสุดก่อน"]],
             state.skuSort,v=>{state.skuSort=v;renderBusiness();})),

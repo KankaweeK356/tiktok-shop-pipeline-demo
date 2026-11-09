@@ -2,7 +2,7 @@
 (function () {
   "use strict";
   const $ = s => document.querySelector(s);
-  const state = { data:null, evidence:null, evidenceLayer:"source", evidenceTable:"", neonStatus:"not_loaded", neonTables:[], neonTable:"", neonData:null, neonError:"", neonRunStatus:null, neonArtifactType:"ALL", labStage:0, labTable:"Fact_Orders", labResults:{}, labBusy:false, labError:"", labLog:[], realReady:false, realConfigChecked:false, realLabPhase:"UNKNOWN", realLabOrders:null, realBatch:"initial", realStageIndex:0, realPreviousRunId:"", realRunId:null, realStatus:"", realUrl:"", realError:"", realStartedAt:"", realAdminKey:"", realEvidence:null, savedLabManifest:null, savedLabReceipt:null, savedLabSelected:"", savedLabLoading:false, pipelineTab:"flow", notebookBatch:"initial", notebookStage:"ingest", labNeon:null, labNeonTable:null, labNeonBusy:false, labNeonError:"", errorCase:"E01", errorReplayed:false, errorLabOpen:false, view:"business", month:"", group:"ALL", sku:"", skuSort:"lowest_margin", model:"", week:"", replay:false, rows:[] };
+  const state = { data:null, evidence:null, evidenceLayer:"source", evidenceTable:"", neonStatus:"not_loaded", neonTables:[], neonTable:"", neonData:null, neonError:"", neonRunStatus:null, neonArtifactType:"ALL", labStage:0, labTable:"Fact_Orders", labResults:{}, labBusy:false, labError:"", labLog:[], realReady:false, realConfigChecked:false, realLabPhase:"UNKNOWN", realLabCycle:null, realLabOrders:null, realBatch:"initial", realStageIndex:0, realPreviousRunId:"", realRunId:null, realStatus:"", realUrl:"", realError:"", realStartedAt:"", realAdminKey:"", realEvidence:null, resetStatus:"", resetSince:"", resetUrl:"", resetError:"", savedLabManifest:null, savedLabReceipt:null, savedLabSelected:"", savedLabLoading:false, pipelineTab:"flow", notebookBatch:"initial", notebookStage:"ingest", labNeon:null, labNeonTable:null, labNeonBusy:false, labNeonError:"", errorCase:"E01", errorReplayed:false, errorLabOpen:false, view:"business", month:"", group:"ALL", sku:"", skuSort:"lowest_margin", model:"", week:"", replay:false, rows:[] };
   const names = {
     business:["ภาพรวมธุรกิจ","ยอดขาย กำไร และ KPI ของร้านเสื้อผ้าผู้หญิง","ภาพรวมธุรกิจ"],
     pipeline:["Test Pipeline","จาก Source ผ่าน Database และ Data Lake สู่ Warehouse","Test Pipeline"],
@@ -581,6 +581,7 @@
       small(item.label),statusLabel(item.pass?"PASS":"FAIL"))));
     wrap.append(summary);
     const input=result.input;
+    if(input?.files?.length)wrap.append(small("ไฟล์ Source ที่อ่านจริง: "+input.files.length+" ไฟล์"));
     if(input?.preview?.length){
       const columns=Object.keys(input.preview[0]).slice(0,6).map(key=>[key,key]);
       wrap.append(node("h3","lab-subheading","Input · ตัวอย่างก่อนประมวลผล"),
@@ -594,6 +595,9 @@
     }else if(result.output?.note){
       wrap.append(notice(result.output.note,true));
     }
+    if(result.output?.tables?.length)wrap.append(
+      node("h3","lab-subheading","ตารางและจำนวนข้อมูลที่เกิดขึ้นในขั้นนี้"),
+      dataTable([["name","ตาราง / ไฟล์"],["rows","จำนวนแถว"]],result.output.tables));
     if(result.output?.file){
       wrap.append(small("ไฟล์หลักฐาน: "+result.output.file.split("/").pop()));
     }
@@ -660,6 +664,7 @@
       const data=await response.json();
       state.realReady=response.ok&&data.ready===true;
       state.realLabPhase=data.lab?.phase||"UNKNOWN";
+      state.realLabCycle=data.lab?.cycle??null;
       state.realLabOrders=data.lab?.orders??null;
     }catch(_error){state.realReady=false;}
     state.realConfigChecked=true;
@@ -696,6 +701,7 @@
       state.realStatus="queued";state.realUrl=result.workflow_url;
       state.realRunId=null;
       renderPipeline();
+      window.setTimeout(checkRealRun,4000);
     }catch(error){
       state.realStatus="";state.realError=error.message||"สั่งรันไม่ได้";
       if(state.realError.includes("สิทธิ์"))state.realAdminKey="";
@@ -735,6 +741,9 @@
         }
       }
       renderPipeline();
+      if(["queued","in_progress"].includes(state.realStatus))
+        window.setTimeout(checkRealRun,4000);
+      if(state.realStatus==="success"&&stage==="validate")loadRealCapabilities();
     }catch(error){state.realError=error.message||"ไม่สามารถตรวจสถานะได้";renderPipeline();}
   }
 
@@ -974,6 +983,44 @@
     ["load","Data Lake → Warehouse","โหลดข้อมูลที่เปลี่ยนไปยัง DuckDB และปรับ Mart"],
     ["validate","ตรวจผลทั้งเส้นทาง","เทียบจำนวนและยอดระหว่างฐานข้อมูลต้นทางกับ Warehouse"]
   ];
+  async function requestNewCycle(){
+    if(!state.realReady||state.realLabPhase!=="RUN2_READY"||!state.realLabCycle)return;
+    const confirmation=window.prompt("พิมพ์ RESET-DEMO-DATA เพื่อเคลียร์เฉพาะข้อมูลใน Lab นี้และเริ่มรอบใหม่");
+    if(confirmation!=="RESET-DEMO-DATA")return;
+    if(!state.realAdminKey)state.realAdminKey=window.prompt("รหัสผู้ควบคุม Pipeline")||"";
+    if(!state.realAdminKey)return;
+    state.resetStatus="submitting";state.resetError="";renderPipeline();
+    try{
+      const response=await fetch("/api/lab-reset",{method:"POST",headers:{"Content-Type":"application/json",
+        "X-Classroom-Admin-Key":state.realAdminKey},body:JSON.stringify({confirmation,
+          expected_cycle:Number(state.realLabCycle)})});
+      const data=await response.json();
+      if(!response.ok||!data.accepted)throw Error(data.error||"ส่งคำสั่งเคลียร์ไม่ได้");
+      state.resetSince=new Date().toISOString();state.resetUrl=data.workflow_url;
+      state.resetStatus="queued";renderPipeline();
+      window.setTimeout(checkNewCycle,4000);
+    }catch(error){state.resetStatus="";state.resetError=error.message;renderPipeline();}
+  }
+  async function checkNewCycle(){
+    if(!state.resetSince)return;
+    try{
+      const query=new URLSearchParams({cycle:String(state.realLabCycle),since:state.resetSince});
+      const response=await fetch("/api/lab-reset?"+query,{headers:{
+        "X-Classroom-Admin-Key":state.realAdminKey},cache:"no-store"});
+      const data=await response.json();
+      if(!response.ok)throw Error(data.error||"ตรวจสถานะไม่ได้");
+      if(data.found){state.resetStatus=data.status==="completed"?
+        (data.conclusion==="success"?"success":"failure"):data.status;
+        state.resetUrl=data.url||state.resetUrl;}
+      if(state.resetStatus==="success"){
+        state.realPreviousRunId="";state.realRunId=null;state.realStatus="";
+        state.realEvidence=null;state.notebookBatch="initial";state.notebookStage="ingest";
+        state.labNeon=null;state.labNeonTable=null;loadRealCapabilities();
+      }
+      renderPipeline();
+      if(["queued","in_progress"].includes(state.resetStatus))window.setTimeout(checkNewCycle,4000);
+    }catch(error){state.resetError=error.message;renderPipeline();}
+  }
   async function loadLabNeon(schema="",table=""){
     if(state.labNeonBusy)return;
     state.labNeonBusy=true;state.labNeonError="";renderPipeline();
@@ -990,7 +1037,7 @@
     const root=$("#app");root.replaceChildren();
     const tabs=box("notebook-tabs");
     [["flow","ขั้นตอนการรัน"],["neon","Neon Database"],["files","Data Lake และ Warehouse"],
-      ["errors","ทดสอบข้อผิดพลาด"],["operate","สั่งรันจริง"]].forEach(([id,label])=>{
+      ["errors","ทดสอบข้อผิดพลาด"]].forEach(([id,label])=>{
       const button=node("button","notebook-tab"+(state.pipelineTab===id?" is-active":""),label);
       button.type="button";button.setAttribute("aria-pressed",String(state.pipelineTab===id));
       button.addEventListener("click",()=>{state.pipelineTab=id;renderPipeline();
@@ -998,9 +1045,9 @@
     });
     root.append(tabs);
     if(state.pipelineTab==="neon"){
-      root.append(notice("ข้อมูลสดจาก branch classroom-step-lab · Database tiktok_demo · อ่านอย่างเดียว"));
-      root.append(link("เปิด classroom-step-lab ใน Neon Console (ต้องมีสิทธิ์)",
-        "https://console.neon.tech/app/projects/hidden-leaf-09169842/branches/br-nameless-truth-bex5d1wp?database=tiktok_demo"));
+      root.append(notice("ข้อมูลสดจาก branch classroom-live-run-lab · Database tiktok_demo · อ่านอย่างเดียว"));
+      root.append(link("เปิด Lab ที่กำลังรันใน Neon Console (ต้องมีสิทธิ์)",
+        "https://console.neon.tech/app/projects/hidden-leaf-09169842/branches/br-sweet-term-bepzkkrb?database=tiktok_demo"));
       if(state.labNeonBusy)root.append(small("กำลังอ่านรายชื่อตาราง…"));
       if(state.labNeonError)root.append(notice(state.labNeonError,true));
       const tables=state.labNeon?.tables||[];
@@ -1031,15 +1078,14 @@
       state.errorLabOpen=true;renderErrorRecoveryLab(root);return;
     }
     if(state.pipelineTab==="operate"){
-      root.append(notice("การสั่งรันจริงต้องใช้สิทธิ์ผู้ควบคุมและสถานะ Lab ที่ถูกต้อง ขณะนี้ชุดข้อมูลผ่าน Run 2 แล้ว"));
+      root.append(notice("Lab ใหม่เริ่มจากฐานข้อมูลว่าง ข้อมูลต้นทางอยู่ในไฟล์ Source; การกด Run 1 และ Run 2 จะประมวลผลจริงผ่าน GitHub Actions"));
       renderRealRunner(root);return;
     }
     const phase=state.realLabPhase;
     root.append(box("notebook-intro",
       node("h2","lab-heading","Source → Database → Data Lake → Warehouse"),
       node("p","lab-description","แต่ละ Run เดินครบทั้งเส้นทาง Run 2 เติมและอัปเดตข้อมูลต่อจาก Run 1"),
-      small(phase==="RUN2_READY"?"ชุดปัจจุบัน: Run 1 และ Run 2 เสร็จแล้ว · "+money(state.realLabOrders)+" ออเดอร์":
-        "สถานะ Lab: "+(phase==="UNKNOWN"?"กำลังตรวจสอบ":phase))));
+      small("Lab ที่ใช้รัน: "+(phase==="UNKNOWN"?"กำลังตรวจสอบ":phase)+" · "+money(state.realLabOrders||0)+" ออเดอร์")));
     const batchPicker=box("notebook-runs");
     [["initial","Run 1 · ข้อมูลตั้งต้น","800 ออเดอร์"],
       ["incremental","Run 2 · เติมข้อมูลต่อ","800 → 900 ออเดอร์"]].forEach(([id,label,detail])=>{
@@ -1049,7 +1095,7 @@
       button.addEventListener("click",()=>{state.notebookBatch=id;state.notebookStage="ingest";
         state.savedLabReceipt=null;state.savedLabSelected="";renderPipeline();});batchPicker.append(button);
     });root.append(batchPicker);
-    root.append(node("p","notebook-caption","เลือกขั้นด้านล่างเพื่อเปิด Input และผลลัพธ์ที่บันทึกจากการรันจริง"));
+    root.append(node("p","notebook-caption","กดรันทีละขั้น แล้วดูผลที่เกิดจากการกดครั้งนี้เมื่อขั้นนั้นเสร็จ"));
     const entries=state.savedLabManifest?.runs?.filter(x=>x.batch===state.notebookBatch)||[];
     NOTEBOOK_STAGES.forEach(([id,title,description],index)=>{
       const entry=entries.find(x=>x.stage===id),active=state.notebookStage===id;
@@ -1058,48 +1104,81 @@
       head.setAttribute("aria-expanded",String(active));
       head.append(node("span","notebook-number",String(index+1)),
         box("notebook-cell-title",node("strong","",title),small(description)),
-        node("span","notebook-cell-state",entry?"ผ่านแล้ว · ดูผล":"ยังไม่มีหลักฐาน"));
+        node("span","notebook-cell-state",entry?"มีหลักฐานจากรอบก่อน":"ยังไม่มีหลักฐาน"));
       head.addEventListener("click",()=>{
         state.notebookStage=id;state.savedLabReceipt=null;renderPipeline();
-        if(entry)selectSavedLabStage(entry);
       });cell.append(head);
       if(active){
         const body=box("notebook-cell-body");
         body.append(small("Input: "+(index===0?"Source CSV ชุด "+(state.notebookBatch==="initial"?"ตั้งต้น":"ข้อมูลใหม่"):
           index===1?"25 ตารางใน Neon":index===2?"Raw Parquet":index===3?"Standardized Parquet":"Database และ Warehouse")));
+        body.append(small("ขั้นนี้ทำอะไร: "+description));
+        const expected=state.notebookBatch==="initial"?"EMPTY":"RUN1_READY";
+        const previousReady=index===0&&state.notebookBatch==="initial"||
+          /^(?:[1-9][0-9]{0,18})$/.test(state.realPreviousRunId);
+        const canRun=state.realReady&&state.realLabPhase===expected&&previousReady;
+        const selectedLive=state.realBatch===state.notebookBatch&&state.realStageIndex===index;
+        const liveBusy=selectedLive&&["submitting","queued","in_progress"].includes(state.realStatus);
+        const real=node("button","button button-primary",liveBusy?"กำลังรันขั้นนี้…":"▶ รันขั้นนี้");
+        real.type="button";real.disabled=!canRun||liveBusy;
+        real.addEventListener("click",()=>{
+          if(state.realBatch!==state.notebookBatch||state.realStageIndex!==index){
+            state.realBatch=state.notebookBatch;state.realStageIndex=index;
+            state.realStatus="";state.realEvidence=null;state.realStartedAt="";
+          }
+          dispatchRealStep();
+        });body.append(real);
+        if(selectedLive&&state.realStatus){
+          body.append(small("สถานะการรันจริง: "+state.realStatus+
+            (state.realRunId?" · GitHub Run #"+state.realRunId:"")));
+          if(liveBusy){
+            const refresh=node("button","button button-outline","ตรวจสถานะการรัน");
+            refresh.type="button";refresh.addEventListener("click",checkRealRun);body.append(refresh);
+          }
+          if(state.realStatus==="success"&&state.realEvidence)
+            body.append(box("notebook-output",node("strong","","ผลจากการรันครั้งนี้"),
+              renderLabResult(state.realEvidence)));
+          if(state.realError)body.append(notice(state.realError,true));
+          if(state.realUrl)body.append(link("เปิด GitHub Actions และ Log",state.realUrl));
+        }
+        if(!canRun)body.append(small(!state.realReady?
+          "ยังสั่งรันไม่ได้: ต้องเปิดสิทธิ์ GitHub Actions และ Admin Key ใน Vercel ก่อน":
+          state.realLabPhase!==expected?"ขั้นนี้ต้องรอ Lab สถานะ "+expected+" (ตอนนี้ "+state.realLabPhase+")":
+          "ต้องรันขั้นก่อนหน้าให้สำเร็จ เพื่อส่งผลต่อให้ขั้นนี้"));
         if(entry){
-          if(state.savedLabLoading)body.append(small("กำลังอ่านผลที่บันทึกไว้…"));
+          const history=node("details","notebook-history");
+          history.open=state.savedLabReceipt?.batch===state.notebookBatch&&state.savedLabReceipt?.stage===id;
+          history.append(node("summary","","ดูผลรอบก่อน (หลักฐานที่บันทึกไว้)"));
+          const historyBody=box("notebook-history-body");
+          if(state.savedLabLoading)historyBody.append(small("กำลังอ่านผลรอบก่อน…"));
           else if(state.savedLabReceipt?.batch===state.notebookBatch&&state.savedLabReceipt?.stage===id){
             const receipt=state.savedLabReceipt;
-            body.append(box("notebook-output",node("strong","","ผลลัพธ์จากขั้นนี้ · ผ่านแล้ว"),
-              renderLabResult(receipt.evidence)));
-            body.append(link("ดูการรันและ Log บน GitHub", "https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/actions/runs/"+receipt.git_run_id));
+            historyBody.append(renderLabResult(receipt.evidence),
+              link("ดู GitHub Run รอบก่อน","https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/actions/runs/"+receipt.git_run_id));
           }else{
-            const open=node("button","button button-outline","ดูผลที่รันไว้แล้ว");open.type="button";
-            open.addEventListener("click",()=>selectSavedLabStage(entry));body.append(open);
+            const open=node("button","button button-outline","เปิดหลักฐานเดิม");
+            open.type="button";open.addEventListener("click",()=>selectSavedLabStage(entry));historyBody.append(open);
           }
-        }else body.append(notice("ยังไม่มีหลักฐานของขั้นนี้ในชุดที่เลือก",true));
-        const expected=state.notebookBatch==="initial"?"EMPTY":"RUN1_READY";
-        const canRun=state.realReady&&state.realLabPhase===expected;
-        const real=node("button","button button-primary","รันขั้นนี้จริงผ่าน GitHub Actions");
-        real.type="button";real.disabled=!canRun;
-        real.addEventListener("click",()=>{
-          state.realBatch=state.notebookBatch;state.realStageIndex=index;
-          state.pipelineTab="operate";renderPipeline();
-        });body.append(real);
-        if(!canRun)body.append(small(state.realLabPhase==="RUN2_READY"?
-          "ชุดนี้รันครบสองรอบแล้ว การรันใหม่ต้องเตรียม Lab ว่างก่อน; ข้อมูลเดิมยังอยู่ครบ":
-          "รันจริงได้เมื่อ Lab อยู่สถานะ "+expected+" และสิทธิ์ผู้ควบคุมพร้อม"));
+          history.append(historyBody);body.append(history);
+        }
         if(id==="ingest")body.append(small("ขั้นนี้ sync ข้อมูลธุรกิจ 25 ตาราง; ตัวอย่างแถวด้านบนเป็นเพียง Fact_Orders ไม่ใช่ตารางทั้งหมด"),
-          link("เปิด classroom-step-lab ใน Neon Console",
-            "https://console.neon.tech/app/projects/hidden-leaf-09169842/branches/br-nameless-truth-bex5d1wp?database=tiktok_demo"));
+          link("เปิด Lab ที่กำลังรันใน Neon Console",
+            "https://console.neon.tech/app/projects/hidden-leaf-09169842/branches/br-sweet-term-bepzkkrb?database=tiktok_demo"));
         if(id==="extract")body.append(small("การตรวจความครบถ้วนระหว่าง Database กับ Raw ใช้จำนวนตารางและไฟล์ manifest"));
         if(id==="validate")body.append(small("ผลตรวจท้ายรอบเทียบ Paid Items และ Net Revenue ระหว่างฐานข้อมูลต้นทางกับ Warehouse"));
         cell.append(body);
       }
       root.append(cell);
     });
-    root.append(notice("ต้องการเริ่ม Run 1 ใหม่ต้องเตรียม Lab ว่างแยกต่างหาก; หน้านี้ไม่มีคำสั่งเคลียร์ข้อมูลอัตโนมัติ"));
+    root.append(notice("ข้อมูลต้นทางแยกอยู่ใน Source; เมื่อ Run 2 จบแล้ว จึงเคลียร์เฉพาะ Lab นี้ก่อนเริ่มรอบใหม่"));
+    if(phase==="RUN2_READY"){
+      const clear=node("button","button button-outline","เริ่มรอบใหม่ · เคลียร์ข้อมูล Lab");
+      clear.type="button";clear.disabled=!state.realReady||["submitting","queued","in_progress"].includes(state.resetStatus);
+      clear.addEventListener("click",requestNewCycle);root.append(clear);
+    }
+    if(state.resetStatus)root.append(small("สถานะการเคลียร์ Lab: "+state.resetStatus));
+    if(state.resetError)root.append(notice(state.resetError,true));
+    if(state.resetUrl)root.append(link("ดู Log การเคลียร์ใน GitHub Actions",state.resetUrl));
   }
 
   function renderML(){

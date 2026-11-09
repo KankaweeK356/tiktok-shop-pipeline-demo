@@ -1,0 +1,88 @@
+name: Classroom Real Pipeline - One Step
+
+on:
+  workflow_dispatch:
+    inputs:
+      batch:
+        description: "Source batch, initial or incremental"
+        type: choice
+        options: [initial, incremental]
+        required: true
+      stage:
+        description: "Run one real ETL stage"
+        type: choice
+        options: [ingest, extract, transform, load, validate]
+        required: true
+      previous_run_id:
+        description: "GitHub Actions run ID containing previous workspace (0 for initial ingest)"
+        required: true
+        type: string
+
+run-name: "Classroom ETL ${{ inputs.batch }} / ${{ inputs.stage }} / previous ${{ inputs.previous_run_id }}"
+
+permissions:
+  contents: read
+  actions: read
+  id-token: write
+
+concurrency:
+  group: neon-classroom-demo-exclusive
+  cancel-in-progress: false
+
+jobs:
+  run-one-stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: Validate stage predecessor
+        env:
+          STAGE: ${{ inputs.stage }}
+          BATCH: ${{ inputs.batch }}
+          PREVIOUS: ${{ inputs.previous_run_id }}
+        run: |
+          python - <<'PY'
+          import os
+          s=os.environ["STAGE"];b=os.environ["BATCH"];p=os.environ["PREVIOUS"]
+          assert s in ("ingest","extract","transform","load","validate")
+          assert b in ("initial","incremental")
+          assert p.isdigit()
+          assert (p=="0") == (b=="initial" and s=="ingest"), "Initial Ingest starts with 0; all other stages must restore a workspace"
+          PY
+      - uses: actions/download-artifact@v4
+        if: ${{ inputs.previous_run_id != '0' }}
+        with:
+          name: classroom-lab-workspace
+          path: output/classroom_lab
+          run-id: ${{ inputs.previous_run_id }}
+          github-token: ${{ github.token }}
+      - name: Exchange signed GitHub OIDC identity for LAB-only Neon credential
+        run: python -m pipeline.oidc_lab_auth
+      - name: Install ETL, Parquet, DuckDB and Neon driver
+        run: python -m pip install -r requirements-neon.txt
+      - name: Execute ONE real stage
+        env:
+          STAGE: ${{ inputs.stage }}
+          BATCH: ${{ inputs.batch }}
+        run: python -m pipeline.ci_lab_stage --stage "$STAGE" --batch "$BATCH"
+      - name: Preserve workspace and evidence for next stage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: classroom-lab-workspace
+          path: output/classroom_lab/
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Publish small step result and sample rows for Lab UI
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: classroom-lab-result
+          path: output/classroom_lab/last_step_result.json
+          if-no-files-found: warn
+          retention-days: 7
+

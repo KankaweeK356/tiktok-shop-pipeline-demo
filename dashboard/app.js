@@ -567,7 +567,8 @@
       statusLabel(result.success?"PASS":"FAIL"),
       small("ตรวจล่าสุด "+new Intl.DateTimeFormat("th-TH",{timeZone:"Asia/Bangkok",
         hour:"2-digit",minute:"2-digit",second:"2-digit"}).format(new Date(result.executed_at))),
-      small("อ้างอิง GitHub Run #"+result.historical_run)));
+      small(result.mode==="REAL_GITHUB_ACTIONS_STAGE"?
+        "ผลจาก GitHub Worker ที่ประมวลผลใหม่":"อ้างอิง GitHub Run #"+result.historical_run)));
     if(result.metrics?.length){
       wrap.append(box("lab-metrics",...result.metrics.map(m=>
         box("lab-stat",small(m.label),
@@ -597,7 +598,8 @@
       wrap.append(small("ไฟล์หลักฐาน: "+result.output.file.split("/").pop()));
     }
     wrap.append(node("div","lab-provenance",
-      "ชนิดผลลัพธ์: "+result.provenance+" · READ-ONLY EVIDENCE REPLAY"));
+      "ชนิดผลลัพธ์: "+result.provenance+
+      (result.mode==="REAL_GITHUB_ACTIONS_STAGE"?" · REAL PYTHON ETL EXECUTION":" · READ-ONLY EVIDENCE REPLAY")));
     return wrap;
   }
 
@@ -717,7 +719,17 @@
         state.realUrl=data.url;
         if(data.status==="completed"){
           state.realStatus=data.conclusion==="success"?"success":"failure";
-          if(state.realStatus==="success")state.realPreviousRunId=String(data.run_id);
+          if(state.realStatus==="success"){
+            state.realPreviousRunId=String(data.run_id);
+            try{
+              const evidenceResponse=await fetch("/api/lab-real-result?run_id="+encodeURIComponent(data.run_id),{
+                headers:{"X-Classroom-Admin-Key":state.realAdminKey},cache:"no-store"});
+              const receipt=await evidenceResponse.json();
+              if(evidenceResponse.ok&&receipt.mode==="REAL_GITHUB_ACTIONS_STAGE")
+                state.realEvidence=receipt.receipt;
+              else state.realError=receipt.error||"ไม่สามารถอ่าน Output จาก Worker";
+            }catch(err){state.realError=err.message||"อ่าน Artifact ไม่สำเร็จ";}
+          }
         }
       }
       renderPipeline();
@@ -740,7 +752,7 @@
       chooseField("เลือก Batch",
         [["initial","Run 1 · Initial"],["incremental","Run 2 · Incremental"]],
         state.realBatch,v=>{state.realBatch=v;state.realStageIndex=0;
-          state.realStatus="";state.realStartedAt="";state.realRunId=null;
+          state.realStatus="";state.realStartedAt="";state.realRunId=null;state.realEvidence=null;
           state.realPreviousRunId="";renderPipeline();}),
       chooseField("ขั้นตอนที่จะประมวลผล",
         LAB_STEPS.map((step,i)=>[String(i),String(i+1)+". "+step.title]),
@@ -771,10 +783,14 @@
       const next=node("button","button button-outline","เลือก Step ถัดไป →");
       next.type="button";next.addEventListener("click",()=>{
         state.realStageIndex++;state.realStatus="";state.realStartedAt="";
-        state.realRunId=null;renderPipeline();
+        state.realRunId=null;state.realEvidence=null;renderPipeline();
       });controls.append(next);
     }
     content.append(controls);
+    if(state.realEvidence&&state.realStatus==="success"){
+      content.append(node("h3","lab-subheading","ผลรันจริง · Input / Output จาก GitHub Worker"));
+      content.append(renderLabResult(state.realEvidence));
+    }
     if(state.realError)content.append(notice(state.realError,true));
     if(state.realStatus)content.append(box("pipeline-meta",
       small("GitHub status: "+state.realStatus),

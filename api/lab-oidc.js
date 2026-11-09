@@ -12,6 +12,7 @@ const REF = "refs/heads/feature/classroom-demo-evidence-foundation";
 const WORKFLOW_PATH = REPOSITORY + "/.github/workflows/classroom-real-step.yml@" + REF;
 const SMOKE_PATH = REPOSITORY + "/.github/workflows/classroom-oidc-smoke.yml@" + REF;
 const PUSH_PATH = REPOSITORY + "/.github/workflows/classroom-push-step.yml@" + REF;
+const RESET_PATH = REPOSITORY + "/.github/workflows/classroom-live-reset.yml@" + REF;
 const JWKS = createRemoteJWKSet(new URL(ISSUER + "/.well-known/jwks"));
 
 export default async function handler(req, res) {
@@ -37,7 +38,7 @@ export default async function handler(req, res) {
       String(payload.repository_id) === REPOSITORY_ID &&
       payload.ref === REF &&
       payload.ref_type === "branch" &&
-      [WORKFLOW_PATH, SMOKE_PATH, PUSH_PATH].includes(payload.workflow_ref) &&
+      [WORKFLOW_PATH, SMOKE_PATH, PUSH_PATH, RESET_PATH].includes(payload.workflow_ref) &&
       (payload.workflow_ref === SMOKE_PATH || payload.workflow_ref === PUSH_PATH ?
         payload.event_name === "push" : payload.event_name === "workflow_dispatch") &&
       payload.runner_environment === "github-hosted" &&
@@ -57,3 +58,4 @@ export default async function handler(req, res) {
     return res.status(403).json({ error: "Unverified GitHub identity" });
   }
 }
+

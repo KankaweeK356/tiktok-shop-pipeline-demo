@@ -131,7 +131,8 @@ export default async function handler(req,res){
       const priorStage=STAGES[index===0?4:index-1];
       const prefix="Classroom ETL "+(index===0?"initial":batch)+" / "+priorStage+" / ";
       if(prior.conclusion!=="success"||prior.head_branch!==REF||
-         prior.name!=="Classroom Real Pipeline - One Step"||
+         prior.path!==".github/workflows/"+WORKFLOW||
+         prior.event!=="workflow_dispatch"||
          typeof prior.display_title!=="string"||!prior.display_title.startsWith(prefix))
         return json(res,409,{error:"Run ID ก่อนหน้าไม่ใช่ Step ที่ผ่านจาก Branch เดียวกัน"});
     }

@@ -21,7 +21,7 @@ export default async function handler(req, res) {
     const table = String(req.query?.table || "");
     if (!table) return res.status(200).json({connected:true,branch:"classroom-step-lab",
       database:"tiktok_demo",tables:rows});
-    if (!schemas.includes(schema) || !safeName(table) ||
+    if (schema !== "demo_er1" || !safeName(table) ||
         !rows.some(row => row.table_schema === schema && row.table_name === table))
       return res.status(404).json({error:"Table not found"});
     const quoted = '"' + schema + '"."' + table + '"';

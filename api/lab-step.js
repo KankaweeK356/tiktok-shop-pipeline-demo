@@ -173,21 +173,32 @@ export default async function handler(req,res){
       const reportFile=await archive(sql,"REPORT","reports/functional_incremental.json");
       const report=await jsonArchive(s3,reportFile);
       const byteCount=Number(head.ContentLength);
-      out.input={label:"Standardized Fact_Sales_Order_Item",records:std.records,
+      let warehouseTable=null;
+      try{
+        const previewArtifact=await archive(sql,"REPORT","warehouse_preview.json");
+        const previewData=await jsonArchive(s3,previewArtifact);
+        if(previewData.source_archive_sha256===warehouse.content_sha256 &&
+           Number(previewData.warehouse_paid_items)===Number(report.warehouse_sales_item_count))
+          warehouseTable=previewData.warehouse_table_previews.find(x=>x.name==="Fact_Sales_Order_Item");
+      }catch(_missingPreview){ /* Initial deployment retains verified row counts. */ }
+      out.input={label:"Standardized Delta Fact_Sales_Order_Item",records:std.records,
         preview:std.preview};
       const totals=await paidTotals(sql);
       out.process=["ตรวจสอบไฟล์ DuckDB ที่เก็บถาวร","ตรวจขนาดไฟล์จริงกับรายการใน Neon Control",
         "เทียบ Sales Fact สะสมกับ Paid Items สะสมจาก Neon (ไม่เทียบกับ Incremental Delta)"];
       out.output={table:"Fact_Sales_Order_Item",records:report.warehouse_sales_item_count,
-        preview:[],origin:"WAREHOUSE_VERIFIED_BY_ARCHIVED_REPORT",
+        preview:warehouseTable?.preview||[],
+        origin:warehouseTable?"ROWS_QUERIED_FROM_EXACT_ARCHIVED_DUCKDB":"WAREHOUSE_VERIFIED_BY_ARCHIVED_REPORT",
         file:warehouse.artifact_uri,
-        note:"ตัวอย่าง Input ด้านบนคือ Incremental Delta; Warehouse เก็บยอดสะสมทั้งหมด 1,147 แถว · ยังไม่ได้ Query ตัวอย่างแถว DuckDB ตรงจาก API"};
+        note:warehouseTable?"Output จากไฟล์ DuckDB ที่ตรวจ SHA256 ก่อนอ่าน":
+          "ยังรอหลักฐานตัวอย่าง DuckDB · จำนวนแถวยืนยันจาก Validation Report"};
       out.metrics=[{label:"Warehouse file",value:byteCount,unit:"bytes"},
         {label:"Sales Fact สะสม",value:Number(report.warehouse_sales_item_count)},
         {label:"Incremental Delta",value:std.records}];
       out.checks=[
         {label:"DuckDB file exists and byte count matches archive",pass:byteCount===Number(warehouse.size_bytes)},
-        {label:"Warehouse สะสมเท่ากับ Paid Items ใน Neon",pass:Number(report.warehouse_sales_item_count)===totals.paid_items}
+        {label:"Warehouse สะสมเท่ากับ Paid Items ใน Neon",pass:Number(report.warehouse_sales_item_count)===totals.paid_items},
+        ...(warehouseTable?[{label:"ตัวอย่าง DuckDB อ่านจากไฟล์ที่ตรวจ SHA256 แล้ว",pass:warehouseTable.rows===totals.paid_items}]:[])
       ];
       out.provenance="REBUILT_DUCKDB_WITH_VERIFIED_ARCHIVE_REPORT";
     } else {

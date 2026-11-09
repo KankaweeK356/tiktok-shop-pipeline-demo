@@ -1,0 +1,15 @@
+{
+  "schema_version": "real_lab_steps_v1",
+  "runs": [
+    {
+      "batch": "incremental",
+      "stage": "ingest",
+      "run_id": "42578675952",
+      "executed_at": "2026-11-09T07:20:38.070918+00:00",
+      "file": "./data/lab_steps/incremental_ingest.json"
+    }
+  ],
+  "source": "REAL_GITHUB_ACTIONS_SEPARATE_STAGES",
+  "data_classification": "SYNTHETIC_EDUCATIONAL_NOT_TIKTOK",
+  "lab_branch": "classroom-step-lab"
+}

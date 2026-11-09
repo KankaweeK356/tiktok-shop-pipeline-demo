@@ -1,12 +1,5 @@
 {
   "version": 2,
   "buildCommand": "echo Static classroom dashboard - using committed report snapshot",
-  "outputDirectory": "dashboard",
-  "functions": {
-    "api/lab-worker.py": {
-      "maxDuration": 300,
-      "includeFiles": "{pipeline/**,schemas/**,source/**}"
-    }
-  }
+  "outputDirectory": "dashboard"
 }
-

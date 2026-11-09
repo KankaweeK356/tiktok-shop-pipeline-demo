@@ -27,11 +27,9 @@ def begin_run(database_url: str, run_type: str) -> str:
     run_id = str(uuid4())
     run_number = os.getenv("GITHUB_RUN_ID","local")
     attempt = os.getenv("GITHUB_RUN_ATTEMPT","1")
-    request_key = (f"vercel-{uuid4()}" if os.getenv("VERCEL") else
-                   f"github-{run_number}-{attempt}-{run_type.lower()}")
+    request_key = f"github-{run_number}-{attempt}-{run_type.lower()}"
     repo = os.getenv("GITHUB_REPOSITORY","KankaweeK356/tiktok-shop-pipeline-demo")
-    runner_ref = (f"https://{os.getenv('VERCEL_URL')}" if os.getenv("VERCEL_URL") else
-                  f"https://github.com/{repo}/actions/runs/{run_number}"
+    runner_ref = (f"https://github.com/{repo}/actions/runs/{run_number}"
                   if run_number != "local" else "local-run")
     with psycopg.connect(database_url) as db:
         with db.cursor() as cur:
@@ -49,10 +47,9 @@ def begin_run(database_url: str, run_type: str) -> str:
                 INSERT INTO demo_control.pipeline_runs
                  (run_id,dataset_key,cycle_number,run_type,request_key,
                   status,runner_ref,triggered_by,started_at,result_summary)
-                VALUES (%s,'classroom',%s,%s,%s,'RUNNING',%s,%s,now(),
+                VALUES (%s,'classroom',%s,%s,%s,'RUNNING',%s,'github-actions',now(),
                    '{"recorded_live":true}'::jsonb)
-            """,(run_id,cycle,run_type,request_key,runner_ref,
-                 "vercel" if os.getenv("VERCEL") else "github-actions"))
+            """,(run_id,cycle,run_type,request_key,runner_ref))
     return run_id
 
 

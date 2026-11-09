@@ -2,7 +2,7 @@
   "classification": "SYNTHETIC_EDUCATIONAL_NOT_TIKTOK",
   "runner": "github_actions_or_local_python",
   "source_engine": "SQLITE_NOT_NEON",
-  "snapshot_at_utc": "2026-11-08T14:29:25.357020+00:00",
+  "snapshot_at_utc": "2026-11-09T03:15:42.905380+00:00",
   "layers": {
     "source": [
       {
@@ -8412,7 +8412,7 @@
             "Claim_Cost": 0.0,
             "Contribution_Profit": 160.51,
             "Data_Cost_Basis": "MOCK_ACTUAL_WITH_POLICY_FEE",
-            "Calculated_At": "2026-11-08T14:29:04"
+            "Calculated_At": "2026-11-09T03:15:21"
           },
           {
             "Date_Key": 20251101,
@@ -8431,7 +8431,7 @@
             "Claim_Cost": 0.0,
             "Contribution_Profit": 201.2,
             "Data_Cost_Basis": "MOCK_ACTUAL_WITH_POLICY_FEE",
-            "Calculated_At": "2026-11-08T14:29:04"
+            "Calculated_At": "2026-11-09T03:15:21"
           },
           {
             "Date_Key": 20251101,
@@ -8450,7 +8450,7 @@
             "Claim_Cost": 0.0,
             "Contribution_Profit": 203.86,
             "Data_Cost_Basis": "MOCK_ACTUAL_WITH_POLICY_FEE",
-            "Calculated_At": "2026-11-08T14:29:04"
+            "Calculated_At": "2026-11-09T03:15:21"
           },
           {
             "Date_Key": 20251101,
@@ -8469,7 +8469,7 @@
             "Claim_Cost": 0.0,
             "Contribution_Profit": 156.86,
             "Data_Cost_Basis": "MOCK_ACTUAL_WITH_POLICY_FEE",
-            "Calculated_At": "2026-11-08T14:29:04"
+            "Calculated_At": "2026-11-09T03:15:21"
           },
           {
             "Date_Key": 20251101,
@@ -8488,7 +8488,7 @@
             "Claim_Cost": 0.0,
             "Contribution_Profit": 185.09,
             "Data_Cost_Basis": "MOCK_ACTUAL_WITH_POLICY_FEE",
-            "Calculated_At": "2026-11-08T14:29:04"
+            "Calculated_At": "2026-11-09T03:15:21"
           }
         ]
       },
@@ -8516,6 +8516,25 @@
           "Target_Status"
         ],
         "preview": [
+          {
+            "Year_Month": "2026-07",
+            "Month_Start_Date_Key": 20260701,
+            "Gross_Reference_Sales": 92272.0,
+            "Net_Revenue": 89175.58,
+            "Contribution_Profit": 33041.79,
+            "Revenue_Target": 50000.0,
+            "Minimum_Profit_Protection_Rate": 0.1,
+            "Revenue_Gap": 39175.58,
+            "Revenue_Achievement_Pct": 178.35,
+            "Profit_Margin_Pct": 37.05,
+            "Profit_Protection_Required": 9227.2,
+            "Profit_Protection_Rate_Pct": 35.81,
+            "Profit_Protection_Gap_Pp": 25.81,
+            "Profit_Protection_Headroom": 23814.59,
+            "Profit_Protection_Status": "PASS",
+            "Profit_Data_Status": "COMPLETE",
+            "Target_Status": "OK"
+          },
           {
             "Year_Month": "2025-12",
             "Month_Start_Date_Key": 20251201,
@@ -8569,25 +8588,6 @@
             "Profit_Protection_Rate_Pct": 36.65,
             "Profit_Protection_Gap_Pp": 26.65,
             "Profit_Protection_Headroom": 21657.27,
-            "Profit_Protection_Status": "PASS",
-            "Profit_Data_Status": "COMPLETE",
-            "Target_Status": "OK"
-          },
-          {
-            "Year_Month": "2026-07",
-            "Month_Start_Date_Key": 20260701,
-            "Gross_Reference_Sales": 92272.0,
-            "Net_Revenue": 89175.58,
-            "Contribution_Profit": 33041.79,
-            "Revenue_Target": 50000.0,
-            "Minimum_Profit_Protection_Rate": 0.1,
-            "Revenue_Gap": 39175.58,
-            "Revenue_Achievement_Pct": 178.35,
-            "Profit_Margin_Pct": 37.05,
-            "Profit_Protection_Required": 9227.2,
-            "Profit_Protection_Rate_Pct": 35.81,
-            "Profit_Protection_Gap_Pp": 25.81,
-            "Profit_Protection_Headroom": 23814.59,
             "Profit_Protection_Status": "PASS",
             "Profit_Data_Status": "COMPLETE",
             "Target_Status": "OK"
@@ -8742,7 +8742,7 @@
         ],
         "metrics": {
           "ingest": {
-            "elapsed_seconds": 3.4105,
+            "elapsed_seconds": 3.4647,
             "result": {
               "input_records": 13821,
               "modified_orders": 3552,
@@ -8750,7 +8750,7 @@
             }
           },
           "extract": {
-            "elapsed_seconds": 0.2113,
+            "elapsed_seconds": 0.2201,
             "result": {
               "parquet_tables": 25,
               "source_files": 21,
@@ -8758,7 +8758,7 @@
             }
           },
           "transform": {
-            "elapsed_seconds": 0.3836,
+            "elapsed_seconds": 0.3878,
             "result": {
               "standardized_tables": 11,
               "changed_sales": 4212,
@@ -8768,7 +8768,7 @@
             }
           },
           "load": {
-            "elapsed_seconds": 34.7764,
+            "elapsed_seconds": 34.5854,
             "result": {
               "loaded_rows": {
                 "Dim_Date": 395,
@@ -8788,7 +8788,7 @@
             }
           },
           "validate": {
-            "elapsed_seconds": 0.1162,
+            "elapsed_seconds": 0.1146,
             "result": {
               "batch": "initial",
               "checks": 53,
@@ -9015,7 +9015,7 @@
         ],
         "metrics": {
           "ingest": {
-            "elapsed_seconds": 0.1645,
+            "elapsed_seconds": 0.1652,
             "result": {
               "input_records": 402,
               "modified_orders": 132,
@@ -9023,7 +9023,7 @@
             }
           },
           "extract": {
-            "elapsed_seconds": 0.127,
+            "elapsed_seconds": 0.1271,
             "result": {
               "parquet_tables": 25,
               "source_files": 5,
@@ -9031,7 +9031,7 @@
             }
           },
           "transform": {
-            "elapsed_seconds": 0.1907,
+            "elapsed_seconds": 0.1919,
             "result": {
               "standardized_tables": 11,
               "changed_sales": 182,
@@ -9041,7 +9041,7 @@
             }
           },
           "load": {
-            "elapsed_seconds": 2.2003,
+            "elapsed_seconds": 2.2165,
             "result": {
               "loaded_rows": {
                 "Dim_Date": 395,
@@ -9061,7 +9061,7 @@
             }
           },
           "validate": {
-            "elapsed_seconds": 0.0964,
+            "elapsed_seconds": 0.0977,
             "result": {
               "batch": "incremental",
               "checks": 54,

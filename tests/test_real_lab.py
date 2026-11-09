@@ -28,7 +28,9 @@ def test_workflow_restores_previous_workspace_and_preserves_results():
     assert "github-token:" in s
     assert "classroom-lab-workspace" in s
     assert "classroom-lab-result" in s
-    assert "NEON_DEMO_DATABASE_URL:" in s
+    assert "python -m pipeline.oidc_lab_auth" in s
+    assert "id-token: write" in s
+    assert "NEON_LAB_DATABASE_URL" not in s
     assert "cancel-in-progress: false" in s
     assert "RESET-DEMO-DATA" not in s
 
@@ -87,6 +89,7 @@ def test_actual_lab_isolated_from_protected_900_order_demo():
     workflow=(ROOT/".github"/"workflows"/"classroom-real-step.yml").read_text(encoding="utf-8")
     assert "CLASSROOM_LAB_NEON_URL" in web
     assert "CLASSROOM_NEON_READONLY_URL" not in web
-    assert "secrets.NEON_LAB_DATABASE_URL" in workflow
+    assert "secrets.NEON_LAB_DATABASE_URL" not in workflow
     assert "secrets.NEON_DEMO_DATABASE_URL" not in workflow
+    assert "python -m pipeline.oidc_lab_auth" in workflow
     assert "RESET-DEMO-DATA" not in workflow

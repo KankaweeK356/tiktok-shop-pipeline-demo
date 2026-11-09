@@ -36,11 +36,11 @@ export default async function handler(req,res){
     return json(res,405,{error:"GET/POST only"});
   const configured=Boolean(process.env.CLASSROOM_GITHUB_TOKEN &&
     process.env.CLASSROOM_LAB_ADMIN_KEY &&
-    process.env.CLASSROOM_LAB_NEON_URL);
+    process.env.CLASSROOM_LAB_NEON_URL && process.env.CLASSROOM_LAB_WRITER_URL);
   if(req.method==="GET"){
     const workflow_url="https://github.com/"+REPO+"/actions/workflows/"+WORKFLOW;
     if(!req.query?.stage){
-      let lab={branch:"classroom-step-lab",phase:"UNKNOWN",cycle:null,orders:null};
+      let lab={branch:"classroom-live-run-lab",phase:"UNKNOWN",cycle:null,orders:null};
       if(process.env.CLASSROOM_LAB_NEON_URL){
         try{
           const sql=neon(process.env.CLASSROOM_LAB_NEON_URL);
@@ -48,7 +48,7 @@ export default async function handler(req,res){
             sql.query("SELECT phase,cycle_number FROM demo_control.dataset_state WHERE dataset_key='classroom'"),
             sql.query('SELECT COUNT(*)::int AS n FROM demo_er1."Fact_Orders"')
           ]);
-          lab={branch:"classroom-step-lab",phase:state[0]?.phase||"UNKNOWN",
+          lab={branch:"classroom-live-run-lab",phase:state[0]?.phase||"UNKNOWN",
                cycle:state[0]?.cycle_number||null,orders:counts[0]?.n??null};
         }catch(_error){/* No write and no credentials in response. */}
       }
@@ -118,3 +118,4 @@ export default async function handler(req,res){
     return json(res,503,{error:"ยังไม่สามารถสั่ง GitHub Actions ได้ ("+error.message+")"});
   }
 }
+

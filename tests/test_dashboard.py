@@ -137,3 +137,28 @@ def test_frontend_has_real_filters_and_no_hardcoded_accuracy():
     assert "72.92%" not in js
     assert "34.42%" not in js
     assert "@media" in css
+
+
+def test_sku_profit_screening_uses_10pct_gross_reference_basis(report):
+    """SKU is screening before group costs, not an approved true-profit gate."""
+    months={m["month"]:m for m in report["business"]["months"]}
+    skus=report["business"].get("sku_performance",[])
+    assert skus, "Source backed SKU sales should be available"
+    tested=0
+    for sku in skus:
+        m=months[sku["month"]]
+        rate=m["minimum_profit_protection_rate"]
+        if rate is None or sku["gross_reference_sales"] <= 0:
+            continue
+        gross=float(sku["gross_reference_sales"])
+        preliminary=float(sku["contribution_before_group_costs"])
+        target_profit=gross*float(rate)
+        gap=100*preliminary/gross-100*float(rate)
+        shortfall=max(0,target_profit-preliminary)
+        # USD/THB amount and percentage gap are mathematically equivalent.
+        assert (shortfall>0)==(gap<0)
+        assert float(rate)==pytest.approx(.10,abs=1e-6)
+        tested+=1
+    assert tested>0
+    assert report["business"]["shop_profit_protection_basis"]==(
+        "CONTRIBUTION_PROFIT_DIVIDED_BY_GROSS_REFERENCE_SALES")

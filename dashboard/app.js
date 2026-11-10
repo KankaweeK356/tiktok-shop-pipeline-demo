@@ -2,7 +2,7 @@
 (function () {
   "use strict";
   const $ = s => document.querySelector(s);
-  const state = { data:null, evidence:null, evidenceLayer:"source", evidenceTable:"", neonStatus:"not_loaded", neonTables:[], neonTable:"", neonData:null, neonError:"", neonRunStatus:null, neonArtifactType:"ALL", labStage:0, labTable:"Fact_Orders", labResults:{}, labBusy:false, labError:"", labLog:[], realReady:false, realConfigChecked:false, realLabPhase:"UNKNOWN", realLabCycle:null, realLabOrders:null, realBatch:"initial", realStageIndex:0, realPreviousRunId:"", realRunId:null, realStatus:"", realUrl:"", realError:"", realStartedAt:"", realAdminKey:"", realEvidence:null, autoBatch:"", batchResults:{initial:{},incremental:{}}, resetStatus:"", resetSince:"", resetUrl:"", resetError:"", savedLabManifest:null, savedLabReceipt:null, savedLabSelected:"", savedLabLoading:false, pipelineTab:"flow", notebookBatch:"initial", notebookStage:"ingest", labNeon:null, labNeonTable:null, labNeonBusy:false, labNeonError:"", errorCase:"N01", errorReplayed:false, errorLabOpen:false, view:"business", month:"", group:"ALL", sku:"", skuSort:"lowest_margin", model:"", week:"", replay:false, rows:[] };
+  const state = { data:null, evidence:null, evidenceLayer:"source", evidenceTable:"", neonStatus:"not_loaded", neonTables:[], neonTable:"", neonData:null, neonError:"", neonRunStatus:null, neonArtifactType:"ALL", labStage:0, labTable:"Fact_Orders", labResults:{}, labBusy:false, labError:"", labLog:[], realReady:false, realConfigChecked:false, realLabPhase:"UNKNOWN", realLabCycle:null, realLabOrders:null, realBatch:"initial", realStageIndex:0, realPreviousRunId:"", realRunId:null, realStatus:"", realUrl:"", realError:"", realStartedAt:"", realAdminKey:"", realEvidence:null, autoBatch:"", batchResults:{initial:{},incremental:{}}, resetStatus:"", resetSince:"", resetUrl:"", resetError:"", savedLabManifest:null, savedLabReceipt:null, savedLabSelected:"", savedLabLoading:false, pipelineTab:"flow", notebookBatch:"initial", notebookStage:"ingest", warehouseStatus:"not_loaded", warehouseSnapshot:null, warehouseError:"", warehouseTable:"Fact_Sales_Order_Item", labNeon:null, labNeonTable:null, labNeonBusy:false, labNeonError:"", errorCase:"N01", errorReplayed:false, errorLabOpen:false, view:"business", month:"", group:"ALL", sku:"", skuSort:"lowest_margin", model:"", week:"", replay:false, rows:[] };
   state.batchRun={batch:"",status:"",since:"",runId:null,url:"",stages:[]};
   state.batchRunIds={initial:null,incremental:null};
   state.batchResume={batch:"",runId:null};
@@ -11,7 +11,7 @@
   state.errorRun={status:"",since:"",url:"",runId:null,phase:"",previous:"0",
     failEvidence:null,fixEvidence:null,error:"",neonRows:null};
   const names = {
-    business:["ภาพรวมธุรกิจ","รายงาน Snapshot จำลองจาก Data Warehouse · ไม่ใช่ข้อมูลปัจจุบันใน Neon","ภาพรวมธุรกิจ"],
+    business:["ภาพรวมธุรกิจ","ข้อมูลจาก Warehouse ของ Lab รอบปัจจุบัน · ว่างเมื่อเคลียร์ Lab","ภาพรวมธุรกิจ"],
     pipeline:["Test Pipeline","จาก Source ผ่าน Database และ Data Lake สู่ Warehouse","Test Pipeline"],
     ml:["พยากรณ์ยอดขาย","ผลทำนายเทียบยอดขายจริงและความน่าเชื่อถือของโมเดล","พยากรณ์ยอดขาย"]
   };
@@ -113,195 +113,106 @@
     return image;
   }
 
-  function renderBusiness(){
-    const d=state.data,months=d.business.months;
-    const m=months.find(x=>x.month===state.month)||months[months.length-1];
-    const all=d.business.groups.filter(x=>x.month===m.month);
-    const shown=state.group==="ALL"?all:all.filter(x=>x.product_group_id===state.group);
-    const total=key=>shown.reduce((sum,x)=>sum+Number(x[key]||0),0);
-    const rowIncomplete=shown.some(x=>x.contribution_profit===null);
-    // The 10% policy is read from ER1 business target via the existing monthly Warehouse KPI.
-    // Denominator is full-price Gross Reference Sales, not Net Revenue.
-    const benchmarkPct=m.minimum_profit_protection_rate===null?null:
-      100*Number(m.minimum_profit_protection_rate);
-    const groupGross=total("gross_reference_sales");
-    const groupContribution=rowIncomplete?null:total("contribution_profit");
-    const groupProtection=groupGross>0&&groupContribution!==null?
-      100*groupContribution/groupGross:null;
-    const allShop=state.group==="ALL";
-    const metrics=allShop?[
-      metric("ยอดขายสุทธิ","฿"+money(m.net_revenue),m.month),
-      metric("ยอดขายเทียบเป้าหมาย",pct(m.revenue_achievement_pct),"เป้าหมาย ฿"+money(m.revenue_target)+" · ทั้งร้าน",Number(m.revenue_achievement_pct)>=100?"metric-good":"metric-bad"),
-      metric("กำไรหลังต้นทุนที่เกี่ยวข้อง",m.contribution_profit===null?"—":"฿"+money(m.contribution_profit),m.profit_data_status==="COMPLETE"?"ต้นทุนครบ":"ต้นทุนไม่ครบ"),
-      metric("อัตรารักษากำไร",pct(m.profit_protection_rate_pct),"เกณฑ์ "+pct(Number(m.minimum_profit_protection_rate)*100,0)+" ของ Gross Reference",m.profit_protection_status==="PASS"?"metric-good":"metric-bad")
-    ]:[
-      metric("ยอดขายสุทธิของกลุ่ม","฿"+money(total("net_revenue")),state.group+" · "+m.month),
-      metric("ยอดขายก่อนส่วนลด","฿"+money(total("gross_reference_sales")),"ก่อนหักส่วนลด"),
-      metric("กำไรกลุ่มสินค้า",rowIncomplete?"—":"฿"+money(total("contribution_profit")),"หัก Ads / Sample / Claim"),
-      metric("อัตรากำไรกลุ่ม (%)",pct(groupProtection),
-        "เกณฑ์ร้าน "+pct(benchmarkPct,0)+" · "+(groupProtection===null?"ข้อมูลไม่ครบ":
-          "Gap "+(groupProtection>=benchmarkPct?"+":"")+money(groupProtection-benchmarkPct,1)+" pp"),
-        groupProtection===null?"":groupProtection<benchmarkPct?"metric-bad":"metric-good")
-    ];
-    const root=$("#app");root.replaceChildren();
-    const sourceNotice=notice("ตัวเลขหน้านี้มาจากรายงาน Snapshot จำลองของ Historical ML ซึ่งเก็บแยกจาก Neon Lab · การเคลียร์ Neon ไม่ได้ลบหรืออัปเดต Snapshot นี้ จึงยังเห็นตัวเลขได้แม้ Neon จะว่าง",true);
-    const neonButton=node("button","button button-outline","ดูสถานะและข้อมูลปัจจุบันใน Neon");
-    neonButton.type="button";
-    neonButton.addEventListener("click",()=>{
-      state.pipelineTab="neon";
-      setView("pipeline");
-      loadLabNeon();
-    });
-    root.append(sourceNotice,neonButton);
-    root.append(notice(allShop?
-      "เป้ากำไรขั้นต่ำ "+pct(benchmarkPct,0)+" ของยอดขายอ้างอิงราคาเต็ม (Gross Reference Sales) · กำไรทั้งร้านหัก Ads / Sample / Claim แล้ว":
-      "อัตรากำไรกลุ่มเทียบเกณฑ์ร้าน "+pct(benchmarkPct,0)+" เพื่อคัดกรองกลุ่มที่น่าตรวจ ไม่ใช่การอนุมัติผ่านเป้าราย SKU"));
-    root.append(add(box("metrics"),...metrics));
-    const monthChart=node("div","mini-chart");
-    const max=Math.max(1,...months.map(x=>Number(x.net_revenue)));
-    months.forEach(x=>{
-      const btn=node("button","mini-col");
-      btn.type="button";btn.setAttribute("aria-label","ดูเดือน "+x.month);
-      btn.title=x.month+" · ฿"+money(x.net_revenue);
-      const bar=node("span","mini-bar"+(x.month===m.month?" is-active":""));
-      bar.style.height=Math.max(2,Number(x.net_revenue)/max*100)+"%";
-      btn.append(bar);
-      btn.addEventListener("click",()=>{
-        state.month=x.month;$("#monthFilter").value=x.month;renderBusiness();
-      });
-      monthChart.append(btn);
-    });
-    const trend=panel("ยอดขายย้อนหลังรายเดือน","คลิกแท่งเพื่อเปลี่ยนเดือน",contentArea(monthChart,
-      box("mini-axis",small(months[0].month),small("Net Revenue (บาท)"),small(months[months.length-1].month)),
-      small("หมายเหตุ: ตุลาคม 2026 รวม Source Initial Demo ซึ่งมีปริมาณ Order สูงกว่าช่วงย้อนหลัง")));
-    const groupBars=shown.map(x=>({name:title(x.product_group_id),value:x.net_revenue,display:"฿"+money(x.net_revenue)}));
-    const groupPanel=panel("ยอดขายแยกกลุ่มสินค้า","Net Revenue · "+m.month,contentArea(barChart(groupBars)));
-    root.append(box("two-col",trend,groupPanel));
-    // Existing DuckDB Sales Fact x Product Dimension; no ad-spend allocation to SKU.
-    const skuRows=(d.business.sku_performance||[]).filter(x=>
-      x.month===m.month && (state.group==="ALL"||x.product_group_id===state.group)
-    ).map(x=>{
-      const gross=Number(x.gross_reference_sales);
-      const profit=x.contribution_before_group_costs;
-      const margin=profit===null||profit===undefined||!Number.isFinite(Number(profit))||
-        !(gross>0)?null:100*Number(profit)/gross;
-      const gap=margin===null||benchmarkPct===null?null:margin-benchmarkPct;
-      const targetAmount=gross>0&&benchmarkPct!==null?gross*benchmarkPct/100:null;
-      const shortfall=profit===null||targetAmount===null?null:
-        Math.max(0,targetAmount-Number(profit));
-      return {...x,
-        pre_group_protection_pct:margin,
-        protection_gap_pp:gap===null?"—":(gap>=0?"+":"")+money(gap,1)+" pp",
-        target_profit_thb:targetAmount,
-        pre_group_shortfall_thb:shortfall,
-        profit_risk:gap===null?"NO_DATA":gap<0?"RISK":"CHECK"};
-    }).sort((a,b)=>{
-      const risk=x=>x.profit_risk==="RISK"?0:x.profit_risk==="NO_DATA"?2:1;
-      if(state.skuSort==="highest_sales")
-        return Number(b.net_revenue)-Number(a.net_revenue);
-      if(state.skuSort==="lowest_margin")
-        return risk(a)-risk(b)||
-          (a.pre_group_protection_pct??Infinity)-(b.pre_group_protection_pct??Infinity);
-      return Number(b.net_revenue)-Number(a.net_revenue);
-    });
-    if(skuRows.length){
-      const choices=[["","เลือก SKU เพื่อดูรายละเอียด"],...skuRows.map(x=>
-        [x.sku_id, (x.sku_name||x.sku_id)+" · "+(x.color||"")+" / "+(x.size||"")+" ("+x.sku_id+")"]
-      )];
-      if(!skuRows.some(x=>x.sku_id===state.sku))state.sku="";
-      const picker=chooseField("เจาะลึกสินค้า (SKU)",choices,state.sku,v=>{state.sku=v;renderBusiness()});
-      const skuCols=[["sku_id","รหัส SKU"],["sku_name","สินค้า"],
-        ["net_revenue","ยอดขายสุทธิ"],["gross_reference_sales","ยอดราคาเต็ม"],
-        ["contribution_before_group_costs","กำไรก่อนต้นทุนกลุ่ม"],
-        ["pre_group_protection_pct","Margin ก่อนต้นทุนกลุ่ม"],
-        ["protection_gap_pp","Gap จาก 10%"],["pre_group_shortfall_thb","เงินขาดก่อนหักต้นทุนกลุ่ม"],["profit_risk","สถานะ"]];
-      const skuFmt={net_revenue:{kind:"money",align:"text-right"},
-        gross_reference_sales:{kind:"money",align:"text-right"},
-        contribution_before_group_costs:{kind:"money",align:"text-right"},
-        pre_group_protection_pct:{kind:"percent",align:"text-right"},
-        protection_gap_pp:{align:"text-right"},pre_group_shortfall_thb:{kind:"money",align:"text-right"},profit_risk:{kind:"risk"}};
-      const selected=skuRows.find(x=>x.sku_id===state.sku);
-      const detail=selected?box("scenario-results",
-        box("",fashionThumb(),small("รหัส SKU "+selected.sku_id+" · "+title(selected.product_group_id)),
-          node("strong","", "ยอดขาย ฿"+money(selected.net_revenue)+" · "+money(selected.quantity)+" ชิ้น"),
-          small("ต้นทุนสินค้า ฿"+money(selected.cogs)+" · ส่วนลดแคมเปญ ฿"+money(selected.campaign_reduction)+
-            " · ส่วนลด Voucher ฿"+money(selected.voucher_discount)),
-          small("ค่าธรรมเนียม ฿"+money(selected.platform_cost)+" · ค่าจัดส่ง ฿"+money(selected.fulfillment_cost)+
-            " · ค่านายหน้า ฿"+money(selected.affiliate_cost)),
-          small("กำไรก่อน Ads / Sample / Claim ฿"+money(selected.contribution_before_group_costs)),
-          node("strong","accent-number","Margin "+pct(selected.pre_group_protection_pct)+" · เกณฑ์ "+pct(benchmarkPct,0)),
-          small("กำไรขั้นต่ำที่ต้องเหลือก่อนเทียบต้นทุนกลุ่ม ฿"+money(selected.target_profit_thb)+
-            " · เงินขาดขั้นต่ำที่พบ ฿"+money(selected.pre_group_shortfall_thb)),
-          small("Gap "+selected.protection_gap_pp+" · "+(selected.profit_risk==="RISK"?
-            "เสี่ยงต่ำกว่าเกณฑ์ตั้งแต่ก่อนหัก Ads":
-            selected.profit_risk==="CHECK"?"ต้องตรวจต้นทุนกลุ่มเพิ่มเติม":"ไม่สามารถคำนวณได้"))),
-        notice("สูตร SKU = กำไรก่อน Ads / Sample / Claim ÷ ยอดขายอ้างอิงราคาเต็ม × 100 · เทียบเส้นอ้างอิง "+pct(benchmarkPct,0)+
-          " · ต้นทุนระดับกลุ่มไม่ถูกกระจายลง SKU จึงยังสรุปว่า SKU ผ่านเกณฑ์กำไรจริงไม่ได้",true)
-      ):small("เลือก SKU ด้านบนเพื่อดูแยกยอดขาย ส่วนลด ต้นทุน กำไร % และ Gap");
-      root.append(panel("วิเคราะห์กำไรต่อ SKU · เป้าหมาย 10%",
-        "ใช้เกณฑ์จริงจาก Ref_Business_Target ของเดือนที่เลือก · คำนวณบนยอดราคาเต็ม ไม่ใช่ Net Revenue",
-        contentArea(
-          box("lab-meta",
-            statusLabel("READY"),
-            small("เสี่ยงต่ำกว่าเส้นอ้างอิง: "+money(skuRows.filter(x=>x.profit_risk==="RISK").length)+" SKU"),
-            small("ต้องตรวจต้นทุนระดับกลุ่ม: "+money(skuRows.filter(x=>x.profit_risk==="CHECK").length)+" SKU"),
-            small("ยอดขาดขั้นต่ำก่อนต้นทุนกลุ่ม ฿"+money(skuRows.reduce((acc,x)=>acc+Number(x.pre_group_shortfall_thb||0),0)))),
-          box("two-col",picker,chooseField("เรียงลำดับตาราง SKU",
-            [["lowest_margin","Margin ต่ำสุดก่อน"],["highest_sales","ยอดขายสูงสุดก่อน"]],
-            state.skuSort,v=>{state.skuSort=v;renderBusiness();})),
-          detail,dataTable(skuCols,skuRows.slice(0,30),skuFmt),
-          small("แสดง 30 SKU แรก · เปลี่ยนการเรียงลำดับได้ · เลือก SKU ด้านบนดูรายละเอียดทุกตัวได้"))));
-      state.rows=skuRows;
+  async function loadWarehouseDashboard(){
+    if(state.warehouseStatus==="loading")return;
+    state.warehouseStatus="loading";state.warehouseSnapshot=null;state.warehouseError="";
+    if(state.view==="business")render();
+    try{
+      const statusResponse=await fetch("/api/lab-batch",{cache:"no-store"});
+      const status=await statusResponse.json();
+      if(!statusResponse.ok||!status.ready)throw Error(status.error||"อ่านสถานะ Warehouse ไม่ได้");
+      if(status.running){
+        state.warehouseSnapshot={...status,running:true};
+      }else if(status.phase==="EMPTY"){
+        state.warehouseSnapshot={...status,result:null};
+      }else{
+        if(!status.current_run_id)throw Error("ไม่พบ Run ปัจจุบันที่เชื่อมกับ Warehouse");
+        const resultResponse=await fetch("/api/lab-batch-result?run_id="+
+          encodeURIComponent(status.current_run_id),{cache:"no-store"});
+        const payload=await resultResponse.json();
+        if(!resultResponse.ok||!payload.result)throw Error(payload.error||"อ่านผล Warehouse ไม่ได้");
+        if(Number(payload.result.cycle)!==Number(status.cycle))
+          throw Error("ผล Warehouse ไม่ตรงกับรอบ Lab ปัจจุบัน");
+        state.warehouseSnapshot={...status,result:payload.result};
+      }
+      state.warehouseStatus="ready";
+    }catch(error){
+      state.warehouseStatus="error";
+      state.warehouseSnapshot=null;
+      state.warehouseError=error.message||"อ่านข้อมูล Warehouse ไม่ได้";
     }
-    const adsRows=(d.business.ads_campaigns||[]).filter(x=>
-      x.month===m.month && (state.group==="ALL"||x.product_group_id===state.group)
-    ).sort((a,b)=>Number(b.ads_spend)-Number(a.ads_spend));
-    const creators=(d.business.creator_performance||[]).filter(x=>
-      x.month===m.month && (state.group==="ALL"||x.product_group_id===state.group)
-    ).sort((a,b)=>Number(b.affiliate_commission)-Number(a.affiliate_commission));
-    if(adsRows.length||creators.length)root.append(box("two-col",
-      panel("ค่าโฆษณาแยกแคมเปญ",
-        "ระดับเดือน × แคมเปญ × กลุ่มสินค้า ไม่ใช่ Ads ราย SKU",
-        dataTable([["product_group_id","กลุ่ม"],["ad_campaign_key","รหัสแคมเปญ"],["ads_spend","ค่าโฆษณา"],
-          ["impressions","แสดงผล"],["clicks","คลิก"],["conversions","Conversion จาก Source"]],
-          adsRows.slice(0,15),{ads_spend:{kind:"money",align:"text-right"}})),
-      panel("ยอดขายที่เกี่ยวข้องกับนายหน้า",
-        "รวมเฉพาะรายการขายที่มีค่าคอมมิชชัน ไม่บวกยอดขายซ้ำ",
-        dataTable([["product_group_id","กลุ่ม"],["creator_key","รหัส Creator"],["associated_sales","ยอดขายที่เกี่ยวข้อง"],
-          ["affiliate_commission","ค่านายหน้า"]],creators.slice(0,15),
-          {associated_sales:{kind:"money",align:"text-right"},
-           affiliate_commission:{kind:"money",align:"text-right"}}))
-    ));
-    const gov=contentArea(
-      box("pipeline-meta",small("Revenue Target: "+m.target_status),small("Profit Status: "+m.profit_protection_status),
-        small("Revenue Gap: "+(m.revenue_target===null?"—":"฿"+money(Number(m.net_revenue)-Number(m.revenue_target))))),
-      node("div","flow-divider"),
-      node("div","callout","สูตร KPI: Revenue Achievement = Net Revenue ÷ Revenue Target; Profit Protection = Contribution Profit ÷ Gross Reference Sales (ยอดก่อนส่วนลด) ทั้งสองเป็น KPI ของทั้งร้านต่อเดือน")
-    );
-    root.append(panel("KPI Governance · Monthly View","อ่านจาก View_Shop_Monthly_KPI จริง",gov,link("ER2 Schema",d.links.schema)));
-    const groupRows=shown.map(x=>{
-      const rate=x.contribution_profit===null||Number(x.gross_reference_sales)<=0?
-        null:100*Number(x.contribution_profit)/Number(x.gross_reference_sales);
-      return {...x,group_margin_pct:rate,
-        group_gap_pp:rate===null||benchmarkPct===null?"—":
-          (rate>=benchmarkPct?"+":"")+money(rate-benchmarkPct,1)+" pp",
-        group_risk:rate===null||benchmarkPct===null?"NO_DATA":rate<benchmarkPct?"GROUP_BELOW":"GROUP_ABOVE"};
-    });
-    const cols=[["product_group_id","Product Group"],["net_revenue","ยอดขายสุทธิ"],
-      ["gross_reference_sales","ยอดราคาเต็ม"],["ads_cost","ค่าโฆษณา"],
-      ["contribution_profit","กำไรหลังต้นทุน"],["group_margin_pct","Margin %"],
-      ["group_gap_pp","Gap จาก 10%"],["group_risk","เทียบเกณฑ์"]];
-    const fmt={};
-    for(const x of ["net_revenue","gross_reference_sales","ads_cost","contribution_profit"])
-      fmt[x]={kind:"money",align:"text-right"};
-    fmt.group_margin_pct={kind:"percent",align:"text-right"};
-    fmt.group_gap_pp={align:"text-right"};
-    fmt.group_risk={kind:"risk"};
-    root.append(panel("ผลการดำเนินงานแยกกลุ่มสินค้า",
-      "Profit Protection ใช้ Contribution Profit ÷ Gross Reference Sales · เกณฑ์ร้าน "+pct(benchmarkPct,0)+" · ไม่กระจาย Ads ลง SKU",
-      dataTable(cols,groupRows,fmt)));
-    renderScenario(root);
-    if(!skuRows.length)state.rows=groupRows;
+    if(state.view==="business")render();
+  }
+
+  function renderBusiness(){
+    const root=$("#app");root.replaceChildren();state.rows=[];
+    const snapshot=state.warehouseSnapshot;
+    const phase=snapshot?.phase||"UNKNOWN";
+    $("#headerMode").textContent=state.warehouseStatus==="ready"?
+      phase==="EMPTY"?"Warehouse ว่าง":snapshot?.running?"Warehouse กำลังอัปเดต":"Warehouse · ข้อมูลรอบปัจจุบัน":
+      "กำลังตรวจ Warehouse";
+    const executed=snapshot?.result?.stages?.find(x=>x.stage==="load")?.evidence?.executed_at;
+    $("#snapshotStamp").textContent=executed?
+      new Intl.DateTimeFormat("th-TH",{timeZone:"Asia/Bangkok",year:"numeric",month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})
+        .format(new Date(executed)):
+      snapshot?.cycle?"รอบ Lab "+snapshot.cycle:"—";
+    $("#footerStatus").textContent=state.warehouseStatus==="ready"?
+      phase==="EMPTY"?"Warehouse ว่าง · ยังไม่มี Run ในรอบนี้":
+      snapshot?.running?"กำลังประมวลผล · จะเปิดข้อมูลเมื่อ Run สำเร็จ":
+      (snapshot?.result?.batch==="incremental"?"Run 2":"Run 1")+" · Lab รอบ "+(snapshot?.cycle??"—"):
+      "ตรวจสอบ Warehouse";
+    root.append(notice("หน้านี้อ่านผลจาก DuckDB Warehouse ของ Run ปัจจุบันโดยตรง · เมื่อเคลียร์ Lab สถานะจะกลับเป็นว่างและซ่อนผลรอบก่อน",false));
+    if(state.warehouseStatus==="not_loaded"||state.warehouseStatus==="loading"){
+      root.append(small("กำลังตรวจสถานะ Lab และ Warehouse…"));return;
+    }
+    if(state.warehouseStatus==="error"){
+      root.append(notice("ไม่สามารถยืนยันข้อมูล Warehouse ได้ จึงไม่แสดงตัวเลขเก่า · "+state.warehouseError,true));
+      const retry=node("button","button button-outline","ตรวจสถานะอีกครั้ง");
+      retry.type="button";retry.addEventListener("click",loadWarehouseDashboard);root.append(retry);return;
+    }
+    if(snapshot?.running){
+      root.append(node("h2","lab-heading","กำลังประมวลผลข้อมูลเข้า Warehouse"));
+      root.append(small("เมื่อ Run สำเร็จ Dashboard จะแสดงข้อมูลรอบนี้ · ระหว่างนี้จะไม่แสดงตัวเลขจากรอบก่อน"));
+      return;
+    }
+    if(phase==="EMPTY"||!snapshot?.result){
+      root.append(node("h2","lab-heading","Warehouse ยังไม่มีข้อมูล"));
+      root.append(small("Lab รอบ "+(snapshot?.cycle??"—")+" ว่างอยู่ · กด Run 1 ใน Test Pipeline เพื่อสร้างข้อมูล Warehouse รอบใหม่"));
+      const open=node("button","button button-primary","ไปที่ Test Pipeline");
+      open.type="button";open.addEventListener("click",()=>setView("pipeline"));root.append(open);return;
+    }
+    const result=snapshot.result;
+    const load=result.stages?.find(x=>x.stage==="load")?.evidence?.output;
+    if(!load||load.origin!=="NEW_DUCKDB_WAREHOUSE"){
+      root.append(notice("Run ปัจจุบันไม่มีหลักฐาน Warehouse ที่ตรวจสอบได้ · ไม่แสดง Snapshot เก่า",true));return;
+    }
+    const tables=Array.isArray(load.tables)?load.tables:[];
+    const previews=load.table_previews||{};
+    const names=tables.map(x=>x.name);
+    if(!names.length){root.append(notice("Run นี้ยังไม่มีตารางใน Warehouse"));return;}
+    if(!names.includes(state.warehouseTable))state.warehouseTable=
+      names.includes("Fact_Sales_Order_Item")?"Fact_Sales_Order_Item":names[0];
+    const rows=Array.isArray(previews[state.warehouseTable])?previews[state.warehouseTable]:[];
+    state.rows=rows;
+    const batchLabel=result.batch==="incremental"?"Run 2 · เติมข้อมูล":"Run 1 · ข้อมูลตั้งต้น";
+    root.append(add(box("metrics"),
+      metric("รอบ Warehouse",batchLabel,"Lab รอบ "+snapshot.cycle),
+      metric("ออเดอร์ในฐานข้อมูล",money(result.orders_after),"ข้อมูลจาก Run ปัจจุบัน"),
+      metric("รายการขายใน Warehouse",money(result.paid_sales_rows),"Fact_Sales_Order_Item"),
+      metric("ยอดขายสุทธิ",result.net_revenue===null?"—":"฿"+money(result.net_revenue),"ผล Validate ของ Run นี้"),
+      metric("ตารางใน Warehouse",money(tables.length),"DuckDB · "+batchLabel)));
+    root.append(panel("ตารางใน Warehouse","จำนวนแถวที่อ่านจาก DuckDB Warehouse ของ Run ปัจจุบัน",
+      contentArea(dataTable([["name","ชื่อตาราง"],["rows","จำนวนแถว"]],tables))));
+    root.append(chooseField("เลือกตารางเพื่อดูแถวตัวอย่าง",
+      tables.map(item=>[item.name,item.name+" · "+money(item.rows)+" แถว"]),
+      state.warehouseTable,value=>{state.warehouseTable=value;renderBusiness();}));
+    root.append(panel("ตัวอย่างแถวจริงจาก Warehouse",state.warehouseTable+" · แสดงได้สูงสุด 5 แถว",
+      contentArea(rows.length?
+        dataTable(Object.keys(rows[0]).slice(0,10).map(key=>[key,key]),rows):
+        notice("ตารางนี้ยังไม่มีแถวข้อมูล"))));
+    const refresh=node("button","button button-outline","รีเฟรชข้อมูล Warehouse");
+    refresh.type="button";refresh.addEventListener("click",loadWarehouseDashboard);
+    root.append(refresh);
   }
 
   function renderScenario(root){
@@ -1597,7 +1508,8 @@
     if(state.view==="business")renderBusiness();
     if(state.view==="pipeline")renderPipeline();
     if(state.view==="ml")renderML();
-    $("#exportCurrent").textContent="↓ ดาวน์โหลดข้อมูลตัวอย่างที่แสดง (CSV)";
+    $("#exportCurrent").textContent=state.view==="business"?
+      "↓ ดาวน์โหลดแถวตัวอย่างจาก Warehouse (CSV)":"↓ ดาวน์โหลดข้อมูลตัวอย่างที่แสดง (CSV)";
     $("#exportCurrent").disabled=state.view==="pipeline"||!state.rows.length;
   }
   function setView(value){
@@ -1611,10 +1523,11 @@
     $("#pageTitle").textContent=names[value][0];
     $("#pageSubtitle").textContent=names[value][1];
     $("#crumbView").textContent=names[value][2];
-    $("#monthFilterWrap").classList.toggle("hidden",value!=="business");
-    $("#groupFilterWrap").classList.toggle("hidden",value==="pipeline");
+    $("#monthFilterWrap").classList.add("hidden");
+    $("#groupFilterWrap").classList.toggle("hidden",value!=="ml");
     $("#modelFilterWrap").classList.toggle("hidden",value!=="ml");
     render();
+    if(value==="business")loadWarehouseDashboard();
     if(value==="pipeline" && state.neonStatus==="not_loaded")loadNeonEvidence();
     if(value==="pipeline" && !state.realConfigChecked)loadRealCapabilities();
     if(value==="pipeline" && state.savedLabManifest===null)loadSavedLabEvidence();
@@ -1629,7 +1542,7 @@
     const csv=[columns.map(cell).join(","),...rows.map(x=>columns.map(k=>cell(x[k])).join(","))].join("\r\n");
     const blob=new Blob(["\ufeff",csv],{type:"text/csv;charset=utf-8"});
     const url=URL.createObjectURL(blob),a=document.createElement("a");
-    a.href=url;a.download="tiktok_"+state.view+"_"+state.month+".csv";
+    a.href=url;a.download=state.view==="business"?("warehouse_"+(state.warehouseSnapshot?.current_run_id||"current")+"_"+state.warehouseTable+".csv"):"tiktok_"+state.view+"_"+state.month+".csv";
     document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
   }
   async function init(){
@@ -1663,8 +1576,8 @@
       $("#snapshotStamp").textContent=d.generated_at_utc?new Intl.DateTimeFormat("th-TH",{
         timeZone:"Asia/Bangkok",year:"numeric",month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"
       }).format(new Date(d.generated_at_utc)):"Batch Snapshot";
-      $("#headerMode").textContent="Snapshot จำลอง · แยกจาก Neon";
-      $("#footerStatus").textContent="Historical ML Snapshot · ไม่ใช่ข้อมูลปัจจุบันใน Neon";
+      $("#headerMode").textContent="Warehouse · ตรวจสถานะสด";
+      $("#footerStatus").textContent="กำลังตรวจข้อมูล Warehouse";
       $("#repoLink").href=d.links.repo;
       setView("business");
       try {

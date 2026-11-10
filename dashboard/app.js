@@ -13,7 +13,7 @@
   const names = {
     business:["ภาพรวมธุรกิจ","เส้นทางข้อมูลจากการนำเข้า ถึงการวิเคราะห์และโมเดล ML","ภาพรวมธุรกิจ"],
     pipeline:["Test Pipeline","จาก Source ผ่าน Database และ Data Lake สู่ Warehouse","Test Pipeline"],
-    ml:["วางแผนยอดขายและกำไร","เลือกแผน ดู KPI และเปิดดูหลักฐาน ML","วางแผนยอดขายและกำไร"]
+    ml:["ML Lab","จาก Warehouse สู่ Feature Store และผลทำนาย","ML Lab"]
   };
   const groups=["PG01","PG02","PG03","PG04","PG05"];
   const money = (n,digits=0) => n===null||n===undefined||!Number.isFinite(Number(n)) ? "—" :
@@ -1446,72 +1446,62 @@
   function renderML(){
     const root=$("#app");root.replaceChildren();
     const ml=state.data.ml,chosen=ml.registry.selected_model;
+    const group=state.mlGroup||"PG01";
     const score=ml.test_metrics.find(x=>x.model===chosen)||{};
-    const predictions=ml.serving_predictions||[];
-    const features=(ml.feature_preview||[]).slice(0,5);
-    state.rows=predictions;
-    const created=state.data.generated_at_utc?
+    const features=(ml.feature_preview||[]).filter(x=>x.product_group_id===group).slice(0,5);
+    const predicted=(ml.serving_predictions||[]).filter(x=>x.product_group_id===group);
+    const checked=(ml.test_predictions||[]).filter(x=>x.model===chosen&&x.product_group_id===group).slice(0,5);
+    state.rows=predicted;
+    $("#headerMode").textContent="ML Lab · ข้อมูลจำลอง";
+    $("#snapshotStamp").textContent=state.data.generated_at_utc?
       new Intl.DateTimeFormat("th-TH",{timeZone:"Asia/Bangkok",year:"numeric",month:"short",day:"numeric"})
         .format(new Date(state.data.generated_at_utc)):"—";
-    $("#headerMode").textContent="ผลวิเคราะห์จาก ML Lab";
-    $("#snapshotStamp").textContent=created;
-    $("#footerStatus").textContent="ข้อมูลจำลอง · ยังไม่ใช้แนะนำงบ Ads";
-    root.append(notice("โจทย์ของงานนี้: วางแผนให้ยอดขายถึงเป้า โดยกำไรหลังหักต้นทุนที่เกี่ยวข้องไม่น้อยกว่า 10% ของยอดขายอ้างอิง"));
-    root.append(panel("ข้อสรุปสำหรับการตัดสินใจ",
-      "ผลที่มีในขณะนี้ใช้สาธิตการทำนายยอดขาย ยังใช้เลือกงบโฆษณาหรือส่วนลดใหม่ไม่ได้",
-      contentArea(
-        notice("ยังไม่มีคำแนะนำแผน: ผลทดสอบความคลาดเคลื่อนของโมเดลยังไม่ผ่านเกณฑ์ และยังไม่ได้พิสูจน์ผลของการเปลี่ยน Ads/ส่วนลดต่อยอดขาย",true),
-        small("จึงยังไม่แสดงตัวเลขยอดขายเทียบเป้า หรือกำไรเทียบเกณฑ์ 10% สำหรับแผนที่ลองปรับ")
-      )));
-    root.append(panel("1 · โมเดลทำนายอะไรได้แล้ว",
-      "ตัวอย่างยอดขายสุทธิรายสัปดาห์ แยกตามกลุ่มสินค้า จากชุดข้อมูลจำลองของ ML Lab",
-      contentArea(
-        dataTable([["forecast_week_start","สัปดาห์ที่ทำนาย"],["product_group_id","กลุ่มสินค้า"],
-          ["predicted_net_revenue_week","ยอดขายสุทธิที่คาด"]],
-          predictions,{predicted_net_revenue_week:{kind:"money",digits:2}}),
-        small("ตัวเลขนี้ใช้แผนการตลาดที่บันทึกไว้ในชุดเดโม ไม่ใช่ผลจากการกรอกงบใหม่")
-      )));
-    root.append(panel("2 · ผลทำนายเชื่อถือได้เพียงใด",
-      "เลือกโมเดลจากข้อมูล Validation แล้วประเมินอีกครั้งกับช่วง Test ที่แยกไว้",
-      contentArea(
-        add(box("metrics"),
-          metric("โมเดลที่เลือก",chosen,ml.registry.model_version),
-          metric("คลาดเคลื่อนรายกลุ่ม",pct(score.group_wape_pct,2),"WAPE · เกณฑ์ไม่เกิน 20%"),
-          metric("คลาดเคลื่อนทั้งร้าน",pct(score.shop_wape_pct,2),"WAPE · เกณฑ์ไม่เกิน 15%")),
-        small("WAPE คือสัดส่วนยอดที่ทำนายคลาดจากยอดจริง ยิ่งต่ำยิ่งดี"),
-        notice("โมเดลที่เลือกยังไม่ผ่านเกณฑ์ทั้งรายกลุ่มและทั้งร้าน จึงยังไม่ใช้ผลไปแนะนำแผน",true),
-        dataTable([["model","วิธีทำนาย"],["group_wape_pct","WAPE รายกลุ่ม"],
-          ["shop_wape_pct","WAPE ทั้งร้าน"]],ml.test_metrics,
-          {group_wape_pct:{kind:"percent",digits:2},shop_wape_pct:{kind:"percent",digits:2}})
-      )));
-    root.append(panel("3 · ข้อมูลและวิธีคำนวณที่ตรวจสอบได้",
-      "ตามรอยจาก Warehouse ไปถึงข้อมูลที่ป้อนให้โมเดล",
-      contentArea(
-        small("Source ประวัติจำลอง → Database → Data Lake → DuckDB Warehouse → Feature Store → โมเดล"),
-        small("Warehouse: Mart_Product_Group_Daily_Performance · "+money(ml.backtest.weeks)+
-          " สัปดาห์ · "+money(ml.backtest.groups)+" กลุ่มสินค้า"),
-        small("Feature Store: "+money(ml.feature_count)+
-          " แถว · หนึ่งแถวระบุกลุ่มสินค้า สัปดาห์ที่จะทำนาย และวันที่ตัดข้อมูล"),
-        small("ตัวอย่างข้อมูลที่ใช้คิด: ยอดขายย้อนหลัง ค่า Ads ย้อนหลัง และแผน Ads ที่บันทึกก่อนวันทำนาย"),
-        dataTable([["as_of_date","ข้อมูลถึงวันที่"],["forecast_week_start","สัปดาห์ที่จะทำนาย"],
-          ["product_group_id","กลุ่มสินค้า"],["revenue_last_week","ยอดขายสัปดาห์ก่อน"],
-          ["planned_ads_week","แผน Ads"]],features,
-          {revenue_last_week:{kind:"money"},planned_ads_week:{kind:"money"}}),
-        small("ข้อมูลชุดนี้เป็นประวัติจำลองที่สร้างย้อนหลัง จึงยังต้องตรวจความพร้อมก่อนใช้กับงานจริง"),
-        link("ดูขั้นตอนที่สร้าง Warehouse และผลโมเดล",state.data.links.ml)
-      )));
-    const ads=labelInput("งบ Ads ที่ต้องการลอง (บาท)","number",state.mlAds||"","0","1000000");
-    const discount=labelInput("ส่วนลดที่ต้องการลอง (%)","number",state.mlDiscount||"","0","100");
-    ads.field.addEventListener("input",()=>{state.mlAds=ads.field.value;});
-    discount.field.addEventListener("input",()=>{state.mlDiscount=discount.field.value;});
-    const simulate=node("button","button button-primary","ประเมินแผนใหม่ · ยังไม่เปิดใช้");
-    simulate.type="button";simulate.disabled=true;
-    root.append(panel("ขั้นต่อไป · ทดลองแผนยอดขายและกำไร",
-      "เมื่อโมเดลผ่านการประเมิน จะลองงบและส่วนลด แล้วเทียบยอดขายกับกำไรตาม KPI ได้",
-      contentArea(
-        box("scenario-grid",ads.label,discount.label),simulate,
-        small("การเปลี่ยนงบ Ads ต้องมีแบบจำลองผลของแผนที่ตรวจสอบได้ ก่อนคำนวณยอดขายและกำไรของแผนใหม่")
-      )));
+    $("#footerStatus").textContent="โมเดลทำนายได้ · ผลประเมินยังไม่ผ่านเกณฑ์";
+    const step=(title,opened,...children)=>{
+      const details=node("details","notebook-history");details.open=opened;
+      details.append(node("summary","",title),box("notebook-history-body",...children));
+      return details;
+    };
+    root.append(notice("โจทย์ ML: ใช้ข้อมูลจาก Warehouse ทำนายยอดขายสุทธิรายสัปดาห์แยกตามกลุ่มสินค้า · ชุดนี้เป็นข้อมูลจำลองเพื่อการศึกษา"));
+    root.append(small("เลือกกลุ่มสินค้า แล้วกดเปิดแต่ละขั้นเพื่อดูข้อมูลที่ใช้ วิธีทำ และผลที่ได้"));
+    root.append(chooseField("กลุ่มสินค้าที่จะดู",groups.map(id=>[id,title(id)]),group,v=>{state.mlGroup=v;renderML();}));
+    root.append(step("1 · ข้อมูลจาก Warehouse",true,
+      small("Source ประวัติจำลองผ่าน Database และ Data Lake ก่อนโหลดเข้า DuckDB Warehouse"),
+      small("ตารางที่ใช้: Mart_Product_Group_Daily_Performance · "+money(ml.backtest.weeks)+
+        " สัปดาห์ · "+money(ml.backtest.groups)+" กลุ่มสินค้า"),
+      small("ML Lab นี้ใช้ Warehouse ประวัติแยกจาก Lab ที่ทดสอบ Run 1/2"),
+      link("ดู workflow ที่สร้าง Warehouse",state.data.links.ml)));
+    root.append(step("2 · สร้าง Feature Store",false,
+      small(money(ml.feature_count)+" แถว · คีย์คือกลุ่มสินค้า สัปดาห์ที่จะทำนาย และวันที่ตัดข้อมูล"),
+      small("ยอดขายย้อนหลัง ค่า Ads ย้อนหลัง และแผน Ads ที่ทราบก่อนวันทำนาย เป็นตัวอย่างข้อมูลเข้าโมเดล"),
+      dataTable([["as_of_date","ข้อมูลถึงวันที่"],["forecast_week_start","สัปดาห์ที่จะทำนาย"],
+        ["product_group_id","กลุ่มสินค้า"],["revenue_last_week","ยอดขายสัปดาห์ก่อน"],
+        ["planned_ads_week","แผน Ads"]],features,
+        {revenue_last_week:{kind:"money"},planned_ads_week:{kind:"money"}})));
+    root.append(step("3 · เตรียมชุดฝึกและฝึกโมเดล",false,
+      small("ค่าที่ทำนาย: ยอดขายสุทธิของสัปดาห์ถัดไป แยกตามกลุ่มสินค้า"),
+      small("แบ่งข้อมูลตามเวลา · Validation: "+(ml.backtest.validation_folds||[]).join(", ")+
+        " · Test: "+(ml.backtest.final_test_window||[]).join(" ถึง ")),
+      small("เปรียบเทียบวิธีพื้นฐานกับโมเดลที่ใช้ยอดขายย้อนหลังและข้อมูลการตลาด"),
+      small("โมเดลที่เลือกจาก Validation: "+chosen+" · รุ่น "+ml.registry.model_version)));
+    root.append(step("4 · ตรวจความคลาดเคลื่อน",false,
+      small("WAPE คือสัดส่วนยอดที่ทำนายคลาดจากยอดจริง ยิ่งต่ำยิ่งดี"),
+      add(box("metrics"),
+        metric("WAPE รายกลุ่ม",pct(score.group_wape_pct,2),"เกณฑ์ไม่เกิน 20%"),
+        metric("WAPE ทั้งร้าน",pct(score.shop_wape_pct,2),"เกณฑ์ไม่เกิน 15%")),
+      notice("ผลทดสอบยังไม่ผ่านเกณฑ์ทั้งสองข้อ จึงยังไม่ใช้โมเดลนี้แนะนำแผนการตลาด",true),
+      dataTable([["model","วิธีทำนาย"],["group_wape_pct","WAPE รายกลุ่ม"],
+        ["shop_wape_pct","WAPE ทั้งร้าน"]],ml.test_metrics,
+        {group_wape_pct:{kind:"percent",digits:2},shop_wape_pct:{kind:"percent",digits:2}})));
+    root.append(step("5 · ดูผลทำนายและเทียบยอดจริง",false,
+      small("ตัวอย่างผลทำนายที่โมเดลบันทึกไว้สำหรับ "+group),
+      dataTable([["forecast_week_start","สัปดาห์"],["predicted_net_revenue_week","ยอดขายสุทธิคาดการณ์"]],
+        predicted,{predicted_net_revenue_week:{kind:"money",digits:2}}),
+      small("ตัวอย่างช่วง Test ที่มียอดจริงแล้ว"),
+      dataTable([["forecast_week_start","สัปดาห์"],["actual_net_revenue_week","ยอดจริง"],
+        ["predicted_net_revenue_week","ยอดที่ทำนาย"]],checked,
+        {actual_net_revenue_week:{kind:"money",digits:2},predicted_net_revenue_week:{kind:"money",digits:2}})));
+    root.append(notice("ผลนี้แสดงการทำ ML จาก Warehouse ได้จริง แต่ยังไม่ใช่การจำลองผลของการเปลี่ยนงบ Ads หรือส่วนลด"));
   }
 
   function render(){

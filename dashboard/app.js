@@ -1428,62 +1428,65 @@
 
   function renderML(){
     const root=$("#app");root.replaceChildren();state.rows=[];
-    $("#headerMode").textContent="วางแผนยอดขายและกำไร";
-    const snapshot=state.warehouseSnapshot;
-    const result=snapshot?.result;
-    const runLabel=result?.batch==="incremental"?"Run 2":"Run 1";
-    root.append(notice("เป้าหมาย: ยอดขายถึงเป้า และกำไรหลังต้นทุนที่เกี่ยวข้องไม่น้อยกว่า 10% ของ Gross Reference Sales"));
-    if(state.warehouseStatus==="not_loaded"||state.warehouseStatus==="loading"){
-      root.append(small("กำลังตรวจข้อมูล Warehouse ของ Lab รอบปัจจุบัน…"));return;
-    }
-    if(state.warehouseStatus==="error"){
-      root.append(notice("อ่านข้อมูล Warehouse รอบปัจจุบันไม่ได้ · "+state.warehouseError,true));
-      const retry=node("button","button button-outline","ตรวจอีกครั้ง");
-      retry.type="button";retry.addEventListener("click",loadWarehouseDashboard);root.append(retry);return;
-    }
-    if(snapshot?.running){
-      root.append(small("Pipeline กำลังรัน · รอผล Warehouse รอบนี้ก่อนเตรียมข้อมูล ML"));return;
-    }
-    const available=snapshot?.phase!=="EMPTY"&&!!result;
-    root.append(panel("1 · ข้อมูลตั้งต้นจาก Warehouse",
-      available?"Lab รอบ "+snapshot.cycle+" · "+runLabel+" · ใช้ผลรอบปัจจุบัน":
-        "Lab รอบ "+(snapshot?.cycle??"—")+" ว่างอยู่",
+    const ml=state.data.ml;
+    const chosen=ml.registry.selected_model;
+    const score=ml.test_metrics.find(x=>x.model===chosen)||{};
+    const group=state.mlGroup||"PG01";
+    const features=(ml.feature_preview||[]).filter(x=>x.product_group_id===group).slice(0,5);
+    const predictions=(ml.serving_predictions||[]).filter(x=>x.product_group_id===group);
+    state.rows=predictions;
+    $("#headerMode").textContent="ML Lab · Warehouse ประวัติจำลอง";
+    $("#snapshotStamp").textContent="ML Lab · "+(state.data.generated_at_utc||"—");
+    $("#footerStatus").textContent="โมเดลสาธิต · ยังไม่ผ่านเกณฑ์ WAPE";
+    root.append(notice("ML Lab นี้รัน ETL จาก Source ประวัติจำลองไปยัง DuckDB Warehouse แล้วสร้าง Feature และฝึกโมเดลจาก Warehouse นั้น · แยกจาก Lab Run 1/2"));
+    root.append(panel("1 · ข้อมูลจาก Warehouse ของ ML Lab",
+      "ข้อมูลประวัติจำลอง "+money(ml.backtest.weeks)+" สัปดาห์ · "+money(ml.backtest.groups)+" กลุ่มสินค้า",
       contentArea(
-        available?small("Warehouse มี "+money(result.orders_after)+" ออเดอร์ · ข้อมูลนี้เป็นข้อมูลจำลองเพื่อการศึกษา"):
-          notice("ยังไม่มีข้อมูล Warehouse สำหรับเตรียม Feature · เริ่ม Run 1 ที่ Test Pipeline ก่อน"),
-        available?small("แหล่งข้อมูลที่ต้องใช้: Mart_Product_Group_Daily_Performance สำหรับยอดขาย ต้นทุน และค่า Ads รายวัน"):null
+        small("แหล่งข้อมูล: Mart_Product_Group_Daily_Performance ใน DuckDB Warehouse · สร้างจาก Source ผ่าน Database และ Data Lake"),
+        small("รอบสร้างรายงาน: "+(state.data.generated_at_utc||"—")+" · ใช้ข้อมูลสังเคราะห์เพื่อการศึกษา"),
+        link("ดู workflow ที่สร้าง Warehouse และรายงาน",state.data.links.ml)
       )));
     root.append(panel("2 · Feature Store",
-      "เตรียมข้อมูลรายกลุ่มสินค้าและเวลา เพื่อใช้วิธีเดียวกันตอนฝึกและตอนทำนาย",
+      money(ml.feature_count)+" แถว · คีย์กลุ่มสินค้า + สัปดาห์ + วันที่อ้างอิง",
       contentArea(
-        small("คีย์: Product_Group_ID + วันที่อ้างอิง · ตัวอย่าง Feature: ยอดขายย้อนหลัง ค่าเฉลี่ยย้อนหลัง ค่า Ads และส่วนลดที่ทราบก่อนวันทำนาย"),
-        notice("ยังไม่มี Feature Store ที่สร้างและตรวจจาก Warehouse ของ Lab รอบนี้ · จึงยังไม่แสดงแถว Feature หรือผลโมเดลเป็นข้อมูลปัจจุบัน")
+        small("ตัวอย่าง Feature: ยอดขายสัปดาห์ก่อน ค่าเฉลี่ยย้อนหลัง ค่า Ads ย้อนหลัง และแผน Ads ที่บันทึกก่อนวันทำนาย"),
+        dataTable([["as_of_date","ข้อมูลถึงวันที่"],["forecast_week_start","สัปดาห์ที่จะทำนาย"],
+          ["product_group_id","กลุ่ม"],["revenue_last_week","ยอดขายสัปดาห์ก่อน"],
+          ["planned_ads_week","แผน Ads"]],features,
+          {revenue_last_week:{kind:"money"},planned_ads_week:{kind:"money"}}),
+        small("ข้อมูลย้อนหลังเป็นแบบ retrospective จึงยังไม่ใช่หลักฐานพร้อมใช้จริง")
+      )));
+    root.append(panel("3 · ประเมินโมเดล",
+      "เลือกโมเดลจากช่วง Validation แล้ววัดผลกับช่วง Test ที่แยกไว้",
+      contentArea(
+        add(box("metrics"),
+          metric("โมเดลที่เลือก",chosen,ml.registry.model_version),
+          metric("WAPE รายกลุ่ม",pct(score.group_wape_pct,2),"เกณฑ์ ≤20%"),
+          metric("WAPE ทั้งร้าน",pct(score.shop_wape_pct,2),"เกณฑ์ ≤15%")),
+        notice("ผลล่าสุดยังไม่ผ่านเกณฑ์ WAPE ทั้งสองข้อ · WAPE คือสัดส่วนความคลาดเคลื่อนของผลทำนาย ยิ่งต่ำยิ่งดี",true),
+        dataTable([["model","โมเดล"],["group_wape_pct","WAPE รายกลุ่ม"],["shop_wape_pct","WAPE ทั้งร้าน"]],
+          ml.test_metrics,{group_wape_pct:{kind:"percent",digits:2},shop_wape_pct:{kind:"percent",digits:2}})
+      )));
+    root.append(panel("4 · ผลทำนายจากโมเดลที่บันทึกไว้",
+      "ผลจาก Warehouse ของ ML Lab · เป็นผล Replay ของสัปดาห์ทดสอบ",
+      contentArea(
+        chooseField("กลุ่มสินค้า",groups.map(id=>[id,title(id)]),group,v=>{state.mlGroup=v;renderML();}),
+        dataTable([["forecast_week_start","สัปดาห์"],["product_group_id","กลุ่ม"],
+          ["predicted_net_revenue_week","ยอดขายสุทธิคาดการณ์"]],
+          predictions,{predicted_net_revenue_week:{kind:"money",digits:2}}),
+        small("ผลนี้ใช้แผน Ads ที่อยู่ในชุดข้อมูลเดโม ไม่ใช่ผลของงบใหม่ที่กรอกด้านล่าง")
       )));
     const ads=labelInput("งบ Ads ที่อยากทดลอง (บาท)","number",state.mlAds||"","0","1000000");
-    const discount=labelInput("ส่วนลด Campaign ที่อยากทดลอง (%)","number",state.mlDiscount||"","0","100");
+    const discount=labelInput("ส่วนลดที่อยากทดลอง (%)","number",state.mlDiscount||"","0","100");
     ads.field.addEventListener("input",()=>{state.mlAds=ads.field.value;});
     discount.field.addEventListener("input",()=>{state.mlDiscount=discount.field.value;});
-    const simulate=node("button","button button-primary","ทำนายผลแผน · รอโมเดล");
+    const simulate=node("button","button button-primary","ทำนายแผนใหม่ · ยังไม่พร้อม");
     simulate.type="button";simulate.disabled=true;
-    root.append(panel("3 · เลือกแผนเพื่อจำลอง",
-      "เลือกงบ Ads และส่วนลด แล้วดูยอดขายกับกำไรเทียบ KPI เมื่อโมเดลพร้อม",
+    root.append(panel("5 · ลองแผน Ads และกำไร",
+      "เป้าหมายคือยอดขายถึงเป้า และกำไรหลังต้นทุนไม่น้อยกว่า 10% ของ Gross Reference Sales",
       contentArea(
-        chooseField("กลุ่มสินค้า",groups.map(id=>[id,title(id)]),state.mlGroup||"PG01",v=>{state.mlGroup=v;renderML();}),
-        box("scenario-grid",ads.label,discount.label),
-        simulate,
-        notice("ยังไม่มีโมเดลวัดผลของการเปลี่ยน Ads/ส่วนลดที่ผ่านการตรวจย้อนหลัง จึงยังคำนวณยอดขายหรือกำไรของแผนใหม่อย่างน่าเชื่อถือไม่ได้",true),
-        add(box("metrics"),
-          metric("ยอดขายเทียบเป้า","—","รอโมเดลประเมินแผน"),
-          metric("กำไรเทียบเกณฑ์ 10%","—","รอผลยอดขายและต้นทุน"),
-          metric("ผลแผน","ยังประเมินไม่ได้","ไม่มีตัวเลขสมมติ"))
-      )));
-    root.append(panel("4 · วิธีตรวจโมเดลและผลจริง",
-      "เปิดดูหลักฐานก่อนใช้ผลคาดการณ์ประกอบการตัดสินใจ",
-      contentArea(
-        small("ชุดข้อมูลฝึกต้องแยกตามเวลา และใช้เฉพาะ Feature ที่รู้ก่อนวันทำนาย"),
-        small("WAPE วัดความคลาดเคลื่อนของยอดขายที่ทำนายเทียบยอดจริง · ยิ่งต่ำยิ่งดี ไม่ใช่เปอร์เซ็นต์ความแม่นยำ"),
-        small("เมื่อมีโมเดลของ Warehouse รอบนี้ จะแสดง Baseline, WAPE รายกลุ่ม, ช่วงข้อมูลทดสอบ และผลจริงหลังรัน"),
-        notice("ผล WAPE ในรายงานตัวอย่างเดิมไม่ใช่ผลจาก Warehouse รอบปัจจุบัน จึงไม่ใช้ตัดสินแผนนี้")
+        box("scenario-grid",ads.label,discount.label),simulate,
+        notice("โมเดลปัจจุบันทำนายจาก Warehouse ได้ แต่ WAPE ยังไม่ผ่านเกณฑ์ และยังยืนยันผลเพิ่มยอดขายจากการเปลี่ยน Ads/ส่วนลดไม่ได้ จึงยังไม่แสดงยอดขายหรือกำไรของแผนใหม่",true)
       )));
   }
 
@@ -1512,7 +1515,7 @@
     $("#groupFilterWrap").classList.toggle("hidden",value!=="ml");
     $("#modelFilterWrap").classList.toggle("hidden",value!=="ml");
     render();
-    if(value==="business"||value==="ml")loadWarehouseDashboard();
+    if(value==="business")loadWarehouseDashboard();
     if(value==="pipeline" && state.neonStatus==="not_loaded")loadNeonEvidence();
     if(value==="pipeline" && !state.realConfigChecked)loadRealCapabilities();
     if(value==="pipeline" && state.savedLabManifest===null)loadSavedLabEvidence();

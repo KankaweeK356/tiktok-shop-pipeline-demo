@@ -11,7 +11,7 @@
   state.errorRun={status:"",since:"",url:"",runId:null,phase:"",previous:"0",
     failEvidence:null,fixEvidence:null,error:"",neonRows:null};
   const names = {
-    business:["ภาพรวมธุรกิจ","ยอดขาย กำไร และ KPI ของร้านเสื้อผ้าผู้หญิง","ภาพรวมธุรกิจ"],
+    business:["ภาพรวมธุรกิจ","รายงาน Snapshot จำลองจาก Data Warehouse · ไม่ใช่ข้อมูลปัจจุบันใน Neon","ภาพรวมธุรกิจ"],
     pipeline:["Test Pipeline","จาก Source ผ่าน Database และ Data Lake สู่ Warehouse","Test Pipeline"],
     ml:["พยากรณ์ยอดขาย","ผลทำนายเทียบยอดขายจริงและความน่าเชื่อถือของโมเดล","พยากรณ์ยอดขาย"]
   };
@@ -144,7 +144,15 @@
         groupProtection===null?"":groupProtection<benchmarkPct?"metric-bad":"metric-good")
     ];
     const root=$("#app");root.replaceChildren();
-    root.append(notice("แหล่งข้อมูล Business Dashboard: DuckDB Snapshot ของชุด Historical ML จำลอง · แยกจาก Neon demo-pipeline ในหน้า Lab จึงห้ามนำยอดสองหน้ามารวมกัน",true));
+    const sourceNotice=notice("ตัวเลขหน้านี้มาจากรายงาน Snapshot จำลองของ Historical ML ซึ่งเก็บแยกจาก Neon Lab · การเคลียร์ Neon ไม่ได้ลบหรืออัปเดต Snapshot นี้ จึงยังเห็นตัวเลขได้แม้ Neon จะว่าง",true);
+    const neonButton=node("button","button button-outline","ดูสถานะและข้อมูลปัจจุบันใน Neon");
+    neonButton.type="button";
+    neonButton.addEventListener("click",()=>{
+      state.pipelineTab="neon";
+      setView("pipeline");
+      loadLabNeon();
+    });
+    root.append(sourceNotice,neonButton);
     root.append(notice(allShop?
       "เป้ากำไรขั้นต่ำ "+pct(benchmarkPct,0)+" ของยอดขายอ้างอิงราคาเต็ม (Gross Reference Sales) · กำไรทั้งร้านหัก Ads / Sample / Claim แล้ว":
       "อัตรากำไรกลุ่มเทียบเกณฑ์ร้าน "+pct(benchmarkPct,0)+" เพื่อคัดกรองกลุ่มที่น่าตรวจ ไม่ใช่การอนุมัติผ่านเป้าราย SKU"));
@@ -1655,8 +1663,8 @@
       $("#snapshotStamp").textContent=d.generated_at_utc?new Intl.DateTimeFormat("th-TH",{
         timeZone:"Asia/Bangkok",year:"numeric",month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"
       }).format(new Date(d.generated_at_utc)):"Batch Snapshot";
-      $("#headerMode").textContent="รายงานจากการรันล่าสุด · ไม่ใช่ข้อมูลสด";
-      $("#footerStatus").textContent=d.source_run;
+      $("#headerMode").textContent="Snapshot จำลอง · แยกจาก Neon";
+      $("#footerStatus").textContent="Historical ML Snapshot · ไม่ใช่ข้อมูลปัจจุบันใน Neon";
       $("#repoLink").href=d.links.repo;
       setView("business");
       try {

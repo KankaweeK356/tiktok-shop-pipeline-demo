@@ -1589,4 +1589,93 @@
     if(state.view==="business")renderBusiness();
     if(state.view==="pipeline")renderPipeline();
     if(state.view==="ml")renderML();
-    $("#exportCurrent").textContent="↓ ดาวน์โหลดข้อมูลตั
+    $("#exportCurrent").textContent="↓ ดาวน์โหลดข้อมูลตัวอย่างที่แสดง (CSV)";
+    $("#exportCurrent").disabled=state.view==="pipeline"||!state.rows.length;
+  }
+  function setView(value){
+    if(!names[value])return;
+    state.view=value;state.replay=false;
+    document.querySelectorAll("[data-view]").forEach(btn=>{
+      const active=btn.dataset.view===value;
+      btn.classList.toggle("is-active",active);
+      if(active)btn.setAttribute("aria-current","page");else btn.removeAttribute("aria-current");
+    });
+    $("#pageTitle").textContent=names[value][0];
+    $("#pageSubtitle").textContent=names[value][1];
+    $("#crumbView").textContent=names[value][2];
+    $("#monthFilterWrap").classList.toggle("hidden",value!=="business");
+    $("#groupFilterWrap").classList.toggle("hidden",value==="pipeline");
+    $("#modelFilterWrap").classList.toggle("hidden",value!=="ml");
+    render();
+    if(value==="pipeline" && state.neonStatus==="not_loaded")loadNeonEvidence();
+    if(value==="pipeline" && !state.realConfigChecked)loadRealCapabilities();
+    if(value==="pipeline" && state.savedLabManifest===null)loadSavedLabEvidence();
+  }
+  function exportCsv(){
+    const rows=state.rows;if(!rows.length)return;
+    const columns=[...new Set(rows.flatMap(x=>Object.keys(x)))];
+    const cell=x=>{
+      const s=x===null||x===undefined?"":String(x);
+      return /[,\"\r\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;
+    };
+    const csv=[columns.map(cell).join(","),...rows.map(x=>columns.map(k=>cell(x[k])).join(","))].join("\r\n");
+    const blob=new Blob(["\ufeff",csv],{type:"text/csv;charset=utf-8"});
+    const url=URL.createObjectURL(blob),a=document.createElement("a");
+    a.href=url;a.download="tiktok_"+state.view+"_"+state.month+".csv";
+    document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
+  async function init(){
+    document.querySelectorAll("[data-view]").forEach(btn=>btn.addEventListener("click",()=>setView(btn.dataset.view)));
+    $("#exportCurrent").addEventListener("click",exportCsv);
+    try {
+      const res=await fetch("./data/report.json",{cache:"no-cache"});
+      if(!res.ok)throw Error("HTTP "+res.status);
+      const d=await res.json();
+      if(d.schema_version!=="decision_dashboard_v1" ||
+         d.source_classification!=="SYNTHETIC_EDUCATIONAL_NOT_TIKTOK" ||
+         !Array.isArray(d.business?.months) || !Array.isArray(d.ml?.test_predictions) ||
+         !Array.isArray(d.pipeline?.stages) || !d.business.months.length || !d.ml.test_predictions.length)
+        throw Error("รูปแบบ Report ไม่ถูกต้องหรือไม่มีข้อมูลจริงจาก Pipeline");
+      state.data=d;
+      const months=d.business.months.map(x=>x.month);
+      state.month=months.includes("2026-10")?"2026-10":months[months.length-1];
+      $("#monthFilter").replaceChildren(...months.map(x=>{const opt=node("option","",x);opt.value=x;return opt;}));
+      $("#monthFilter").value=state.month;
+      $("#groupFilter").replaceChildren(...[["ALL","ทุกกลุ่มสินค้า"],...groups.map(x=>[x,title(x)])].map(x=>{
+        const opt=node("option","",x[1]);opt.value=x[0];return opt;
+      }));
+      state.model=d.ml.registry.selected_model;
+      $("#modelFilter").replaceChildren(...d.ml.test_metrics.map(x=>{
+        const opt=node("option","",x.model);opt.value=x.model;return opt;
+      }));
+      $("#modelFilter").value=state.model;
+      $("#monthFilter").addEventListener("change",e=>{state.month=e.target.value;render()});
+      $("#groupFilter").addEventListener("change",e=>{state.group=e.target.value;state.sku="";render()});
+      $("#modelFilter").addEventListener("change",e=>{state.model=e.target.value;state.replay=false;render()});
+      $("#snapshotStamp").textContent=d.generated_at_utc?new Intl.DateTimeFormat("th-TH",{
+        timeZone:"Asia/Bangkok",year:"numeric",month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"
+      }).format(new Date(d.generated_at_utc)):"Batch Snapshot";
+      $("#headerMode").textContent="รายงานจากการรันล่าสุด · ไม่ใช่ข้อมูลสด";
+      $("#footerStatus").textContent=d.source_run;
+      $("#repoLink").href=d.links.repo;
+      setView("business");
+      try {
+        const evidenceResponse=await fetch("./data/classroom_evidence.json",{cache:"no-cache"});
+        if(evidenceResponse.ok){
+          const evidence=await evidenceResponse.json();
+          if(evidence.classification==="SYNTHETIC_EDUCATIONAL_NOT_TIKTOK"
+            && evidence.layers?.source && evidence.layers?.warehouse)state.evidence=evidence;
+        }
+      }catch(_error){
+        // Explorer will clearly report that the real evidence snapshot is unavailable.
+      }
+      if(state.view==="pipeline")renderPipeline();
+    } catch(e){
+      $("#app").replaceChildren(notice("ไม่สามารถโหลด Report Snapshot: "+e.message+
+        " กรุณารัน Python Exporter แล้วเปิดเว็บด้วย HTTP Server ไม่ใช่ file://",true));
+      $("#headerMode").textContent="ไม่พบข้อมูลรายงาน";
+      $("#exportCurrent").disabled=true;
+    }
+  }
+  init();
+})();

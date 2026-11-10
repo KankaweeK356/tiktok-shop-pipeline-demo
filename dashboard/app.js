@@ -11,7 +11,7 @@
   state.errorRun={status:"",since:"",url:"",runId:null,phase:"",previous:"0",
     failEvidence:null,fixEvidence:null,error:"",neonRows:null};
   const names = {
-    business:["ภาพรวมธุรกิจ","ข้อมูลจาก Warehouse ของ Lab รอบปัจจุบัน · ว่างเมื่อเคลียร์ Lab","ภาพรวมธุรกิจ"],
+    business:["ภาพรวมธุรกิจ","เส้นทางข้อมูลจากการนำเข้า ถึงการวิเคราะห์และโมเดล ML","ภาพรวมธุรกิจ"],
     pipeline:["Test Pipeline","จาก Source ผ่าน Database และ Data Lake สู่ Warehouse","Test Pipeline"],
     ml:["วางแผนยอดขายและกำไร","เลือกแผน ดู KPI และเปิดดูหลักฐาน ML","วางแผนยอดขายและกำไร"]
   };
@@ -161,7 +161,24 @@
       snapshot?.running?"กำลังประมวลผล · จะเปิดข้อมูลเมื่อ Run สำเร็จ":
       (snapshot?.result?.batch==="incremental"?"Run 2":"Run 1")+" · Lab รอบ "+(snapshot?.cycle??"—"):
       "ตรวจสอบ Warehouse";
-    root.append(notice("หน้านี้อ่านผลจาก DuckDB Warehouse ของ Run ปัจจุบันโดยตรง · เมื่อเคลียร์ Lab สถานะจะกลับเป็นว่างและซ่อนผลรอบก่อน",false));
+    const pipelineButton=node("button","button button-outline","ดูการรัน Pipeline");
+    pipelineButton.type="button";pipelineButton.addEventListener("click",()=>setView("pipeline"));
+    const mlButton=node("button","button button-outline","ดูวิธีสร้างโมเดล ML");
+    mlButton.type="button";mlButton.addEventListener("click",()=>setView("ml"));
+    root.append(panel("จากข้อมูลสู่การตัดสินใจ",
+      "เว็บนี้สาธิตการทำงานครบเส้นทาง พร้อมเปิดให้ตรวจข้อมูลและผลของแต่ละขั้น",
+      contentArea(
+        box("steps-grid",
+          box("step-card",node("div","step-num","01"),node("span","step-name","นำข้อมูลเข้า"),
+            node("div","step-text","รัน Source → Database → Data Lake → Warehouse และตรวจความครบถ้วน")),
+          box("step-card",node("div","step-num","02"),node("span","step-name","อ่านผลธุรกิจ"),
+            node("div","step-text","ดูตารางและตัวเลขจาก Warehouse ของ Lab รอบปัจจุบัน")),
+          box("step-card",node("div","step-num","03"),node("span","step-name","ใช้ข้อมูลทำ ML"),
+            node("div","step-text","ดู Feature Store ผลทดสอบโมเดล และตัวอย่างคำทำนายจาก ML Lab"))),
+        box("h-stack",pipelineButton,mlButton),
+        small("ข้อมูลทั้งสอง Lab เป็นข้อมูลจำลองเพื่อการศึกษา · ML Lab ใช้ Warehouse ประวัติแยกจาก Run 1/2")
+      )));
+    root.append(notice("ตัวเลขธุรกิจด้านล่างอ่านจาก DuckDB Warehouse ของ Run ปัจจุบัน · เมื่อเคลียร์ Lab ผลรอบก่อนจะไม่แสดง",false));
     if(state.warehouseStatus==="not_loaded"||state.warehouseStatus==="loading"){
       root.append(small("กำลังตรวจสถานะ Lab และ Warehouse…"));return;
     }

@@ -13,7 +13,7 @@
   const names = {
     business:["ภาพรวมธุรกิจ","ข้อมูลจาก Warehouse ของ Lab รอบปัจจุบัน · ว่างเมื่อเคลียร์ Lab","ภาพรวมธุรกิจ"],
     pipeline:["Test Pipeline","จาก Source ผ่าน Database และ Data Lake สู่ Warehouse","Test Pipeline"],
-    ml:["พยากรณ์ยอดขาย","ผลทำนายเทียบยอดขายจริงและความน่าเชื่อถือของโมเดล","พยากรณ์ยอดขาย"]
+    ml:["วางแผนยอดขายและกำไร","เลือกแผน ดู KPI และเปิดดูหลักฐาน ML","วางแผนยอดขายและกำไร"]
   };
   const groups=["PG01","PG02","PG03","PG04","PG05"];
   const money = (n,digits=0) => n===null||n===undefined||!Number.isFinite(Number(n)) ? "—" :
@@ -116,7 +116,7 @@
   async function loadWarehouseDashboard(){
     if(state.warehouseStatus==="loading")return;
     state.warehouseStatus="loading";state.warehouseSnapshot=null;state.warehouseError="";
-    if(state.view==="business")render();
+    if(state.view==="business"||state.view==="ml")render();
     try{
       const statusResponse=await fetch("/api/lab-batch",{cache:"no-store"});
       const status=await statusResponse.json();
@@ -141,7 +141,7 @@
       state.warehouseSnapshot=null;
       state.warehouseError=error.message||"อ่านข้อมูล Warehouse ไม่ได้";
     }
-    if(state.view==="business")render();
+    if(state.view==="business"||state.view==="ml")render();
   }
 
   function renderBusiness(){
@@ -1427,78 +1427,64 @@
   }
 
   function renderML(){
-    const ml=state.data.ml,chosen=state.model||ml.registry.selected_model;
-    const score=ml.test_metrics.find(x=>x.model===chosen)||{};
-    const root=$("#app");root.replaceChildren();
-    root.append(notice("Synthetic ML แบบ DEMO ONLY: เปรียบเทียบ Forecast Accuracy ไม่ใช่หลักฐานเชิงเหตุและผลว่าเพิ่ม Ads แล้วขายเพิ่ม",true));
-    root.append(add(box("metrics"),
-      metric("โมเดลที่เลือกจากผลทดสอบ",ml.registry.selected_model,"ไม่ได้เลือกจาก Test"),
-      metric("Group WAPE · "+chosen,pct(score.group_wape_pct,2),"เป้าหมาย ≤20%",score.group_target_20pct?"metric-good":"metric-bad"),
-      metric("Shop WAPE · "+chosen,pct(score.shop_wape_pct,2),"เป้าหมาย ≤15%",score.shop_target_15pct?"metric-good":"metric-bad"),
-      metric("ชุดข้อมูลฝึกโมเดล",money(ml.backtest.dataset_rows)+" Rows",ml.backtest.weeks+" Weeks × "+ml.backtest.groups+" Groups")));
-    const steps=[
-      ["01","Data Extraction","CSV / SQLite / Parquet / DuckDB"],
-      ["02","EDA","Monthly / Group Analysis"],
-      ["03","Preparation","Lag & Planned Features"],
-      ["04","Training","Naive + LightGBM x2"],
-      ["05","Evaluation","MAE / WAPE / Bias"],
-      ["06","Validation","3 Folds + Locked Test"],
-      ["07","Serving","Reload Serialized Model"],
-      ["08","Monitoring","Error and Alerts"]
-    ];
-    const stepsGrid=node("div","steps-grid");
-    steps.forEach(s=>stepsGrid.append(box("step-card",node("div","step-num",s[0]),node("span","step-name",s[1]),node("div","step-text",s[2]))));
-    root.append(panel("ขั้นตอนพัฒนาและตรวจสอบโมเดล (สำหรับผู้สนใจ)","ครบกระบวนการตามบทเรียน · Offline Demonstration",contentArea(stepsGrid)));
-    const modelRows=ml.test_metrics.map(m=>({name:m.model,value:m.group_wape_pct,display:pct(m.group_wape_pct,2)}));
-    const valRows=ml.model_selection.map(m=>({name:m.model,value:m.validation_group_wape_pct,display:pct(m.validation_group_wape_pct,2)}));
-    root.append(box("two-col",
-      panel("ความคลาดเคลื่อนการทำนายรายกลุ่ม","Aug–Sep 2026 · ยิ่งต่ำยิ่งดี",contentArea(barChart(modelRows,chosen),small("WAPE ไม่ใช่เปอร์เซ็นต์ความแม่นยำที่นำไปลบจาก 100"))),
-      panel("เปรียบเทียบผลประเมินโมเดล","เลือกโมเดลจาก May / June / July",contentArea(barChart(valRows,ml.registry.selected_model)))));
-    const byGroup=ml.test_by_group.filter(x=>x.model===chosen&&(state.group==="ALL"||x.product_group_id===state.group));
-    const imp=ml.feature_importance.slice(0,8).map(x=>({name:x.feature,value:x.gain,display:money(x.gain)}));
-    root.append(box("two-col",
-      panel("ความคลาดเคลื่อนแยกกลุ่มสินค้า",chosen,dataTable(
-        [["product_group_id","Group"],["wape_pct","WAPE"],["mae_thb_per_week","MAE / Week"],["bias_pct","Bias"]],
-        byGroup,{wape_pct:{kind:"percent",digits:2},mae_thb_per_week:{kind:"money"},bias_pct:{kind:"percent"}})),
-      panel("Feature Importance · Marketing","Gain: ความสัมพันธ์ ไม่ใช่ผล causal",contentArea(barChart(imp)))));
-    const weeks=[...new Set(ml.test_predictions.map(x=>x.forecast_week_start))].sort();
-    if(!weeks.includes(state.week))state.week=weeks[weeks.length-1];
-    const replayContainer=node("div","panel-body");
-    const selector=chooseField("Forecast Week (Monday)",weeks.map(x=>[x,x]),state.week,v=>{
-      state.week=v;state.replay=false;renderML();
-    });
-    const replayButton=node("button","button button-primary","ดูผลพยากรณ์");replayButton.type="button";
-    replayButton.addEventListener("click",()=>{state.replay=true;renderML()});
-    replayContainer.append(box("h-stack",selector,replayButton));
-    const archived=ml.test_predictions.filter(x=>x.model===chosen&&x.forecast_week_start===state.week&&
-      (state.group==="ALL"||x.product_group_id===state.group));
-    const isServing=chosen===ml.registry.selected_model&&state.week===ml.monitoring.forecast_week;
-    const served=state.replay&&isServing?ml.serving_predictions.filter(x=>state.group==="ALL"||x.product_group_id===state.group).map(x=>({
-      product_group_id:x.product_group_id,
-      actual_net_revenue_week:archived.find(a=>a.product_group_id===x.product_group_id)?.actual_net_revenue_week??null,
-      predicted_net_revenue_week:x.predicted_net_revenue_week
-    })):archived;
-    replayContainer.append(small(state.replay?
-      (isServing?"Saved Model Serving Replay · โมเดลถูกโหลดใหม่จริงใน CI":
-      "Archived Test Prediction · ไม่ได้เรียก Live Model สำหรับสัปดาห์นี้"):
-      "เลือกสัปดาห์และกดปุ่มเพื่อดูผลที่สร้างจาก Pipeline จริง"));
-    if(state.replay)replayContainer.append(dataTable(
-      [["product_group_id","Group"],["actual_net_revenue_week","Actual"],["predicted_net_revenue_week","Prediction"]],served,
-      {actual_net_revenue_week:{kind:"money",digits:2},predicted_net_revenue_week:{kind:"money",digits:2}}));
-    else replayContainer.append(box("empty-state",node("span","", "กดดูผล Serving / Prediction เพื่อแสดงการทำนายที่บันทึกไว้")));
-    replayContainer.append(node("div","flow-divider"));
-    const alerts=ml.monitoring.alerts||[];
-    replayContainer.append(box("h-stack",
-      node("span","tag "+(alerts.length?"tag-warn":"tag-good"),"Monitoring Replay: "+alerts.length+" Alerts"),
-      node("span","tag","Model: "+ml.registry.model_version),
-      node("span","tag","Approval: DEMO ONLY")));
-    replayContainer.append(small(alerts.length?"Alert: "+alerts.join(", "):"ไม่มี Alert ในสัปดาห์ Replay"));
-    replayContainer.append(small("Serving/Monitoring เป็น Offline Replay: ใช้ Actual หลังจากทำนายแล้ว ไม่ใช่ระบบสด"));
-    root.append(panel("ผลทำนายและการติดตามโมเดล","เลือกรอบ Backtest แล้วเปิดหลักฐานการทำนาย",replayContainer,link("Workflow",state.data.links.ml)));
-    root.append(panel("ตัวอย่างข้อมูลที่ใช้ทำนาย","10 ตัวอย่างจาก "+money(ml.feature_count)+" Weekly Feature Rows",
-      dataTable([["as_of_date","As-of"],["forecast_week_start","Forecast"],["product_group_id","Group"],["revenue_last_week","Past Revenue"],["planned_ads_week","Planned Ads"]],
-        ml.feature_preview,{revenue_last_week:{kind:"money"},planned_ads_week:{kind:"money"}})));
-    state.rows=archived;
+    const root=$("#app");root.replaceChildren();state.rows=[];
+    $("#headerMode").textContent="วางแผนยอดขายและกำไร";
+    const snapshot=state.warehouseSnapshot;
+    const result=snapshot?.result;
+    const runLabel=result?.batch==="incremental"?"Run 2":"Run 1";
+    root.append(notice("เป้าหมาย: ยอดขายถึงเป้า และกำไรหลังต้นทุนที่เกี่ยวข้องไม่น้อยกว่า 10% ของ Gross Reference Sales"));
+    if(state.warehouseStatus==="not_loaded"||state.warehouseStatus==="loading"){
+      root.append(small("กำลังตรวจข้อมูล Warehouse ของ Lab รอบปัจจุบัน…"));return;
+    }
+    if(state.warehouseStatus==="error"){
+      root.append(notice("อ่านข้อมูล Warehouse รอบปัจจุบันไม่ได้ · "+state.warehouseError,true));
+      const retry=node("button","button button-outline","ตรวจอีกครั้ง");
+      retry.type="button";retry.addEventListener("click",loadWarehouseDashboard);root.append(retry);return;
+    }
+    if(snapshot?.running){
+      root.append(small("Pipeline กำลังรัน · รอผล Warehouse รอบนี้ก่อนเตรียมข้อมูล ML"));return;
+    }
+    const available=snapshot?.phase!=="EMPTY"&&!!result;
+    root.append(panel("1 · ข้อมูลตั้งต้นจาก Warehouse",
+      available?"Lab รอบ "+snapshot.cycle+" · "+runLabel+" · ใช้ผลรอบปัจจุบัน":
+        "Lab รอบ "+(snapshot?.cycle??"—")+" ว่างอยู่",
+      contentArea(
+        available?small("Warehouse มี "+money(result.orders_after)+" ออเดอร์ · ข้อมูลนี้เป็นข้อมูลจำลองเพื่อการศึกษา"):
+          notice("ยังไม่มีข้อมูล Warehouse สำหรับเตรียม Feature · เริ่ม Run 1 ที่ Test Pipeline ก่อน"),
+        available?small("แหล่งข้อมูลที่ต้องใช้: Mart_Product_Group_Daily_Performance สำหรับยอดขาย ต้นทุน และค่า Ads รายวัน"):null
+      )));
+    root.append(panel("2 · Feature Store",
+      "เตรียมข้อมูลรายกลุ่มสินค้าและเวลา เพื่อใช้วิธีเดียวกันตอนฝึกและตอนทำนาย",
+      contentArea(
+        small("คีย์: Product_Group_ID + วันที่อ้างอิง · ตัวอย่าง Feature: ยอดขายย้อนหลัง ค่าเฉลี่ยย้อนหลัง ค่า Ads และส่วนลดที่ทราบก่อนวันทำนาย"),
+        notice("ยังไม่มี Feature Store ที่สร้างและตรวจจาก Warehouse ของ Lab รอบนี้ · จึงยังไม่แสดงแถว Feature หรือผลโมเดลเป็นข้อมูลปัจจุบัน")
+      )));
+    const ads=labelInput("งบ Ads ที่อยากทดลอง (บาท)","number",state.mlAds||"","0","1000000");
+    const discount=labelInput("ส่วนลด Campaign ที่อยากทดลอง (%)","number",state.mlDiscount||"","0","100");
+    ads.field.addEventListener("input",()=>{state.mlAds=ads.field.value;});
+    discount.field.addEventListener("input",()=>{state.mlDiscount=discount.field.value;});
+    const simulate=node("button","button button-primary","ทำนายผลแผน · รอโมเดล");
+    simulate.type="button";simulate.disabled=true;
+    root.append(panel("3 · เลือกแผนเพื่อจำลอง",
+      "เลือกงบ Ads และส่วนลด แล้วดูยอดขายกับกำไรเทียบ KPI เมื่อโมเดลพร้อม",
+      contentArea(
+        chooseField("กลุ่มสินค้า",groups.map(id=>[id,title(id)]),state.mlGroup||"PG01",v=>{state.mlGroup=v;renderML();}),
+        box("scenario-grid",ads.label,discount.label),
+        simulate,
+        notice("ยังไม่มีโมเดลวัดผลของการเปลี่ยน Ads/ส่วนลดที่ผ่านการตรวจย้อนหลัง จึงยังคำนวณยอดขายหรือกำไรของแผนใหม่อย่างน่าเชื่อถือไม่ได้",true),
+        add(box("metrics"),
+          metric("ยอดขายเทียบเป้า","—","รอโมเดลประเมินแผน"),
+          metric("กำไรเทียบเกณฑ์ 10%","—","รอผลยอดขายและต้นทุน"),
+          metric("ผลแผน","ยังประเมินไม่ได้","ไม่มีตัวเลขสมมติ"))
+      )));
+    root.append(panel("4 · วิธีตรวจโมเดลและผลจริง",
+      "เปิดดูหลักฐานก่อนใช้ผลคาดการณ์ประกอบการตัดสินใจ",
+      contentArea(
+        small("ชุดข้อมูลฝึกต้องแยกตามเวลา และใช้เฉพาะ Feature ที่รู้ก่อนวันทำนาย"),
+        small("WAPE วัดความคลาดเคลื่อนของยอดขายที่ทำนายเทียบยอดจริง · ยิ่งต่ำยิ่งดี ไม่ใช่เปอร์เซ็นต์ความแม่นยำ"),
+        small("เมื่อมีโมเดลของ Warehouse รอบนี้ จะแสดง Baseline, WAPE รายกลุ่ม, ช่วงข้อมูลทดสอบ และผลจริงหลังรัน"),
+        notice("ผล WAPE ในรายงานตัวอย่างเดิมไม่ใช่ผลจาก Warehouse รอบปัจจุบัน จึงไม่ใช้ตัดสินแผนนี้")
+      )));
   }
 
   function render(){
@@ -1513,6 +1499,7 @@
   function setView(value){
     if(!names[value])return;
     state.view=value;state.replay=false;
+    if(value==="ml"&&(!state.mlGroup||!groups.includes(state.mlGroup)))state.mlGroup="PG01";
     document.querySelectorAll("[data-view]").forEach(btn=>{
       const active=btn.dataset.view===value;
       btn.classList.toggle("is-active",active);
@@ -1525,7 +1512,7 @@
     $("#groupFilterWrap").classList.toggle("hidden",value!=="ml");
     $("#modelFilterWrap").classList.toggle("hidden",value!=="ml");
     render();
-    if(value==="business")loadWarehouseDashboard();
+    if(value==="business"||value==="ml")loadWarehouseDashboard();
     if(value==="pipeline" && state.neonStatus==="not_loaded")loadNeonEvidence();
     if(value==="pipeline" && !state.realConfigChecked)loadRealCapabilities();
     if(value==="pipeline" && state.savedLabManifest===null)loadSavedLabEvidence();

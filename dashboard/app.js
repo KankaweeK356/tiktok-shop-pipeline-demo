@@ -194,14 +194,13 @@
       names.includes("Fact_Sales_Order_Item")?"Fact_Sales_Order_Item":names[0];
     const rows=Array.isArray(previews[state.warehouseTable])?previews[state.warehouseTable]:[];
     state.rows=rows;
-    const batchLabel=result.batch==="incremental"?"Run 2 · เติมข้อมูล":"Run 1 · ข้อมูลตั้งต้น";
+    const runLabel=result.batch==="incremental"?"Run 2":"Run 1";
+    root.append(small("ข้อมูลชุดปัจจุบัน · "+runLabel+" · Lab รอบ "+snapshot.cycle));
     root.append(add(box("metrics"),
-      metric("รอบ Warehouse",batchLabel,"Lab รอบ "+snapshot.cycle),
-      metric("ออเดอร์ในฐานข้อมูล",money(result.orders_after),"ข้อมูลจาก Run ปัจจุบัน"),
-      metric("รายการขายใน Warehouse",money(result.paid_sales_rows),"Fact_Sales_Order_Item"),
-      metric("ยอดขายสุทธิ",result.net_revenue===null?"—":"฿"+money(result.net_revenue),"ผล Validate ของ Run นี้"),
-      metric("ตารางใน Warehouse",money(tables.length),"DuckDB · "+batchLabel)));
-    root.append(panel("ตารางใน Warehouse","จำนวนแถวที่อ่านจาก DuckDB Warehouse ของ Run ปัจจุบัน",
+      metric("ออเดอร์",money(result.orders_after),"ข้อมูลจาก Run ปัจจุบัน"),
+      metric("รายการขาย",money(result.paid_sales_rows),"Fact_Sales_Order_Item"),
+      metric("ยอดขายสุทธิ",result.net_revenue===null?"—":"฿"+money(result.net_revenue),"ผลตรวจของ Run นี้")));
+    root.append(panel("ตารางใน Warehouse",money(tables.length)+" ตาราง · จำนวนแถวจาก DuckDB Warehouse รอบปัจจุบัน",
       contentArea(dataTable([["name","ชื่อตาราง"],["rows","จำนวนแถว"]],tables))));
     root.append(chooseField("เลือกตารางเพื่อดูแถวตัวอย่าง",
       tables.map(item=>[item.name,item.name+" · "+money(item.rows)+" แถว"]),
@@ -1204,56 +1203,55 @@
       ];
       const selected=scenarios.find(x=>x[0]===state.errorCase)||scenarios[0];
       const busy=["submitting","queued","in_progress"].includes(state.errorRun.status);
-      root.append(node("h2","lab-heading","ทดสอบ Error: เจอปัญหา → แก้ → รันซ้ำ"));
-      root.append(notice("ใช้ Error Lab แยกจาก Run 1/2 เริ่มได้ทันที แม้ Lab หลักยังว่าง"));
+      root.append(node("h2","lab-heading","สาธิตการรับมือเมื่อข้อมูลมีปัญหา"));
+      root.append(notice("ใช้ชุดข้อมูลจำลองใน Error Lab ซึ่งแยกจาก Run 1/2 เพื่อให้เห็นว่าระบบพบปัญหาอะไร แก้อย่างไร และผลหลังแก้เป็นอย่างไร",false));
       root.append(chooseField("เลือกกรณี",[...scenarios.map(x=>[x[0],x[1]])],
         state.errorCase,value=>{
           if(busy)return;
           resetErrorLab(value);
         }));
-      root.append(node("h3","lab-subheading","ก่อนกดรัน · "+selected[1]));
-      root.append(small("ขั้นที่จะตรวจ: "+selected[2]));
+      root.append(node("h3","lab-subheading","สถานการณ์ที่จะทดลอง · "+selected[1]));
+      root.append(small("จุดที่ระบบจะตรวจ: "+selected[2]));
       if(state.errorCase==="N01"){
-        root.append(small("Source ที่เตรียมไว้: N01.csv · Product_Group_ID=MISSING_GROUP"));
+        root.append(small("ตัวอย่างข้อมูล: N01.csv ระบุ Product_Group_ID เป็น MISSING_GROUP ซึ่งไม่มีอยู่ในฐานข้อมูล"));
         root.append(dataTable([["SKU_ID","SKU_ID"],["Product_Group_ID","Product_Group_ID"],
           ["SKU_Name","SKU_Name"]],[{SKU_ID:"ERROR_TEST_SKU",
             Product_Group_ID:"MISSING_GROUP",SKU_Name:"สินค้าเดโมทดสอบ Error"}]));
         root.append(small("กฎใน Neon: SKU ต้องอ้างถึง Product_Group_ID ที่มีอยู่จริง"));
-      }else root.append(small("ระบบจะใส่ข้อผิดพลาดนี้ในข้อมูลทดสอบแยก แล้วรัน Pipeline ถึงขั้นที่ตรวจพบ"));
+      }else root.append(small("ระบบจะใช้ชุดข้อมูลทดสอบแยกที่จำลองสถานการณ์นี้ แล้วตรวจจนถึงขั้นที่พบปัญหา"));
       if(!state.errorRun.failEvidence){
         const button=node("button","button button-primary",
-          busy?"กำลังตรวจ Error…":"▶ รันทดสอบให้เจอ Error");
+          busy?"กำลังตรวจชุดข้อมูล…":"▶ เริ่มทดสอบกรณีนี้");
         button.type="button";button.disabled=busy;
         button.addEventListener("click",()=>startErrorRun("fail"));root.append(button);
       }
       if(busy)root.append(small(state.errorRun.phase==="fix"?
-        "กำลังแก้ข้อมูลและรันซ้ำ…":"กำลังนำ Source เข้าระบบและตรวจหาจุดที่ผิด…"));
+        "กำลังแก้ข้อมูลและรันซ้ำ…":"กำลังตรวจชุดข้อมูลและหาจุดที่พบปัญหา…"));
       if(state.errorRun.error)root.append(notice(state.errorRun.error,true));
       if(state.errorRun.failEvidence){
         const found=state.errorRun.failEvidence;
-        root.append(node("h3","lab-subheading","1 · พบ Error ที่ "+found.stage));
-        root.append(notice(found.title+" · "+(found.detail.error_message||found.detail.error_code),true));
+        root.append(node("h3","lab-subheading","1 · ระบบพบปัญหาที่ขั้น "+found.stage));
+        root.append(notice("สาเหตุ: "+found.title+" · "+(found.detail.error_message||found.detail.error_code),true));
         if(found.detail.source_rows?.length){
           const rows=found.detail.source_rows;
           root.append(small("ข้อมูลที่ทำให้เกิด Error"));
           root.append(dataTable(Object.keys(rows[0]).map(key=>[key,key]),rows));
         }
         if(found.detail.source_file)root.append(small("Source: "+found.detail.source_file));
-        root.append(small("รหัส Error: "+found.detail.error_code+
-          " · แถวที่ผิดไม่ถูกบันทึกเป็นผลสำเร็จ"));
-        root.append(node("h3","lab-subheading","2 · วิธีแก้"));
+        root.append(small("ผลต่อการรัน: ขั้นนี้ไม่ผ่าน ข้อมูลชุดนี้จึงยังไม่ถือว่าผ่าน Pipeline · รหัสอ้างอิง: "+found.detail.error_code));
+        root.append(node("h3","lab-subheading","2 · แนวทางแก้"));
         root.append(small(found.fix));
         if(!state.errorRun.fixEvidence){
           const fix=node("button","button button-primary",
-            busy?"กำลังแก้และรันซ้ำ…":"แก้ข้อมูลและรันซ้ำ");
+            busy?"กำลังแก้ตามแนวทางและตรวจต่อ…":"ให้ระบบแก้ตามแนวทาง แล้วรันต่อ");
           fix.type="button";fix.disabled=busy;
           fix.addEventListener("click",()=>startErrorRun("fix"));root.append(fix);
         }
       }
       if(state.errorRun.fixEvidence){
         const fixed=state.errorRun.fixEvidence.detail;
-        root.append(node("h3","lab-subheading","3 · ผลรันซ้ำ: ผ่าน"));
-        root.append(small("รันต่อจากขั้นที่ล้ม · ผลจริง: "+fixed.retry_status));
+        root.append(node("h3","lab-subheading","3 · ผลหลังแก้"));
+        root.append(small("รันต่อจากขั้นที่พบปัญหา · สถานะหลังแก้: "+fixed.retry_status));
         if(fixed.before&&fixed.after){
           root.append(small("ก่อนแก้"));
           root.append(dataTable(Object.keys(fixed.before).map(key=>[key,key]),[fixed.before]));
@@ -1271,7 +1269,7 @@
             "https://console.neon.tech/app/projects/hidden-leaf-09169842/branches/br-summer-field-bey5qhdt?database=tiktok_demo"));
           root.append(small('ใน Neon เปิด SQL Editor แล้วดูตาราง demo_er1."Dim_SKU" โดยกรอง SKU_ID=ERROR_TEST_SKU'));
         }
-        const again=node("button","button","เริ่มทดสอบใหม่");
+        const again=node("button","button","เริ่มสถานการณ์นี้อีกครั้ง");
         again.type="button";again.addEventListener("click",()=>resetErrorLab());
         root.append(again);
       }

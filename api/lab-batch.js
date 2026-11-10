@@ -25,8 +25,12 @@ export default async function handler(req,res){
     if(req.method==="GET"){
       const batch=String(req.query?.batch||"");
       if(!batch){
-        const [phase,orders,active]=await Promise.all([
-          sql.query("SELECT phase,cycle_number FROM demo_control.dataset_state WHERE dataset_key='classroom'"),
+        const [lab,orders,active]=await Promise.all([
+          sql.query(`SELECT d.phase,d.cycle_number,r.status AS last_run_status,
+                    r.run_type AS last_run_type,r.runner_ref
+                    FROM demo_control.dataset_state d
+                    LEFT JOIN demo_control.pipeline_runs r ON r.run_id=d.last_run_id
+                    WHERE d.dataset_key='classroom' LIMIT 1`),
           sql.query('SELECT COUNT(*)::int AS n FROM demo_er1."Fact_Orders"'),
           sql.query("SELECT run_type FROM demo_control.pipeline_runs WHERE dataset_key='classroom' AND status='RUNNING' ORDER BY started_at DESC LIMIT 1")]);
         const recent=await github("/actions/workflows/"+WORKFLOW+
@@ -44,8 +48,14 @@ export default async function handler(req,res){
         const failed=resumeBatch?(recent.workflow_runs||[]).find(run=>
           run.status==="completed"&&run.conclusion!=="success"&&
           run.display_title?.startsWith("Classroom complete "+resumeBatch+" / previous ")):null;
-        return res.status(200).json({ready:true,phase:phase[0]?.phase||"UNKNOWN",
-          cycle:phase[0]?.cycle_number??null,orders:orders[0]?.n??null,
+        const latest=lab[0]||{};
+        const githubRun=String(latest.runner_ref||"").match(/\/actions\/runs\/([1-9][0-9]*)\/?$/);
+        const currentRunId=["RUN1_READY","RUN2_READY"].includes(latest.phase)&&
+          latest.last_run_status==="SUCCEEDED"?githubRun?.[1]||null:null;
+        return res.status(200).json({ready:true,phase:latest.phase||"UNKNOWN",
+          cycle:latest.cycle_number??null,orders:orders[0]?.n??null,
+          current_run_id:currentRunId,current_run_type:currentRunId?latest.last_run_type:null,
+          running:Boolean(active.length),active_run_type:active[0]?.run_type||null,
           previous_run_id:initial?.id||null,resume_batch:resumeBatch,
           resume_run_id:failed?.id||null,history,workflow_url:url});
       }

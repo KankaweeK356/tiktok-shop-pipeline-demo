@@ -1166,7 +1166,6 @@
   }
   async function requestNewCycle(){
     if(!state.realReady||!["RUN1_READY","RUN2_READY"].includes(state.realLabPhase)||!state.realLabCycle)return;
-    if(!window.confirm("เคลียร์เฉพาะข้อมูล Lab ทดสอบรอบนี้เพื่อเริ่ม Run 1 ใหม่? ผลรันเก่ายังดูได้"))return;
     const confirmation="RESET-DEMO-DATA";
     state.resetStatus="submitting";state.resetError="";renderPipeline();
     try{

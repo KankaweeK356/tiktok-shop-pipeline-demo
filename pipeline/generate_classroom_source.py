@@ -10,12 +10,12 @@ import calendar
 import json
 import random
 import shutil
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 import pandas as pd
 
-from .generate_ml_history import generate_ml_history
+from .generate_ml_history import SCENARIO_ID, generate_ml_history
 from .schema import ROOT
 
 BATCHES = ("initial",) + tuple(f"incremental_{i:02d}" for i in range(1, 7))
@@ -137,6 +137,32 @@ def build(target: Path, seed: int = 8102) -> dict:
                "Revenue_Target": 120000, "Minimum_Profit_Protection_Rate": 0.10}], target_columns)
         results.append({"batch": folder.name, "month": f"{year}-{month:02d}",
                         "orders": len(orders), "ads_rows": len(ads)})
+    # Plans are separate synthetic Source inputs, dated before the sales week.
+    # Extend them alongside the later ER1 deliveries so retraining can use
+    # complete weeks after November rather than a fixed 2026 holdout.
+    plans_path = target / "ml_marketing_plan.csv"
+    plans = pd.read_csv(plans_path)
+    extra_plans = []
+    day = date(2026, 12, 1)
+    while day <= date(2027, 4, 30):
+        for group in range(1, 6):
+            group_id = f"PG{group:02d}"
+            rng = random.Random(f"{seed}:plan:{day}:{group_id}")
+            budget = rng.choice((0, 8, 18, 32, 45, 60))
+            if day.weekday() >= 5:
+                budget += 5
+            extra_plans.append({
+                "scenario_id": SCENARIO_ID, "product_group_id": group_id,
+                "plan_date": day.isoformat(), "plan_version": 1,
+                "planned_ads_spend": budget,
+                "planned_campaign_discount_rate": 0.0,
+                "plan_status": "HISTORICAL",
+                "plan_source": "SYNTHETIC_HISTORICAL_PLAN",
+                "recorded_at": (day - timedelta(days=35)).isoformat() + "T17:00:00+07:00",
+            })
+        day += timedelta(days=1)
+    pd.concat([plans, pd.DataFrame(extra_plans)], ignore_index=True).to_csv(
+        plans_path, index=False, encoding="utf-8-sig")
     (target / "source_manifest.json").write_text(json.dumps({
         "classification": "SYNTHETIC_EDUCATIONAL_NOT_TIKTOK",
         "seed": seed, "batches": list(BATCHES),
@@ -153,3 +179,4 @@ if __name__ == "__main__":
     parser.add_argument("--output", default="output/classroom_source")
     args = parser.parse_args()
     print(json.dumps(build(ROOT / args.output), ensure_ascii=False))
+

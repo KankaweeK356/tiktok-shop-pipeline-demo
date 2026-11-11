@@ -11,7 +11,7 @@
   state.errorRun={status:"",since:"",url:"",runId:null,phase:"",previous:"0",
     failEvidence:null,fixEvidence:null,error:"",neonRows:null};
   const names = {
-    business:["ภาพรวมธุรกิจ","เส้นทางข้อมูลจากการนำเข้า ถึงการวิเคราะห์และโมเดล ML","ภาพรวมธุรกิจ"],
+    business:["ภาพรวมธุรกิจ","ยอดขายเทียบเป้า กำไร และจุดที่ควรตัดสินใจจาก Warehouse ปัจจุบัน","ภาพรวมธุรกิจ"],
     pipeline:["Test Pipeline","จาก Source ผ่าน Database และ Data Lake สู่ Warehouse","Test Pipeline"],
     ml:["ML Lab","จาก Warehouse สู่ Feature Store และผลทำนาย","ML Lab"]
   };
@@ -117,6 +117,7 @@
     if(state.warehouseStatus==="loading")return;
     state.warehouseStatus="loading";state.warehouseSnapshot=null;state.warehouseError="";
     if(state.view==="business"||state.view==="ml")render();
+    if(state.view==="ml"&&state.warehouseSnapshot?.result)loadLiveML();
     try{
       const statusResponse=await fetch("/api/lab-batch",{cache:"no-store"});
       const status=await statusResponse.json();
@@ -159,26 +160,8 @@
     $("#footerStatus").textContent=state.warehouseStatus==="ready"?
       phase==="EMPTY"?"Warehouse ว่าง · ยังไม่มี Run ในรอบนี้":
       snapshot?.running?"กำลังประมวลผล · จะเปิดข้อมูลเมื่อ Run สำเร็จ":
-      (snapshot?.result?.batch==="incremental"?"Run 2":"Run 1")+" · Lab รอบ "+(snapshot?.cycle??"—"):
+      "ข้อมูล Warehouse ปัจจุบัน · Lab รอบ "+(snapshot?.cycle??"—"):
       "ตรวจสอบ Warehouse";
-    const pipelineButton=node("button","button button-outline","ดูการรัน Pipeline");
-    pipelineButton.type="button";pipelineButton.addEventListener("click",()=>setView("pipeline"));
-    const mlButton=node("button","button button-outline","ดูวิธีสร้างโมเดล ML");
-    mlButton.type="button";mlButton.addEventListener("click",()=>setView("ml"));
-    root.append(panel("จากข้อมูลสู่การตัดสินใจ",
-      "เว็บนี้สาธิตการทำงานครบเส้นทาง พร้อมเปิดให้ตรวจข้อมูลและผลของแต่ละขั้น",
-      contentArea(
-        box("steps-grid",
-          box("step-card",node("div","step-num","01"),node("span","step-name","นำข้อมูลเข้า"),
-            node("div","step-text","รัน Source → Database → Data Lake → Warehouse และตรวจความครบถ้วน")),
-          box("step-card",node("div","step-num","02"),node("span","step-name","อ่านผลธุรกิจ"),
-            node("div","step-text","ดูตารางและตัวเลขจาก Warehouse ของ Lab รอบปัจจุบัน")),
-          box("step-card",node("div","step-num","03"),node("span","step-name","ใช้ข้อมูลทำ ML"),
-            node("div","step-text","ดู Feature Store ผลทดสอบโมเดล และตัวอย่างคำทำนายจาก ML Lab"))),
-        box("h-stack",pipelineButton,mlButton),
-        small("ข้อมูลทั้งสอง Lab เป็นข้อมูลจำลองเพื่อการศึกษา · ML Lab ใช้ Warehouse ประวัติแยกจาก Run 1/2")
-      )));
-    root.append(notice("ตัวเลขธุรกิจด้านล่างอ่านจาก DuckDB Warehouse ของ Run ปัจจุบัน · เมื่อเคลียร์ Lab ผลรอบก่อนจะไม่แสดง",false));
     if(state.warehouseStatus==="not_loaded"||state.warehouseStatus==="loading"){
       root.append(small("กำลังตรวจสถานะ Lab และ Warehouse…"));return;
     }
@@ -211,12 +194,67 @@
       names.includes("Fact_Sales_Order_Item")?"Fact_Sales_Order_Item":names[0];
     const rows=Array.isArray(previews[state.warehouseTable])?previews[state.warehouseTable]:[];
     state.rows=rows;
-    const runLabel=result.batch==="incremental"?"Run 2":"Run 1";
-    root.append(small("ข้อมูลชุดปัจจุบัน · "+runLabel+" · Lab รอบ "+snapshot.cycle));
+    const business=result.business;
+    if(!business?.months?.length){root.append(notice("ยังไม่มีสรุป KPI จาก Warehouse รอบนี้",true));return;}
+    if(state.businessRunId!==snapshot.current_run_id){
+      state.businessRunId=snapshot.current_run_id;
+      state.month=business.months.at(-1).month;
+      state.group="ALL";
+    }
+    const current=business.months.find(x=>x.month===state.month)||business.months.at(-1);
+    const groupRows=business.groups.filter(x=>x.month===current.month);
+    const visibleGroups=state.group==="ALL"?groupRows:groupRows.filter(x=>x.group_id===state.group);
+    const days=business.days.filter(x=>x.month===current.month&&
+      (state.group==="ALL"||x.group_id===state.group));
+    const skus=business.sku.filter(x=>x.month===current.month&&
+      (state.group==="ALL"||x.group_id===state.group));
+    root.append(box("h-stack",
+      chooseField("เดือน",business.months.map(x=>[x.month,x.month]),current.month,
+        value=>{state.month=value;renderBusiness()}),
+      chooseField("กลุ่มสินค้า",[["ALL","ทั้งร้าน"],...groupRows.map(x=>
+        [x.group_id,x.group_name||x.group_id])],state.group,
+        value=>{state.group=value;renderBusiness()})));
     root.append(add(box("metrics"),
-      metric("ออเดอร์",money(result.orders_after),"ข้อมูลจาก Run ปัจจุบัน"),
-      metric("รายการขาย",money(result.paid_sales_rows),"Fact_Sales_Order_Item"),
-      metric("ยอดขายสุทธิ",result.net_revenue===null?"—":"฿"+money(result.net_revenue),"ผลตรวจของ Run นี้")));
+      metric("ยอดขายสุทธิ","฿"+money(current.net),"เป้า ฿"+money(current.target)),
+      metric("เทียบเป้ารายเดือน",pct(current.achievement_pct),
+        "ส่วนต่าง "+(Number(current.gap)>=0?"+":"")+"฿"+money(current.gap)),
+      metric("กำไรหลังต้นทุนที่เกี่ยวข้อง",
+        current.profit===null?"รอตรวจต้นทุน":"฿"+money(current.profit),
+        "ยังไม่กระจายค่า Ads ลง SKU"),
+      metric("คุ้มครองกำไร",pct(current.protection_pct),
+        "เกณฑ์ ≥10% ของยอดราคาเต็ม · "+current.protection_status)));
+    const belowTarget=current.gap!==null&&Number(current.gap)<0;
+    const profitFail=current.protection_status==="FAIL";
+    root.append(notice(current.profit_data_status==="INCOMPLETE"?
+      "ต้นทุนยังไม่ครบ จึงยังสรุปกำไรไม่ได้":
+      belowTarget&&profitFail?"ยอดขายต่ำกว่าเป้าและกำไรต่ำกว่าเกณฑ์ ตรวจกลุ่มสินค้าและต้นทุนด้านล่าง":
+      belowTarget?"ยอดขายต่ำกว่าเป้า ตรวจกลุ่มสินค้าที่เป็นส่วนต่างด้านล่าง":
+      profitFail?"ยอดขายถึงเป้า แต่กำไรต่ำกว่าเกณฑ์ ตรวจต้นทุนและส่วนลดด้านล่าง":
+      "ยอดขายและกำไรผ่านเกณฑ์ของเดือนที่เลือก"));
+    state.rows=visibleGroups;
+    root.append(panel("ผลงานรายเดือน","ระดับร้าน · เปรียบเทียบยอดจริงกับเป้า",
+      contentArea(dataTable([["month","เดือน"],["net","ยอดขายสุทธิ"],["target","เป้า"],
+        ["gap","ส่วนต่าง"],["protection_status","กำไร ≥10%"]],business.months))));
+    root.append(panel("เจาะลงกลุ่มสินค้า","เลือกกลุ่มด้านบนเพื่อดูวันและ SKU",
+      contentArea(dataTable([["group_name","กลุ่ม"],["net","ยอดขายสุทธิ"],
+        ["profit","กำไร"],["ads_cost","Ads รวมระดับกลุ่ม"],
+        ["campaign_reduction","ส่วนลดแคมเปญ"]],visibleGroups))));
+    root.append(panel("รายวัน","ข้อมูลระดับวัน × กลุ่มสินค้า จาก Mart",
+      contentArea(dataTable([["day","วัน"],["group_id","กลุ่ม"],["net","ยอดขายสุทธิ"],
+        ["profit","กำไร"],["ads_cost","ค่า Ads"]],days))));
+    root.append(panel("สินค้า SKU","ยอดขายและต้นทุนสินค้า · ไม่จัดสรรค่า Ads ที่ระดับ SKU",
+      contentArea(dataTable([["sku_id","SKU"],["sku_name","สินค้า"],
+        ["paid_items","รายการขาย"],["net","ยอดขายสุทธิ"],["cogs","ต้นทุนสินค้า"]],skus))));
+    const campaigns=business.campaigns.filter(x=>x.month===current.month);
+    const adCampaigns=business.ad_campaigns.filter(x=>x.month===current.month&&
+      (state.group==="ALL"||x.group_id===state.group));
+    root.append(panel("แคมเปญขายและโฆษณา","สองแหล่งข้อมูลต่างระดับ ไม่รวม Ads GMV เป็นยอดขายซ้ำ",
+      contentArea(node("h3","lab-subheading","แคมเปญราคาขาย"),
+        dataTable([["campaign_name","แคมเปญ"],["paid_items","รายการขาย"],
+          ["net","ยอดขายสุทธิ"],["price_reduction","ส่วนลด"]],campaigns),
+        node("h3","lab-subheading","แคมเปญโฆษณา"),
+        dataTable([["campaign_name","Ads"],["group_id","กลุ่ม"],
+          ["ads_cost","ค่าใช้จ่าย"],["clicks","คลิก"]],adCampaigns))));
     root.append(panel("ตารางใน Warehouse",money(tables.length)+" ตาราง · จำนวนแถวจาก DuckDB Warehouse รอบปัจจุบัน",
       contentArea(dataTable([["name","ชื่อตาราง"],["rows","จำนวนแถว"]],tables))));
     root.append(chooseField("เลือกตารางเพื่อดูแถวตัวอย่าง",
@@ -638,7 +676,11 @@
       state.realLabPhase=data.phase||"UNKNOWN";
       state.realLabCycle=data.cycle??null;
       state.realLabOrders=data.orders??null;
-      if(data.previous_run_id)state.batchRunIds.initial=data.previous_run_id;
+      state.currentRunId=data.current_run_id||null;
+      state.nextSourceBatch=data.next_source_batch||null;
+      state.sourceRemaining=data.source_remaining??null;
+      state.sourceExhausted=Boolean(data.source_exhausted);
+      if(data.phase==="RUN1_READY"||data.phase==="RUN2_READY")state.notebookBatch="incremental";
       state.batchResume={batch:data.resume_batch||"",runId:data.resume_run_id||null};
       state.recentRuns=data.history||[];
     }catch(_error){state.realReady=false;}
@@ -973,9 +1015,9 @@
        state.batchRun.status==="submitting")return;
     const previous=state.batchResume.batch===batch&&state.batchResume.runId?
       String(state.batchResume.runId):batch==="initial"?"0":
-      String(state.batchRunIds.initial||"");
+      String(state.currentRunId||"");
     if(batch==="incremental"&&!/^[1-9][0-9]{0,18}$/.test(previous)){
-      state.realError="Run 2 ต้องรอ Run 1 จบก่อน";renderPipeline();return;
+      state.realError="ต้องให้ข้อมูลชุดก่อนผ่านครบก่อน";renderPipeline();return;
     }
     state.realError="";state.batchRun={batch,status:"submitting",since:"",runId:null,url:"",stages:[]};
     renderPipeline();
@@ -984,6 +1026,8 @@
       .then(async response=>{const data=await response.json();
         if(!response.ok||!data.accepted)throw Error(data.error||"สั่ง Run ไม่สำเร็จ");
         state.batchRun.status="queued";state.batchRun.since=new Date().toISOString();
+        state.batchRun.sourceBatch=data.source_batch;
+        state.batchResults[batch]={};
         state.batchRun.url=data.workflow_url;renderPipeline();
         window.setTimeout(checkBatchRun,3000);
       }).catch(error=>{state.batchRun.status="failure";state.realError=error.message;
@@ -993,7 +1037,8 @@
     const current=state.batchRun;
     if(!current.since||!["queued","in_progress"].includes(current.status))return;
     try{
-      const query=new URLSearchParams({batch:current.batch,since:current.since});
+      const query=new URLSearchParams({batch:current.batch,source_batch:current.sourceBatch,
+        since:current.since});
       const response=await fetch("/api/lab-batch?"+query,{cache:"no-store"});
       const data=await response.json();
       if(!response.ok)throw Error(data.error||"ติดตาม Run ไม่ได้");
@@ -1030,7 +1075,7 @@
         loadRealCapabilities();
       }
       if(current.status==="failure"){
-        state.realError="Run ไม่สำเร็จ · เปิด Log เพื่อดูขั้นที่ผิดพลาด แล้วกดรันต่อ";
+        state.realError="Run ไม่ผ่าน · ข้อมูลชุดนี้ยังไม่เสร็จ กดปุ่มเดิมเพื่อลองอีกครั้ง หากยังไม่ผ่านให้ดูสาเหตุใน Log";
         state.batchResume={batch:current.batch,runId:current.runId};
         loadRealCapabilities();
       }
@@ -1120,7 +1165,7 @@
       window.setTimeout(checkErrorRun,8000);}
   }
   async function requestNewCycle(){
-    if(!state.realReady||state.realLabPhase!=="RUN2_READY"||!state.realLabCycle)return;
+    if(!state.realReady||!["RUN1_READY","RUN2_READY"].includes(state.realLabPhase)||!state.realLabCycle)return;
     if(!window.confirm("เคลียร์เฉพาะข้อมูล Lab ทดสอบรอบนี้เพื่อเริ่ม Run 1 ใหม่? ผลรันเก่ายังดูได้"))return;
     const confirmation="RESET-DEMO-DATA";
     state.resetStatus="submitting";state.resetError="";renderPipeline();
@@ -1300,32 +1345,30 @@
     const phase=state.realLabPhase;
     root.append(box("notebook-intro",
       node("h2","lab-heading","Source → Database → Data Lake → Warehouse"),
-      node("p","lab-description","แต่ละ Run เดินครบทั้งเส้นทาง Run 2 เติมและอัปเดตข้อมูลต่อจาก Run 1"),
+      node("p","lab-description","Run 1 นำเข้าข้อมูลตั้งต้น จากนั้นกดเติมข้อมูลใหม่ได้ทีละชุด ทุกครั้งเดินครบทั้งเส้นทาง"),
       small("Lab ที่ใช้รัน: "+(phase==="UNKNOWN"?"กำลังตรวจสอบ":phase)+" · "+money(state.realLabOrders||0)+" ออเดอร์")));
     const batchPicker=box("notebook-runs");
-    [["initial","Run 1 · ข้อมูลตั้งต้น","800 ออเดอร์"],
-      ["incremental","Run 2 · เติมข้อมูลต่อ","800 → 900 ออเดอร์"]].forEach(([id,label,detail])=>{
+    [["initial","Run 1 · ข้อมูลตั้งต้น","ข้อมูลย้อนหลังและโครงสร้างธุรกิจ"],
+      ["incremental","เติมข้อมูลใหม่","อ่าน Source ชุดถัดไปเมื่อกดรัน"]].forEach(([id,label,detail])=>{
       const button=node("button","notebook-run"+(state.notebookBatch===id?" is-active":""));
       button.type="button";button.setAttribute("aria-pressed",String(state.notebookBatch===id));
       button.append(node("strong","",label),small(detail));
       button.addEventListener("click",()=>{state.notebookBatch=id;state.notebookStage="ingest";
         state.savedLabReceipt=null;state.savedLabSelected="";renderPipeline();});batchPicker.append(button);
     });root.append(batchPicker);
-    const expectedBatchPhase=state.notebookBatch==="initial"?"EMPTY":"RUN1_READY";
-    const canStartBatch=state.realReady&&phase===expectedBatchPhase&&
-      (state.notebookBatch==="initial"||Boolean(state.batchRunIds.initial));
+    const canStartBatch=state.realReady&&!state.sourceExhausted&&
+      (state.notebookBatch==="initial"?phase==="EMPTY":
+        ["RUN1_READY","RUN2_READY"].includes(phase)&&Boolean(state.currentRunId));
     const batchBusy=["submitting","queued","in_progress"].includes(state.batchRun.status);
     const batchAction=node("button","button button-primary",batchBusy?
-      "กำลังรัน "+(state.batchRun.batch==="initial"?"Run 1":"Run 2")+" ทั้งรอบ…":
-      state.batchResume.batch===state.notebookBatch&&state.batchResume.runId?
-      "▶ รันต่อจากขั้นที่ผิดพลาด":
-      "▶ รัน "+(state.notebookBatch==="initial"?"Run 1":"Run 2")+" ทั้งรอบ");
+      "กำลังรัน "+(state.batchRun.batch==="initial"?"Run 1":"ข้อมูลใหม่")+" ทั้งรอบ…":
+      state.notebookBatch==="initial"?"▶ รันข้อมูลตั้งต้น":"▶ เติมข้อมูลใหม่");
     batchAction.type="button";batchAction.disabled=!canStartBatch||batchBusy;
     batchAction.addEventListener("click",runWholeBatch);root.append(batchAction);
     if(!canStartBatch)root.append(small(!state.realReady?
-      "ระบบสั่งงานยังไม่พร้อม":phase!==expectedBatchPhase?
-      "รอบนี้ต้องรอสถานะ Lab "+expectedBatchPhase+" (ตอนนี้ "+phase+")":
-      "ต้องให้ Run 1 ผ่านครบก่อน จึงเริ่ม Run 2 ได้"));
+      "ระบบสั่งงานยังไม่พร้อม":state.sourceExhausted?
+      "Source ชุดนี้ใช้ครบแล้ว เคลียร์ Lab เพื่อเริ่มใหม่":
+      "ต้องให้ข้อมูลชุดก่อนผ่านครบก่อน"));
     root.append(node("p","notebook-caption","กด Run หนึ่งครั้ง ระบบจะวิ่งครบทุกขั้น แล้วเปิดดูผลของแต่ละขั้นเมื่อเสร็จ"));
     if(state.batchRun.status){
       root.append(small("สถานะ Run: "+state.batchRun.status+
@@ -1412,8 +1455,8 @@
         small(summary?.no_duplicate_sales_items?"ตรวจแล้ว: ไม่มีรายการขายซ้ำ":"ยังไม่มีผลตรวจรายการซ้ำ"),
         small("กดเปิดแต่ละขั้นด้านบนเพื่อดูตารางและตัวอย่างข้อมูลจริง"),download));
     }
-    root.append(notice("ข้อมูลต้นทางแยกอยู่ใน Source; เมื่อ Run 2 จบแล้ว จึงเคลียร์เฉพาะ Lab นี้ก่อนเริ่มรอบใหม่"));
-    if(phase==="RUN2_READY"){
+    root.append(notice("Source CSV แยกจาก Lab · เมื่อใช้ครบ ระบบจะแจ้งว่าไม่มีข้อมูลใหม่ · เคลียร์ Lab แล้วเริ่มได้ใหม่"));
+    if(["RUN1_READY","RUN2_READY"].includes(phase)){
       const clear=node("button","button button-outline","เริ่มรอบใหม่ · เคลียร์ข้อมูล Lab");
       clear.type="button";clear.disabled=!state.realReady||["submitting","queued","in_progress"].includes(state.resetStatus);
       clear.addEventListener("click",requestNewCycle);root.append(clear);
@@ -1443,7 +1486,7 @@
     if(state.resetUrl)root.append(link("ดู Log การเคลียร์ใน GitHub Actions",state.resetUrl));
   }
 
-  function renderML(){
+  function renderMLLegacy(){
     const root=$("#app");root.replaceChildren();
     const ml=state.data.ml,chosen=ml.registry.selected_model;
     const group=state.mlGroup||"PG01";
@@ -1504,6 +1547,98 @@
     root.append(notice("ผลนี้แสดงการทำ ML จาก Warehouse ได้จริง แต่ยังไม่ใช่การจำลองผลของการเปลี่ยนงบ Ads หรือส่วนลด"));
   }
 
+  async function loadLiveML(){
+    const runId=state.warehouseSnapshot?.current_run_id;
+    if(!runId||state.mlLoading)return;
+    state.mlLoading=true;
+    try{
+      const query=new URLSearchParams({warehouse_run_id:String(runId)});
+      const response=await fetch("/api/lab-ml?"+query,{cache:"no-store"});
+      const data=await response.json();
+      if(!response.ok)throw Error(data.error||"อ่านผล ML ไม่ได้");
+      state.liveML=data;
+      state.mlError="";
+      if(["queued","in_progress","processing"].includes(data.status))
+        window.setTimeout(loadLiveML,5000);
+    }catch(error){state.mlError=error.message||"อ่านผล ML ไม่ได้";}
+    state.mlLoading=false;
+    if(state.view==="ml")renderML();
+  }
+  async function trainLiveML(){
+    const runId=state.warehouseSnapshot?.current_run_id;
+    if(!runId||state.mlLoading)return;
+    state.mlLoading=true;state.mlError="";renderML();
+    try{
+      const response=await fetch("/api/lab-ml",{method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({warehouse_run_id:String(runId)})});
+      const data=await response.json();
+      if(!response.ok||!data.accepted)throw Error(data.error||"เริ่ม Train ไม่ได้");
+      state.liveML={status:data.status||"queued"};
+      window.setTimeout(loadLiveML,4000);
+    }catch(error){state.mlError=error.message||"เริ่ม Train ไม่ได้";}
+    state.mlLoading=false;renderML();
+  }
+  function renderML(){
+    const root=$("#app");root.replaceChildren();state.rows=[];
+    const warehouse=state.warehouseSnapshot;
+    $("#headerMode").textContent="ML Lab · Warehouse ปัจจุบัน";
+    $("#footerStatus").textContent=warehouse?.result?
+      "Feature และโมเดลจาก Lab รอบ "+warehouse.cycle:"ยังไม่มี Warehouse สำหรับ ML";
+    if(state.warehouseStatus==="loading"||state.warehouseStatus==="not_loaded"){
+      root.append(small("กำลังตรวจ Warehouse ปัจจุบัน…"));return;
+    }
+    if(!warehouse?.result||warehouse.phase==="EMPTY"){
+      root.append(node("h2","lab-heading","ยังไม่มีข้อมูลสำหรับฝึกโมเดล"));
+      root.append(small("รันข้อมูลใน Test Pipeline ก่อน เมื่อ Warehouse มีข้อมูลแล้วจึงฝึกโมเดลได้"));
+      return;
+    }
+    const runId=warehouse.current_run_id;
+    if(state.liveMLRunId!==runId){state.liveMLRunId=runId;state.liveML=null;}
+    root.append(notice("ทำนายยอดขายสุทธิรายสัปดาห์ × กลุ่มสินค้า จาก Warehouse รอบปัจจุบัน · ข้อมูลจำลองเพื่อการศึกษา"));
+    const train=node("button","button button-primary",state.mlLoading?
+      "กำลังเตรียมโมเดล…":"▶ ฝึกโมเดลจาก Warehouse");
+    train.type="button";train.disabled=state.mlLoading||
+      ["queued","in_progress","processing"].includes(state.liveML?.status);
+    train.addEventListener("click",trainLiveML);root.append(train);
+    if(state.mlError)root.append(notice(state.mlError,true));
+    if(["queued","in_progress","processing"].includes(state.liveML?.status)){
+      root.append(small("กำลังสร้าง Feature, แบ่งข้อมูลตามเวลา, ฝึกโมเดล และตรวจผลจริง…"));
+      return;
+    }
+    if(state.liveML?.status==="failure"){
+      root.append(notice("การฝึกไม่ผ่าน · กดปุ่มเดิมเพื่อลองอีกครั้ง และเปิด Log ดูสาเหตุ",true));
+      if(state.liveML.url)root.append(link("ดู Log การฝึก",state.liveML.url));
+      return;
+    }
+    const result=state.liveML?.result;
+    if(!result){root.append(small("กดฝึกโมเดลเพื่อดู Feature, คะแนนทดสอบ และคำทำนายจากข้อมูลรอบนี้"));return;}
+    const summary=result.summary;
+    root.append(box("h-stack",small("Warehouse Run #"+runId),
+      small(money(summary.dataset_rows)+" แถว Feature · "+money(summary.weeks)+" สัปดาห์ · "+
+        money(summary.groups)+" กลุ่ม")));
+    root.append(panel("1 · Feature Store","ข้อมูลระดับสัปดาห์ × กลุ่มสินค้า · สร้างจาก Mart และแผนจำลองที่บันทึกก่อนวันทำนาย",
+      contentArea(dataTable([["as_of_date","ข้อมูลถึง"],["forecast_week_start","สัปดาห์เป้าหมาย"],
+        ["product_group_id","กลุ่ม"],["revenue_last_week","ยอดสัปดาห์ก่อน"],
+        ["planned_ads_week","แผน Ads"]],result.feature_preview))));
+    root.append(panel("2 · ฝึกและเลือกโมเดล","แบ่ง Train/Validation/Test ตามเวลา · เลือกจาก Validation ก่อนเปิด Test",
+      contentArea(small("โมเดลที่เลือก: "+summary.selected_by_validation),
+        small("ช่วง Test: "+summary.final_test_window.join(" ถึง ")),
+        dataTable([["model","วิธี"],["validation_group_wape_pct","Validation WAPE"]],
+          summary.validation_model_comparison))));
+    root.append(panel("3 · ตรวจผลทำนาย","WAPE ยิ่งต่ำยิ่งดี · คะแนนจากช่วง Test ที่กันไว้",
+      contentArea(dataTable([["model","โมเดล"],["group_wape_pct","WAPE รายกลุ่ม"],
+        ["shop_wape_pct","WAPE ทั้งร้าน"],["group_target_20pct","รายกลุ่ม ≤20%"],
+        ["shop_target_15pct","ทั้งร้าน ≤15%"]],result.test_metrics),
+        small("ผลจริงถูกใช้ตรวจหลังทำนาย · "+result.monitor.monitoring_mode))));
+    root.append(panel("4 · ตัวอย่างยอดจริงเทียบคำทำนาย","ข้อมูลช่วง Test ที่เก็บไว้ตรวจความคลาดเคลื่อน",
+      contentArea(dataTable([["forecast_week_start","สัปดาห์"],["product_group_id","กลุ่ม"],
+        ["actual_net_revenue_week","ยอดจริง"],
+        ["predicted_net_revenue_week","คำทำนาย"]],result.test_predictions))));
+    root.append(notice("โมเดลเรียนรู้ความสัมพันธ์จากข้อมูลจำลอง ไม่ได้พิสูจน์ว่างบ Ads ที่เพิ่มจะทำให้ยอดขายเพิ่ม และข้อมูลย้อนหลังนี้ยังไม่ผ่านการยืนยัน point-in-time",true));
+    if(state.liveML.url)root.append(link("ดูงานฝึกและไฟล์โมเดล",state.liveML.url));
+  }
+
   function render(){
     if(!state.data)return;
     if(state.view==="business")renderBusiness();
@@ -1529,7 +1664,7 @@
     $("#groupFilterWrap").classList.toggle("hidden",value!=="ml");
     $("#modelFilterWrap").classList.toggle("hidden",value!=="ml");
     render();
-    if(value==="business")loadWarehouseDashboard();
+    if(value==="business"||value==="ml")loadWarehouseDashboard();
     if(value==="pipeline" && state.neonStatus==="not_loaded")loadNeonEvidence();
     if(value==="pipeline" && !state.realConfigChecked)loadRealCapabilities();
     if(value==="pipeline" && state.savedLabManifest===null)loadSavedLabEvidence();
@@ -1602,3 +1737,4 @@
   }
   init();
 })();
+

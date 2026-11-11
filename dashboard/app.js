@@ -58,6 +58,8 @@
         const spec=formats[key]||{};
         const td=node("td",spec.align||"");
         if(spec.kind==="status")td.append(statusLabel(row[key]));
+        else if(spec.kind==="goal")td.append(node("span","status "+
+          (row[key]?"status-pass":"status-fail"),row[key]?"ผ่าน":"ยังไม่ผ่าน"));
         else if(spec.kind==="risk"){
           const code=row[key],bad=["RISK","GROUP_BELOW"].includes(code);
           td.append(node("span","status "+(bad?"status-fail":code==="GROUP_ABOVE"?"status-pass":"status-pending"),
@@ -1628,11 +1630,17 @@
       contentArea(small("โมเดลที่เลือก: "+summary.selected_by_validation),
         small("ช่วง Test: "+summary.final_test_window.join(" ถึง ")),
         dataTable([["model","วิธี"],["validation_group_wape_pct","Validation WAPE"]],
-          summary.validation_model_comparison))));
+          summary.validation_model_comparison,
+          {validation_group_wape_pct:{kind:"percent",digits:1}})));
+    const selectedScore=result.test_metrics.find(x=>x.model===summary.selected_by_validation);
+    if(selectedScore&&(!selectedScore.group_target_20pct||!selectedScore.shop_target_15pct))
+      root.append(notice("คะแนนช่วง Test ยังไม่ถึงเกณฑ์ที่ตั้งไว้ ใช้ผลทำนายเพื่อสาธิตวิธีทำ ML และตรวจสอบแนวโน้มเท่านั้น",true));
     root.append(panel("3 · ตรวจผลทำนาย","WAPE ยิ่งต่ำยิ่งดี · คะแนนจากช่วง Test ที่กันไว้",
       contentArea(dataTable([["model","โมเดล"],["group_wape_pct","WAPE รายกลุ่ม"],
         ["shop_wape_pct","WAPE ทั้งร้าน"],["group_target_20pct","รายกลุ่ม ≤20%"],
-        ["shop_target_15pct","ทั้งร้าน ≤15%"]],result.test_metrics),
+        ["shop_target_15pct","ทั้งร้าน ≤15%"]],result.test_metrics,
+        {group_wape_pct:{kind:"percent",digits:1},shop_wape_pct:{kind:"percent",digits:1},
+          group_target_20pct:{kind:"goal"},shop_target_15pct:{kind:"goal"}}),
         small("ผลจริงถูกใช้ตรวจหลังทำนาย · "+result.monitor.monitoring_mode))));
     root.append(panel("4 · ตัวอย่างยอดจริงเทียบคำทำนาย","ข้อมูลช่วง Test ที่เก็บไว้ตรวจความคลาดเคลื่อน",
       contentArea(dataTable([["forecast_week_start","สัปดาห์"],["product_group_id","กลุ่ม"],

@@ -22,15 +22,10 @@ from .ml_features import _prepare_daily, _prepare_plans, read_warehouse_daily
 
 MODEL_VERSION = "weekly_sales_lightgbm_demo_v1"
 START_WEEK = "2025-12-01"
-LAST_WEEK = "2026-09-21"
-FINAL_TRAIN_END = "2026-08-02"
-TEST_START = "2026-08-03"
-TEST_END = "2026-09-27"
-VALIDATION_FOLDS = (
-    ("May", "2026-04-26", "2026-05-04", "2026-05-31"),
-    ("June", "2026-05-31", "2026-06-01", "2026-06-28"),
-    ("July", "2026-06-28", "2026-06-29", "2026-07-26"),
-)
+LAST_WEEK = "2026-09-21"  # historical standalone example only
+TEST_WEEKS = 8
+VALIDATION_WEEKS = 4
+VALIDATION_FOLD_COUNT = 3
 MODELS = ("Last Week Naive", "LightGBM History", "LightGBM Marketing")
 HISTORY_FEATURES = (
     "product_group_code", "week_of_year", "week_month",
@@ -51,6 +46,24 @@ GOAL_SHOP_WAPE = 15.0
 
 def _d(v):
     return pd.Timestamp(v).date()
+
+
+def weekly_windows(dataset: pd.DataFrame) -> tuple[list[tuple[str, str, str, str]], str, str, str]:
+    """Use only complete observed weeks; keep validation before untouched test."""
+    weeks = sorted(dataset.forecast_week_start.unique())
+    needed = TEST_WEEKS + VALIDATION_WEEKS * VALIDATION_FOLD_COUNT + 12
+    if len(weeks) < needed:
+        raise ValueError(f"Need at least {needed} complete weeks for weekly Train/Test")
+    test_start = _d(weeks[-TEST_WEEKS])
+    test_end = _d(weeks[-1]) + timedelta(days=6)
+    folds = []
+    first = len(weeks) - TEST_WEEKS - VALIDATION_WEEKS * VALIDATION_FOLD_COUNT
+    for i in range(VALIDATION_FOLD_COUNT):
+        start = _d(weeks[first + i * VALIDATION_WEEKS])
+        end = _d(weeks[first + (i + 1) * VALIDATION_WEEKS - 1]) + timedelta(days=6)
+        folds.append((f"Fold {i + 1}", (start - timedelta(days=1)).isoformat(),
+                      start.isoformat(), end.isoformat()))
+    return folds, (test_start - timedelta(days=1)).isoformat(), test_start.isoformat(), test_end.isoformat()
 
 
 def _all_days(start: date, n: int) -> list[date]:
@@ -241,8 +254,9 @@ def train_evaluate_weekly(dataset: pd.DataFrame, destination: str | Path) -> dic
     """Choose model from validation, *then* inspect an untouched weekly test."""
     folder = Path(destination)
     folder.mkdir(parents=True, exist_ok=True)
+    validation_folds, train_end, test_start, test_end = weekly_windows(dataset)
     fold_rows, fold_predictions = [], []
-    for fold_name, train_thru, start, end in VALIDATION_FOLDS:
+    for fold_name, train_thru, start, end in validation_folds:
         tr, val = split_weekly(dataset, train_end=train_thru,
                                valid_start=start, valid_end=end)
         for name in MODELS:
@@ -285,8 +299,8 @@ def train_evaluate_weekly(dataset: pd.DataFrame, destination: str | Path) -> dic
     selected_model = str(selection_df.iloc[0]["model"])
 
     tr, test = split_weekly(
-        dataset, train_end=FINAL_TRAIN_END,
-        valid_start=TEST_START, valid_end=TEST_END,
+        dataset, train_end=train_end,
+        valid_start=test_start, valid_end=test_end,
     )
     test_results = []
     per_group = []
@@ -347,7 +361,8 @@ def train_evaluate_weekly(dataset: pd.DataFrame, destination: str | Path) -> dic
             g: int(code)
             for g, code in dataset[["product_group_id", "product_group_code"]].drop_duplicates().values
         },
-        "train_cutoff_week_end": FINAL_TRAIN_END,
+        "train_cutoff_week_end": train_end,
+        "test_window": [test_start, test_end],
         "feature_columns": list(
             HISTORY_FEATURES if selected_model == "LightGBM History"
             else MARKETING_FEATURES if selected_model == "LightGBM Marketing"
@@ -385,10 +400,14 @@ def train_evaluate_weekly(dataset: pd.DataFrame, destination: str | Path) -> dic
         "dataset_hash_sha256": feature_hash,
         "weekly_grain": "Monday-Sunday x Product Group",
         "forecast_asof": "Previous Sunday",
-        "validation_folds": [x[0] for x in VALIDATION_FOLDS],
+        "validation_folds": [x[0] for x in validation_folds],
+        "validation_windows": [{"fold": name, "train_through": thru,
+                                "from": start, "through": end}
+                               for name, thru, start, end in validation_folds],
+        "train_cutoff_week_end": train_end,
         "selected_by_validation": selected_model,
         "validation_model_comparison": selection,
-        "final_test_window": [TEST_START, TEST_END],
+        "final_test_window": [test_start, test_end],
         "final_test_comparison": test_results,
         "targets": {"group_wape_pct": GOAL_GROUP_WAPE, "shop_wape_pct": GOAL_SHOP_WAPE},
         "test_not_used_for_model_selection": True,
@@ -408,7 +427,11 @@ def train_evaluate_weekly(dataset: pd.DataFrame, destination: str | Path) -> dic
 def run_weekly(warehouse: str | Path, plans: str | Path, output: str | Path):
     daily = read_warehouse_daily(warehouse)
     plan_df = pd.read_csv(plans, dtype={"product_group_id": str, "scenario_id": str})
-    dataset = build_weekly_dataset(daily, plan_df)
+    latest = min(pd.Timestamp(daily.event_date.max()).date(),
+                 pd.to_datetime(plan_df.plan_date).dt.date.max())
+    last_sunday = latest - timedelta(days=(latest.weekday() + 1) % 7)
+    last_week = last_sunday - timedelta(days=6)
+    dataset = build_weekly_dataset(daily, plan_df, last_week=last_week.isoformat())
     return train_evaluate_weekly(dataset, output)
 
 
@@ -425,3 +448,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

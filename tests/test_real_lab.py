@@ -41,7 +41,7 @@ def test_frontend_labels_real_execution_distinct_from_readonly_replay():
     assert "READ_ONLY_EVIDENCE_REPLAY" in s
     assert '"/api/lab-batch"' in s
     assert '"/api/lab-batch-result?run_id="' in s
-    assert "รันต่อจากขั้นที่ผิดพลาด" in s
+    assert "กดปุ่มเดิมเพื่อลองอีกครั้ง" in s
     assert "pre_group_shortfall_thb" in s
     assert "gross*benchmarkPct/100" in s
 
@@ -75,7 +75,7 @@ def test_reset_button_does_not_request_browser_password():
     api=(ROOT/"api"/"lab-reset.js").read_text(encoding="utf-8")
     assert 'window.prompt("รหัสผู้ควบคุม' not in ui
     assert 'x-classroom-admin-key' not in api.lower()
-    assert 'state?.phase!=="RUN2_READY"' in api
+    assert '["RUN1_READY","RUN2_READY"].includes(state?.phase)' in api
 
 
 def test_worker_output_is_from_real_rows_not_example_constants():

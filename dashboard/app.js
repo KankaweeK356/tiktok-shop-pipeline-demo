@@ -204,6 +204,14 @@
       state.group="ALL";
     }
     const current=business.months.find(x=>x.month===state.month)||business.months.at(-1);
+    const coverage=month=>{
+      const dates=[...new Set(business.days.filter(x=>x.month===month)
+        .map(x=>String(x.day).slice(0,10)))].sort();
+      const [year,number]=month.split("-").map(Number);
+      const total=new Date(Date.UTC(year,number,0)).getUTCDate();
+      return {last:dates.at(-1)||"—",complete:dates.length===total};
+    };
+    const monthCoverage=coverage(current.month);
     const groupRows=business.groups.filter(x=>x.month===current.month);
     const visibleGroups=state.group==="ALL"?groupRows:groupRows.filter(x=>x.group_id===state.group);
     const days=business.days.filter(x=>x.month===current.month&&
@@ -218,8 +226,9 @@
         value=>{state.group=value;renderBusiness()})));
     root.append(add(box("metrics"),
       metric("ยอดขายสุทธิ","฿"+money(current.net),"เป้า ฿"+money(current.target)),
-      metric("เทียบเป้ารายเดือน",pct(current.achievement_pct),
-        "ส่วนต่าง "+(Number(current.gap)>=0?"+":"")+"฿"+money(current.gap)),
+      metric("เทียบเป้ารายเดือน",monthCoverage.complete?pct(current.achievement_pct):"รอข้อมูลครบเดือน",
+        monthCoverage.complete?"ส่วนต่าง "+(Number(current.gap)>=0?"+":"")+"฿"+money(current.gap):
+        "ข้อมูลถึง "+monthCoverage.last),
       metric("กำไรหลังต้นทุนที่เกี่ยวข้อง",
         current.profit===null?"รอตรวจต้นทุน":"฿"+money(current.profit),
         "ยังไม่กระจายค่า Ads ลง SKU"),
@@ -227,16 +236,22 @@
         "เกณฑ์ ≥10% ของยอดราคาเต็ม · "+current.protection_status)));
     const belowTarget=current.gap!==null&&Number(current.gap)<0;
     const profitFail=current.protection_status==="FAIL";
-    root.append(notice(current.profit_data_status==="INCOMPLETE"?
+    root.append(notice(!monthCoverage.complete?
+      "ข้อมูลถึง "+monthCoverage.last+" · เดือนยังไม่ครบ จึงยังไม่สรุปเทียบเป้าทั้งเดือน":
+      current.profit_data_status==="INCOMPLETE"?
       "ต้นทุนยังไม่ครบ จึงยังสรุปกำไรไม่ได้":
       belowTarget&&profitFail?"ยอดขายต่ำกว่าเป้าและกำไรต่ำกว่าเกณฑ์ ตรวจกลุ่มสินค้าและต้นทุนด้านล่าง":
       belowTarget?"ยอดขายต่ำกว่าเป้า ตรวจกลุ่มสินค้าที่เป็นส่วนต่างด้านล่าง":
       profitFail?"ยอดขายถึงเป้า แต่กำไรต่ำกว่าเกณฑ์ ตรวจต้นทุนและส่วนลดด้านล่าง":
       "ยอดขายและกำไรผ่านเกณฑ์ของเดือนที่เลือก"));
     state.rows=visibleGroups;
+    const monthRows=business.months.map(row=>{
+      const status=coverage(row.month);
+      return status.complete?row:{...row,gap:"—"};
+    });
     root.append(panel("ผลงานรายเดือน","ระดับร้าน · เปรียบเทียบยอดจริงกับเป้า",
       contentArea(dataTable([["month","เดือน"],["net","ยอดขายสุทธิ"],["target","เป้า"],
-        ["gap","ส่วนต่าง"],["protection_status","กำไร ≥10%"]],business.months))));
+        ["gap","ส่วนต่าง"],["protection_status","กำไร ≥10%"]],monthRows))));
     root.append(panel("เจาะลงกลุ่มสินค้า","เลือกกลุ่มด้านบนเพื่อดูวันและ SKU",
       contentArea(dataTable([["group_name","กลุ่ม"],["net","ยอดขายสุทธิ"],
         ["profit","กำไร"],["ads_cost","Ads รวมระดับกลุ่ม"],

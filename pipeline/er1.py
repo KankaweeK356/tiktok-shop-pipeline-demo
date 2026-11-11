@@ -160,7 +160,8 @@ def allocate_fifo(conn,item,paid_at):
     conn.execute('UPDATE Fact_Order_Items SET Total_COGS=? WHERE Order_Item_ID=?',(money(c['c']),iid))
 
 def snapshots(conn,batch):
-    ts='2026-10-31 23:59:59' if batch=='initial' else '2026-11-01 23:59:59'
+    latest=one(conn,'SELECT MAX(Order_Created_At) AS ts FROM Fact_Orders')['ts']
+    ts=(latest[:10]+' 23:59:59') if latest else '2026-10-31 23:59:59'
     rows=fetchdict(conn,"""SELECT s.SKU_ID,p.Cost_Standard_Product,COALESCE(SUM(g.Remaining_Qty),0) rem
       FROM Dim_SKU s JOIN Dim_Product_Group p ON s.Product_Group_ID=p.Product_Group_ID
       LEFT JOIN Fact_Goods_Receipt_Items g ON g.SKU_ID=s.SKU_ID GROUP BY s.SKU_ID,p.Cost_Standard_Product""")

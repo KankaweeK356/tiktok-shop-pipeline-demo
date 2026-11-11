@@ -1397,7 +1397,7 @@
       });cell.append(head);
       if(active){
         const body=box("notebook-cell-body");
-        body.append(small("Input: "+(index===0?"Source CSV ชุด "+(state.notebookBatch==="initial"?"ตั้งต้น":"ข้อมูลใหม่"):
+        body.append(small("Input: "+(index===0?"Source CSV ชุด"+(state.notebookBatch==="initial"?"ตั้งต้น":"ข้อมูลใหม่"):
           index===1?"25 ตารางใน Neon":index===2?"Raw Parquet":index===3?"Standardized Parquet":"Database และ Warehouse")));
         body.append(small("ขั้นนี้ทำอะไร: "+description));
         if(liveStep?.started_at)body.append(small("เริ่ม "+
@@ -1424,7 +1424,7 @@
           }
           history.append(historyBody);body.append(history);
         }
-        if(id==="ingest"){
+        if(id==="ingest"&&savedResult){
           body.append(small("ขั้นนี้ sync ข้อมูลธุรกิจ 25 ตารางเข้า Neon · กดชื่อตารางด้านบนเพื่อดูตัวอย่างจากรันนี้"));
           const neonButton=node("button","button button-outline","ดูตารางและแถวจริงใน Neon");
           neonButton.type="button";
@@ -1683,7 +1683,8 @@
     if(state.view==="pipeline")renderPipeline();
     if(state.view==="ml")renderML();
     $("#exportCurrent").textContent=state.view==="business"?
-      "↓ ดาวน์โหลดแถวตัวอย่างจาก Warehouse (CSV)":"↓ ดาวน์โหลดข้อมูลตัวอย่างที่แสดง (CSV)";
+      "↓ ดาวน์โหลดแถวตัวอย่างจาก Warehouse (CSV)":state.view==="ml"?
+      "↓ ดาวน์โหลดผล Scenario (CSV)":"↓ ดาวน์โหลดข้อมูลตัวอย่างที่แสดง (CSV)";
     $("#exportCurrent").disabled=state.view==="pipeline"||!state.rows.length;
   }
   function setView(value){
@@ -1699,8 +1700,8 @@
     $("#pageSubtitle").textContent=names[value][1];
     $("#crumbView").textContent=names[value][2];
     $("#monthFilterWrap").classList.add("hidden");
-    $("#groupFilterWrap").classList.toggle("hidden",value!=="ml");
-    $("#modelFilterWrap").classList.toggle("hidden",value!=="ml");
+    $("#groupFilterWrap").classList.add("hidden");
+    $("#modelFilterWrap").classList.add("hidden");
     render();
     if(value==="business"||value==="ml")loadWarehouseDashboard();
     if(value==="pipeline" && state.neonStatus==="not_loaded")loadNeonEvidence();
@@ -1775,4 +1776,5 @@
   }
   init();
 })();
+
 

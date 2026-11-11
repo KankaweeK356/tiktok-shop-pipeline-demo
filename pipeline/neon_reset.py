@@ -46,12 +46,15 @@ def reset_source(database_url: str, *, confirmation: str,
             """,(current_cycle,))
             if cur.fetchone()[0]:
                 raise RuntimeError("Cannot reset while a pipeline run is active")
-            cur.execute("""
-                SELECT COUNT(*) FROM demo_control.upload_sessions
-                 WHERE revoked=FALSE AND expires_at>now()
-            """)
-            if cur.fetchone()[0]:
-                raise RuntimeError("Cannot reset during an active storage upload")
+            # Older classroom branches predate the optional upload-session table.
+            cur.execute("SELECT to_regclass('demo_control.upload_sessions')")
+            if cur.fetchone()[0] is not None:
+                cur.execute("""
+                    SELECT COUNT(*) FROM demo_control.upload_sessions
+                     WHERE revoked=FALSE AND expires_at>now()
+                """)
+                if cur.fetchone()[0]:
+                    raise RuntimeError("Cannot reset during an active storage upload")
             # The scoped writer has DELETE but deliberately not TRUNCATE privileges.
             # Reverse foreign-key topological order safely deletes children first.
             # All statements run in one transaction; failures roll back every deletion.
@@ -93,3 +96,4 @@ def main():
 
 if __name__=="__main__":
     main()
+

@@ -57,11 +57,11 @@ def test_margin_uses_full_price_not_discounted_sales():
 
 def test_group_and_sku_are_distinct_profit_grains():
     ui=FRONTEND.read_text(encoding="utf-8")
-    assert "100*Number(profit)/gross" in ui
-    assert "100*Number(x.contribution_profit)/Number(x.gross_reference_sales)" in ui
-    assert "GROUP_BELOW" in ui and "GROUP_ABOVE" in ui
-    assert 'gap<0?"RISK":"CHECK"' in ui
-    assert "ไม่ถูกกระจายลง SKU" in ui
+    assert 'metric("คุ้มครองกำไร",pct(current.protection_pct)' in ui
+    assert 'const profitFail=current.protection_status==="FAIL"' in ui
+    assert '"ยังไม่กระจายค่า Ads ลง SKU"' in ui
+    assert '"สินค้า SKU","ยอดขายและต้นทุนสินค้า · ไม่จัดสรรค่า Ads ที่ระดับ SKU"' in ui
+    assert '"แคมเปญขายและโฆษณา","สองแหล่งข้อมูลต่างระดับ ไม่รวม Ads GMV เป็นยอดขายซ้ำ"' in ui
 
 
 def test_six_offline_error_cases_have_inspectable_recovery_evidence():
@@ -72,3 +72,4 @@ def test_six_offline_error_cases_have_inspectable_recovery_evidence():
     assert all(x["passed"] for x in errors)
     assert len(report["error_case_details"])==6
     assert report["source_engine"]=="SQLITE_NOT_NEON"
+

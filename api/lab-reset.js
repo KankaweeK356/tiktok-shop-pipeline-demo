@@ -38,8 +38,8 @@ export default async function handler(req,res){
       return res.status(400).json({error:"ต้องยืนยัน RESET-DEMO-DATA และรอบข้อมูลที่ถูกต้อง"});
     const sql=neon(process.env.CLASSROOM_LAB_NEON_URL);
     const [state]=await sql.query("SELECT phase,cycle_number FROM demo_control.dataset_state WHERE dataset_key='classroom'");
-    if(state?.phase!=="RUN2_READY"||Number(state.cycle_number)!==expected_cycle)
-      return res.status(409).json({error:"เคลียร์ได้เมื่อ Run 2 จบ และรอบข้อมูลยังตรงกันเท่านั้น"});
+    if(!["RUN1_READY","RUN2_READY"].includes(state?.phase)||Number(state.cycle_number)!==expected_cycle)
+      return res.status(409).json({error:"เคลียร์ได้เมื่อรอบปัจจุบันผ่านการตรวจแล้วและรอบข้อมูลยังตรงกัน"});
     const active=await sql.query("SELECT COUNT(*)::int AS n FROM demo_control.pipeline_runs WHERE dataset_key='classroom' AND status IN ('RUNNING','QUEUED')");
     if(active[0]?.n)return res.status(409).json({error:"มี Run กำลังทำงาน เคลียร์ไม่ได้"});
     await github("/actions/workflows/"+workflow+"/dispatches","POST",{

@@ -34,4 +34,4 @@ jobs:
       - name: Clear only the 25 lab database tables for a new cycle
         env:
           RESET_CYCLE: ${{ inputs.expected_cycle }}
-        run: python -m pipeline.neon_reset --confirm RESET-DEMO-DATA --expected-cycle "$RESET_CYCLE" --reason "Operator requested a new classroom run after Run 2"
+        run: python -m pipeline.neon_reset --confirm RESET-DEMO-DATA --expected-cycle "$RESET_CYCLE" --reason "Operator requested a new classroom data cycle"

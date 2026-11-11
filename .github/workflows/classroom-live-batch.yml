@@ -4,12 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       batch:
-        description: Run 1 initial or Run 2 incremental
+        description: Next deterministic Source delivery
         required: true
         type: choice
-        options: [initial, incremental]
+        options: [initial, incremental_01, incremental_02, incremental_03, incremental_04, incremental_05, incremental_06]
       previous_run_id:
-        description: Successful Run 1 ID for incremental, 0 for initial
+        description: Latest successful run ID, 0 only for initial
         required: true
         type: string
 
@@ -28,6 +28,8 @@ jobs:
   complete-run:
     runs-on: ubuntu-latest
     timeout-minutes: 35
+    env:
+      CLASSROOM_SOURCE_ROOT: output/classroom_source
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -46,6 +48,8 @@ jobs:
         run: python -m pipeline.oidc_lab_auth
       - name: Install pipeline dependencies
         run: python -m pip install -r requirements-neon.txt
+      - name: Prepare deterministic Source CSV deliveries
+        run: python -m pipeline.generate_classroom_source --output output/classroom_source
       - name: "1 Source to Database"
         env:
           BATCH: ${{ inputs.batch }}
@@ -97,7 +101,7 @@ jobs:
         env:
           BATCH: ${{ inputs.batch }}
         run: python -m pipeline.ci_lab_batch --batch "$BATCH" --finalize
-      - name: Preserve workspace for Run 2
+      - name: Preserve workspace for the next Source delivery
         if: always()
         uses: actions/upload-artifact@v4
         with:

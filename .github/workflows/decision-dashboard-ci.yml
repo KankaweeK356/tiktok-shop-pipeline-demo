@@ -86,6 +86,7 @@ jobs:
           node --check api/lab-oidc.js
           node --check api/lab-batch.js
           node --check api/lab-batch-result.js
+          node --check lib/lab-ml.js
           node --check lib/lab-warehouse-download.js
           node --check api/lab-error.js
           node --check api/lab-reset.js

@@ -1553,7 +1553,7 @@
     state.mlLoading=true;
     try{
       const query=new URLSearchParams({warehouse_run_id:String(runId)});
-      const response=await fetch("/api/lab-ml?"+query,{cache:"no-store"});
+      const response=await fetch("/api/lab-batch-result?ml=1&"+query,{cache:"no-store"});
       const data=await response.json();
       if(!response.ok)throw Error(data.error||"อ่านผล ML ไม่ได้");
       state.liveML=data;
@@ -1569,7 +1569,7 @@
     if(!runId||state.mlLoading)return;
     state.mlLoading=true;state.mlError="";renderML();
     try{
-      const response=await fetch("/api/lab-ml",{method:"POST",
+      const response=await fetch("/api/lab-batch-result?ml=1",{method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({warehouse_run_id:String(runId)})});
       const data=await response.json();

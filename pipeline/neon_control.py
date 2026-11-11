@@ -17,7 +17,7 @@ from psycopg.types.json import Jsonb
 
 from .orchestrator import STAGES
 
-REQUIRED_PHASE = {"RUN1": "EMPTY", "RUN2": "RUN1_READY", "REPLAY": "RUN2_READY"}
+REQUIRED_PHASE = {"RUN1": "EMPTY", "RUN2": ("RUN1_READY","RUN2_READY"), "REPLAY": "RUN2_READY"}
 NEXT_PHASE = {"RUN1": "RUN1_READY", "RUN2": "RUN2_READY", "REPLAY": "RUN2_READY"}
 
 
@@ -36,7 +36,8 @@ def begin_run(database_url: str, run_type: str) -> str:
             cur.execute("SELECT phase,cycle_number FROM demo_control.dataset_state "
                         "WHERE dataset_key='classroom' FOR UPDATE")
             row = cur.fetchone()
-            if not row or row[0] != REQUIRED_PHASE[run_type]:
+            allowed=REQUIRED_PHASE[run_type]
+            if not row or row[0] not in (allowed if isinstance(allowed,tuple) else (allowed,)):
                 raise RuntimeError(f"{run_type}: wrong phase; expected {REQUIRED_PHASE[run_type]}")
             phase,cycle=row
             cur.execute("SELECT COUNT(*) FROM demo_control.pipeline_runs "
@@ -69,7 +70,7 @@ def complete_run(database_url: str, run_id: str, run_type: str,
                  result: dict, workspace: Path) -> None:
     if result.get("status")!="SUCCESS":
         raise ValueError("A non-successful batch cannot complete a Neon run")
-    batch = {"RUN1":"initial","RUN2":"incremental","REPLAY":"incremental"}[run_type]
+    batch = result.get("batch") or {"RUN1":"initial","RUN2":"incremental_01","REPLAY":"incremental_01"}[run_type]
     stage_logs = _stage_log_records(workspace,batch)
     with psycopg.connect(database_url) as db:
         with db.cursor() as cur:
@@ -120,14 +121,16 @@ def complete_run(database_url: str, run_id: str, run_type: str,
                 UPDATE demo_control.dataset_state
                    SET phase=%s,last_run_id=%s,lock_version=lock_version+1,updated_at=now()
                  WHERE dataset_key='classroom' AND phase=%s
-            """,(NEXT_PHASE[run_type],run_id,REQUIRED_PHASE[run_type]))
+            """,(NEXT_PHASE[run_type],run_id,"EMPTY" if run_type=="RUN1" else
+                 "RUN2_READY" if run_type=="REPLAY" or batch!="incremental_01" else "RUN1_READY"))
             if cur.rowcount!=1:
                 raise RuntimeError("Neon phase changed while completing run")
 
 
 def fail_run(database_url: str, run_id: str, run_type: str,
-             workspace: Path, error: BaseException) -> None:
-    batch={"RUN1":"initial","RUN2":"incremental","REPLAY":"incremental"}[run_type]
+             workspace: Path, error: BaseException, *, batch: str | None = None) -> None:
+    if batch is None:
+        batch="initial" if run_type=="RUN1" else "incremental_01"
     stage_logs=_stage_log_records(workspace,batch)
     # Do not serialize database connection strings or exception internals into logs.
     failed_stage=next((stage for stage in STAGES

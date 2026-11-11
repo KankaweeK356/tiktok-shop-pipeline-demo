@@ -680,7 +680,9 @@
       state.nextSourceBatch=data.next_source_batch||null;
       state.sourceRemaining=data.source_remaining??null;
       state.sourceExhausted=Boolean(data.source_exhausted);
-      if(data.phase==="RUN1_READY"||data.phase==="RUN2_READY")state.notebookBatch="incremental";
+      if((data.phase==="RUN1_READY"||data.phase==="RUN2_READY")&&
+         !state.batchRun.status&&!state.notebookSelectionTouched)
+        state.notebookBatch="incremental";
       state.batchResume={batch:data.resume_batch||"",runId:data.resume_run_id||null};
       state.recentRuns=data.history||[];
     }catch(_error){state.realReady=false;}
@@ -1190,7 +1192,8 @@
         state.resetUrl=data.url||state.resetUrl;}
       if(state.resetStatus==="success"){
         state.realPreviousRunId="";state.realRunId=null;state.realStatus="";
-        state.realEvidence=null;state.notebookBatch="initial";state.notebookStage="ingest";
+        state.realEvidence=null;state.notebookBatch="initial";
+        state.notebookSelectionTouched=false;state.notebookStage="ingest";
         state.batchResults={initial:{},incremental:{}};
         state.batchRunIds={initial:null,incremental:null};
         state.batchRun={batch:"",status:"",since:"",runId:null,url:"",stages:[]};
@@ -1352,7 +1355,8 @@
       const button=node("button","notebook-run"+(state.notebookBatch===id?" is-active":""));
       button.type="button";button.setAttribute("aria-pressed",String(state.notebookBatch===id));
       button.append(node("strong","",label),small(detail));
-      button.addEventListener("click",()=>{state.notebookBatch=id;state.notebookStage="ingest";
+      button.addEventListener("click",()=>{state.notebookBatch=id;
+        state.notebookSelectionTouched=true;state.notebookStage="ingest";
         state.savedLabReceipt=null;state.savedLabSelected="";renderPipeline();});batchPicker.append(button);
     });root.append(batchPicker);
     const canStartBatch=state.realReady&&!state.sourceExhausted&&

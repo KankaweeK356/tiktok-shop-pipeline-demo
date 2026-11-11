@@ -8,8 +8,11 @@ def test_control_transitions_and_actual_evidence():
     source=(ROOT/"pipeline"/"neon_control.py").read_text(encoding="utf-8")
     ast.parse(source)
     assert '"RUN1": "EMPTY"' in source
-    from pipeline.neon_control import REQUIRED_PHASE
-    assert REQUIRED_PHASE["RUN2"] == ("RUN1_READY", "RUN2_READY")
+    parsed=ast.parse(source)
+    assignment=next(node for node in parsed.body if isinstance(node,ast.Assign)
+                    and any(isinstance(target,ast.Name) and target.id=="REQUIRED_PHASE"
+                            for target in node.targets))
+    assert ast.literal_eval(assignment.value)["RUN2"] == ("RUN1_READY", "RUN2_READY")
     assert '"REPLAY": "RUN2_READY"' in source
     assert "stage_history.jsonl" in source
     assert "FROM demo_control.dataset_state" in source

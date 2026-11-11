@@ -4,12 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       batch:
-        description: Run 1 initial or Run 2 incremental
+        description: Next classroom Source delivery
         required: true
         type: choice
-        options: [initial, incremental]
+        options: [initial, incremental_01, incremental_02, incremental_03, incremental_04, incremental_05, incremental_06]
       previous_run_id:
-        description: Successful Run 1 ID for incremental, 0 for initial
+        description: Latest successful run ID, 0 for initial
         required: true
         type: string
 

@@ -1,0 +1,19 @@
+name: Classroom ML - Train from current Warehouse
+
+on:
+  workflow_dispatch:
+    inputs:
+      warehouse_run_id:
+        description: Successful current classroom pipeline run
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  registration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Feature-branch registration
+        run: echo "Run this workflow from the classroom feature branch."

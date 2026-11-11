@@ -1631,7 +1631,7 @@
         small("ช่วง Test: "+summary.final_test_window.join(" ถึง ")),
         dataTable([["model","วิธี"],["validation_group_wape_pct","Validation WAPE"]],
           summary.validation_model_comparison,
-          {validation_group_wape_pct:{kind:"percent",digits:1}})));
+          {validation_group_wape_pct:{kind:"percent",digits:1}}))));
     const selectedScore=result.test_metrics.find(x=>x.model===summary.selected_by_validation);
     if(selectedScore&&(!selectedScore.group_target_20pct||!selectedScore.shop_target_15pct))
       root.append(notice("คะแนนช่วง Test ยังไม่ถึงเกณฑ์ที่ตั้งไว้ ใช้ผลทำนายเพื่อสาธิตวิธีทำ ML และตรวจสอบแนวโน้มเท่านั้น",true));

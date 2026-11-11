@@ -58,7 +58,7 @@ jobs:
         with:
           name: classroom-stage-ingest
           path: output/classroom_lab/last_step_result.json
-          retention-days: 30
+          retention-days: 90
       - name: "2 Database to Data Lake"
         env:
           BATCH: ${{ inputs.batch }}
@@ -67,7 +67,7 @@ jobs:
         with:
           name: classroom-stage-extract
           path: output/classroom_lab/last_step_result.json
-          retention-days: 30
+          retention-days: 90
       - name: "3 Standardize Data Lake"
         env:
           BATCH: ${{ inputs.batch }}
@@ -76,7 +76,7 @@ jobs:
         with:
           name: classroom-stage-transform
           path: output/classroom_lab/last_step_result.json
-          retention-days: 30
+          retention-days: 90
       - name: "4 Data Lake to Warehouse"
         env:
           BATCH: ${{ inputs.batch }}
@@ -85,7 +85,7 @@ jobs:
         with:
           name: classroom-stage-load
           path: output/classroom_lab/last_step_result.json
-          retention-days: 30
+          retention-days: 90
       - name: Export all Warehouse tables as CSV
         run: python -m pipeline.ci_lab_export
       - name: "5 Validate whole run"
@@ -96,7 +96,7 @@ jobs:
         with:
           name: classroom-stage-validate
           path: output/classroom_lab/last_step_result.json
-          retention-days: 30
+          retention-days: 90
       - name: Summarize run
         env:
           BATCH: ${{ inputs.batch }}
@@ -108,7 +108,7 @@ jobs:
           name: classroom-lab-workspace
           path: output/classroom_lab/
           if-no-files-found: warn
-          retention-days: 7
+          retention-days: 90
       - name: Publish run results
         if: always()
         uses: actions/upload-artifact@v4
@@ -116,7 +116,7 @@ jobs:
           name: classroom-batch-result
           path: output/classroom_lab/batch_result.json
           if-no-files-found: warn
-          retention-days: 30
+          retention-days: 90
       - name: Publish complete Warehouse CSV
         if: success()
         uses: actions/upload-artifact@v4
@@ -124,4 +124,5 @@ jobs:
           name: classroom-warehouse-csv
           path: output/classroom_lab/warehouse_csv.zip
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 90
+

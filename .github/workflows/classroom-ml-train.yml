@@ -44,9 +44,10 @@ jobs:
         with:
           name: classroom-ml-result
           path: output/classroom_ml/classroom_ml_result.json
-          retention-days: 30
+          retention-days: 90
       - uses: actions/upload-artifact@v4
         with:
           name: classroom-ml-model
           path: output/classroom_ml/
-          retention-days: 30
+          retention-days: 90
+

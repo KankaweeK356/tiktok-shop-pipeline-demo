@@ -8,6 +8,7 @@ import pandas as pd
 
 from .ml_weekly import run_weekly
 from .ml_weekly_serve import serve_monitor_replay
+from .ml_scenarios import build_scenarios
 from .schema import ROOT
 
 
@@ -21,6 +22,7 @@ def main() -> None:
                          .read_text(encoding="utf-8"))
     summary = run_weekly(warehouse, source / "ml_marketing_plan.csv", result_dir)
     monitor = serve_monitor_replay(result_dir)
+    scenarios = build_scenarios(warehouse,result_dir)
     feature = pd.read_parquet(result_dir / "weekly_training_dataset.parquet")
     test = pd.read_csv(result_dir / "weekly_test_predictions.csv")
     metrics = pd.read_csv(result_dir / "weekly_test_metrics.csv")
@@ -32,6 +34,7 @@ def main() -> None:
         "source": "CURRENT_CLASSROOM_WAREHOUSE",
         "summary": summary,
         "monitor": monitor,
+        "scenarios": scenarios,
         "feature_preview": json.loads(feature.head(12).to_json(orient="records")),
         "test_metrics": json.loads(metrics.to_json(orient="records")),
         "test_predictions": json.loads(test.head(20).to_json(orient="records")),

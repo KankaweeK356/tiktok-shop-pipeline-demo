@@ -1635,6 +1635,44 @@
       contentArea(dataTable([["forecast_week_start","สัปดาห์"],["product_group_id","กลุ่ม"],
         ["actual_net_revenue_week","ยอดจริง"],
         ["predicted_net_revenue_week","คำทำนาย"]],result.test_predictions))));
+    const scenarios=result.scenarios;
+    if(scenarios?.status==="READY"){
+      const options=scenarios.grid;
+      const group=state.scenarioGroup&&options.some(x=>x.group_id===state.scenarioGroup)?
+        state.scenarioGroup:options[0].group_id;
+      const ratio=state.scenarioRatio??1,campaign=state.scenarioCampaign??0;
+      const selected=options.find(x=>x.group_id===group&&x.budget_ratio===ratio&&
+        x.campaign_discount_pct===campaign);
+      const baseline=options.filter(x=>x.budget_ratio===1&&x.campaign_discount_pct===0);
+      const shopBaseline=baseline.reduce((sum,x)=>sum+x.predicted_net_revenue_week,0);
+      const groupBaseline=baseline.find(x=>x.group_id===group);
+      const shopScenario=shopBaseline-(groupBaseline?.predicted_net_revenue_week||0)+
+        (selected?.predicted_net_revenue_week||0);
+      state.rows=options;
+      root.append(panel("5 · ทดลองแผนการตลาด","ใช้โมเดลที่ฝึกจาก Warehouse คำนวณทางเลือกของกลุ่มสินค้าที่เลือก",
+        contentArea(box("h-stack",
+          chooseField("กลุ่มสินค้า",[...new Set(options.map(x=>x.group_id))].map(x=>[x,title(x)]),
+            group,value=>{state.scenarioGroup=value;renderML()}),
+          chooseField("งบ Ads เทียบกับ 7 วันล่าสุด",[[0,"0%"],[0.5,"50%"],[1,"เท่าเดิม"],
+            [1.5,"150%"],[2,"200%"]].map(([value,label])=>[String(value),label]),
+            String(ratio),value=>{state.scenarioRatio=Number(value);renderML()}),
+          chooseField("แผนลดราคา",[["0","ไม่ลด"],["10","ลด 10%"]],String(campaign),
+            value=>{state.scenarioCampaign=Number(value);renderML()})),
+          selected?add(box("metrics"),
+            metric("งบ Ads ที่เลือก","฿"+money(selected.planned_ads_week),
+              "ค่าใช้จ่ายตามแผนรายสัปดาห์"),
+            metric("คาดการณ์ยอดขายกลุ่มนี้","฿"+money(selected.predicted_net_revenue_week),
+              "ฐานเดิม ฿"+money(groupBaseline?.predicted_net_revenue_week)),
+            metric("คาดการณ์ยอดขายทั้งร้าน","฿"+money(shopScenario),
+              "เป้ารายสัปดาห์ ฿"+money(scenarios.weekly_shop_target))):
+            notice("ยังคำนวณทางเลือกนี้ไม่ได้",true),
+          small("จุดตัดข้อมูล "+scenarios.as_of_date+" · พยากรณ์สัปดาห์ "+
+            scenarios.forecast_week_start+" ถึง "+scenarios.forecast_week_end),
+          small(scenarios.model_uses_plan?
+            "โมเดลใช้ตัวแปรแผน Ads และส่วนลด แต่ผลต่างเป็นความสัมพันธ์จากข้อมูลจำลอง ไม่ใช่ผลเพิ่มยอดขายที่พิสูจน์แล้ว":
+            "โมเดลที่ Validation เลือกไม่ใช้ตัวแปรแผน ตัวเลขคาดการณ์จึงอาจไม่เปลี่ยนตามงบ"),
+          notice("โมเดลนี้ทำนายยอดขาย ยังไม่ทำนายกำไร · เกณฑ์กำไร ≥10% ต้องดูข้อมูลต้นทุนจริงในภาพรวมธุรกิจ",true))));
+    }else root.append(notice("ยังจำลองแผนไม่ได้: ข้อมูลรายวันย้อนหลังไม่ครบ 28 วัน ณ จุดตัดข้อมูลที่ใช้ได้",true));
     root.append(notice("โมเดลเรียนรู้ความสัมพันธ์จากข้อมูลจำลอง ไม่ได้พิสูจน์ว่างบ Ads ที่เพิ่มจะทำให้ยอดขายเพิ่ม และข้อมูลย้อนหลังนี้ยังไม่ผ่านการยืนยัน point-in-time",true));
     if(state.liveML.url)root.append(link("ดูงานฝึกและไฟล์โมเดล",state.liveML.url));
   }

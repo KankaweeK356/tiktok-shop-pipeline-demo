@@ -4,6 +4,7 @@ import { neon } from "@neondatabase/serverless";
 const REPO="KankaweeK356/tiktok-shop-pipeline-demo";
 const REF="feature/classroom-demo-evidence-foundation";
 const WORKFLOW="classroom-live-batch.yml";
+const DELIVERIES=["initial",...Array.from({length:6},(_,i)=>"incremental_"+String(i+1).padStart(2,"0"))];
 const url="https://github.com/"+REPO+"/actions/workflows/"+WORKFLOW;
 async function github(path,method="GET",body){
   const response=await fetch("https://api.github.com/repos/"+REPO+path,{
@@ -25,29 +26,30 @@ export default async function handler(req,res){
     if(req.method==="GET"){
       const batch=String(req.query?.batch||"");
       if(!batch){
-        const [lab,orders,active]=await Promise.all([
+        const [lab,orders,active,completed]=await Promise.all([
           sql.query(`SELECT d.phase,d.cycle_number,r.status AS last_run_status,
                     r.run_type AS last_run_type,r.runner_ref
                     FROM demo_control.dataset_state d
                     LEFT JOIN demo_control.pipeline_runs r ON r.run_id=d.last_run_id
                     WHERE d.dataset_key='classroom' LIMIT 1`),
           sql.query('SELECT COUNT(*)::int AS n FROM demo_er1."Fact_Orders"'),
-          sql.query("SELECT run_type FROM demo_control.pipeline_runs WHERE dataset_key='classroom' AND status='RUNNING' ORDER BY started_at DESC LIMIT 1")]);
+          sql.query("SELECT run_type FROM demo_control.pipeline_runs WHERE dataset_key='classroom' AND status='RUNNING' ORDER BY started_at DESC LIMIT 1"),
+          sql.query("SELECT COUNT(*)::int AS n FROM demo_control.pipeline_runs WHERE dataset_key='classroom' AND cycle_number=(SELECT cycle_number FROM demo_control.dataset_state WHERE dataset_key='classroom') AND status='SUCCEEDED' AND run_type IN ('RUN1','RUN2')")]);
         const recent=await github("/actions/workflows/"+WORKFLOW+
           "/runs?branch="+encodeURIComponent(REF)+"&event=workflow_dispatch&per_page=30");
-        const initial=(recent.workflow_runs||[]).find(run=>
-          run.conclusion==="success"&&run.display_title==="Classroom complete initial / previous 0");
         const history=(recent.workflow_runs||[]).filter(run=>
           run.conclusion==="success"&&
-          /^Classroom complete (initial|incremental) \/ previous /.test(run.display_title||""))
+          /^Classroom complete (initial|incremental(?:_0[1-6])?) \/ previous /.test(run.display_title||""))
           .slice(0,10).map(run=>({run_id:run.id,
             batch:run.display_title.includes(" complete initial ")?"initial":"incremental",
             created_at:run.created_at}));
         const resumeBatch=active[0]?.run_type==="RUN1"?"initial":
           active[0]?.run_type==="RUN2"?"incremental":null;
-        const failed=resumeBatch?(recent.workflow_runs||[]).find(run=>
+        const successCount=Number(completed[0]?.n||0);
+        const nextSource=DELIVERIES[successCount]||null;
+        const failed=resumeBatch&&nextSource?(recent.workflow_runs||[]).find(run=>
           run.status==="completed"&&run.conclusion!=="success"&&
-          run.display_title?.startsWith("Classroom complete "+resumeBatch+" / previous ")):null;
+          run.display_title?.startsWith("Classroom complete "+nextSource+" / previous ")):null;
         const latest=lab[0]||{};
         const githubRun=String(latest.runner_ref||"").match(/\/actions\/runs\/([1-9][0-9]*)\/?$/);
         const currentRunId=["RUN1_READY","RUN2_READY"].includes(latest.phase)&&
@@ -56,16 +58,19 @@ export default async function handler(req,res){
           cycle:latest.cycle_number??null,orders:orders[0]?.n??null,
           current_run_id:currentRunId,current_run_type:currentRunId?latest.last_run_type:null,
           running:Boolean(active.length),active_run_type:active[0]?.run_type||null,
-          previous_run_id:initial?.id||null,resume_batch:resumeBatch,
-          resume_run_id:failed?.id||null,history,workflow_url:url});
+          previous_run_id:currentRunId,next_source_batch:nextSource,
+          source_remaining:Math.max(0,DELIVERIES.length-successCount),
+          source_exhausted:successCount>=DELIVERIES.length,
+          resume_batch:resumeBatch,resume_run_id:failed?.id||null,history,workflow_url:url});
       }
       const since=Date.parse(String(req.query?.since||""));
-      if(!["initial","incremental"].includes(batch)||!Number.isFinite(since))
+      const sourceBatch=String(req.query?.source_batch||batch);
+      if(!DELIVERIES.includes(sourceBatch)||!Number.isFinite(since))
         return res.status(400).json({error:"ข้อมูลติดตามไม่ถูกต้อง"});
       const runs=await github("/actions/workflows/"+WORKFLOW+
         "/runs?branch="+encodeURIComponent(REF)+"&event=workflow_dispatch&per_page=30");
       const match=(runs.workflow_runs||[]).find(run=>
-        run.display_title?.startsWith("Classroom complete "+batch+" / previous ")&&
+        run.display_title?.startsWith("Classroom complete "+sourceBatch+" / previous ")&&
         Date.parse(run.created_at)>=since-10000);
       let stages=[];
       if(match){
@@ -85,38 +90,44 @@ export default async function handler(req,res){
     if(!["initial","incremental"].includes(batch)||
        !/^(0|[1-9][0-9]{0,18})$/.test(previous))
       return res.status(400).json({error:"ข้อมูล Run ไม่ถูกต้อง"});
-    const [state,active]=await Promise.all([
-      sql.query("SELECT phase FROM demo_control.dataset_state WHERE dataset_key='classroom'"),
-      sql.query("SELECT run_type FROM demo_control.pipeline_runs WHERE dataset_key='classroom' AND status IN ('RUNNING','QUEUED') LIMIT 1")]);
-    const expected=batch==="initial"?"EMPTY":"RUN1_READY";
+    const [state,active,completed]=await Promise.all([
+      sql.query("SELECT d.phase,d.cycle_number,r.runner_ref FROM demo_control.dataset_state d LEFT JOIN demo_control.pipeline_runs r ON r.run_id=d.last_run_id WHERE d.dataset_key='classroom'"),
+      sql.query("SELECT run_type FROM demo_control.pipeline_runs WHERE dataset_key='classroom' AND status IN ('RUNNING','QUEUED') LIMIT 1"),
+      sql.query("SELECT COUNT(*)::int AS n FROM demo_control.pipeline_runs WHERE dataset_key='classroom' AND cycle_number=(SELECT cycle_number FROM demo_control.dataset_state WHERE dataset_key='classroom') AND status='SUCCEEDED' AND run_type IN ('RUN1','RUN2')")]);
+    const sourceBatch=DELIVERIES[Number(completed[0]?.n||0)];
+    if(!sourceBatch)return res.status(409).json({error:"Source ชุดนี้ใช้ครบแล้ว เคลียร์ Lab เพื่อเริ่มใหม่"});
+    if(batch!==(sourceBatch==="initial"?"initial":"incremental"))
+      return res.status(409).json({error:"เลือกการรันไม่ตรงกับ Source ชุดถัดไป"});
+    const expected=sourceBatch==="initial"?"EMPTY":sourceBatch==="incremental_01"?"RUN1_READY":"RUN2_READY";
     if(state[0]?.phase!==expected)
       return res.status(409).json({error:"Lab ยังไม่พร้อมเริ่มรอบนี้"});
     const retry=Boolean(active.length);
     if(retry&&active[0]?.run_type!==(batch==="initial"?"RUN1":"RUN2"))
       return res.status(409).json({error:"มี Run อื่นกำลังทำงาน"});
-    if((retry&&previous==="0")||(!retry&&batch==="initial"&&previous!=="0")||
-       (!retry&&batch==="incremental"&&previous==="0"))
+    if((retry&&previous==="0")||(!retry&&sourceBatch==="initial"&&previous!=="0")||
+       (!retry&&sourceBatch!=="initial"&&previous==="0"))
       return res.status(409).json({error:"Run ID สำหรับเริ่มหรือรันต่อไม่ถูกต้อง"});
     if(previous!=="0"){
       const prior=await github("/actions/runs/"+previous);
       const valid=prior.head_branch===REF&&prior.path===".github/workflows/"+WORKFLOW&&
         prior.event==="workflow_dispatch"&&
         (retry?prior.status==="completed"&&prior.conclusion!=="success"&&
-          prior.display_title?.startsWith("Classroom complete "+batch+" / previous "):
+          prior.display_title?.startsWith("Classroom complete "+sourceBatch+" / previous "):
           prior.conclusion==="success"&&
-          prior.display_title==="Classroom complete initial / previous 0");
+          prior.html_url===state[0]?.runner_ref);
       if(!valid)return res.status(409).json({error:"Run ก่อนหน้าไม่ตรงกับการรันต่อ"});
     }
     const recent=await github("/actions/workflows/"+WORKFLOW+
       "/runs?branch="+encodeURIComponent(REF)+"&event=workflow_dispatch&per_page=30");
-    const title="Classroom complete "+batch+" / previous "+previous;
+    const title="Classroom complete "+sourceBatch+" / previous "+previous;
     if((recent.workflow_runs||[]).some(run=>run.display_title===title&&run.status!=="completed"))
       return res.status(409).json({error:"Run นี้ถูกสั่งแล้ว กรุณารอผล"});
     await github("/actions/workflows/"+WORKFLOW+"/dispatches","POST",{
-      ref:REF,inputs:{batch,previous_run_id:previous}});
-    return res.status(202).json({accepted:true,workflow_url:url});
+      ref:REF,inputs:{batch:sourceBatch,previous_run_id:previous}});
+    return res.status(202).json({accepted:true,source_batch:sourceBatch,workflow_url:url});
   }catch(error){
     console.error("Complete lab request failed",error?.message);
     return res.status(503).json({error:"ติดต่อ GitHub หรือ Neon ไม่สำเร็จ"});
   }
 }
+

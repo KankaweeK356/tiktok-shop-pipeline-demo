@@ -20,6 +20,7 @@ from .orchestrator import STAGES, run_batch
 from .neon_control import begin_run, complete_run, fail_run
 from .schema import ROOT
 from .neon_source import _ordered_source_tables
+from .generate_classroom_source import BATCHES
 
 STATE_PATH = ROOT / "output" / "classroom_lab" / "lab_session.json"
 
@@ -47,7 +48,7 @@ def _real_step_evidence(workspace: Path,batch: str,stage: str) -> dict:
     input_data={"label":"Actual source files","preview":[]}
     output={"origin":"GITHUB_WORKER_ACTUAL","preview":[]}
     if stage=="ingest":
-        source_dir=ROOT/"source"/batch
+        source_dir=Path(os.environ.get("CLASSROOM_SOURCE_ROOT",str(ROOT/"source")))/batch
         input_data={"label":"Source CSV", "files":[p.name for p in sorted(source_dir.glob("*.csv"))],
                     "preview":[]}
         with sqlite3.connect(workspace/"er1.sqlite") as db:
@@ -110,14 +111,15 @@ def _real_step_evidence(workspace: Path,batch: str,stage: str) -> dict:
 
 
 def run_stage(stage: str, batch: str) -> dict:
-    if stage not in STAGES or batch not in ("initial", "incremental"):
+    if stage not in STAGES or batch not in BATCHES:
         raise ValueError("Invalid stage or batch")
     db_url = os.getenv("NEON_DEMO_DATABASE_URL")
     if not db_url:
         raise RuntimeError("Protected Neon demo database secret is not configured")
     workspace = STATE_PATH.parent
     phase, cycle = _phase(db_url)
-    required = "EMPTY" if batch == "initial" else "RUN1_READY"
+    required = ("EMPTY" if batch == "initial" else
+                "RUN1_READY" if batch == BATCHES[1] else "RUN2_READY")
     if phase != required:
         raise RuntimeError(
             f"Refusing live {batch} ETL in {phase} cycle {cycle}; "
@@ -127,12 +129,13 @@ def run_stage(stage: str, batch: str) -> dict:
     if stage == "ingest":
         if STATE_PATH.exists() and batch == "initial":
             raise RuntimeError("Initial session exists; refuse duplicate ingest")
-        if batch == "incremental":
+        if batch != "initial":
             if not STATE_PATH.exists():
                 raise RuntimeError("Initial workspace artifact is required for incremental")
             previous = json.loads(STATE_PATH.read_text(encoding="utf-8"))
-            if previous.get("batch")!="initial" or previous.get("last_completed")!="validate":
-                raise RuntimeError("Initial Validate must pass before Incremental")
+            prior_batch=BATCHES[BATCHES.index(batch)-1]
+            if previous.get("batch")!=prior_batch or previous.get("last_completed")!="validate":
+                raise RuntimeError("Previous Source delivery must validate before the next one")
         run_id = begin_run(db_url, "RUN1" if batch=="initial" else "RUN2")
         data = {"batch":batch,"cycle":cycle,"run_id":run_id,"last_completed":None}
     else:
@@ -150,7 +153,7 @@ def run_stage(stage: str, batch: str) -> dict:
         # Neon run lock so a corrected Source can start a fresh attempt.
         if stage=="ingest":
             fail_run(db_url,data["run_id"],"RUN1" if batch=="initial" else "RUN2",
-                     workspace,error)
+                     workspace,error,batch=batch)
         raise
     if stage!="validate" and result.get("status")!="PARTIAL":
         raise RuntimeError("Unexpected state: intermediate step must be PARTIAL")
@@ -179,7 +182,7 @@ def run_stage(stage: str, batch: str) -> dict:
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument("--stage",choices=STAGES,required=True)
-    parser.add_argument("--batch",choices=("initial","incremental"),required=True)
+    parser.add_argument("--batch",choices=BATCHES,required=True)
     args=parser.parse_args()
     run_stage(args.stage,args.batch)
 

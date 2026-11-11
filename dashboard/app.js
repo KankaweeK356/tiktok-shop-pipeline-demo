@@ -1460,7 +1460,7 @@
         small(summary?.no_duplicate_sales_items?"ตรวจแล้ว: ไม่มีรายการขายซ้ำ":"ยังไม่มีผลตรวจรายการซ้ำ"),
         small("กดเปิดแต่ละขั้นด้านบนเพื่อดูตารางและตัวอย่างข้อมูลจริง"),download));
     }
-    root.append(notice("Source CSV แยกจาก Lab · เมื่อใช้ครบ ระบบจะแจ้งว่าไม่มีข้อมูลใหม่ · เคลียร์ Lab แล้วเริ่มได้ใหม่"));
+    root.append(notice("เคลียร์ Lab = ลบข้อมูลใน Neon ทั้ง 25 ตารางให้เหลือ 0 · Source แยกไว้สำหรับเริ่มใหม่"));
     if(["RUN1_READY","RUN2_READY"].includes(phase)){
       const clear=node("button","button button-outline","เริ่มรอบใหม่ · เคลียร์ข้อมูล Lab");
       clear.type="button";clear.disabled=!state.realReady||["submitting","queued","in_progress"].includes(state.resetStatus);
@@ -1468,7 +1468,7 @@
     }
     if(state.recentRuns.length){
       const history=node("details","notebook-history");
-      history.append(node("summary","","ผล Run ที่ผ่านมา · เปิดดูหลังเคลียร์ได้"));
+      history.append(node("summary","","บันทึก Run เก่าใน GitHub · ไม่ใช่ข้อมูลใน Lab ปัจจุบัน"));
       const list=box("notebook-history-body");
       state.recentRuns.forEach(item=>{
         const button=node("button","button button-outline",

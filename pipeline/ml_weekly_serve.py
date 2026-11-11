@@ -13,13 +13,13 @@ import numpy as np
 import pandas as pd
 
 from .ml_weekly import (
-    TEST_END, _score, _score_shop_grouped, MODEL_VERSION,
+    _score, _score_shop_grouped, MODEL_VERSION,
     MARKETING_FEATURES, HISTORY_FEATURES,
 )
 
 
 def serve_monitor_replay(
-    output_dir: str | Path, *, forecast_week: str = "2026-09-21",
+    output_dir: str | Path, *, forecast_week: str | None = None,
 ) -> dict:
     output = Path(output_dir)
     registry = json.loads((output / "weekly_model_registry.json").read_text(encoding="utf-8"))
@@ -27,6 +27,9 @@ def serve_monitor_replay(
         raise ValueError("Model registry version mismatch")
     if registry["model_approval"] != "DEMO_ONLY":
         raise ValueError("Unexpected model approval status")
+    test_start, test_end = registry["test_window"]
+    if forecast_week is None:
+        forecast_week = (pd.Timestamp(test_end) - pd.Timedelta(days=6)).date().isoformat()
     # For an honest replay, do not include labels in model features.
     dataset = pd.read_parquet(output / "weekly_training_dataset.parquet")
     group_rows = dataset.loc[dataset.forecast_week_start.eq(forecast_week)].copy()
@@ -35,7 +38,7 @@ def serve_monitor_replay(
         raise ValueError("Missing complete week and groups for serving replay")
     if group_rows.training_ready.any():
         raise AssertionError("Unverified PIT features must not be marked training_ready")
-    if group_rows.forecast_week_end.max() > TEST_END:
+    if forecast_week < test_start or group_rows.forecast_week_end.max() > test_end:
         raise ValueError("Only archived hold-out replay dates are supported")
     if not (group_rows.as_of_date < group_rows.forecast_week_start).all():
         raise AssertionError("Serving input contains unavailable dates")
@@ -104,3 +107,4 @@ def serve_monitor_replay(
         json.dumps(monitor, ensure_ascii=False, indent=2), encoding="utf-8"
     )
     return monitor
+

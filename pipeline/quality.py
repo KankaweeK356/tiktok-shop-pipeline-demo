@@ -97,7 +97,7 @@ def lineage(er1:Path,er2:Path,batch:str,control_dir:Path,report_dir:Path,limit=8
         # Determine the latest transformed batch for each item from real per-batch control receipts.
         item_processed_batch={}
         from .generate_classroom_source import BATCHES
-        for b in BATCHES:
+        for b in (*BATCHES,'incremental'):
             receipt=Path(control_dir)/f'changes_{b}.json'
             if receipt.exists():
                 for k in json.loads(receipt.read_text(encoding='utf-8')).get('changed_order_item_ids',[]):
@@ -120,7 +120,8 @@ def lineage(er1:Path,er2:Path,batch:str,control_dir:Path,report_dir:Path,limit=8
                 WHERE Date_Key=? AND Product_Group_ID=?''',[dwrow[3],dwrow[4]]).fetchone()
             processed=item_processed_batch.get(itemid,'initial')
             origin='initial' if row[0].startswith(('OCT','H')) else (
-                'incremental_01' if row[0].startswith('NOV') else
+                ('incremental_01' if (Path(control_dir)/'changes_incremental_01.json').exists()
+                 else 'incremental') if row[0].startswith('NOV') else
                 next((b for b in BATCHES[2:] if row[0].startswith(
                     'M'+({'incremental_02':'202612','incremental_03':'202701',
                            'incremental_04':'202702','incremental_05':'202703',

@@ -36,7 +36,7 @@ def run_batch(workspace:Path,batch='initial',source_root:Path|None=None,inject_e
         raise ValueError(f'Invalid stop_after stage: {stop_after}')
     workspace=Path(workspace);source_root=Path(source_root or os.environ.get('CLASSROOM_SOURCE_ROOT') or ROOT/'source')
     from .generate_classroom_source import BATCHES
-    if batch not in BATCHES:raise ValueError('Unknown Source delivery')
+    if batch not in (*BATCHES,'incremental'):raise ValueError('Unknown Source delivery')
     if batch!='initial' and not (workspace/'er1.sqlite').exists():
         raise PipelineError('NEEDS_INITIAL','Run 1 before Run 2')
     control=workspace/'lake'/'control';reports=workspace/'reports'

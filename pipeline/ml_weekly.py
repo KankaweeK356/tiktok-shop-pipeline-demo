@@ -78,6 +78,7 @@ def build_weekly_dataset(
     last_week: str = LAST_WEEK,
     scenario_id: str = SCENARIO_ID,
     source_run_id: str = "synthetic_warehouse_v1",
+    skip_incomplete_weeks: bool = False,
 ) -> pd.DataFrame:
     """Strict full-week materialization; missing days/plans are not filled.
 
@@ -104,6 +105,7 @@ def build_weekly_dataset(
     rows = []
     dates = pd.date_range(first, last, freq="W-MON")
     for week in dates:
+        week_rows = []
         week_start = week.date()
         week_end = week_start + timedelta(days=6)
         asof = week_start - timedelta(days=1)
@@ -117,10 +119,14 @@ def build_weekly_dataset(
                 hist = d.loc[[(group, x) for x in historic_days]]
                 target = d.loc[[(group, x) for x in target_days]]
             except KeyError as exc:
+                if skip_incomplete_weeks:
+                    break
                 raise ValueError(
                     f"Incomplete daily DWH coverage: {group} week {week_start}"
                 ) from exc
             if len(hist) != 28 or len(target) != 7:
+                if skip_incomplete_weeks:
+                    break
                 raise ValueError("Daily coverage must contain each exact day")
             window_plans = p.loc[
                 p["product_group_id"].eq(group) &
@@ -128,6 +134,8 @@ def build_weekly_dataset(
                 p["recorded_at"].lt(asof_utc_end_exclusive)
             ].drop_duplicates(["plan_date"], keep="last")
             if len(window_plans) != 7:
+                if skip_incomplete_weeks:
+                    break
                 raise ValueError(
                     f"Missing pre-approved historical plans: {group} week {week_start}"
                 )
@@ -142,7 +150,7 @@ def build_weekly_dataset(
                 float(camp[-7:].sum() / prev7_gross)
                 if prev7_gross > 0 else 0.0
             )
-            rows.append({
+            week_rows.append({
                 "scenario_id": scenario_id,
                 "source_run_id": source_run_id,
                 "feature_version": MODEL_VERSION,
@@ -166,6 +174,8 @@ def build_weekly_dataset(
                 "history_fidelity": "RETROSPECTIVE_LATEST_DWH",
                 "training_ready": False,
             })
+        if len(week_rows) == len(groups):
+            rows.extend(week_rows)
     result = pd.DataFrame(rows)
     if result.empty:
         raise ValueError("No training weeks")
@@ -431,7 +441,8 @@ def run_weekly(warehouse: str | Path, plans: str | Path, output: str | Path):
                  pd.to_datetime(plan_df.plan_date).dt.date.max())
     last_sunday = latest - timedelta(days=(latest.weekday() + 1) % 7)
     last_week = last_sunday - timedelta(days=6)
-    dataset = build_weekly_dataset(daily, plan_df, last_week=last_week.isoformat())
+    dataset = build_weekly_dataset(daily, plan_df, last_week=last_week.isoformat(),
+                                   skip_incomplete_weeks=True)
     return train_evaluate_weekly(dataset, output)
 
 

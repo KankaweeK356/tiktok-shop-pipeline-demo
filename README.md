@@ -1,61 +1,45 @@
 # TikTok Shop Fashion Intelligence — Classroom Demo
 
-เว็บสาธิตการนำ **ข้อมูลขายจำลอง** ผ่าน Database → Data Lake → Data Warehouse แล้วใช้ตรวจ KPI ธุรกิจและทดลองทำ ML ข้อมูลทั้งหมดสร้างเพื่อการศึกษา ไม่ได้เชื่อม TikTok Shop API และไม่ใช่ยอดขายของร้านจริง
+เว็บสาธิตการใช้ **ข้อมูลร้านเสื้อผ้าจำลอง** ผ่าน Source → Database → Data Lake → Data Warehouse แล้วอ่าน KPI และทดลอง ML ข้อมูลทั้งหมดเป็นข้อมูลสังเคราะห์เพื่อการศึกษา ไม่ได้ดึงจาก TikTok Shop API
 
-**[เปิดเว็บ Demo](https://tiktok-shop-mlops-dashboard-git-feature-classroom-dea39b-newja.vercel.app/)** · [ดู Source CSV](source/README.md) · [ดูโครงสร้างข้อมูล](docs/NEON_CLASSROOM_PIPELINE_ARCHITECTURE_TH.md)
+**[เปิดเว็บ Demo](https://tiktok-shop-mlops-dashboard-git-feature-classroom-dea39b-newja.vercel.app/)** · [ดูตัวสร้าง Source](pipeline/generate_classroom_source.py) · [ดูแบบ ER1/ER2](schemas/)
 
-## เริ่มดูจากตรงไหน
+## ทดลองบนเว็บ
 
-| หน้าเว็บ | ทำอะไร | ผลที่ควรเห็น |
+| หน้า | สิ่งที่ทำ | สิ่งที่ดู |
 | --- | --- | --- |
-| **Test Pipeline** | กด Run 1 และ Run 2; แต่ละ Run ประมวลผล Source → Database → Data Lake → Warehouse → Validation ครบเส้นทาง | สถานะและผลจริงของแต่ละขั้น จำนวนก่อน–หลัง ตารางและตัวอย่างแถว |
-| **ภาพรวมธุรกิจ** | อ่าน Warehouse ของ Lab รอบปัจจุบัน | เมื่อยังไม่รันหรือเคลียร์แล้ว ต้องแสดงว่าไม่มีข้อมูล; เมื่อรันสำเร็จจึงแสดงผลจากรอบนั้น |
-| **ML Lab** | แสดงการสร้าง Feature การแบ่งข้อมูลตามเวลา การฝึก ประเมิน WAPE และตัวอย่างคำทำนาย | ใช้ **Warehouse ประวัติจำลองแยกจาก Test Pipeline**; ผลโมเดลยังไม่ผ่านเกณฑ์ที่ตั้งไว้ |
+| **Test Pipeline** | กด Run 1 เพื่อรับข้อมูลตั้งต้น แล้วกด **เติมข้อมูลใหม่** ทีละชุด | แต่ละครั้งรัน Source → Neon Database → Parquet Data Lake → DuckDB Warehouse → Validation ครบ ดู PASS/FAIL ตารางและแถวจริงได้หลังรัน |
+| **ภาพรวมธุรกิจ** | ดู Warehouse ของ Lab รอบปัจจุบัน | ยอดสุทธิเทียบเป้ารายเดือน กำไรเทียบเกณฑ์ 10% และเจาะเดือน → กลุ่มสินค้า → วัน/SKU/แคมเปญ |
+| **ML Lab** | กดฝึกโมเดลจาก Warehouse รอบปัจจุบัน | Feature รายสัปดาห์ การแบ่ง Train/Validation/Test WAPE ยอดจริงเทียบคำทำนาย และทดลองแผน Ads/ส่วนลด |
 
-**สถานะปัจจุบัน:** เว็บรองรับ Run 1 → Run 2 → เคลียร์เพื่อเริ่มรอบใหม่ ยัง **ไม่รองรับ Run 3–7** หรือการฝึก ML ใหม่จาก Warehouse ของ Lab ที่ผู้ชมเพิ่งกดรัน เรื่องนี้เป็นแนวทางพัฒนาที่กำลังออกแบบ ไม่ใช่ฟังก์ชันที่มีแล้ว
+### Source และรอบการรัน
 
-### ข้อมูลไหลอย่างไร
+ตัวสร้าง Source ใช้ seed เดียวกันทุกครั้งและส่งออก CSV **7 ชุด** ภายใต้ `output/classroom_source/` ใน GitHub Worker: `initial` มีประวัติประมาณ 12 เดือน; `incremental_01` ถึง `incremental_06` เป็นข้อมูลเติมต่อเนื่อง ชุดแรกมีการอัปเดตออเดอร์เดิมด้วย ทุกชุดใช้โครงสร้าง ER1 เดิม 25 ตาราง ไม่มีตารางธุรกิจเพิ่ม ชุดข้อมูลเป็น Source แยกจาก Neon และจากผล Data Lake/Warehouse
 
-1. [Source CSV](source/) แยก `initial` (Run 1), `incremental` (Run 2) และชุดทดสอบ Error
-2. Run 1 รับข้อมูล CSV เข้า SQLite ตามแบบ ER1 แล้ว sync ตารางธุรกิจไปยัง **Neon Lab branch ที่แยกไว้**; Run 2 เพิ่มออเดอร์ใหม่และอัปเดตบางรายการในฐานเดิม
-3. Data Lake เก็บ Landing CSV, Raw Parquet และ Standardized Parquet
-4. DuckDB Warehouse เก็บ Dimensions, Facts, Mart และ KPI View; ขั้น Validation เทียบจำนวนและยอดสำคัญกับฐานข้อมูลต้นทาง
-5. เว็บอ่านผล Run ปัจจุบัน; การกดเคลียร์ Lab ล้างข้อมูลทดสอบของรอบนี้ แต่ **ไม่ลบ Source CSV ใน GitHub**
+บนเว็บผู้ชมเห็นเพียง **Run 1** และปุ่ม **เติมข้อมูลใหม่** ไม่ต้องเลือกลำดับชุดเอง ระบบเลือก Source ชุดที่ยังไม่ผ่านรอบปัจจุบันถัดไป เมื่อใช้ครบจะบอกว่าไม่มี Source ใหม่และไม่สร้างผลปลอม จำนวนออเดอร์ก่อน–หลังและยอดขายจะแสดงจากผลรัน ไม่แสดงผลล่วงหน้า หากรันปกติไม่ผ่าน ให้ดูสาเหตุใน Log และกดปุ่มเดิมเพื่อลองชุดเดิมอีกครั้ง; Error Lab เป็นชุดทดลองปัญหาที่แยกต่างหาก
 
-ข้อมูล Run 1 และ Run 2 เป็นชุดที่เตรียมไว้ล่วงหน้าเพื่อรันทดสอบซ้ำได้ จำนวนในไฟล์ Source **ไม่ใช่ผลสำเร็จของ Pipeline**; ให้ดูจำนวนก่อน–หลังและผลตรวจที่หน้าเว็บหลัง Run จบ การกด Run 2 ซ้ำด้วยไฟล์ชุดเดิมไม่ใช่การสร้างชุดข้อมูลใหม่
+ปุ่ม **เคลียร์ข้อมูล Lab** ลบข้อมูลธุรกิจใน Neon ของรอบปัจจุบันและเริ่มรอบใหม่ ข้อมูล Warehouse/ML รอบเก่าไม่ถูกนำมาแสดงเป็นข้อมูลปัจจุบัน ไฟล์ Source ไม่ถูกลบ Log GitHub เก่าเก็บไว้ตรวจย้อนหลัง หากเว็บยังแสดงรอบข้อมูลที่สร้างด้วยระบบสองชุดเดิม ให้เคลียร์ Lab หลังตรวจว่าไม่มีงานกำลังรัน เพื่อเริ่มชุด 7 Source รุ่นใหม่นี้
 
-> **ข้อควรแยก:** Database ต้นทางในเว็บ Lab ใช้ Neon; Data Lake เป็นไฟล์; Warehouse ใช้ DuckDB และไม่ได้เป็นตารางใน Neon โดยตรง ส่วน Error Lab ใช้ข้อมูลทดสอบแยกจาก Run ปกติ
+> Neon เก็บ ER1 Database จริง ส่วน Data Lake เป็นไฟล์ Parquet และ Warehouse เป็น DuckDB ใน GitHub Actions Artifact จึงไม่เห็นตาราง Warehouse ใน Neon Console โดยตรง หน้า Test Pipeline มีตัวอย่างแถวจริงและปุ่มไปดู Neon ER1 แบบอ่านอย่างเดียว
 
-## อยากลองรันโค้ดเองใน Google Colab
+### KPI และ ML
 
-Colab รันใน Runtime ของผู้เปิดเองด้วย **SQLite และ DuckDB ในพื้นที่ชั่วคราว** ไม่ต้องมีรหัส Neon/Vercel ไม่เปลี่ยนข้อมูลบนเว็บ และไม่เคลียร์ฐานข้อมูลของคนอื่น
+**ยอดขายเทียบเป้า** = Net Revenue เทียบ Revenue Target ของเดือนนั้น **เกณฑ์รักษากำไร** = Contribution Profit หลังต้นทุนที่เกี่ยวข้อง ÷ Gross Reference Sales ราคาเต็ม ต้องไม่น้อยกว่า **10%** Ads อยู่ระดับวัน × กลุ่มสินค้า จึงไม่กระจาย Ads ลง SKU โดยไม่มีเกณฑ์จัดสรร และไม่บวก Reported Ads GMV เป็นยอดขายร้านซ้ำ
 
-### 1. Pipeline แบบทีละขั้น — แนะนำ
+ML ใช้ Mart จาก Warehouse รอบที่รันบนเว็บ พร้อมแผนการตลาดสังเคราะห์ที่บันทึกแยกจาก ER1 ธุรกรรม Feature หนึ่งแถวแทนสัปดาห์ × กลุ่มสินค้า มีข้อมูลยอดขาย/Ads ย้อนหลังและแผนที่ทราบก่อนสัปดาห์เป้าหมาย เลือกโมเดลด้วย Validation ตามเวลา แล้วรายงาน WAPE บน Test ที่กันไว้ คะแนนอาจไม่ผ่านเกณฑ์และต้องแสดงตามจริง การปรับงบหรือส่วนลดในหน้า Scenario เป็นการลองเปลี่ยนตัวแปรของโมเดล **ไม่ใช่หลักฐานเชิงเหตุและผล** ว่าเพิ่มงบแล้วจะเพิ่มยอดขาย โมเดลนี้ยังไม่ทำนายกำไรหรือรับรองเกณฑ์ 10%; ตรวจต้นทุนจริงในภาพรวมธุรกิจประกอบการตัดสินใจ
 
-[![เปิด Pipeline Notebook ใน Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/KankaweeK356/tiktok-shop-pipeline-demo/blob/feature/classroom-demo-evidence-foundation/notebooks/TikTok_Shop_Step_by_Step_Demo.ipynb)
+## รันเองใน Google Colab
 
-เปิด Notebook แล้วเลือก **Runtime → Run all** โปรแกรมจะอ่าน Source, สร้างฐานข้อมูล, Data Lake, Warehouse, ตรวจยอด, เติม Run 2, ทดสอบการส่ง Batch เดิมซ้ำ และทดลอง Error ในพื้นที่แยก ผลแต่ละขั้นอยู่ใต้ Cell และไฟล์อยู่ใน `output/main/` ของ Runtime นั้น การ Run all ซ้ำจะเริ่มพื้นที่ทดลองนี้ใหม่ แต่ไม่ลบ Source หรือ Google Drive
+Colab ใช้พื้นที่ชั่วคราวของผู้เปิดเอง ไม่เชื่อม Neon Lab หรือเคลียร์ข้อมูลของผู้อื่น
 
-### 2. ML จาก Warehouse — แยกจาก Classroom Lab ปัจจุบัน
+1. [Pipeline Notebook](notebooks/TikTok_Shop_Step_by_Step_Demo.ipynb) — สร้าง Source CSV ตรวจทีละชั้นข้อมูล รันข้อมูลตั้งต้นและข้อมูลเติมครบทุกชุด ทดสอบ Error แยก และมีตัวเลือกเคลียร์ผลใน Runtime ตอนท้าย
+2. [ML Notebook](notebooks/TikTok_Shop_ML_Study.ipynb) — รัน Source ทั้ง 7 ชุดเข้า Warehouse เดียวกัน แล้วสร้าง Feature ฝึก/เทียบโมเดล ตรวจ WAPE และลอง Scenario จากโมเดลที่บันทึกไว้
 
-[![เปิด ML Notebook ใน Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/KankaweeK356/tiktok-shop-pipeline-demo/blob/feature/classroom-demo-evidence-foundation/notebooks/TikTok_Shop_ML_Study.ipynb)
+เปิด Notebook จาก GitHub ใน Colab แล้วเลือก **Runtime → Run all**; โค้ดจะติดตั้ง dependencies ภายใน Runtime ผลตัวเลขขึ้นกับการรันจริงของ Runtime นั้น
 
-Notebook นี้สร้างประวัติสังเคราะห์ ผ่าน Pipeline ไปยัง DuckDB Warehouse แล้วสร้าง Feature รายสัปดาห์ ฝึกและเทียบโมเดลด้วย **การแบ่ง Train/Validation/Test ตามเวลา** แสดง WAPE และผลทำนายเทียบยอดจริง ใช้เวลาและทรัพยากรมากกว่า Notebook แรก ผลอยู่ใน `output/ml_history_ci/` ของ Runtime ผู้รันเอง
+## ตรวจสอบโค้ดและผลรัน
 
-ML นี้เป็น **offline study**: Feature Store คือชุด Feature ที่จัดเก็บเป็นไฟล์สำหรับการทดลอง ยังไม่ใช่บริการ Feature Store สด; ข้อมูลประวัติแยกจาก Run 1/2 บนเว็บ การมีตัวแปร Ads/แคมเปญในโมเดล **ไม่ได้พิสูจน์** ว่าเพิ่มงบแล้วจะทำให้ยอดขายเพิ่ม ผล WAPE ที่ไม่ผ่านเกณฑ์ต้องรายงานตามจริง ไม่ปรับตัวเลขเพื่อให้ดูผ่าน
+- [Source generator](pipeline/generate_classroom_source.py) · [ER1/ER2](schemas/) · [Workflow รันจริง](.github/workflows/classroom-live-batch.yml) · [Workflow ฝึก ML](.github/workflows/classroom-ml-train.yml)
+- [กฎ KPI](sql/monthly_kpi_view.sql) · [Feature และการทดสอบโมเดล](pipeline/ml_weekly.py) · [CI ตรวจ 7 ชุด](pipeline/ci_classroom_source.py)
 
-## หลักธุรกิจที่ใช้
-
-- **ยอดขายเทียบเป้า:** Net Revenue เทียบ Revenue Target ของเดือนนั้น
-- **เกณฑ์รักษากำไร:** Contribution Profit หลังต้นทุนที่เกี่ยวข้อง ÷ Gross Reference Sales (ยอดอ้างอิงก่อนส่วนลด) ต้องไม่น้อยกว่า **10%**
-- ค่า Platform Fee 10% และกติกาต้นทุนอื่น ๆ ใน Source เป็น **สมมติฐานของกรณีศึกษา**; `Planning_Adjustable_Gap_Rate = 30%` เป็นกรอบวางแผน ไม่ใช่ผลตอบแทนจาก Ads ที่พิสูจน์แล้ว
-- ต้นทุน Ads อยู่ที่ระดับวัน × กลุ่มสินค้า; ไม่ควรอ้างว่าแต่ละ SKU มีกำไรสุทธิหลัง Ads หากยังไม่ได้กำหนดวิธีจัดสรรต้นทุนลง SKU
-
-## ตรวจโค้ดและผลรัน
-
-- [Pipeline Notebook](notebooks/TikTok_Shop_Step_by_Step_Demo.ipynb) · [ML Notebook](notebooks/TikTok_Shop_ML_Study.ipynb)
-- [Pipeline CI](.github/workflows/pipeline-ci.yml) · [ML CI](.github/workflows/ml-weekly-demo-ci.yml)
-- [Mapping และ Data Dictionary](docs/) · [คำอธิบาย ML รายสัปดาห์](docs/ML_WEEKLY_CLASSROOM_DEMO_TH.md)
-
-เครื่องหมายเขียวใน GitHub Actions ยืนยันการรันบน GitHub เท่านั้น ไม่ใช่การยืนยันว่า Colab ของทุกคนหรือ Neon Lab ขณะนั้นมีผลเหมือนกัน หากต้องการตรวจผลใน Colab ให้ดู Output ของ Runtime ที่ตนรัน ส่วนหน้าเว็บให้อ่านสถานะและผล Run ปัจจุบันจาก Lab
-
+GitHub Actions เก็บหลักฐานแต่ละรอบไว้ตรวจสอบ แต่หน้าเว็บจะยึด Lab cycle และ Warehouse ที่ผ่าน Validation ล่าสุดเท่านั้น

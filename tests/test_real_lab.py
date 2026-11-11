@@ -42,8 +42,9 @@ def test_frontend_labels_real_execution_distinct_from_readonly_replay():
     assert '"/api/lab-batch"' in s
     assert '"/api/lab-batch-result?run_id="' in s
     assert "กดปุ่มเดิมเพื่อลองอีกครั้ง" in s
-    assert "pre_group_shortfall_thb" in s
-    assert "gross*benchmarkPct/100" in s
+    assert "current.protection_status" in s
+    assert "current.achievement_pct" in s
+    assert "ไม่จัดสรรค่า Ads ที่ระดับ SKU" in s
 
 
 def test_complete_run_dispatch_keeps_token_server_side_and_checks_phase():

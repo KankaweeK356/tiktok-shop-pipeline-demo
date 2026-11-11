@@ -42,9 +42,15 @@ def main() -> None:
     scenarios=build_scenarios(workspace/"er2.duckdb",ml_dir)
     if ml["dataset_rows"]<200 or monitor["status"]!="MONITORED" or scenarios["status"]!="READY":
         raise AssertionError("Warehouse-backed ML or plan inference did not complete")
+    if (ml["final_test_window"][1] < "2027-04-01" or
+            ml["train_cutoff_week_end"] < "2027-01-01" or
+            monitor["forecast_week"] < "2027-04-01"):
+        raise AssertionError("Incremental Source did not advance ML Train/Test windows")
     report=ROOT/"output"/"classroom_ci_result.json"
     report.write_text(json.dumps({"deliveries":checks,"source_retained":True,
                                  "ml_rows":ml["dataset_rows"],
+                                 "ml_train_through":ml["train_cutoff_week_end"],
+                                 "ml_test_window":ml["final_test_window"],
                                  "scenario_options":len(scenarios["grid"])},
                                  ensure_ascii=False,indent=2),encoding="utf-8")
     reset(workspace)
@@ -57,3 +63,4 @@ def main() -> None:
 
 if __name__=="__main__":
     main()
+

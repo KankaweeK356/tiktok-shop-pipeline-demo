@@ -8,6 +8,9 @@ import duckdb
 
 from .generate_classroom_source import BATCHES, build
 from .orchestrator import reset, run_batch
+from .ml_weekly import run_weekly
+from .ml_weekly_serve import serve_monitor_replay
+from .ml_scenarios import build_scenarios
 from .schema import ROOT
 
 
@@ -33,8 +36,16 @@ def main() -> None:
                        "validation_passes":result["functional_passes"]})
     if checks[0]["months"]<12 or checks[-1]["months"]<18:
         raise AssertionError("Historical or increment month coverage is incomplete")
+    ml_dir=ROOT/"output"/"classroom_ci_ml"
+    ml=run_weekly(workspace/"er2.duckdb",source/"ml_marketing_plan.csv",ml_dir)
+    monitor=serve_monitor_replay(ml_dir)
+    scenarios=build_scenarios(workspace/"er2.duckdb",ml_dir)
+    if ml["dataset_rows"]<200 or monitor["status"]!="MONITORED" or scenarios["status"]!="READY":
+        raise AssertionError("Warehouse-backed ML or plan inference did not complete")
     report=ROOT/"output"/"classroom_ci_result.json"
-    report.write_text(json.dumps({"deliveries":checks,"source_retained":True},
+    report.write_text(json.dumps({"deliveries":checks,"source_retained":True,
+                                 "ml_rows":ml["dataset_rows"],
+                                 "scenario_options":len(scenarios["grid"])},
                                  ensure_ascii=False,indent=2),encoding="utf-8")
     reset(workspace)
     if (workspace/"er1.sqlite").exists() or (workspace/"er2.duckdb").exists():

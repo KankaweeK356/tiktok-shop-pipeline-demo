@@ -1,0 +1,52 @@
+name: Classroom ML - Train from current Warehouse
+
+on:
+  workflow_dispatch:
+    inputs:
+      warehouse_run_id:
+        description: Successful current classroom pipeline run
+        required: true
+        type: string
+
+run-name: "Classroom ML train / warehouse ${{ inputs.warehouse_run_id }}"
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: classroom-ml-train
+  cancel-in-progress: false
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - uses: actions/download-artifact@v4
+        with:
+          name: classroom-lab-workspace
+          path: output/classroom_lab
+          run-id: ${{ inputs.warehouse_run_id }}
+          github-token: ${{ github.token }}
+      - name: Install ML dependencies
+        run: python -m pip install -r requirements-ml.txt
+      - name: Regenerate the same frozen synthetic Source plan
+        run: python -m pipeline.generate_classroom_source --output output/classroom_source
+      - name: Train, test, and monitor against the current Warehouse
+        run: python -m pipeline.ci_lab_ml
+      - uses: actions/upload-artifact@v4
+        with:
+          name: classroom-ml-result
+          path: output/classroom_ml/classroom_ml_result.json
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        with:
+          name: classroom-ml-model
+          path: output/classroom_ml/
+          retention-days: 30

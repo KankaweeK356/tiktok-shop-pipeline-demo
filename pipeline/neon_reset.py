@@ -37,8 +37,8 @@ def reset_source(database_url: str, *, confirmation: str,
             if not current or current[1] != expected_cycle:
                 raise RuntimeError("Current data cycle changed; no reset performed")
             previous_phase,current_cycle=current
-            if previous_phase != "RUN2_READY":
-                raise RuntimeError("Run 2 must complete before clearing the classroom lab")
+            if previous_phase not in ("RUN1_READY", "RUN2_READY"):
+                raise RuntimeError("A completed lab run is required before clearing")
             cur.execute("""
                 SELECT COUNT(*) FROM demo_control.pipeline_runs
                  WHERE dataset_key='classroom' AND cycle_number=%s
@@ -46,16 +46,12 @@ def reset_source(database_url: str, *, confirmation: str,
             """,(current_cycle,))
             if cur.fetchone()[0]:
                 raise RuntimeError("Cannot reset while a pipeline run is active")
-            # Older classroom labs have no upload_sessions table. Only check
-            # active uploads when that optional storage feature is installed.
-            cur.execute("SELECT to_regclass('demo_control.upload_sessions')")
-            if cur.fetchone()[0] is not None:
-                cur.execute("""
-                    SELECT COUNT(*) FROM demo_control.upload_sessions
-                     WHERE revoked=FALSE AND expires_at>now()
-                """)
-                if cur.fetchone()[0]:
-                    raise RuntimeError("Cannot reset during an active storage upload")
+            cur.execute("""
+                SELECT COUNT(*) FROM demo_control.upload_sessions
+                 WHERE revoked=FALSE AND expires_at>now()
+            """)
+            if cur.fetchone()[0]:
+                raise RuntimeError("Cannot reset during an active storage upload")
             # The scoped writer has DELETE but deliberately not TRUNCATE privileges.
             # Reverse foreign-key topological order safely deletes children first.
             # All statements run in one transaction; failures roll back every deletion.

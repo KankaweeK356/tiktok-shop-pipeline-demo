@@ -19,7 +19,7 @@
 
 Colab ใช้ SQLite, Parquet และ DuckDB ใน Runtime ของผู้รันเอง ไม่เชื่อม Neon และผลไม่แสดงใน Dashboard เว็บ
 
-## จำนวนและโครงสร้าง Source
+## ดาวน์โหลด Source\n\n[GitHub Release: Source ZIP มกราคม–ตุลาคม 2569 จำนวน 10 ชุด](https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/releases/tag/classroom-source-v1).\n\n## จำนวนและโครงสร้าง Source
 
 ตัวสร้าง [Source รายเดือน](../pipeline/generate_classroom_source.py) สร้าง 10 ชุด มกราคม–ตุลาคม โดยทุกเดือนมี CSV 21 ตารางตามโครงสร้างและคอลัมน์ ER1 เดียวกัน. Run 1 ส่ง Master/Reference และข้อมูลธุรกิจเดือนมกราคม; Run ต่อไปส่งรายการธุรกิจของเดือนใหม่ โดยคงตาราง Master/Reference ไว้ใน ZIP ตาม Contract.
 

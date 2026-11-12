@@ -1233,7 +1233,7 @@
         state.batchResults={initial:{},incremental:{}};
         state.batchRunIds={initial:null,incremental:null};
         state.batchRun={batch:"",status:"",since:"",runId:null,url:"",stages:[]};
-        if(state.sourceUploadId)fetch("/api/classroom-source-upload?id="+
+        if(state.sourceUploadId)fetch("/api/lab-batch?id="+
           encodeURIComponent(state.sourceUploadId),{method:"DELETE"}).catch(()=>{});
         state.sourceUploadId="";state.sourceUploadMonth="";
         sessionStorage.removeItem("classroom_source_upload");
@@ -1555,7 +1555,7 @@
     if(state.sourceUploadId&&state.sourceUploadMonth===month){
       controls.append(small("จะใช้ ZIP ที่อัปโหลดแทน Source เตรียมไว้"));
       const clear=node("button","button button-muted","กลับไปใช้ Source เตรียมไว้");clear.type="button";
-      clear.addEventListener("click",()=>{fetch("/api/classroom-source-upload?id="+
+      clear.addEventListener("click",()=>{fetch("/api/lab-batch?id="+
         encodeURIComponent(state.sourceUploadId),{method:"DELETE"}).catch(()=>{});
         state.sourceUploadId="";state.sourceUploadMonth="";
         sessionStorage.removeItem("classroom_source_upload");state.sourceUploadError="";renderPipeline();});
@@ -1567,12 +1567,12 @@
       state.sourceUploadBusy=true;state.sourceUploadError="";renderPipeline();
       try{
         if(!selected.name.toLowerCase().endsWith(".zip"))throw Error("เลือกไฟล์ ZIP ของ Source รายเดือน");
-        const response=await fetch("/api/classroom-source-upload",{method:"POST",
+        const response=await fetch("/api/lab-batch",{method:"POST",
           headers:{"Content-Type":"application/zip"},body:selected});
         const data=await response.json();
         if(!response.ok||!data.upload_id)throw Error(data.error||"อัปโหลด Source ไม่สำเร็จ");
         if(data.month!==month){
-          fetch("/api/classroom-source-upload?id="+encodeURIComponent(data.upload_id),{method:"DELETE"}).catch(()=>{});
+          fetch("/api/lab-batch?id="+encodeURIComponent(data.upload_id),{method:"DELETE"}).catch(()=>{});
           throw Error("ไฟล์นี้เป็นเดือน "+thaiMonth(data.month)+" แต่รอบนี้ต้องใช้ "+thaiMonth(month));
         }
         state.sourceUploadId=data.upload_id;state.sourceUploadMonth=data.month;

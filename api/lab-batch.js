@@ -1,11 +1,18 @@
 /** Dispatch and follow one complete run on the isolated classroom Neon branch. */
 import { neon } from "@neondatabase/serverless";
+import { handleClassroomSourceUpload } from "../lib/classroom-source-upload.js";
 
 const REPO="KankaweeK356/tiktok-shop-pipeline-demo";
 const REF="feature/classroom-demo-evidence-foundation";
 const WORKFLOW="classroom-live-batch.yml";
 const DELIVERIES=["initial",...Array.from({length:9},(_,i)=>"incremental_"+String(i+1).padStart(2,"0"))];
 const url="https://github.com/"+REPO+"/actions/workflows/"+WORKFLOW;
+export const config={api:{bodyParser:false}};
+async function readJsonBody(req){
+  const chunks=[];let size=0;
+  for await(const chunk of req){size+=chunk.length;if(size>16384)throw Error("Request body too large");chunks.push(chunk);}
+  return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+}
 async function github(path,method="GET",body){
   const response=await fetch("https://api.github.com/repos/"+REPO+path,{
     method,headers:{Authorization:"Bearer "+process.env.CLASSROOM_GITHUB_TOKEN,
@@ -17,6 +24,10 @@ async function github(path,method="GET",body){
 }
 export default async function handler(req,res){
   res.setHeader("Cache-Control","no-store");
+  if(req.method==="POST"&&String(req.headers["content-type"]||"").toLowerCase().includes("application/zip"))
+    return handleClassroomSourceUpload(req,res);
+  if((req.method==="GET"&&req.query?.id)||req.method==="DELETE")
+    return handleClassroomSourceUpload(req,res);
   if(!["GET","POST"].includes(req.method))return res.status(405).json({error:"GET/POST only"});
   if(!process.env.CLASSROOM_GITHUB_TOKEN||!process.env.CLASSROOM_LAB_NEON_URL||
      !process.env.CLASSROOM_LAB_WRITER_URL)
@@ -108,8 +119,10 @@ export default async function handler(req,res){
         status:match?.status||"queued",conclusion:match?.conclusion||null,
         url:match?.html_url||url});
     }
-    const batch=String(req.body?.batch||"");
-    const previous=String(req.body?.previous_run_id||"0");
+    let requestBody;
+    try{requestBody=await readJsonBody(req);}catch(_error){return res.status(400).json({error:"ข้อมูลคำขอ Run ไม่ถูกต้อง"});}
+    const batch=String(requestBody?.batch||"");
+    const previous=String(requestBody?.previous_run_id||"0");
     if(!["initial","incremental"].includes(batch)||
        !/^(0|[1-9][0-9]{0,18})$/.test(previous))
       return res.status(400).json({error:"ข้อมูล Run ไม่ถูกต้อง"});
@@ -160,7 +173,7 @@ export default async function handler(req,res){
     const title="Classroom complete "+sourceBatch+" / previous "+previous+" / source-v2";
     if((recent.workflow_runs||[]).some(run=>run.display_title===title&&run.status!=="completed"))
       return res.status(409).json({error:"Run นี้ถูกสั่งแล้ว กรุณารอผล"});
-    const sourceUploadId=String(req.body?.source_upload_id||"");
+    const sourceUploadId=String(requestBody?.source_upload_id||"");
     if(sourceUploadId&&!/^[0-9a-f-]{36}$/.test(sourceUploadId))
       return res.status(400).json({error:"รหัส ZIP อัปโหลดไม่ถูกต้อง"});
     await github("/actions/workflows/"+WORKFLOW+"/dispatches","POST",{

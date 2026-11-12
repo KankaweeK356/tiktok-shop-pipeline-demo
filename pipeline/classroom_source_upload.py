@@ -8,7 +8,7 @@ from .generate_classroom_source import BATCHES, BATCH_MONTHS
 from .schema import ROOT, parse_dbml
 
 API=os.environ.get("CLASSROOM_SOURCE_UPLOAD_API",
-    "https://tiktok-shop-mlops-dashboard-git-feature-classroom-dea39b-newja.vercel.app/api/classroom-source-upload")
+    "https://tiktok-shop-mlops-dashboard-git-feature-classroom-dea39b-newja.vercel.app/api/lab-batch")
 MAX_ARCHIVE=4*1024*1024
 MAX_EXPANDED=24*1024*1024
 

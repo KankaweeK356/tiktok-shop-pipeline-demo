@@ -63,7 +63,7 @@ jobs:
             output/ml_history_ci/main/reports/functional_*.json
           if-no-files-found: warn
           retention-days: 14
-  classroom-seven-deliveries:
+  classroom-ten-month-deliveries:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -91,7 +91,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: classroom-seven-deliveries-check
+          name: classroom-ten-month-deliveries-check
           path: output/classroom_ci_result.json
           if-no-files-found: warn
           retention-days: 14

@@ -78,6 +78,19 @@ export default async function handler(req,res){
         const githubRun=String(latest.runner_ref||"").match(/\/actions\/runs\/([1-9][0-9]*)\/?$/);
         const currentRunId=["RUN1_READY","RUN2_READY"].includes(latest.phase)&&
           latest.last_run_status==="SUCCEEDED"?githubRun?.[1]||null:null;
+        const workflowsById=new Map((recent.workflow_runs||[]).map(run=>[String(run.id),run]));
+        const currentCycleRuns=[];
+        let chainRunId=currentRunId;
+        for(let index=0;chainRunId&&index<DELIVERIES.length;index++){
+          const run=workflowsById.get(String(chainRunId));
+          const match=(run?.display_title||"").match(/^Classroom complete (initial|incremental_0[1-9]) \/ previous ([0-9]+) \/ source-v2$/);
+          if(!run||run.conclusion!=="success"||!match)break;
+          const sourceIndex=DELIVERIES.indexOf(match[1]);
+          currentCycleRuns.push({run_id:run.id,batch:match[1]==="initial"?"initial":"incremental",
+            source_batch:match[1],source_month:sourceIndex>=0?"2026-"+String(sourceIndex+1).padStart(2,"0"):null,
+            previous_run_id:match[2],created_at:run.created_at,url:run.html_url});
+          chainRunId=match[2]==="0"?null:match[2];
+        }
         let sourceV2Ready=latest.phase==="EMPTY";
         if(currentRunId){
           const currentWorkflow=await github("/actions/runs/"+currentRunId);
@@ -95,7 +108,8 @@ export default async function handler(req,res){
           previous_run_id:currentRunId,next_source_batch:nextSource,
           source_remaining:Math.max(0,DELIVERIES.length-successCount),
           source_exhausted:successCount>=DELIVERIES.length,
-          resume_batch:resumeBatch,resume_run_id:failed?.id||null,history,workflow_url:url});
+          resume_batch:resumeBatch,resume_run_id:failed?.id||null,history,
+          current_cycle_runs:currentCycleRuns,workflow_url:url});
       }
       const since=Date.parse(String(req.query?.since||""));
       const sourceBatch=String(req.query?.source_batch||batch);

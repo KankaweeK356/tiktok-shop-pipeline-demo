@@ -1,15 +1,14 @@
 # ผลการรัน Demo
 
-พื้นที่นี้ใช้เก็บ **รายงานผลการรันบน Google Colab ที่ตรวจสอบแล้ว** เพื่อให้อาจารย์เปิดดูหลักฐานได้โดยไม่ต้องรัน Notebook ก่อน
+ผลจาก Colab แสดงอยู่ใน Notebook และในพื้นที่ Runtime ของผู้รัน ไม่ถูกส่งกลับ GitHub, Neon หรือ Dashboard เว็บโดยอัตโนมัติ
 
-**สถานะปัจจุบัน:** ยังไม่มีรายงานที่ยืนยันว่าได้รัน End-to-End บน Google Colab ด้วย DuckDB/Parquet จริง จึงไม่ใส่ CSV หรือกราฟสมมติไว้เป็นผลทดสอบ
+## Notebook ปัจจุบัน
 
-## หลังทดลองครบแล้วต้องทำอะไร?
+เปิด [Pipeline Notebook ใน Colab](https://colab.research.google.com/github/KankaweeK356/tiktok-shop-pipeline-demo/blob/feature/classroom-demo-evidence-foundation/notebooks/TikTok_Shop_Step_by_Step_Demo.ipynb) เลือก **Runtime → Run all** เพื่อเตรียมโปรเจกต์ แล้วใช้ปุ่มเริ่ม Run 1 และเติมเดือนถัดไปครั้งละหนึ่งเดือน
 
-1. เปิด [Google Colab Demo](https://colab.research.google.com/github/KankaweeK356/tiktok-shop-pipeline-demo/blob/main/notebooks/TikTok_Shop_Demo.ipynb)
-2. รัน Setup, Run 1, Run 2, Functional/Lineage, Error 6 กรณี และ Performance/Business Results ให้ผ่าน
-3. ที่ท้าย Notebook เลือก **เตรียมรายงานสำหรับ GitHub** ระบบจะตรวจว่าได้รันครบและสร้าง `github_report_upload.zip`
-4. ดาวน์โหลด ZIP → แตกไฟล์ → อัปโหลดโฟลเดอร์ `reports/` กลับมายัง GitHub และกด Commit changes
-5. ตัวเลขในรายงานจะมาจากการรันจริงใน Colab ของคุณ ไม่ใช่ข้อมูลที่แต่งขึ้น
+## ผลและไฟล์
 
-**หมายเหตุ:** การรัน Colab ของคนอื่นจะไม่เขียนกลับ GitHub อัตโนมัติ และไม่กระทบผลลัพธ์ของเจ้าของ Repository
+- ผลแต่ละ Run แสดงจำนวนก่อน–หลัง, Validation, ตัวอย่าง Warehouse และเวลาที่วัดจาก Runtime ปัจจุบัน
+- ไฟล์อยู่ที่ `output/colab_classroom/main/` ภายใน Runtime; เมื่อ Runtime หมดอายุ พื้นที่ชั่วคราวอาจหายไป
+- ปุ่มเคลียร์ใน Notebook ลบผล Pipeline และ Error Lab ใน Runtime นั้น โดยคง Source ไว้
+- ผล Colab แยกจาก Lab Neon บนเว็บ; ผู้ใช้ต้องเปิด Test Pipeline เพื่อดู Run ที่ทำผ่านเว็บ

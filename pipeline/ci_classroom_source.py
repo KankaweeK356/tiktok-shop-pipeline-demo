@@ -1,4 +1,4 @@
-"""Exercise all seven Source deliveries without touching Neon."""
+"""Exercise all ten monthly Source deliveries without touching Neon."""
 from __future__ import annotations
 
 import json

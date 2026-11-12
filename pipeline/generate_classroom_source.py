@@ -1,4 +1,4 @@
-"""Build the seven deterministic CSV deliveries used by the classroom lab.
+"""Build ten deterministic monthly CSV deliveries used by the classroom lab.
 
 The generated files are Source, separate from Neon and from the worker's
 SQLite/Parquet/DuckDB outputs. A reset discards outputs, never these inputs.

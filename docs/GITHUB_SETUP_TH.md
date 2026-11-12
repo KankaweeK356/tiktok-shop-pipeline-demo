@@ -41,11 +41,11 @@
 
 1. เปิด [Google Colab](https://colab.research.google.com/)
 2. เลือก **File → Open notebook → GitHub** แล้วค้นหาหรือวางลิงก์ Repository ที่เพิ่งสร้าง
-3. เลือกไฟล์ `notebooks/TikTok_Shop_Demo.ipynb`
-4. รันหัวข้อ **00 เตรียมโปรเจกต์** และใส่ลิงก์ Repository จริงใน `REPO_URL` เช่น `https://github.com/USERNAME/tiktok-shop-pipeline-demo`
-5. รัน **01 Run 1** → **02 Run 2** → **03 ตรวจยอด** → **04 Error Recovery** → **05 Performance & KPI** ตามลำดับ
+3. เลือก `notebooks/TikTok_Shop_Step_by_Step_Demo.ipynb`
+4. เลือก **Runtime → Run all** เพื่อเตรียม Code และ Source จาก Repository ที่กำหนดไว้
+5. กดปุ่ม **เริ่มรอบใหม่และรัน Run 1 · มกราคม** แล้วกด **เติมข้อมูลเดือนถัดไป** ทีละเดือนตามต้องการ
 
-ผลลัพธ์จะปรากฏใต้ Code Cell และในโฟลเดอร์ `output/` ภายใน Colab
+ผลของแต่ละรอบจะแสดงใน Notebook และเก็บใน `output/colab_classroom/` ภายใน Colab Runtime; กดปุ่มเคลียร์เมื่อต้องการลบผลทดลอง
 
 ## 5. ถ้าอยากอัปเดต README ภายหลัง
 
@@ -64,8 +64,8 @@
 
 ## ลิงก์เปิด Demo สำหรับผู้เข้าเยี่ยมชม
 
-หลังอัปโหลดเสร็จ คนอื่นไม่ต้องอัปโหลด ZIP ให้กดปุ่ม **Open in Colab** บนหน้า README ได้เลย
+หลังอัปโหลดเสร็จ คนอื่นเปิด [Pipeline Notebook รุ่นปัจจุบันใน Colab](https://colab.research.google.com/github/KankaweeK356/tiktok-shop-pipeline-demo/blob/feature/classroom-demo-evidence-foundation/notebooks/TikTok_Shop_Step_by_Step_Demo.ipynb) ได้เลย. เลือก **Runtime → Run all** เพื่อเตรียมโปรเจกต์ จากนั้นกดปุ่มเริ่ม Run 1 และปุ่มเติมเดือนถัดไปบน Notebook.
 
-ลิงก์โดยตรง: https://colab.research.google.com/github/KankaweeK356/tiktok-shop-pipeline-demo/blob/main/notebooks/TikTok_Shop_Demo.ipynb
+ลิงก์โดยตรง: https://colab.research.google.com/github/KankaweeK356/tiktok-shop-pipeline-demo/blob/feature/classroom-demo-evidence-foundation/notebooks/TikTok_Shop_Step_by_Step_Demo.ipynb
 
-Notebook ตั้ง REPO_URL ไว้ให้แล้ว จึง Clone Code และข้อมูลจาก GitHub อัตโนมัติเมื่อรันหัวข้อ 00
+Notebook ตั้ง Repository และสาขาไว้แล้ว จึงดึง Code และ Source จาก GitHub อัตโนมัติเมื่อเตรียม Runtime; Colab ใช้ฐานข้อมูลแยกจาก Neon และข้อมูล Dashboard

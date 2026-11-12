@@ -1,72 +1,32 @@
-"""Run every Step-by-Step Colab cell sequentially using real SQLite, PyArrow, DuckDB.
-
-Every stage is asserted before the next stage begins, proving that the notebook
-actually demonstrates Source -> ER1 -> Lake -> ER2 -> Validation, then incremental,
-replay, and error recovery rather than executing one hidden batch.
-"""
 from __future__ import annotations
 
-import os
-from pathlib import Path
-os.environ.setdefault("MPLBACKEND", "Agg")
-
+from pipeline.schema import ROOT
 import nbformat
-from .schema import ROOT
 
 
-def run_once(pass_number: int):
-    notebook = nbformat.read(ROOT / "notebooks" / "TikTok_Shop_Step_by_Step_Demo.ipynb", as_version=4)
+def main() -> None:
+    path = ROOT / "notebooks" / "TikTok_Shop_Step_by_Step_Demo.ipynb"
+    notebook = nbformat.read(path, as_version=4)
     nbformat.validate(notebook)
-    ctx = {"__name__": "__main__"}
-    code_cells = [cell for cell in notebook.cells if cell.cell_type == "code"]
-    expected = 17
-    assert len(code_cells) == expected, (len(code_cells), expected)
-    for i, cell in enumerate(code_cells):
-        print(f"START STAGED CELL {i:02d}: {cell.source.splitlines()[0]}", flush=True)
-        exec(compile(cell.source, f"staged-cell-{i}", "exec"), ctx)
-        workspace = ROOT / "output" / "main"
-        if i == 2:
-            assert (workspace / "er1.sqlite").is_file()
-            assert not (workspace / "er2.duckdb").is_file()
-        elif i == 3:
-            assert (workspace / "lake" / "raw" / "initial" / "Fact_Orders.parquet").is_file()
-            assert not (workspace / "er2.duckdb").is_file()
-        elif i == 4:
-            assert (workspace / "lake" / "standardized" / "initial" / "Fact_Sales_Order_Item.parquet").is_file()
-        elif i == 5:
-            assert (workspace / "er2.duckdb").is_file()
-        elif i == 6:
-            assert ctx["initial_result"]["status"] == "SUCCESS"
-        elif i == 7:
-            assert len(ctx["new_orders"]) > 0 and len(ctx["changed_orders"]) > 0
-        elif i == 8:
-            assert "ingest" in ctx["stage"]["completed"]
-        elif i == 9:
-            assert (workspace / "lake" / "raw" / "incremental" / "Fact_Orders.parquet").is_file()
-        elif i == 10:
-            assert len(ctx["std_delta"]) > 0
-        elif i == 11:
-            assert ctx["after_load"]["orders"] > ctx["INITIAL_SIGNATURE"]["orders"]
-        elif i == 12:
-            assert ctx["final_check"]["failed"] == 0
-        elif i == 13:
-            assert ctx["after_replay"] == ctx["before_replay"]
-        elif i == 14:
-            assert ctx["chosen"]["passed"].all()
-        elif i == 15:
-            assert len(ctx["six"]) == 6 and ctx["six"]["passed"].all()
-            assert len(ctx["perf"]) == 2
-            assert Path(ctx["evidence"]["zip_path"]).is_file()
-        print(f"PASS STAGED CELL {i:02d}", flush=True)
-    print(f"STAGED RUN ALL #{pass_number}: ALL CELLS PASSED", flush=True)
-
-
-def main():
-    # Re-run all 17 cells without deleting the runtime. Cell 00 itself must
-    # reset only the demo workspace, then each run must recreate its own ER1/ER2.
-    run_once(1)
-    run_once(2)
-    print("STEP-BY-STEP RUN ALL + RE-RUN ALL: PASSED", flush=True)
+    code = "\n".join(cell.source for cell in notebook.cells if cell.cell_type == "code")
+    required = (
+        "เริ่มรอบใหม่และรัน Run 1",
+        "เติมข้อมูลเดือนถัดไป",
+        "เคลียร์ผลทดลองใน Colab",
+        "ทดสอบ Error แยก",
+        "run_batch(WORKSPACE,batch,source_root=SOURCE)",
+        "BATCHES[index]",
+        "os.environ.pop(\"NEON_DEMO_DATABASE_URL\",None)",
+    )
+    missing = [item for item in required if item not in code]
+    if missing:
+        raise AssertionError("Interactive Colab journey is missing: " + ", ".join(missing))
+    for index, cell in enumerate(notebook.cells):
+        if cell.cell_type == "code":
+            compile(cell.source, f"{path}:cell{index}", "exec")
+    if "for batch in BATCHES:" in code:
+        raise AssertionError("Interactive Pipeline Notebook must not auto-run every month")
+    print("COLAB NOTEBOOK: setup and one-month-at-a-time controls are present")
 
 
 if __name__ == "__main__":

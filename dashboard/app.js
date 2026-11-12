@@ -2,7 +2,7 @@
 (function () {
   "use strict";
   const $ = s => document.querySelector(s);
-  const state = { data:null, evidence:null, evidenceLayer:"source", evidenceTable:"", neonStatus:"not_loaded", neonTables:[], neonTable:"", neonData:null, neonError:"", neonRunStatus:null, neonArtifactType:"ALL", labStage:0, labTable:"Fact_Orders", labResults:{}, labBusy:false, labError:"", labLog:[], realReady:false, realConfigChecked:false, realLabPhase:"UNKNOWN", realLabCycle:null, realLabOrders:null, realBatch:"initial", realStageIndex:0, realPreviousRunId:"", realRunId:null, realStatus:"", realUrl:"", realError:"", realStartedAt:"", realAdminKey:"", realEvidence:null, autoBatch:"", batchResults:{initial:{},incremental:{}}, resetStatus:"", resetSince:"", resetUrl:"", resetError:"", savedLabManifest:null, savedLabReceipt:null, savedLabSelected:"", savedLabLoading:false, pipelineTab:"flow", notebookBatch:"initial", notebookStage:"ingest", warehouseStatus:"not_loaded", warehouseSnapshot:null, warehouseError:"", warehouseTable:"Fact_Sales_Order_Item", labNeon:null, labNeonTable:null, labNeonBusy:false, labNeonError:"", errorCase:"N01", errorReplayed:false, errorLabOpen:false, view:"business", month:"", group:"ALL", sku:"", skuSort:"lowest_margin", model:"", week:"", replay:false, rows:[], sourceUploadId:"", sourceUploadMonth:"", sourceUploadBusy:false, sourceUploadError:"" };
+  const state = { data:null, evidence:null, evidenceLayer:"source", evidenceTable:"", neonStatus:"not_loaded", neonTables:[], neonTable:"", neonData:null, neonError:"", neonRunStatus:null, neonArtifactType:"ALL", labStage:0, labTable:"Fact_Orders", labResults:{}, labBusy:false, labError:"", labLog:[], realReady:false, realConfigChecked:false, realLabPhase:"UNKNOWN", realLabCycle:null, realLabOrders:null, realBatch:"initial", realStageIndex:0, realPreviousRunId:"", realRunId:null, realStatus:"", realUrl:"", realError:"", realStartedAt:"", realAdminKey:"", realEvidence:null, autoBatch:"", batchResults:{initial:{},incremental:{}}, batchSummaries:{initial:null,incremental:null}, currentCycleRuns:[], resetStatus:"", resetSince:"", resetUrl:"", resetError:"", savedLabManifest:null, savedLabReceipt:null, savedLabSelected:"", savedLabLoading:false, pipelineTab:"flow", notebookBatch:"initial", notebookStage:"ingest", warehouseStatus:"not_loaded", warehouseSnapshot:null, warehouseError:"", warehouseTable:"Fact_Sales_Order_Item", labNeon:null, labNeonTable:null, labNeonBusy:false, labNeonError:"", errorCase:"N01", errorReplayed:false, errorLabOpen:false, view:"business", month:"", group:"ALL", sku:"", skuSort:"lowest_margin", model:"", week:"", replay:false, rows:[], sourceUploadId:"", sourceUploadMonth:"", sourceUploadName:"", sourceUploadBusy:false, sourceUploadError:"" };
   state.batchRun={batch:"",status:"",since:"",runId:null,url:"",stages:[]};
   state.batchRunIds={initial:null,incremental:null};
   state.batchResume={batch:"",runId:null};
@@ -713,10 +713,38 @@
         state.notebookBatch=state.requiresReset?"initial":"incremental";
       state.batchResume={batch:data.resume_batch||"",runId:data.resume_run_id||null};
       state.recentRuns=data.history||[];
+      await hydrateCurrentCycleRuns(data.current_cycle_runs||[],Boolean(data.current_run_id));
     }catch(_error){state.realReady=false;}
     state.capabilitiesLoading=false;
     state.realConfigChecked=true;
     if(state.view==="pipeline")renderPipeline();
+  }
+
+  async function hydrateCurrentCycleRuns(runs,hasCurrentRun){
+    state.currentCycleRuns=runs;
+    if(!hasCurrentRun){
+      state.batchResults={initial:{},incremental:{}};
+      state.batchSummaries={initial:null,incremental:null};
+      state.batchRunIds={initial:null,incremental:null};
+      return;
+    }
+    const latestByBatch={};
+    for(const run of runs){if(!latestByBatch[run.batch])latestByBatch[run.batch]=run;}
+    for(const batch of ["initial","incremental"]){
+      const run=latestByBatch[batch];if(!run)continue;
+      try{
+        const response=await fetch("/api/lab-batch-result?run_id="+encodeURIComponent(run.run_id),
+          {cache:"no-store"});
+        if(!response.ok)continue;
+        const payload=await response.json();
+        const result=payload.result;if(!result||result.status!=="SUCCESS")continue;
+        state.batchRunIds[batch]=String(run.run_id);
+        state.batchSummaries[batch]={runId:String(run.run_id),url:run.url,
+          sourceMonth:run.source_month,result};
+        state.batchResults[batch]=Object.fromEntries((result.stages||[]).map(item=>
+          [item.stage,{evidence:item.evidence,url:run.url,runId:String(run.run_id)}]));
+      }catch(_error){/* The live Lab state stays visible if a past artifact is unavailable. */}
+    }
   }
 
   async function dispatchRealStep(){
@@ -1062,6 +1090,7 @@
         state.batchRun.status="queued";state.batchRun.since=new Date().toISOString();
         state.batchRun.sourceBatch=data.source_batch;
         state.batchResults[batch]={};
+        state.batchSummaries[batch]=null;
         state.batchRun.url=data.workflow_url;renderPipeline();
         window.setTimeout(checkBatchRun,3000);
       }).catch(error=>{state.batchRun.status="failure";state.realError=error.message;
@@ -1103,6 +1132,8 @@
         if(!resultResponse.ok)throw Error(payload.error||"อ่านผล Run ไม่สำเร็จ");
         current.result=payload.result;
         state.batchRunIds[current.batch]=current.runId;
+        state.batchSummaries[current.batch]={runId:String(current.runId),url:current.url,
+          sourceMonth:sourceMonthForBatch(current.sourceBatch),result:payload.result};
         state.batchResults[current.batch]=Object.fromEntries(payload.result.stages.map(item=>
           [item.stage,{evidence:item.evidence,url:current.url,runId:current.runId}]));
         if(state.sourceUploadId&&state.sourceUploadMonth===sourceMonthForBatch(state.nextSourceBatch)){
@@ -1231,11 +1262,12 @@
         state.realEvidence=null;state.notebookBatch="initial";
         state.notebookSelectionTouched=false;state.notebookStage="ingest";
         state.batchResults={initial:{},incremental:{}};
+        state.batchSummaries={initial:null,incremental:null};
         state.batchRunIds={initial:null,incremental:null};
         state.batchRun={batch:"",status:"",since:"",runId:null,url:"",stages:[]};
         if(state.sourceUploadId)fetch("/api/lab-batch?id="+
           encodeURIComponent(state.sourceUploadId),{method:"DELETE"}).catch(()=>{});
-        state.sourceUploadId="";state.sourceUploadMonth="";
+        state.sourceUploadId="";state.sourceUploadMonth="";state.sourceUploadName="";
         sessionStorage.removeItem("classroom_source_upload");
         state.labNeon=null;state.labNeonTable=null;loadRealCapabilities();
       }
@@ -1389,8 +1421,10 @@
       node("p","lab-description","Run 1 นำเข้าข้อมูลตั้งต้น จากนั้นกดเติมข้อมูลใหม่ได้ทีละชุด ทุกครั้งเดินครบทั้งเส้นทาง"),
       small("Lab ที่ใช้รัน: "+(phase==="UNKNOWN"?"กำลังตรวจสอบ":phase)+" · "+money(state.realLabOrders||0)+" ออเดอร์")));
     const batchPicker=box("notebook-runs");
-    [["initial","Run 1 · ข้อมูลตั้งต้น","ข้อมูลย้อนหลังและโครงสร้างธุรกิจ"],
-      ["incremental","เติมข้อมูลใหม่","อ่าน Source ชุดถัดไปเมื่อกดรัน"]].forEach(([id,label,detail])=>{
+    const nextMonth=sourceMonthForBatch(state.nextSourceBatch);
+    [["initial","Run 1 · มกราคม 2569","ข้อมูลตั้งต้นและโครงสร้างธุรกิจ"],
+      ["incremental",nextMonth?"เติมข้อมูล · "+thaiMonth(nextMonth):"ข้อมูลครบถึงตุลาคม 2569",
+        "เพิ่ม Source เดือนถัดไปครั้งละหนึ่งเดือน"]].forEach(([id,label,detail])=>{
       const button=node("button","notebook-run"+(state.notebookBatch===id?" is-active":""));
       button.type="button";button.setAttribute("aria-pressed",String(state.notebookBatch===id));
       button.append(node("strong","",label),small(detail));
@@ -1402,8 +1436,10 @@
       !state.sharedRun.running&&(state.notebookBatch==="initial"?phase==="EMPTY":
         ["RUN1_READY","RUN2_READY"].includes(phase)&&Boolean(state.currentRunId));
     const batchBusy=["submitting","queued","in_progress"].includes(state.batchRun.status);
+    const alreadyDone=state.notebookBatch==="initial"&&Boolean(state.batchSummaries.initial);
     const batchAction=node("button","button button-primary",batchBusy?
       "กำลังรัน "+(state.batchRun.batch==="initial"?"Run 1":"ข้อมูลใหม่")+" ทั้งรอบ…":
+      alreadyDone?(state.notebookBatch==="initial"?"✓ Run 1 ผ่านแล้ว":"✓ เดือนนี้รันผ่านแล้ว"):
       state.notebookBatch==="initial"?"▶ รันข้อมูลตั้งต้น":"▶ เติมข้อมูลใหม่");
     batchAction.type="button";batchAction.disabled=!canStartBatch||batchBusy;
     batchAction.addEventListener("click",runWholeBatch);root.append(batchAction);
@@ -1492,17 +1528,25 @@
       }
       root.append(cell);
     });
-    if(state.batchRun.status==="success"&&state.batchRun.batch===state.notebookBatch){
-      const summary=state.batchRun.result;
+    const savedSummary=state.batchSummaries[state.notebookBatch];
+    const liveSummary=state.batchRun.status==="success"&&state.batchRun.batch===state.notebookBatch?
+      {runId:state.batchRun.runId,url:state.batchRun.url,sourceMonth:sourceMonthForBatch(state.batchRun.sourceBatch),result:state.batchRun.result}:null;
+    const displayedSummary=liveSummary||savedSummary;
+    if(displayedSummary){
+      const summary=displayedSummary.result;
+      if(state.notebookBatch==="incremental"&&displayedSummary.sourceMonth!==sourceMonthForBatch(state.nextSourceBatch))
+        root.append(small("ผลขั้นตอนด้านล่างคือการเติม Source เดือน "+thaiMonth(displayedSummary.sourceMonth||"")+" ที่ผ่านล่าสุด · เดือนถัดไปคือ "+thaiMonth(sourceMonthForBatch(state.nextSourceBatch)||"")));
       const download=node("a","button button-outline","↓ ดาวน์โหลด Warehouse ครบทุกตาราง (ZIP/CSV)");
-      download.href="/api/lab-batch-result?download=warehouse&run_id="+encodeURIComponent(state.batchRun.runId);
+      download.href="/api/lab-batch-result?download=warehouse&run_id="+encodeURIComponent(displayedSummary.runId);
       root.append(box("lab-result",node("h3","lab-subheading","สรุปผล Run นี้"),
+        small("Source เดือน "+thaiMonth(displayedSummary.sourceMonth||"")),
         small("ผ่านครบ 5 ขั้น · ใช้เวลา "+money(summary?.elapsed_seconds,1)+" วินาที"),
         small("ออเดอร์ก่อนรัน "+money(summary?.orders_before)+" → หลังรัน "+
           money(summary?.orders_after)+" · เพิ่ม "+money(summary?.orders_added)),
         small("รายการขายใน Warehouse "+money(summary?.paid_sales_rows)+" แถว"),
         small(summary?.no_duplicate_sales_items?"ตรวจแล้ว: ไม่มีรายการขายซ้ำ":"ยังไม่มีผลตรวจรายการซ้ำ"),
-        small("กดเปิดแต่ละขั้นด้านบนเพื่อดูตารางและตัวอย่างข้อมูลจริง"),download));
+        small("กดเปิดแต่ละขั้นด้านบนเพื่อดูตารางและตัวอย่างข้อมูลจริง"),
+        displayedSummary.url?link("เปิด Log ของ Run นี้",displayedSummary.url):null,download));
     }
     root.append(notice("เคลียร์ Lab = ลบข้อมูลใน Neon ทั้ง 25 ตารางให้เหลือ 0 · Source แยกไว้สำหรับเริ่มใหม่"));
     if(["RUN1_READY","RUN2_READY"].includes(phase)){
@@ -1549,15 +1593,15 @@
     download.target="_blank";download.rel="noopener noreferrer";
     panelRoot.append(download);
     const controls=box("source-picker-actions");
-    const label=node("label","button button-outline source-upload-label","เลือก ZIP ที่แก้แล้ว");
+    const label=node("label","button button-outline source-upload-label","อัปโหลด Source "+thaiMonth(month)+" (.zip)");
     const file=node("input","source-upload-input");file.type="file";file.accept=".zip,application/zip";
     label.append(file);controls.append(label);
     if(state.sourceUploadId&&state.sourceUploadMonth===month){
-      controls.append(small("จะใช้ ZIP ที่อัปโหลดแทน Source เตรียมไว้"));
+      controls.append(small("ไฟล์ที่เลือก: "+(state.sourceUploadName||"Source ZIP")+" · ใช้แทนชุดตัวอย่างเดือนนี้"));
       const clear=node("button","button button-muted","กลับไปใช้ Source เตรียมไว้");clear.type="button";
       clear.addEventListener("click",()=>{fetch("/api/lab-batch?id="+
         encodeURIComponent(state.sourceUploadId),{method:"DELETE"}).catch(()=>{});
-        state.sourceUploadId="";state.sourceUploadMonth="";
+        state.sourceUploadId="";state.sourceUploadMonth="";state.sourceUploadName="";
         sessionStorage.removeItem("classroom_source_upload");state.sourceUploadError="";renderPipeline();});
       controls.append(clear);
     }else controls.append(small("ถ้าไม่อัปโหลด ระบบใช้ Source ที่เตรียมไว้ให้อัตโนมัติ"));
@@ -1575,14 +1619,14 @@
           fetch("/api/lab-batch?id="+encodeURIComponent(data.upload_id),{method:"DELETE"}).catch(()=>{});
           throw Error("ไฟล์นี้เป็นเดือน "+thaiMonth(data.month)+" แต่รอบนี้ต้องใช้ "+thaiMonth(month));
         }
-        state.sourceUploadId=data.upload_id;state.sourceUploadMonth=data.month;
-        sessionStorage.setItem("classroom_source_upload",JSON.stringify({id:data.upload_id,month:data.month}));
+        state.sourceUploadId=data.upload_id;state.sourceUploadMonth=data.month;state.sourceUploadName=selected.name;
+        sessionStorage.setItem("classroom_source_upload",JSON.stringify({id:data.upload_id,month:data.month,name:selected.name}));
       }catch(error){state.sourceUploadError=error.message||"อัปโหลด Source ไม่สำเร็จ";}
       state.sourceUploadBusy=false;renderPipeline();
     });
     panelRoot.append(controls);
     panelRoot.append(small(state.sourceUploadBusy?"กำลังตรวจและอัปโหลด ZIP…":
-      "ระบบตรวจเดือนและรายชื่อตารางก่อน แล้วตรวจคอลัมน์และข้อมูลซ้ำใน GitHub Actions ก่อนนำเข้า"));
+      "ตรวจเดือน รายชื่อ 21 ตาราง และหัวคอลัมน์ทันที จากนั้นตรวจแถวและความสัมพันธ์ในพื้นที่ชั่วคราวก่อนเขียนเข้า Neon"));
     if(state.sourceUploadError)panelRoot.append(notice(state.sourceUploadError,true));
     root.append(panelRoot);
   }
@@ -1845,7 +1889,7 @@
   async function init(){
     document.querySelectorAll("[data-view]").forEach(btn=>btn.addEventListener("click",()=>setView(btn.dataset.view)));
     try{const upload=JSON.parse(sessionStorage.getItem("classroom_source_upload")||"null");
-      if(upload?.id&&upload?.month){state.sourceUploadId=upload.id;state.sourceUploadMonth=upload.month;}
+      if(upload?.id&&upload?.month){state.sourceUploadId=upload.id;state.sourceUploadMonth=upload.month;state.sourceUploadName=upload.name||"";}
     }catch(_error){sessionStorage.removeItem("classroom_source_upload");}
     window.setInterval(()=>{
       if(state.view==="pipeline")loadRealCapabilities();

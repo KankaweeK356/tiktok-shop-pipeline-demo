@@ -135,7 +135,7 @@ def export_github_reports(project_root: Path) -> dict:
 
 ## ทดลองเอง
 
-[เปิด Demo บน Google Colab](https://colab.research.google.com/github/KankaweeK356/tiktok-shop-pipeline-demo/blob/main/notebooks/TikTok_Shop_Demo.ipynb)
+[เปิด Demo บน Google Colab](https://colab.research.google.com/github/KankaweeK356/tiktok-shop-pipeline-demo/blob/feature/classroom-demo-evidence-foundation/notebooks/TikTok_Shop_Step_by_Step_Demo.ipynb)
 
 > รายงานชุดนี้เป็น snapshot ที่เจ้าของ Repository อัปโหลดหลังทดสอบ ไม่เปลี่ยนอัตโนมัติเมื่อผู้อื่นเปิด Colab ผลสดของแต่ละคนแสดงใน Notebook ของตนเอง และอาจแตกต่างกันด้าน Performance
 '''
@@ -145,3 +145,4 @@ def export_github_reports(project_root: Path) -> dict:
         for f in sorted(reports.iterdir()):
             z.write(f,arcname=f'reports/{f.name}')
     return {'zip_path': str(archive), 'reports_folder':str(reports), 'summary':summary}
+

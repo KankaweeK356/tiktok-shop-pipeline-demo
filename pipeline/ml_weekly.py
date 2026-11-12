@@ -23,9 +23,10 @@ from .ml_features import _prepare_daily, _prepare_plans, read_warehouse_daily
 MODEL_VERSION = "weekly_sales_lightgbm_demo_v1"
 START_WEEK = "2025-12-01"
 LAST_WEEK = "2026-09-21"  # historical standalone example only
-TEST_WEEKS = 8
-VALIDATION_WEEKS = 4
-VALIDATION_FOLD_COUNT = 3
+TEST_WEEKS = 4
+VALIDATION_WEEKS = 3
+VALIDATION_FOLD_COUNT = 2
+MIN_TRAIN_WEEKS = 6
 MODELS = ("Last Week Naive", "LightGBM History", "LightGBM Marketing")
 HISTORY_FEATURES = (
     "product_group_code", "week_of_year", "week_month",
@@ -51,13 +52,16 @@ def _d(v):
 def weekly_windows(dataset: pd.DataFrame) -> tuple[list[tuple[str, str, str, str]], str, str, str]:
     """Use only complete observed weeks; keep validation before untouched test."""
     weeks = sorted(dataset.forecast_week_start.unique())
-    needed = TEST_WEEKS + VALIDATION_WEEKS * VALIDATION_FOLD_COUNT + 12
+    needed = TEST_WEEKS + VALIDATION_WEEKS * VALIDATION_FOLD_COUNT + MIN_TRAIN_WEEKS
     if len(weeks) < needed:
-        raise ValueError(f"Need at least {needed} complete weeks for weekly Train/Test")
+        raise ValueError(
+            f"Need at least {needed} complete weeks for weekly Train/Validation/Test; "
+            f"currently have {len(weeks)}"
+        )
     test_start = _d(weeks[-TEST_WEEKS])
     test_end = _d(weeks[-1]) + timedelta(days=6)
     folds = []
-    first = len(weeks) - TEST_WEEKS - VALIDATION_WEEKS * VALIDATION_FOLD_COUNT
+    first = len(weeks) - TEST_WEEKS - VALIDATION_WEEKS * VALIDATION_FOLD_COUNT - MIN_TRAIN_WEEKS
     for i in range(VALIDATION_FOLD_COUNT):
         start = _d(weeks[first + i * VALIDATION_WEEKS])
         end = _d(weeks[first + (i + 1) * VALIDATION_WEEKS - 1]) + timedelta(days=6)

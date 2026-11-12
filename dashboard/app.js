@@ -1629,10 +1629,23 @@
     }
     const runId=warehouse.current_run_id;
     if(state.liveMLRunId!==runId){state.liveMLRunId=runId;state.liveML=null;}
+    const monthCount=warehouse.result.business?.months?.length||0;
+    const needsReset=Boolean(warehouse.requires_reset);
     root.append(notice("ทำนายยอดขายสุทธิรายสัปดาห์ × กลุ่มสินค้า จาก Warehouse รอบปัจจุบัน · ข้อมูลจำลองเพื่อการศึกษา"));
+    root.append(panel("ข้อมูลที่โมเดลใช้เป็น Feature","คำนวณจาก Warehouse ไม่ได้ใส่ตัวเลขผลลัพธ์ไว้ล่วงหน้า",
+      contentArea(dataTable([["feature","Feature"],["use","ข้อมูลที่นำมาใช้"]],[
+        {feature:"revenue_last_week",use:"ยอดขายสุทธิกลุ่มสินค้าในสัปดาห์ก่อน"},
+        {feature:"revenue_mean_4weeks",use:"ค่าเฉลี่ยยอดขาย 4 สัปดาห์ย้อนหลัง"},
+        {feature:"historical_ads_last_week",use:"ค่า Ads จริงในสัปดาห์ก่อน"},
+        {feature:"planned_ads_week",use:"แผน Ads ที่บันทึกก่อนสัปดาห์เป้าหมาย"},
+        {feature:"planned_discount_mean_week",use:"ส่วนลดที่วางแผนไว้สำหรับสัปดาห์เป้าหมาย"}]))));
+    if(needsReset)root.append(notice("Lab ปัจจุบันยังเป็น Source รุ่นเดิม · เคลียร์ Lab ก่อนเพื่อให้ ML ใช้ Warehouse ชุดรายเดือนใหม่",true));
+    else if(monthCount<5)root.append(notice(
+      "Warehouse มีข้อมูล "+monthCount+" เดือน · ต้องสะสมอย่างน้อย 5 เดือนก่อนฝึกและประเมินโมเดลตามช่วงเวลา ปุ่ม Train จะเปิดเมื่อข้อมูลถึงเกณฑ์",false));
     const train=node("button","button button-primary",state.mlLoading?
       "กำลังเตรียมโมเดล…":"▶ ฝึกโมเดลจาก Warehouse");
     train.type="button";train.disabled=state.mlLoading||
+      needsReset||monthCount<5||
       ["queued","in_progress","processing"].includes(state.liveML?.status);
     train.addEventListener("click",trainLiveML);root.append(train);
     if(state.mlError)root.append(notice(state.mlError,true));

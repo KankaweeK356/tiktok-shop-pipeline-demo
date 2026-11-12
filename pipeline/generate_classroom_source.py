@@ -20,7 +20,7 @@ from .er1 import SOURCE_ORDER
 from .schema import ROOT, parse_dbml
 
 BATCH_MONTHS = [date(2026, month, 1) for month in range(1, 8)]
-INITIAL_HISTORY_START = date(2025, 2, 1)
+INITIAL_HISTORY_START = date(2026, 1, 1)
 INITIAL_HISTORY_END = date(2026, 1, 31)
 SOURCE_DATA_END = date(2026, 7, 31)
 BATCHES = ("initial",) + tuple(f"incremental_{i:02d}" for i in range(1, 7))
@@ -51,9 +51,9 @@ def build(target: Path, seed: int = 8102) -> dict:
     if target.exists():
         shutil.rmtree(target)
     target.mkdir(parents=True)
-    # Run 1 contains the trailing 12 months needed for a meaningful weekly ML
-    # train/validation/test split, including January 2026. Later deliveries add
-    # exactly one new month each, beginning February 2026.
+    # Run 1 is January 2026 only. Later deliveries add exactly one new month
+    # each. ML training stays unavailable until enough real Warehouse months
+    # have accumulated for chronological Train/Validation/Test evaluation.
     history = generate_ml_history(target, seed=seed,
                                   start=INITIAL_HISTORY_START,
                                   end=SOURCE_DATA_END)
@@ -79,42 +79,42 @@ def build(target: Path, seed: int = 8102) -> dict:
             frame = source_frames[table]
             if table == "Fact_Orders":
                 order_months = frame.Order_Created_At.astype(str).str[:7]
-                chosen = frame[(order_months.ge("2025-02") & order_months.le("2026-01"))
+                chosen = frame[order_months.eq("2026-01")
                                if index == 0 else order_months.eq(month)]
             elif table == "Fact_Order_Items":
                 order_months = order_frame.Order_Created_At.astype(str).str[:7]
-                in_delivery = (order_months.ge("2025-02") & order_months.le("2026-01")
+                in_delivery = (order_months.eq("2026-01")
                                if index == 0 else order_months.eq(month))
                 ids = set(order_frame.loc[in_delivery, "Order_ID"])
                 chosen = frame[frame.Order_ID.isin(ids)]
             elif table == "Fact_Internal_Fulfillment":
                 order_months = order_frame.Order_Created_At.astype(str).str[:7]
-                in_delivery = (order_months.ge("2025-02") & order_months.le("2026-01")
+                in_delivery = (order_months.eq("2026-01")
                                if index == 0 else order_months.eq(month))
                 ids = set(order_frame.loc[in_delivery, "Order_ID"])
                 chosen = frame[frame.Order_ID.isin(ids)]
             elif table == "Fact_Marketing_Costs":
                 dates = frame.Record_Date.astype(str).str[:7]
-                chosen = frame[(dates.ge("2025-02") & dates.le("2026-01"))
+                chosen = frame[dates.eq("2026-01")
                                if index == 0 else dates.eq(month)]
             elif table == "Fact_Free_Samples":
                 dates = frame.Request_Date.astype(str).str[:7]
-                chosen = frame[(dates.ge("2025-02") & dates.le("2026-01"))
+                chosen = frame[dates.eq("2026-01")
                                if index == 0 else dates.eq(month)]
             elif table == "Fact_Claim_Header":
                 dates = frame.Claim_Date.astype(str).str[:7]
-                chosen = frame[(dates.ge("2025-02") & dates.le("2026-01"))
+                chosen = frame[dates.eq("2026-01")
                                if index == 0 else dates.eq(month)]
             elif table == "Fact_Claim_Details":
                 claims = source_frames["Fact_Claim_Header"]
                 claim_months = claims.Claim_Date.astype(str).str[:7]
-                in_delivery = (claim_months.ge("2025-02") & claim_months.le("2026-01")
+                in_delivery = (claim_months.eq("2026-01")
                                if index == 0 else claim_months.eq(month))
                 claim_ids = set(claims.loc[in_delivery, "Claim_ID"])
                 chosen = frame[frame.Claim_ID.isin(claim_ids)]
             elif table == "Ref_Business_Target":
                 target_months = frame.Target_Year_Month.astype(str)
-                chosen = frame[(target_months.ge("2025-02") & target_months.le("2026-01"))
+                chosen = frame[target_months.eq("2026-01")
                                if index == 0 else target_months.eq(month)]
             elif table in ("Fact_Goods_Receipt", "Fact_Goods_Receipt_Items"):
                 chosen = frame if index == 0 else frame.iloc[0:0]
@@ -126,7 +126,7 @@ def build(target: Path, seed: int = 8102) -> dict:
                           columns=columns[table], encoding="utf-8-sig")
         order_months = order_frame.Order_Created_At.astype(str).str[:7]
         batch_orders = order_frame.loc[
-            order_months.between("2025-02", "2026-01") if index == 0
+            order_months.eq("2026-01") if index == 0
             else order_months.eq(month)]
         batch_order_ids = set(batch_orders.Order_ID)
         batch_items = item_frame[item_frame.Order_ID.isin(batch_order_ids)]
@@ -137,17 +137,17 @@ def build(target: Path, seed: int = 8102) -> dict:
     # ML planning rows stay separate from ER1, but span the exact warehouse history.
     plan_path = target / "ml_marketing_plan.csv"
     plans = pd.read_csv(plan_path)
-    plans = plans[plans.plan_date.astype(str).str[:7].between("2025-02", "2026-07")]
+            plans = plans[plans.plan_date.astype(str).str[:7].between("2026-01", "2026-07")]
     plans.to_csv(plan_path, index=False, encoding="utf-8-sig")
     (target / "source_manifest.json").write_text(json.dumps({
         "seed": seed,
-        "run_1_month": "2026-01", "run_1_history_range": ["2025-02", "2026-01"],
+        "run_1_month": "2026-01",
         "incremental_months": [x["month"] for x in result_batches[1:]],
         "source_tables": SOURCE_ORDER, "er1_tables": len(tables),
         "derived_tables": sorted(derived), "batches": result_batches,
         "master_policy": "Master/Ref/Bridge supplied on Run 1; monthly Ref_Business_Target and facts are supplied in each incremental delivery.",
         "classification": "SYNTHETIC_EDUCATIONAL_NOT_TIKTOK",
-        "note": "Every delivery has the same 21 ER1 Source CSVs. Run 1 includes 12 months through January 2026 for ML history; each later delivery adds one month. Four derived ER1 tables are created by pipeline code; no ER changes. Reset preserves Source."
+        "note": "Every delivery has the same 21 ER1 Source CSVs. Run 1 contains January 2026 only; each later delivery adds one month. ML waits until the Warehouse has enough monthly data for chronological evaluation. Four derived ER1 tables are created by pipeline code; no ER changes. Reset preserves Source."
     }, ensure_ascii=False, indent=2), encoding="utf-8")
     return {"historical_start": history["historical_start"],
             "batches": result_batches, "source_tables": SOURCE_ORDER,

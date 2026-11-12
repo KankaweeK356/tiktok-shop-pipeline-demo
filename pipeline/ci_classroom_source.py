@@ -53,8 +53,8 @@ def main() -> None:
             months=db.execute("SELECT COUNT(*) FROM View_Shop_Monthly_KPI").fetchone()[0]
         checks.append({"source":batch,"paid_orders":orders,"months":months,
                        "validation_passes":result["functional_passes"]})
-    if checks[0]["months"]<12 or checks[-1]["months"]<18:
-        raise AssertionError("Historical or increment month coverage is incomplete")
+    if checks[0]["months"]!=1 or checks[-1]["months"]<7:
+        raise AssertionError("Run 1 must contain January only, followed by monthly increments")
     ml_dir=ROOT/"output"/"classroom_ci_ml"
     ml=run_weekly(workspace/"er2.duckdb",source/"ml_marketing_plan.csv",ml_dir)
     monitor=serve_monitor_replay(ml_dir)
@@ -62,9 +62,9 @@ def main() -> None:
     if ml["dataset_rows"]<100 or monitor["status"]!="MONITORED" or scenarios["status"]!="READY":
         raise AssertionError("Warehouse-backed ML or plan inference did not complete")
     if (ml["final_test_window"][1] < "2026-07-01" or
-            ml["train_cutoff_week_end"] < "2026-05-01" or
+            ml["train_cutoff_week_end"] < "2026-06-01" or
             monitor["forecast_week"] < "2026-07-20"):
-        raise AssertionError("January-to-July Source did not advance ML Train/Test windows")
+        raise AssertionError("January-to-July Source did not advance ML time-based windows")
     report=ROOT/"output"/"classroom_ci_result.json"
     report.write_text(json.dumps({"deliveries":checks,"source_retained":True,
                                  "ml_rows":ml["dataset_rows"],

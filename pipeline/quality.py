@@ -119,13 +119,13 @@ def lineage(er1:Path,er2:Path,batch:str,control_dir:Path,report_dir:Path,limit=8
             mart=dw.execute('''SELECT Net_Revenue,Contribution_Profit FROM Mart_Product_Group_Daily_Performance
                 WHERE Date_Key=? AND Product_Group_ID=?''',[dwrow[3],dwrow[4]]).fetchone()
             processed=item_processed_batch.get(itemid,'initial')
-            origin='initial' if row[0].startswith(('OCT','H')) else (
-                ('incremental_01' if (Path(control_dir)/'changes_incremental_01.json').exists()
-                 else 'incremental') if row[0].startswith('NOV') else
-                next((b for b in BATCHES[2:] if row[0].startswith(
-                    'M'+({'incremental_02':'202612','incremental_03':'202701',
-                           'incremental_04':'202702','incremental_05':'202703',
-                           'incremental_06':'202704'}[b]))),'incremental_01'))
+            if row[0].startswith("H") and len(row[0])>=9 and row[0][1:7].isdigit():
+                source_month=row[0][1:7]
+                year,month=int(source_month[:4]),int(source_month[4:])
+                origin="initial" if (year,month)==(2026,1) else (
+                    f"incremental_{(year-2026)*12+month-1:02d}")
+            else:
+                origin="initial" if row[0].startswith(("OCT","H")) else "incremental_01"
             month=str(dwrow[3])[:4]+'-'+str(dwrow[3])[4:6]
             rec.append({'Batch_Inspected':batch,'Source_Order_Item_ID':itemid,
                 'Source':f'source/{origin}/Fact_Order_Items.csv',

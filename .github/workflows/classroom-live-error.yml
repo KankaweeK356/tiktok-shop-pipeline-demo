@@ -2,27 +2,11 @@ name: Classroom Live Lab - Real Error Recovery
 
 on:
   workflow_dispatch:
-    inputs:
-      case:
-        description: One isolated error scenario
-        required: true
-        type: choice
-        options: [N01, E01, E02, T01, T02, L01]
-      phase:
-        description: Detect error first, then fix and retry
-        required: true
-        type: choice
-        options: [fail, fix]
-      previous_run_id:
-        description: Failed demonstration run ID for fix, 0 for fail
-        required: true
-        type: string
 
-run-name: "Classroom error ${{ inputs.case }} / ${{ inputs.phase }} / previous ${{ inputs.previous_run_id }}"
+run-name: Classroom real error recovery
 
 permissions:
   contents: read
-  actions: read
   id-token: write
 
 concurrency:
@@ -41,29 +25,10 @@ jobs:
           cache: pip
       - name: Obtain scoped Neon Lab credential
         run: python -m pipeline.oidc_lab_auth
-      - name: Restore failed scenario workspace
-        if: ${{ inputs.phase == 'fix' && inputs.case != 'N01' }}
-        uses: actions/download-artifact@v4
-        with:
-          name: classroom-error-workspace
-          path: output/classroom_error_work
-          run-id: ${{ inputs.previous_run_id }}
-          github-token: ${{ github.token }}
       - name: Install pipeline dependencies
         run: python -m pip install -r requirements-neon.txt
       - name: Run isolated failure fix retry and Neon rollback check
-        env:
-          ERROR_CASE: ${{ inputs.case }}
-          ERROR_PHASE: ${{ inputs.phase }}
-        run: python -m pipeline.ci_lab_error --case "$ERROR_CASE" --phase "$ERROR_PHASE"
-      - name: Preserve scenario workspace for retry
-        if: ${{ inputs.phase == 'fail' && inputs.case != 'N01' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: classroom-error-workspace
-          path: output/classroom_error_work/
-          if-no-files-found: error
-          retention-days: 7
+        run: python -m pipeline.ci_lab_error
       - name: Publish test evidence
         if: always()
         uses: actions/upload-artifact@v4

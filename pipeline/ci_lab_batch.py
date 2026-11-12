@@ -10,6 +10,7 @@ import duckdb
 from .ci_lab_stage import STATE_PATH, run_stage
 from .orchestrator import STAGES
 from .generate_classroom_source import BATCHES
+from .ml_weekly import weekly_readiness
 
 
 def run_stage_and_save(batch: str, stage: str) -> dict:
@@ -117,6 +118,8 @@ def finalize(batch: str) -> dict:
     summary["no_duplicate_sales_items"] = total == distinct
     if not summary["no_duplicate_sales_items"]:
         raise RuntimeError("Warehouse contains duplicate sales item IDs")
+    summary["ml_readiness"] = weekly_readiness(
+        workspace / "er2.duckdb", ROOT / "output" / "classroom_source" / "ml_marketing_plan.csv")
     (workspace / "batch_result.json").write_text(
         json.dumps(summary, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
     return summary

@@ -47,9 +47,7 @@ export default async function handler(req, res) {
       /^[1-9][0-9]{3,19}$/.test(String(payload.run_id || ""));
     if (!allow)
       return res.status(403).json({ error: "GitHub OIDC policy rejected this workflow" });
-    const connection = payload.workflow_ref === ERROR_PATH ?
-      process.env.CLASSROOM_ERROR_LAB_WRITER_URL :
-      process.env.CLASSROOM_LAB_WRITER_URL;
+    const connection = process.env.CLASSROOM_LAB_WRITER_URL;
     if (!connection || !/^postgres(?:ql)?:\/\//.test(connection))
       return res.status(503).json({ error: "Isolated Neon lab credential not configured" });
     return res.status(200).json({

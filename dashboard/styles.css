@@ -150,3 +150,9 @@ tr:hover td{background:#fff8f0}.metric-label,.metric-sub,.panel-description{colo
 .notebook-cell.is-open{border-color:#bd8590;background:#fffaf8}
 .notebook-number{background:#741d2b}.notebook-output{background:#f8f3ef}
 .notebook-cell-head{color:#421d20}.notebook-cell-body{border-top-color:#ede2d5}
+.source-picker-panel{display:flex;flex-direction:column;gap:10px;margin:12px 0 20px;padding:16px 18px;border:1px solid #ede2d5;border-radius:12px;background:#fffdfb}
+.source-picker-panel .lab-subheading{margin:0;color:#421d20}
+.source-picker-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.source-upload-label{position:relative;display:inline-flex;align-items:center;overflow:hidden}
+.source-upload-input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+@media(max-width:600px){.source-picker-actions{align-items:stretch;flex-direction:column}.source-picker-actions>*{width:100%;text-align:center}}

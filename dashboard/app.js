@@ -2,7 +2,7 @@
 (function () {
   "use strict";
   const $ = s => document.querySelector(s);
-  const state = { data:null, evidence:null, evidenceLayer:"source", evidenceTable:"", neonStatus:"not_loaded", neonTables:[], neonTable:"", neonData:null, neonError:"", neonRunStatus:null, neonArtifactType:"ALL", labStage:0, labTable:"Fact_Orders", labResults:{}, labBusy:false, labError:"", labLog:[], realReady:false, realConfigChecked:false, realLabPhase:"UNKNOWN", realLabCycle:null, realLabOrders:null, realBatch:"initial", realStageIndex:0, realPreviousRunId:"", realRunId:null, realStatus:"", realUrl:"", realError:"", realStartedAt:"", realAdminKey:"", realEvidence:null, autoBatch:"", batchResults:{initial:{},incremental:{}}, resetStatus:"", resetSince:"", resetUrl:"", resetError:"", savedLabManifest:null, savedLabReceipt:null, savedLabSelected:"", savedLabLoading:false, pipelineTab:"flow", notebookBatch:"initial", notebookStage:"ingest", warehouseStatus:"not_loaded", warehouseSnapshot:null, warehouseError:"", warehouseTable:"Fact_Sales_Order_Item", labNeon:null, labNeonTable:null, labNeonBusy:false, labNeonError:"", errorCase:"N01", errorReplayed:false, errorLabOpen:false, view:"business", month:"", group:"ALL", sku:"", skuSort:"lowest_margin", model:"", week:"", replay:false, rows:[] };
+  const state = { data:null, evidence:null, evidenceLayer:"source", evidenceTable:"", neonStatus:"not_loaded", neonTables:[], neonTable:"", neonData:null, neonError:"", neonRunStatus:null, neonArtifactType:"ALL", labStage:0, labTable:"Fact_Orders", labResults:{}, labBusy:false, labError:"", labLog:[], realReady:false, realConfigChecked:false, realLabPhase:"UNKNOWN", realLabCycle:null, realLabOrders:null, realBatch:"initial", realStageIndex:0, realPreviousRunId:"", realRunId:null, realStatus:"", realUrl:"", realError:"", realStartedAt:"", realAdminKey:"", realEvidence:null, autoBatch:"", batchResults:{initial:{},incremental:{}}, resetStatus:"", resetSince:"", resetUrl:"", resetError:"", savedLabManifest:null, savedLabReceipt:null, savedLabSelected:"", savedLabLoading:false, pipelineTab:"flow", notebookBatch:"initial", notebookStage:"ingest", warehouseStatus:"not_loaded", warehouseSnapshot:null, warehouseError:"", warehouseTable:"Fact_Sales_Order_Item", labNeon:null, labNeonTable:null, labNeonBusy:false, labNeonError:"", errorCase:"N01", errorReplayed:false, errorLabOpen:false, view:"business", month:"", group:"ALL", sku:"", skuSort:"lowest_margin", model:"", week:"", replay:false, rows:[], sourceUploadId:"", sourceUploadMonth:"", sourceUploadBusy:false, sourceUploadError:"" };
   state.batchRun={batch:"",status:"",since:"",runId:null,url:"",stages:[]};
   state.batchRunIds={initial:null,incremental:null};
   state.batchResume={batch:"",runId:null};
@@ -17,9 +17,14 @@
     ml:["ML Lab","จาก Warehouse สู่ Feature Store และผลทำนาย","ML Lab"]
   };
   const groups=["PG01","PG02","PG03","PG04","PG05"];
+  const sourceMonths=Array.from({length:10},(_,i)=>"2026-"+String(i+1).padStart(2,"0"));
   const money = (n,digits=0) => n===null||n===undefined||!Number.isFinite(Number(n)) ? "—" :
     new Intl.NumberFormat("th-TH",{minimumFractionDigits:digits,maximumFractionDigits:digits}).format(Number(n));
   const pct=(n,digits=1)=> n===null||n===undefined?"—":money(n,digits)+"%";
+  const sourceMonthForBatch=batch=>batch==="initial"?sourceMonths[0]:
+    /^incremental_\d{2}$/.test(batch)?sourceMonths[Number(batch.slice(-2))]:null;
+  const thaiMonth=month=>month?new Intl.DateTimeFormat("th-TH",{month:"long",year:"numeric"})
+    .format(new Date(month+"-01T00:00:00+07:00")):"";
   const node=(tag,cls="",label=null)=>{
     const el=document.createElement(tag);
     if(cls)el.className=cls;
@@ -644,7 +649,7 @@
     body.append(notice("ส่วนนี้ Replay หลักฐานการทดสอบ Error จาก Python/SQLite Runner ที่ผ่านแล้ว ไม่ได้ฉีด Error ลง Neon ที่มี 900 ออเดอร์",true));
     const errors=state.evidence?.error_recovery_evidence||[];
     const labels={
-      E01:"E01 · SKU FK ไม่ถูกต้อง",
+      E01:"E01 · รายการสั่งซื้ออ้างถึง SKU ที่ไม่มีในข้อมูลหลัก",
       E02:"E02 · ขาดไฟล์ Source",
       T01:"T01 · Voucher Rule ผิด",
       T02:"T02 · Campaign ทับซ้อน",
@@ -1049,8 +1054,9 @@
     }
     state.realError="";state.batchRun={batch,status:"submitting",since:"",runId:null,url:"",stages:[]};
     renderPipeline();
+    const uploadId=state.sourceUploadMonth===sourceMonthForBatch(state.nextSourceBatch)?state.sourceUploadId:"";
     fetch("/api/lab-batch",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({batch,previous_run_id:previous})})
+      body:JSON.stringify({batch,previous_run_id:previous,source_upload_id:uploadId})})
       .then(async response=>{const data=await response.json();
         if(!response.ok||!data.accepted)throw Error(data.error||"สั่ง Run ไม่สำเร็จ");
         state.batchRun.status="queued";state.batchRun.since=new Date().toISOString();
@@ -1099,6 +1105,10 @@
         state.batchRunIds[current.batch]=current.runId;
         state.batchResults[current.batch]=Object.fromEntries(payload.result.stages.map(item=>
           [item.stage,{evidence:item.evidence,url:current.url,runId:current.runId}]));
+        if(state.sourceUploadId&&state.sourceUploadMonth===sourceMonthForBatch(state.nextSourceBatch)){
+          state.sourceUploadId="";state.sourceUploadMonth="";
+          sessionStorage.removeItem("classroom_source_upload");
+        }
         state.notebookStage="validate";
         loadRealCapabilities();
       }
@@ -1223,6 +1233,10 @@
         state.batchResults={initial:{},incremental:{}};
         state.batchRunIds={initial:null,incremental:null};
         state.batchRun={batch:"",status:"",since:"",runId:null,url:"",stages:[]};
+        if(state.sourceUploadId)fetch("/api/classroom-source-upload?id="+
+          encodeURIComponent(state.sourceUploadId),{method:"DELETE"}).catch(()=>{});
+        state.sourceUploadId="";state.sourceUploadMonth="";
+        sessionStorage.removeItem("classroom_source_upload");
         state.labNeon=null;state.labNeonTable=null;loadRealCapabilities();
       }
       renderPipeline();
@@ -1283,7 +1297,7 @@
     }
     if(state.pipelineTab==="errors"){
       const scenarios=[
-        ["N01","สินค้าอ้างถึงกลุ่มที่ไม่มีอยู่","Database · Neon จริง"],
+        ["N01","สินค้าอ้างถึงกลุ่มสินค้าที่ไม่มีในข้อมูลหลัก","Database · Neon Error Lab แยกต่างหาก"],
         ["E01","รายการสั่งซื้ออ้างถึง SKU ที่ไม่มีอยู่","Source → Database"],
         ["E02","ไฟล์ออเดอร์ต้นทางหาย","Source → Database"],
         ["T01","ข้อมูล Voucher ผิดกฎ","Data Lake → Standardized"],
@@ -1302,11 +1316,11 @@
       root.append(node("h3","lab-subheading","สถานการณ์ที่จะทดลอง · "+selected[1]));
       root.append(small("จุดที่ระบบจะตรวจ: "+selected[2]));
       if(state.errorCase==="N01"){
-        root.append(small("ตัวอย่างข้อมูล: N01.csv ระบุ Product_Group_ID เป็น MISSING_GROUP ซึ่งไม่มีอยู่ในฐานข้อมูล"));
+        root.append(small("ตัวอย่างข้อมูล: แถวสินค้าอ้าง Product_Group_ID = MISSING_GROUP แต่ไม่มีรหัสนี้ในตารางกลุ่มสินค้า"));
         root.append(dataTable([["SKU_ID","SKU_ID"],["Product_Group_ID","Product_Group_ID"],
           ["SKU_Name","SKU_Name"]],[{SKU_ID:"ERROR_TEST_SKU",
             Product_Group_ID:"MISSING_GROUP",SKU_Name:"สินค้าเดโมทดสอบ Error"}]));
-        root.append(small("กฎใน Neon: SKU ต้องอ้างถึง Product_Group_ID ที่มีอยู่จริง"));
+        root.append(small("กฎที่ตรวจ: สินค้าต้องอ้างถึงกลุ่มสินค้าที่มีอยู่จริง · ระบบไม่ได้สร้าง Group ใหม่"));
       }else root.append(small("ระบบจะใช้ชุดข้อมูลทดสอบแยกที่จำลองสถานการณ์นี้ แล้วตรวจจนถึงขั้นที่พบปัญหา"));
       if(!state.errorRun.failEvidence){
         const button=node("button","button button-primary",
@@ -1369,6 +1383,7 @@
       renderRealRunner(root);return;
     }
     const phase=state.realLabPhase;
+    renderSourcePicker(root);
     root.append(box("notebook-intro",
       node("h2","lab-heading","Source → Database → Data Lake → Warehouse"),
       node("p","lab-description","Run 1 นำเข้าข้อมูลตั้งต้น จากนั้นกดเติมข้อมูลใหม่ได้ทีละชุด ทุกครั้งเดินครบทั้งเส้นทาง"),
@@ -1520,6 +1535,58 @@
     if(state.resetUrl)root.append(link("ดู Log การเคลียร์ใน GitHub Actions",state.resetUrl));
   }
 
+  function renderSourcePicker(root){
+    if(state.sourceExhausted)return;
+    const batch=state.nextSourceBatch||"initial";
+    const month=sourceMonthForBatch(batch);
+    if(!month)return;
+    const panelRoot=box("source-picker-panel");
+    panelRoot.append(node("h3","lab-subheading","Source สำหรับรอบนี้ · "+thaiMonth(month)));
+    panelRoot.append(small("ชุดละ 1 เดือน · โครงสร้าง CSV ตาม ER เดียวกัน · ระบบเลือกเดือนถัดไปให้อัตโนมัติ"));
+    const filename="classroom-source-"+month+".zip";
+    const download=node("a","button button-outline","↓ ดาวน์โหลด Source "+thaiMonth(month));
+    download.href="https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/releases/download/classroom-source-v1/"+filename;
+    download.target="_blank";download.rel="noopener noreferrer";
+    panelRoot.append(download);
+    const controls=box("source-picker-actions");
+    const label=node("label","button button-outline source-upload-label","เลือก ZIP ที่แก้แล้ว");
+    const file=node("input","source-upload-input");file.type="file";file.accept=".zip,application/zip";
+    label.append(file);controls.append(label);
+    if(state.sourceUploadId&&state.sourceUploadMonth===month){
+      controls.append(small("จะใช้ ZIP ที่อัปโหลดแทน Source เตรียมไว้"));
+      const clear=node("button","button button-muted","กลับไปใช้ Source เตรียมไว้");clear.type="button";
+      clear.addEventListener("click",()=>{fetch("/api/classroom-source-upload?id="+
+        encodeURIComponent(state.sourceUploadId),{method:"DELETE"}).catch(()=>{});
+        state.sourceUploadId="";state.sourceUploadMonth="";
+        sessionStorage.removeItem("classroom_source_upload");state.sourceUploadError="";renderPipeline();});
+      controls.append(clear);
+    }else controls.append(small("ถ้าไม่อัปโหลด ระบบใช้ Source ที่เตรียมไว้ให้อัตโนมัติ"));
+    file.disabled=state.sourceUploadBusy||state.sharedRun.running||!state.realReady;
+    file.addEventListener("change",async()=>{
+      const selected=file.files?.[0];if(!selected)return;
+      state.sourceUploadBusy=true;state.sourceUploadError="";renderPipeline();
+      try{
+        if(!selected.name.toLowerCase().endsWith(".zip"))throw Error("เลือกไฟล์ ZIP ของ Source รายเดือน");
+        const response=await fetch("/api/classroom-source-upload",{method:"POST",
+          headers:{"Content-Type":"application/zip"},body:selected});
+        const data=await response.json();
+        if(!response.ok||!data.upload_id)throw Error(data.error||"อัปโหลด Source ไม่สำเร็จ");
+        if(data.month!==month){
+          fetch("/api/classroom-source-upload?id="+encodeURIComponent(data.upload_id),{method:"DELETE"}).catch(()=>{});
+          throw Error("ไฟล์นี้เป็นเดือน "+thaiMonth(data.month)+" แต่รอบนี้ต้องใช้ "+thaiMonth(month));
+        }
+        state.sourceUploadId=data.upload_id;state.sourceUploadMonth=data.month;
+        sessionStorage.setItem("classroom_source_upload",JSON.stringify({id:data.upload_id,month:data.month}));
+      }catch(error){state.sourceUploadError=error.message||"อัปโหลด Source ไม่สำเร็จ";}
+      state.sourceUploadBusy=false;renderPipeline();
+    });
+    panelRoot.append(controls);
+    panelRoot.append(small(state.sourceUploadBusy?"กำลังตรวจและอัปโหลด ZIP…":
+      "ระบบตรวจเดือนและรายชื่อตารางก่อน แล้วตรวจคอลัมน์และข้อมูลซ้ำใน GitHub Actions ก่อนนำเข้า"));
+    if(state.sourceUploadError)panelRoot.append(notice(state.sourceUploadError,true));
+    root.append(panelRoot);
+  }
+
   function renderMLLegacy(){
     const root=$("#app");root.replaceChildren();
     const ml=state.data.ml,chosen=ml.registry.selected_model;
@@ -1629,7 +1696,8 @@
     }
     const runId=warehouse.current_run_id;
     if(state.liveMLRunId!==runId){state.liveMLRunId=runId;state.liveML=null;}
-    const monthCount=warehouse.result.business?.months?.length||0;
+    const weekCount=Number(warehouse.result.ml_readiness?.complete_weeks||0);
+    const requiredWeeks=Number(warehouse.result.ml_readiness?.minimum_weeks||16);
     const needsReset=Boolean(warehouse.requires_reset);
     root.append(notice("ทำนายยอดขายสุทธิรายสัปดาห์ × กลุ่มสินค้า จาก Warehouse รอบปัจจุบัน · ข้อมูลจำลองเพื่อการศึกษา"));
     root.append(panel("ข้อมูลที่โมเดลใช้เป็น Feature","คำนวณจาก Warehouse ไม่ได้ใส่ตัวเลขผลลัพธ์ไว้ล่วงหน้า",
@@ -1640,12 +1708,12 @@
         {feature:"planned_ads_week",use:"แผน Ads ที่บันทึกก่อนสัปดาห์เป้าหมาย"},
         {feature:"planned_discount_mean_week",use:"ส่วนลดที่วางแผนไว้สำหรับสัปดาห์เป้าหมาย"}]))));
     if(needsReset)root.append(notice("Lab ปัจจุบันยังเป็น Source รุ่นเดิม · เคลียร์ Lab ก่อนเพื่อให้ ML ใช้ Warehouse ชุดรายเดือนใหม่",true));
-    else if(monthCount<5)root.append(notice(
-      "Warehouse มีข้อมูล "+monthCount+" เดือน · ต้องสะสมอย่างน้อย 5 เดือนก่อนฝึกและประเมินโมเดลตามช่วงเวลา ปุ่ม Train จะเปิดเมื่อข้อมูลถึงเกณฑ์",false));
+    else if(weekCount<requiredWeeks)root.append(notice(
+      "มีสัปดาห์ข้อมูลที่ครบและใช้ได้ "+weekCount+" จาก "+requiredWeeks+" สัปดาห์ · เติม Source เดือนถัดไปเพื่อให้ข้อมูลย้อนหลังต่อเนื่องก่อนฝึกโมเดล",false));
     const train=node("button","button button-primary",state.mlLoading?
       "กำลังเตรียมโมเดล…":"▶ ฝึกโมเดลจาก Warehouse");
     train.type="button";train.disabled=state.mlLoading||
-      needsReset||monthCount<5||
+      needsReset||weekCount<requiredWeeks||
       ["queued","in_progress","processing"].includes(state.liveML?.status);
     train.addEventListener("click",trainLiveML);root.append(train);
     if(state.mlError)root.append(notice(state.mlError,true));
@@ -1776,6 +1844,9 @@
   }
   async function init(){
     document.querySelectorAll("[data-view]").forEach(btn=>btn.addEventListener("click",()=>setView(btn.dataset.view)));
+    try{const upload=JSON.parse(sessionStorage.getItem("classroom_source_upload")||"null");
+      if(upload?.id&&upload?.month){state.sourceUploadId=upload.id;state.sourceUploadMonth=upload.month;}
+    }catch(_error){sessionStorage.removeItem("classroom_source_upload");}
     window.setInterval(()=>{
       if(state.view==="pipeline")loadRealCapabilities();
     },10000);

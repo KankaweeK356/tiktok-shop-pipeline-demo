@@ -1,0 +1,42 @@
+name: Publish Monthly Classroom Source Downloads
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/classroom-demo-evidence-foundation]
+    paths:
+      - 'pipeline/generate_classroom_source.py'
+      - 'pipeline/generate_ml_history.py'
+      - 'pipeline/generate.py'
+      - 'pipeline/er1.py'
+      - 'schemas/ER1_V3.dbml'
+      - '.github/workflows/publish-classroom-source.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: Install source generation requirements
+        run: python -m pip install -r requirements.txt
+      - name: Generate ten monthly Source packages
+        run: python -m pipeline.generate_classroom_source --output output/classroom_source --download-dir output/classroom_source_downloads
+      - name: Create or update the stable Source release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view classroom-source-v1 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create classroom-source-v1 --repo "$GITHUB_REPOSITORY" \
+              --title "Classroom Source · Jan–Oct 2026" \
+              --notes "Ten monthly synthetic Source ZIP packages matching ER1. Regenerate from the tagged repository workflow for reproducibility."
+          fi
+          gh release upload classroom-source-v1 output/classroom_source_downloads/classroom-source-2026-*.zip \
+            --repo "$GITHUB_REPOSITORY" --clobber

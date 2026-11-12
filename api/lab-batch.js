@@ -4,7 +4,7 @@ import { neon } from "@neondatabase/serverless";
 const REPO="KankaweeK356/tiktok-shop-pipeline-demo";
 const REF="feature/classroom-demo-evidence-foundation";
 const WORKFLOW="classroom-live-batch.yml";
-const DELIVERIES=["initial",...Array.from({length:6},(_,i)=>"incremental_"+String(i+1).padStart(2,"0"))];
+const DELIVERIES=["initial",...Array.from({length:9},(_,i)=>"incremental_"+String(i+1).padStart(2,"0"))];
 const url="https://github.com/"+REPO+"/actions/workflows/"+WORKFLOW;
 async function github(path,method="GET",body){
   const response=await fetch("https://api.github.com/repos/"+REPO+path,{
@@ -38,7 +38,7 @@ export default async function handler(req,res){
         const recent=await github("/actions/workflows/"+WORKFLOW+
           "/runs?branch="+encodeURIComponent(REF)+"&event=workflow_dispatch&per_page=30");
         const workflowActive=(recent.workflow_runs||[]).find(run=>
-          /^Classroom complete (initial|incremental(?:_0[1-6])?) \/ previous /.test(run.display_title||"")&&
+          /^Classroom complete (initial|incremental(?:_0[1-9])?) \/ previous /.test(run.display_title||"")&&
           ["queued","in_progress","waiting","pending"].includes(run.status));
         let activeStage=null;
         if(workflowActive){
@@ -52,7 +52,7 @@ export default async function handler(req,res){
         }
         const history=(recent.workflow_runs||[]).filter(run=>
           run.conclusion==="success"&&
-          /^Classroom complete (initial|incremental(?:_0[1-6])?) \/ previous /.test(run.display_title||""))
+          /^Classroom complete (initial|incremental(?:_0[1-9])?) \/ previous /.test(run.display_title||""))
           .slice(0,10).map(run=>({run_id:run.id,
             batch:run.display_title.includes(" complete initial ")?"initial":"incremental",
             created_at:run.created_at}));
@@ -160,9 +160,16 @@ export default async function handler(req,res){
     const title="Classroom complete "+sourceBatch+" / previous "+previous+" / source-v2";
     if((recent.workflow_runs||[]).some(run=>run.display_title===title&&run.status!=="completed"))
       return res.status(409).json({error:"Run นี้ถูกสั่งแล้ว กรุณารอผล"});
+    const sourceUploadId=String(req.body?.source_upload_id||"");
+    if(sourceUploadId&&!/^[0-9a-f-]{36}$/.test(sourceUploadId))
+      return res.status(400).json({error:"รหัส ZIP อัปโหลดไม่ถูกต้อง"});
     await github("/actions/workflows/"+WORKFLOW+"/dispatches","POST",{
-      ref:REF,inputs:{batch:sourceBatch,previous_run_id:previous}});
-    return res.status(202).json({accepted:true,source_batch:sourceBatch,workflow_url:url});
+      ref:REF,inputs:{batch:sourceBatch,previous_run_id:previous,
+        source_upload_id:sourceUploadId}});
+    const nextMonth=sourceBatch==="initial"?1:Number(sourceBatch.slice(-2))+1;
+    return res.status(202).json({accepted:true,source_batch:sourceBatch,
+      source_month:"2026-"+String(nextMonth).padStart(2,"0"),
+      workflow_url:url});
   }catch(error){
     console.error("Complete lab request failed",error?.message);
     return res.status(503).json({error:"ติดต่อ GitHub หรือ Neon ไม่สำเร็จ"});

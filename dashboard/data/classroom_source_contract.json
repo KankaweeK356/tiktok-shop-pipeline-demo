@@ -1,0 +1,221 @@
+{
+  "source_tables": [
+    "Dim_Product_Group",
+    "Dim_SKU",
+    "Dim_Creator",
+    "Dim_Campaign",
+    "Dim_Ad_Campaign",
+    "Dim_Voucher",
+    "Bridge_Campaign_Product_Group",
+    "Bridge_Voucher_Product_Group",
+    "Ref_Affiliate_Commission_Rule",
+    "Ref_Platform_Fee_Estimate_Rule",
+    "Ref_Business_Target",
+    "Ref_Cost_Policy",
+    "Fact_Goods_Receipt",
+    "Fact_Goods_Receipt_Items",
+    "Fact_Orders",
+    "Fact_Order_Items",
+    "Fact_Internal_Fulfillment",
+    "Fact_Marketing_Costs",
+    "Fact_Claim_Header",
+    "Fact_Claim_Details",
+    "Fact_Free_Samples"
+  ],
+  "columns": {
+    "Dim_Product_Group": [
+      "Product_Group_ID",
+      "Product_Group_Name",
+      "Base_Selling_Price",
+      "Cost_Standard_Product",
+      "Status"
+    ],
+    "Dim_SKU": [
+      "SKU_ID",
+      "Product_Group_ID",
+      "SKU_Name",
+      "Color",
+      "Size",
+      "Status"
+    ],
+    "Dim_Creator": [
+      "Creator_ID",
+      "Creator_Name",
+      "Creator_Type",
+      "Status"
+    ],
+    "Dim_Campaign": [
+      "Campaign_ID",
+      "Campaign_Name",
+      "Campaign_Type",
+      "Start_Date",
+      "End_Date"
+    ],
+    "Dim_Ad_Campaign": [
+      "Ad_Campaign_ID",
+      "Ad_Campaign_Name",
+      "Ad_Type",
+      "Start_Date",
+      "End_Date"
+    ],
+    "Dim_Voucher": [
+      "Voucher_ID",
+      "Voucher_Name",
+      "Discount_Rate",
+      "Minimum_Spend_Amount",
+      "Maximum_Discount_Amount",
+      "Is_Active",
+      "Effective_From",
+      "Effective_To"
+    ],
+    "Bridge_Campaign_Product_Group": [
+      "Enrollment_ID",
+      "Campaign_ID",
+      "Product_Group_ID",
+      "Campaign_Selling_Price",
+      "Effective_From",
+      "Effective_To",
+      "Status"
+    ],
+    "Bridge_Voucher_Product_Group": [
+      "Voucher_ID",
+      "Product_Group_ID"
+    ],
+    "Ref_Affiliate_Commission_Rule": [
+      "Affiliate_Rule_ID",
+      "Product_Group_ID",
+      "Affiliate_Commission_Rate",
+      "Effective_From",
+      "Effective_To",
+      "Is_Active"
+    ],
+    "Ref_Platform_Fee_Estimate_Rule": [
+      "Platform_Fee_Rule_ID",
+      "Product_Group_ID",
+      "Total_Platform_Fee_Rate",
+      "Fee_Calculation_Mode",
+      "Platform_Commission_Rate",
+      "Transaction_Fee_Rate",
+      "Commerce_Growth_Fee_Rate",
+      "Infrastructure_Fee_Per_Order",
+      "Effective_From",
+      "Effective_To",
+      "Is_Mock_Assumption"
+    ],
+    "Ref_Business_Target": [
+      "Target_Year_Month",
+      "Revenue_Target",
+      "Minimum_Profit_Protection_Rate"
+    ],
+    "Ref_Cost_Policy": [
+      "Cost_Policy_ID",
+      "Fixed_Fulfillment_Cost_Per_Order",
+      "Claim_Risk_Allowance_Rate",
+      "Planning_Base_Cost_Rate",
+      "Planning_Adjustable_Gap_Rate",
+      "Effective_From",
+      "Effective_To",
+      "Is_Active"
+    ],
+    "Fact_Goods_Receipt": [
+      "Goods_Receipt_ID",
+      "Receipt_Date",
+      "Supplier_ID",
+      "Reference_PO_ID",
+      "Source_System"
+    ],
+    "Fact_Goods_Receipt_Items": [
+      "Goods_Receipt_Item_ID",
+      "Goods_Receipt_ID",
+      "SKU_ID",
+      "Received_Qty",
+      "Unit_Cost",
+      "Total_Cost",
+      "Remaining_Qty",
+      "Lot_No"
+    ],
+    "Fact_Orders": [
+      "Order_ID",
+      "Order_Created_At",
+      "Current_Status",
+      "Voucher_ID",
+      "GMV_Total",
+      "Voucher_Seller_Cost",
+      "Shipping_Fee_Collected",
+      "Shipping_Mode",
+      "Paid_At",
+      "Shipped_At",
+      "Delivered_At",
+      "Cancelled_At"
+    ],
+    "Fact_Order_Items": [
+      "Order_Item_ID",
+      "Source_Order_Item_ID",
+      "Order_ID",
+      "SKU_ID",
+      "Quantity",
+      "Creator_ID",
+      "Campaign_ID",
+      "Base_Unit_Price_At_Sale",
+      "Unit_Selling_Price",
+      "Campaign_Discount_Amount",
+      "Voucher_Allocated_Amount",
+      "Total_Selling_Amount",
+      "Total_COGS",
+      "Fee_Affiliate_Payout",
+      "Created_At"
+    ],
+    "Fact_Internal_Fulfillment": [
+      "Fulfillment_ID",
+      "Order_ID",
+      "Secondary_Packaging_Cost",
+      "Packing_Labor_Cost",
+      "Actual_Shipping_Cost",
+      "Fulfillment_Timestamp"
+    ],
+    "Fact_Marketing_Costs": [
+      "Ad_Record_ID",
+      "Record_Date",
+      "Ad_Campaign_ID",
+      "Product_Group_ID",
+      "Ad_Spend_Amount",
+      "Impressions",
+      "Clicks",
+      "Conversions",
+      "Reported_Ads_GMV",
+      "Reported_Ads_Orders",
+      "Reported_Revenue_Basis"
+    ],
+    "Fact_Claim_Header": [
+      "Claim_ID",
+      "Claim_Date",
+      "Claim_Reason",
+      "Claim_Status"
+    ],
+    "Fact_Claim_Details": [
+      "Claim_Detail_ID",
+      "Claim_ID",
+      "Order_Item_ID",
+      "Claim_Qty",
+      "Replacement_Qty",
+      "Return_Qty",
+      "Disposal_Qty",
+      "Backend_Packing_Cost",
+      "Backend_Shipping_Cost",
+      "Replacement_Product_Cost",
+      "Disposal_Loss_Cost",
+      "Backend_Action_Date"
+    ],
+    "Fact_Free_Samples": [
+      "Sample_ID",
+      "SKU_ID",
+      "Creator_ID",
+      "Sample_Quantity",
+      "Request_Date",
+      "Dispatched_Date",
+      "Sample_Shipping_Cost",
+      "Sample_COGS"
+    ]
+  },
+  "er1_tables": 25
+}

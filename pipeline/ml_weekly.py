@@ -27,6 +27,7 @@ TEST_WEEKS = 4
 VALIDATION_WEEKS = 3
 VALIDATION_FOLD_COUNT = 2
 MIN_TRAIN_WEEKS = 6
+MINIMUM_COMPLETE_WEEKS = TEST_WEEKS + VALIDATION_WEEKS * VALIDATION_FOLD_COUNT + MIN_TRAIN_WEEKS
 MODELS = ("Last Week Naive", "LightGBM History", "LightGBM Marketing")
 HISTORY_FEATURES = (
     "product_group_code", "week_of_year", "week_month",
@@ -52,7 +53,7 @@ def _d(v):
 def weekly_windows(dataset: pd.DataFrame) -> tuple[list[tuple[str, str, str, str]], str, str, str]:
     """Use only complete observed weeks; keep validation before untouched test."""
     weeks = sorted(dataset.forecast_week_start.unique())
-    needed = TEST_WEEKS + VALIDATION_WEEKS * VALIDATION_FOLD_COUNT + MIN_TRAIN_WEEKS
+    needed = MINIMUM_COMPLETE_WEEKS
     if len(weeks) < needed:
         raise ValueError(
             f"Need at least {needed} complete weeks for weekly Train/Validation/Test; "
@@ -448,6 +449,28 @@ def run_weekly(warehouse: str | Path, plans: str | Path, output: str | Path):
     dataset = build_weekly_dataset(daily, plan_df, last_week=last_week.isoformat(),
                                    skip_incomplete_weeks=True)
     return train_evaluate_weekly(dataset, output)
+
+
+def weekly_readiness(warehouse: str | Path, plans: str | Path) -> dict:
+    """Count the same complete weekly feature rows required by the trainer."""
+    try:
+        daily = read_warehouse_daily(warehouse)
+        plan_df = pd.read_csv(plans, dtype={"product_group_id": str, "scenario_id": str})
+        if daily.empty or plan_df.empty:
+            weeks = []
+        else:
+            latest = min(pd.Timestamp(daily.event_date.max()).date(),
+                         pd.to_datetime(plan_df.plan_date).dt.date.max())
+            last_sunday = latest - timedelta(days=(latest.weekday() + 1) % 7)
+            last_week = last_sunday - timedelta(days=6)
+            data = build_weekly_dataset(daily, plan_df, last_week=last_week.isoformat(),
+                                        skip_incomplete_weeks=True)
+            weeks = sorted(data.forecast_week_start.unique())
+    except (ValueError, KeyError, FileNotFoundError):
+        weeks = []
+    return {"complete_weeks": len(weeks), "minimum_weeks": MINIMUM_COMPLETE_WEEKS,
+            "latest_complete_week": weeks[-1] if weeks else None,
+            "ready": len(weeks) >= MINIMUM_COMPLETE_WEEKS}
 
 
 def main():

@@ -7,10 +7,14 @@ on:
         description: Next deterministic Source delivery
         required: true
         type: choice
-        options: [initial, incremental_01, incremental_02, incremental_03, incremental_04, incremental_05, incremental_06]
+        options: [initial, incremental_01, incremental_02, incremental_03, incremental_04, incremental_05, incremental_06, incremental_07, incremental_08, incremental_09]
       previous_run_id:
         description: Latest successful run ID, 0 only for initial
         required: true
+        type: string
+      source_upload_id:
+        description: Optional one-time uploaded monthly Source package
+        required: false
         type: string
 
 run-name: "Classroom complete ${{ inputs.batch }} / previous ${{ inputs.previous_run_id }} / source-v2"
@@ -50,6 +54,12 @@ jobs:
         run: python -m pip install -r requirements-neon.txt
       - name: Prepare deterministic Source CSV deliveries
         run: python -m pipeline.generate_classroom_source --output output/classroom_source
+      - name: Apply uploaded monthly Source package
+        if: ${{ inputs.source_upload_id != '' }}
+        env:
+          SOURCE_UPLOAD_ID: ${{ inputs.source_upload_id }}
+          SOURCE_BATCH: ${{ inputs.batch }}
+        run: python -m pipeline.classroom_source_upload --upload-id "$SOURCE_UPLOAD_ID" --batch "$SOURCE_BATCH"
       - name: "1 Source to Database"
         env:
           BATCH: ${{ inputs.batch }}

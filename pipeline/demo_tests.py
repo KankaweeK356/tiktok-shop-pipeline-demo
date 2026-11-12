@@ -22,7 +22,7 @@ def signature(ws):
       'ads':conn.execute('SELECT COUNT(*) FROM Fact_Ads_Daily').fetchone()[0]}
     conn.close();return result
 
-def error_suite(test_root:Path|None=None,cases:list[str]|None=None):
+def error_suite(test_root:Path|None=None,cases:list[str]|None=None,stop_after_detection:bool=False):
     root=Path(test_root or ROOT/'output'/'test')
     root.mkdir(exist_ok=True,parents=True)
     selected=set(cases or [x[0] for x in CASES])
@@ -68,6 +68,14 @@ def error_suite(test_root:Path|None=None,cases:list[str]|None=None):
         state=json.loads(statefile.read_text(encoding='utf-8')) if statefile.exists() else {'completed':[]}
         stages=['ingest','extract','transform','load','validate']
         retry_from=next((s for s in stages if s not in state['completed']),None)
+        if stop_after_detection:
+            detected_ok=failed_stage==expected_stage
+            rows.append({'case':case,'stage':expected_stage,'injected_error':label,
+              'expected':'Detect the prepared issue; wait for explicit recovery action',
+              'detected':detected or 'NOT_DETECTED','retry_from':retry_from,
+              'passed':detected_ok,'before':'FAILED' if failed_stage else 'NOT_FAILED',
+              'after':'WAITING_FOR_RECOVERY'})
+            continue
         passed=False
         if failed_stage==expected_stage:
             try:

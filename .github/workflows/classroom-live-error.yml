@@ -1,9 +1,24 @@
-name: Classroom Live Lab - Real Error Recovery
+name: Classroom Live Lab - Error Detection and Recovery
 
 on:
   workflow_dispatch:
+    inputs:
+      case:
+        description: Error Lab scenario
+        required: true
+        type: choice
+        options: [N01, E01, E02, T01, T02, L01]
+      phase:
+        description: Detection or explicit recovery
+        required: true
+        type: choice
+        options: [fail, fix]
+      previous_run_id:
+        description: Detection run ID for recovery phase
+        required: true
+        type: string
 
-run-name: Classroom real error recovery
+run-name: Classroom Error ${{ inputs.case }} / ${{ inputs.phase }} / previous ${{ inputs.previous_run_id }}
 
 permissions:
   contents: read
@@ -14,7 +29,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  test-errors:
+  test-error:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -27,9 +42,9 @@ jobs:
         run: python -m pipeline.oidc_lab_auth
       - name: Install pipeline dependencies
         run: python -m pip install -r requirements-neon.txt
-      - name: Run isolated failure fix retry and Neon rollback check
-        run: python -m pipeline.ci_lab_error
-      - name: Publish test evidence
+      - name: Run selected Error Lab phase
+        run: python -m pipeline.ci_lab_error --case "${{ inputs.case }}" --phase "${{ inputs.phase }}"
+      - name: Publish Error Lab evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:

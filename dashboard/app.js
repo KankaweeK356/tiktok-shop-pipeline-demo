@@ -1213,16 +1213,30 @@
       current.url=data.url||current.url;
       if(data.run_id)current.runId=data.run_id;
       if(data.evidence){
-        if(current.phase==="fail")current.failEvidence=data.evidence;
-        else {
-          current.fixEvidence=data.evidence;
-          if(state.errorCase==="N01"){
-            fetch("/api/lab-error?table=1",{cache:"no-store"})
-              .then(response=>response.json())
-              .then(value=>{current.neonRows=value.rows||[];renderPipeline();})
-              .catch(()=>{});
-          }
-        }
+        if(data.evidence.mode==="REAL_ISOLATED_ERROR_TEST"){
+          const report=data.evidence;
+          const selectedCase=(report.cases||[]).find(item=>item.case===state.errorCase);
+          const neonCase=state.errorCase==="N01"?report.neon_case:null;
+          const passed=Boolean(neonCase?.passed??selectedCase?.passed);
+          const stage=neonCase?.stage||selectedCase?.stage||"Database";
+          const errorCode=neonCase?"FOREIGN_KEY_VIOLATION":
+            selectedCase?.detected||"ERROR_CASE_NOT_FOUND";
+          const title=neonCase?"Neon ปฏิเสธ SKU ที่อ้างถึงกลุ่มสินค้าที่ไม่มีอยู่":
+            selectedCase?.injected_error||"ไม่พบผลของกรณีที่เลือกในรายงาน";
+          current.failEvidence={stage,title,fix:neonCase?
+            "ระบบตรวจพบความสัมพันธ์ที่ผิดด้วย Foreign Key แล้วทดลองใช้ SKU ที่อ้างถึงกลุ่มสินค้าที่มีอยู่จริง โดยการทดลองทั้งหมดถูกย้อนกลับ ไม่ทิ้งแถวทดสอบใน Neon":
+            "ระบบจำลองข้อมูลผิดในพื้นที่ทดสอบ ตรวจพบปัญหา แล้วลองรันซ้ำจากขั้นที่ล้มเหลว",
+            detail:{error_message:neonCase?
+              "Product_Group_ID ที่อ้างถึงไม่มีอยู่ใน Dim_Product_Group; Neon ปฏิเสธการบันทึกตาม Foreign Key":
+              selectedCase?.detected||"ไม่พบรายละเอียดสาเหตุในผลทดสอบ",
+              error_code:errorCode,source_rows:[],source_file:null}};
+          current.fixEvidence={detail:{retry_status:passed?"ผ่าน":"ไม่ผ่าน",
+            before:neonCase?{ผลตรวจ:"Neon ปฏิเสธกลุ่มสินค้าที่ไม่มีจริง"}:
+              {ผลทดสอบ:selectedCase?.before||"พบข้อมูลผิดตามกรณีทดสอบ"},
+            after:neonCase?{ผลตรวจ:"ทดลองซ้ำด้วยกลุ่มสินค้าที่มีอยู่ และย้อนการเปลี่ยนแปลงทั้งหมดแล้ว"}:
+              {ผลทดสอบ:selectedCase?.after||"รันซ้ำไม่ผ่าน"},result_rows:[]}};
+        }else if(current.phase==="fail")current.failEvidence=data.evidence;
+        else current.fixEvidence=data.evidence;
       }
       if(current.status==="failure")current.error="การทดสอบไม่ผ่าน · เปิด Log เพื่อตรวจสาเหตุ";
       renderPipeline();
@@ -1365,17 +1379,20 @@
       if(state.errorRun.error)root.append(notice(state.errorRun.error,true));
       if(state.errorRun.failEvidence){
         const found=state.errorRun.failEvidence;
-        root.append(node("h3","lab-subheading","1 · ระบบพบปัญหาที่ขั้น "+found.stage));
-        root.append(notice("สาเหตุ: "+found.title+" · "+(found.detail.error_message||found.detail.error_code),true));
-        if(found.detail.source_rows?.length){
-          const rows=found.detail.source_rows;
+        const detail=found.detail||{};
+        root.append(node("h3","lab-subheading","1 · ระบบพบปัญหาที่ขั้น "+(found.stage||"กำลังตรวจสอบ")));
+        root.append(notice("สาเหตุ: "+(found.title||"ไม่พบชื่อกรณีทดสอบ")+" · "+
+          (detail.error_message||detail.error_code||"ไม่มีรายละเอียดเพิ่มเติม"),true));
+        if(detail.source_rows?.length){
+          const rows=detail.source_rows;
           root.append(small("ข้อมูลที่ทำให้เกิด Error"));
           root.append(dataTable(Object.keys(rows[0]).map(key=>[key,key]),rows));
         }
-        if(found.detail.source_file)root.append(small("Source: "+found.detail.source_file));
-        root.append(small("ผลต่อการรัน: ขั้นนี้ไม่ผ่าน ข้อมูลชุดนี้จึงยังไม่ถือว่าผ่าน Pipeline · รหัสอ้างอิง: "+found.detail.error_code));
+        if(detail.source_file)root.append(small("Source: "+detail.source_file));
+        root.append(small("ผลต่อการรัน: "+(detail.error_code||"ดูรายละเอียดจากผลทดสอบ")+
+          " · การทดสอบนี้แยกจากข้อมูล Run 1/2"));
         root.append(node("h3","lab-subheading","2 · แนวทางแก้"));
-        root.append(small(found.fix));
+        root.append(small(found.fix||"ตรวจข้อมูลตามสาเหตุ แล้วรันการทดสอบเดิมอีกครั้ง"));
         if(!state.errorRun.fixEvidence){
           const fix=node("button","button button-primary",
             busy?"กำลังแก้ตามแนวทางและตรวจต่อ…":"ให้ระบบแก้ตามแนวทาง แล้วรันต่อ");

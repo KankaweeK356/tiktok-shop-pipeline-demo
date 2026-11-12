@@ -1,23 +1,24 @@
 # TikTok Shop Fashion Intelligence — Classroom Demo
 
-> **Flow ปัจจุบันของ Classroom Demo คือ Source รายเดือนมกราคม–ตุลาคม 2569**: Run 1 เริ่มที่มกราคม และปุ่มเติมเพิ่มเดือนถัดไปครั้งละหนึ่งเดือน. ไม่ได้กำหนด Run 1 = 800 ออเดอร์ แล้ว Run 2 = เพิ่ม 100 ออเดอร์
+เว็บสาธิตการนำข้อมูลร้านเสื้อผ้าจำลองผ่าน Source → Database → Data Lake → Data Warehouse แล้วใช้ตรวจ KPI ธุรกิจและทดลอง ML ข้อมูลทั้งหมดสร้างเพื่อการศึกษา ไม่ได้ดึงจาก TikTok Shop API
 
-**[เปิด Colab Pipeline ปัจจุบัน](https://colab.research.google.com/github/KankaweeK356/tiktok-shop-pipeline-demo/blob/feature/classroom-demo-evidence-foundation/notebooks/TikTok_Shop_Step_by_Step_Demo.ipynb)** · [เปิดเว็บ Demo](https://tiktok-shop-mlops-dashboard-git-feature-classroom-dea39b-newja.vercel.app/) · [ดูโค้ด Flow รายเดือน](https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/tree/feature/classroom-demo-evidence-foundation)
+**[เปิด Colab Pipeline](https://colab.research.google.com/github/KankaweeK356/tiktok-shop-pipeline-demo/blob/feature/classroom-demo-evidence-foundation/notebooks/TikTok_Shop_Step_by_Step_Demo.ipynb)** · **[เปิดเว็บ Demo](https://tiktok-shop-mlops-dashboard-git-feature-classroom-dea39b-newja.vercel.app/)** · **[ดาวน์โหลด Source รายเดือน 10 ชุด](https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/releases/tag/classroom-source-v1)**
 
-## อ่านผลใน Colab
+## เริ่มรัน
 
-หลังรันแต่ละเดือน Notebook แสดง Database → Data Lake → Warehouse พร้อมตาราง/ไฟล์ จำนวนแถว และตัวอย่างข้อมูลจริงที่เลือกดูได้. Colab ใช้ SQLite, Parquet และ DuckDB ใน Runtime ของผู้รัน ไม่เชื่อม Neon Lab และไม่เปลี่ยนข้อมูลบนเว็บ
+ใน Colab เลือก **Runtime → Run all** เพื่อเตรียม Source และเครื่องมือ จากนั้นกด **เริ่มรอบใหม่และรัน Run 1 · มกราคม**. หากต้องการรันต่อ กด **เติมข้อมูลเดือนถัดไป** เพื่อเพิ่มอีกหนึ่งเดือน ตั้งแต่มกราคมถึงตุลาคม 2569
 
-## ทำไมยังเห็นตัวเลข 800/100 ใน GitHub?
+หลังรัน Notebook แสดงผล Database → Data Lake → Warehouse พร้อมตาราง/ไฟล์ จำนวนแถว และตัวอย่างข้อมูลจริงที่เลือกดูได้. จำนวนออเดอร์ที่เพิ่มมาจาก Source เดือนนั้นและแสดงตามผลรัน
 
-ไฟล์ `source/initial` และ `source/incremental` เป็น fixture รุ่นเดิม: ตุลาคม 800 ออเดอร์ และพฤศจิกายนเพิ่ม 100 ออเดอร์. เป็นชุดเก่าที่ใช้กับการสาธิต October→November ไม่ใช่จำนวนของ Run 1/Run 2 ปัจจุบัน. ดาวน์โหลด [Source ZIP 10 เดือนจาก GitHub Releases](https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/releases/tag/classroom-source-v1) หรือโหลดจากหน้า Test Pipeline. Flow รายเดือนสร้างจาก [Source generator](https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/blob/feature/classroom-demo-evidence-foundation/pipeline/generate_classroom_source.py); จำนวนของแต่ละเดือนดูจาก manifest และผลรันจริง ไม่ได้ล็อกไว้ที่ 800/100
+Colab ใช้ SQLite, Parquet และ DuckDB ใน Runtime ของผู้รัน ไม่เชื่อม Neon Lab และไม่เปลี่ยนข้อมูลบนเว็บ
 
-## โครงสร้างและเอกสาร
+## Source และโครงสร้าง
 
-- [Source fixtures และคำอธิบายการแยกชุดเก่า/ปัจจุบัน](source/README.md)
+Source ทั้ง 10 เดือนมี CSV 21 ตารางต่อชุด ตามโครงสร้างและคอลัมน์ ER1 เดียวกัน. ER1 มี 25 ตาราง โดย 4 ตารางสร้างจากการประมวลผลของ Pipeline. ดู [Source ZIP](https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/releases/tag/classroom-source-v1), [ตัวสร้าง Source](https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/blob/feature/classroom-demo-evidence-foundation/pipeline/generate_classroom_source.py) และ [Schema ER1/ER2](schemas/)
+
+## เอกสาร
+
 - [คู่มือเริ่มต้น](docs/QUICK_START_TH.md)
-- [Schema ER1/ER2](schemas/)
+- [ข้อมูล Source](source/README.md)
 - [Pipeline Notebook](notebooks/TikTok_Shop_Step_by_Step_Demo.ipynb)
-- [เอกสารและ Workflow รุ่นรายเดือน](https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/tree/feature/classroom-demo-evidence-foundation)
-
-**สถานะ GitHub:** โค้ดเว็บ/Source รายเดือนฉบับเต็มอยู่ในสาขา `feature/classroom-demo-evidence-foundation` และ PR #7 ยังเป็น Draft; `main` ยังมีโค้ดเก่าบางส่วน. Notebook ที่ลิงก์ด้านบนใช้ Code จากสาขาปัจจุบันจนกว่าจะรวมสาขา.
+- [รายละเอียด Flow รายเดือน](https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/tree/feature/classroom-demo-evidence-foundation)

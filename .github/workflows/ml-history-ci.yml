@@ -1,6 +1,20 @@
 name: ML Historical Mock - Full Data Pipeline
 
 on:
+  push:
+    branches:
+      - feature/classroom-demo-evidence-foundation
+    paths:
+      - 'pipeline/generate_ml_history.py'
+      - 'pipeline/ci_ml_history.py'
+      - 'pipeline/generate_classroom_source.py'
+      - 'pipeline/ci_classroom_source.py'
+      - 'pipeline/ml_weekly.py'
+      - 'pipeline/ml_weekly_serve.py'
+      - 'pipeline/ml_scenarios.py'
+      - 'notebooks/TikTok_Shop_Step_by_Step_Demo.ipynb'
+      - 'notebooks/TikTok_Shop_ML_Study.ipynb'
+      - '.github/workflows/ml-history-ci.yml'
   pull_request:
     paths:
       - 'pipeline/generate_ml_history.py'

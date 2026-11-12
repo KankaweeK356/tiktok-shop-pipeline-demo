@@ -137,7 +137,7 @@ def build(target: Path, seed: int = 8102) -> dict:
     # ML planning rows stay separate from ER1, but span the exact warehouse history.
     plan_path = target / "ml_marketing_plan.csv"
     plans = pd.read_csv(plan_path)
-            plans = plans[plans.plan_date.astype(str).str[:7].between("2026-01", "2026-07")]
+    plans = plans[plans.plan_date.astype(str).str[:7].between("2026-01", "2026-07")]
     plans.to_csv(plan_path, index=False, encoding="utf-8-sig")
     (target / "source_manifest.json").write_text(json.dumps({
         "seed": seed,

@@ -25,8 +25,8 @@ def apply(upload_id: str, batch: str, source_root: Path, workspace: Path):
     if batch not in BATCHES:raise ValueError("Unknown monthly Source batch")
     batch_index=BATCHES.index(batch)
     expected_month=BATCH_MONTHS[batch_index].strftime("%Y-%m")
-    archive=workspace/"source_upload.zip"
-    pending=workspace/".source_upload.pending.zip"
+    archive=workspace/f"source_upload_{expected_month}.zip"
+    pending=workspace/f".source_upload_{expected_month}.pending.zip"
     archive.parent.mkdir(parents=True,exist_ok=True)
     # Keep the verified copy in the preserved Lab artifact so a retry does not
     # need the one-time upload token or an upload that was already consumed.

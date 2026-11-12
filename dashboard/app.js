@@ -11,6 +11,10 @@
   state.sharedRun={running:false,type:null,stage:null};
   state.errorRun={status:"",since:"",url:"",runId:null,phase:"",previous:"0",
     failEvidence:null,fixEvidence:null,error:"",neonRows:null};
+  function saveErrorRun(){
+    try{sessionStorage.setItem("classroom_error_run",JSON.stringify({
+      case:state.errorCase,run:state.errorRun}));}catch(_error){}
+  }
   const names = {
     business:["ภาพรวมธุรกิจ","ยอดขายเทียบเป้า กำไร และจุดที่ควรตัดสินใจจาก Warehouse ปัจจุบัน","ภาพรวมธุรกิจ"],
     pipeline:["Test Pipeline","จาก Source ผ่าน Database และ Data Lake สู่ Warehouse","Test Pipeline"],
@@ -1167,17 +1171,10 @@
     state.historyBusy=false;renderPipeline();
   }
   async function resetErrorLab(nextCase=state.errorCase){
-    state.errorRun.status="submitting";renderPipeline();
-    try{
-      const response=await fetch("/api/lab-error",{method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({phase:"reset"})});
-      const data=await response.json();
-      if(!response.ok||!data.ready)throw Error(data.error||"เตรียม Error Lab ใหม่ไม่ได้");
-      state.errorCase=nextCase;
-      state.errorRun={status:"",since:"",url:"",runId:null,phase:"",
-        previous:"0",failEvidence:null,fixEvidence:null,error:"",neonRows:null};
-    }catch(error){state.errorRun.status="failure";state.errorRun.error=error.message;}
+    state.errorCase=nextCase;
+    state.errorRun={status:"",since:"",url:"",runId:null,phase:"",
+      previous:"0",failEvidence:null,fixEvidence:null,error:"",neonRows:null};
+    try{sessionStorage.removeItem("classroom_error_run");}catch(_error){}
     renderPipeline();
   }
   async function startErrorRun(phase="fail"){
@@ -1212,31 +1209,16 @@
         (data.conclusion==="success"?"success":"failure"):data.status;
       current.url=data.url||current.url;
       if(data.run_id)current.runId=data.run_id;
-      if(data.evidence){
-        if(data.evidence.mode==="REAL_ISOLATED_ERROR_TEST"){
-          const report=data.evidence;
-          const selectedCase=(report.cases||[]).find(item=>item.case===state.errorCase);
-          const neonCase=state.errorCase==="N01"?report.neon_case:null;
-          const passed=Boolean(neonCase?.passed??selectedCase?.passed);
-          const stage=neonCase?.stage||selectedCase?.stage||"Database";
-          const errorCode=neonCase?"FOREIGN_KEY_VIOLATION":
-            selectedCase?.detected||"ERROR_CASE_NOT_FOUND";
-          const title=neonCase?"Neon ปฏิเสธ SKU ที่อ้างถึงกลุ่มสินค้าที่ไม่มีอยู่":
-            selectedCase?.injected_error||"ไม่พบผลของกรณีที่เลือกในรายงาน";
-          current.failEvidence={stage,title,fix:neonCase?
-            "ระบบตรวจพบความสัมพันธ์ที่ผิดด้วย Foreign Key แล้วทดลองใช้ SKU ที่อ้างถึงกลุ่มสินค้าที่มีอยู่จริง โดยการทดลองทั้งหมดถูกย้อนกลับ ไม่ทิ้งแถวทดสอบใน Neon":
-            "ระบบจำลองข้อมูลผิดในพื้นที่ทดสอบ ตรวจพบปัญหา แล้วลองรันซ้ำจากขั้นที่ล้มเหลว",
-            detail:{error_message:neonCase?
-              "Product_Group_ID ที่อ้างถึงไม่มีอยู่ใน Dim_Product_Group; Neon ปฏิเสธการบันทึกตาม Foreign Key":
-              selectedCase?.detected||"ไม่พบรายละเอียดสาเหตุในผลทดสอบ",
-              error_code:errorCode,source_rows:[],source_file:null}};
-          current.fixEvidence={detail:{retry_status:passed?"ผ่าน":"ไม่ผ่าน",
-            before:neonCase?{ผลตรวจ:"Neon ปฏิเสธกลุ่มสินค้าที่ไม่มีจริง"}:
-              {ผลทดสอบ:selectedCase?.before||"พบข้อมูลผิดตามกรณีทดสอบ"},
-            after:neonCase?{ผลตรวจ:"ทดลองซ้ำด้วยกลุ่มสินค้าที่มีอยู่ และย้อนการเปลี่ยนแปลงทั้งหมดแล้ว"}:
-              {ผลทดสอบ:selectedCase?.after||"รันซ้ำไม่ผ่าน"},result_rows:[]}};
-        }else if(current.phase==="fail")current.failEvidence=data.evidence;
-        else current.fixEvidence=data.evidence;
+      if(data.evidence?.phase==="fail"){
+        const found=data.evidence.detected||{};
+        current.failEvidence={stage:found.stage,title:found.title,fix:found.fix,
+          detail:{error_message:found.error_message,error_code:found.error_code,
+            source_rows:found.source_rows||[],source_file:found.source_file||null}};
+        current.fixEvidence=null;
+        saveErrorRun();
+      }else if(data.evidence?.phase==="fix"){
+        current.fixEvidence={detail:data.evidence.recovery||{}};
+        saveErrorRun();
       }
       if(current.status==="failure")current.error="การทดสอบไม่ผ่าน · เปิด Log เพื่อตรวจสาเหตุ";
       renderPipeline();
@@ -1407,7 +1389,9 @@
         if(fixed.before&&fixed.after){
           root.append(small("ก่อนแก้"));
           root.append(dataTable(Object.keys(fixed.before).map(key=>[key,key]),[fixed.before]));
-          root.append(small("หลังแก้ และบันทึกสำเร็จ"));
+          root.append(small(state.errorCase==="N01"?
+          "หลังแก้ · ตรวจผ่านแล้ว และย้อนข้อมูลทดสอบออกจาก Neon เรียบร้อย":
+          "หลังแก้ · รันซ้ำจากขั้นที่พบปัญหาแล้ว"));
         }
         if(fixed.result_rows?.length)
           root.append(dataTable(Object.keys(fixed.result_rows[0]).slice(0,8)
@@ -1910,7 +1894,11 @@
     document.querySelectorAll("[data-view]").forEach(btn=>btn.addEventListener("click",()=>setView(btn.dataset.view)));
     try{const upload=JSON.parse(sessionStorage.getItem("classroom_source_upload")||"null");
       if(upload?.id&&upload?.month){state.sourceUploadId=upload.id;state.sourceUploadMonth=upload.month;state.sourceUploadName=upload.name||"";}
-    }catch(_error){sessionStorage.removeItem("classroom_source_upload");}
+      const errorState=JSON.parse(sessionStorage.getItem("classroom_error_run")||"null");
+      if(errorState?.case&&errorState?.run){state.errorCase=errorState.case;
+        state.errorRun={...state.errorRun,...errorState.run};}
+    }catch(_error){sessionStorage.removeItem("classroom_source_upload");
+      sessionStorage.removeItem("classroom_error_run");}
     window.setInterval(()=>{
       if(state.view==="pipeline")loadRealCapabilities();
     },10000);

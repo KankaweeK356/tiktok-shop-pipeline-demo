@@ -12,6 +12,8 @@ from .orchestrator import STAGES
 from .generate_classroom_source import BATCHES
 from .ml_weekly import weekly_readiness
 
+ROOT = Path(__file__).resolve().parents[1]
+
 
 def run_stage_and_save(batch: str, stage: str) -> dict:
     if batch not in BATCHES:

@@ -28,8 +28,8 @@ def apply(upload_id: str, batch: str, source_root: Path, workspace: Path):
     archive=workspace/f"source_upload_{expected_month}.zip"
     pending=workspace/f".source_upload_{expected_month}.pending.zip"
     archive.parent.mkdir(parents=True,exist_ok=True)
-    # Keep the verified copy in the preserved Lab artifact so a retry does not
-    # need the one-time upload token or an upload that was already consumed.
+    # Keep verified uploads by month in the preserved Lab artifact so a retry
+    # can reuse its own package without confusing it with a later month's ZIP.
     if archive.is_file():
         candidate=archive
     else:

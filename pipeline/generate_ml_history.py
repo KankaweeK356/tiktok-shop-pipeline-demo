@@ -81,7 +81,7 @@ def generate_ml_history(
     start = date.fromisoformat(start) if isinstance(start, str) else start
     end = date.fromisoformat(end) if isinstance(end, str) else end
     if start < date(2025, 1, 1) or end >= OCTOBER_START or start > end:
-        raise ValueError("ML history must be between 2025-01-01 and 2026-09-30")
+        raise ValueError("ML history must be between 2025-01-01 and 2026-10-31")
     if start.day != 1 or end.day != calendar.monthrange(end.year, end.month)[1]:
         raise ValueError("ML history range must cover whole calendar months")
     if base_orders_per_group_day < 0 or base_orders_per_group_day > 15:

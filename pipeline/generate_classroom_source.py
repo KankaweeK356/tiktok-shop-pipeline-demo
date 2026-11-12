@@ -16,8 +16,13 @@ from pathlib import Path
 import pandas as pd
 
 from .generate_ml_history import SCENARIO_ID, generate_ml_history
-from .schema import ROOT
+from .er1 import SOURCE_ORDER
+from .schema import ROOT, parse_dbml
 
+BATCH_MONTHS = [date(2026, month, 1) for month in range(1, 8)]
+INITIAL_HISTORY_START = date(2025, 2, 1)
+INITIAL_HISTORY_END = date(2026, 1, 31)
+SOURCE_DATA_END = date(2026, 7, 31)
 BATCHES = ("initial",) + tuple(f"incremental_{i:02d}" for i in range(1, 7))
 
 
@@ -46,132 +51,107 @@ def build(target: Path, seed: int = 8102) -> dict:
     if target.exists():
         shutil.rmtree(target)
     target.mkdir(parents=True)
-    history = generate_ml_history(target, seed=seed)
-    source = ROOT / "source" / "incremental"
-    shutil.move(str(target / "incremental"), str(target / "incremental_01"))
-    # Keep original November records and corrections, but extend the mock ad
-    # campaign validity to cover later deliveries in the same ER1 structure.
-    campaigns = _read(target / "initial" / "Dim_Ad_Campaign.csv")
-    campaigns["End_Date"] = "2027-04-30"
-    campaigns.to_csv(target / "incremental_01" / "Dim_Ad_Campaign.csv",
-                     index=False, encoding="utf-8-sig")
+    # Run 1 contains the trailing 12 months needed for a meaningful weekly ML
+    # train/validation/test split, including January 2026. Later deliveries add
+    # exactly one new month each, beginning February 2026.
+    history = generate_ml_history(target, seed=seed,
+                                  start=INITIAL_HISTORY_START,
+                                  end=SOURCE_DATA_END)
+    initial = target / "initial"
+    tables, _ = parse_dbml(ROOT / "schemas" / "ER1_V3.dbml")
+    columns = {table.name: [column.name for column in table.columns] for table in tables}
+    derived = {"Fact_FIFO_Allocation", "Fact_Order_Platform_Fees",
+               "Fact_Stock_Movement", "Fact_Inventory_Snapshot"}
+    source_frames = {}
+    for table in SOURCE_ORDER:
+        path = initial / (table + ".csv")
+        source_frames[table] = (_read(path) if path.is_file()
+                                else pd.DataFrame(columns=columns[table]))
 
-    templates = {name: _read(source / f"{name}.csv") for name in
-                 ("Fact_Orders", "Fact_Order_Items", "Fact_Internal_Fulfillment")}
-    nov_orders = templates["Fact_Orders"]
-    nov_orders = nov_orders[nov_orders["Order_ID"].str.startswith("NOV")]
-    all_orders = list(nov_orders["Order_ID"])
-    results = []
-    for index in range(2, 7):
-        year = 2026 if index == 2 else 2027
-        month = 12 if index == 2 else index - 2
-        folder = target / f"incremental_{index:02d}"
-        rng = random.Random(f"{seed}:{year}-{month:02d}")
-        last_day = calendar.monthrange(year, month)[1]
-        mapping = {oid: f"M{year}{month:02d}-{position:04d}"
-                   for position, oid in enumerate(all_orders, 1)}
-        days = {oid: 1 + rng.randrange(last_day) for oid in all_orders}
-        orders = []
-        for record in nov_orders.to_dict("records"):
-            oid = record["Order_ID"]
-            item = dict(record, Order_ID=mapping[oid], Voucher_ID="")
-            for field in ("Order_Created_At", "Paid_At", "Shipped_At",
-                          "Delivered_At", "Cancelled_At"):
-                item[field] = _shift(item[field], days[oid], year, month)
-            item["GMV_Total"] = item["Voucher_Seller_Cost"] = ""
-            orders.append(item)
-        _write(folder, "Fact_Orders", orders, list(nov_orders.columns))
-
-        items = []
-        for record in templates["Fact_Order_Items"].to_dict("records"):
-            oid = record["Order_ID"]
-            if oid not in mapping:
-                continue
-            old_item = record["Order_Item_ID"]
-            new_item = mapping[oid] + old_item[len(oid):]
-            item = dict(record, Order_ID=mapping[oid], Order_Item_ID=new_item,
-                        Source_Order_Item_ID=new_item, Campaign_ID="",
-                        Created_At=_shift(record["Created_At"], days[oid], year, month))
-            for field in ("Base_Unit_Price_At_Sale", "Unit_Selling_Price",
-                          "Campaign_Discount_Amount", "Total_Selling_Amount",
-                          "Total_COGS", "Fee_Affiliate_Payout"):
-                item[field] = ""
-            item["Voucher_Allocated_Amount"] = "0"
-            items.append(item)
-        _write(folder, "Fact_Order_Items", items,
-               list(templates["Fact_Order_Items"].columns))
-
-        fulfillment = []
-        for record in templates["Fact_Internal_Fulfillment"].to_dict("records"):
-            oid = record["Order_ID"]
-            if oid not in mapping:
-                continue
-            item = dict(record, Order_ID=mapping[oid],
-                        Fulfillment_ID="FUL-" + mapping[oid],
-                        Fulfillment_Timestamp=_shift(record["Fulfillment_Timestamp"],
-                                                     days[oid], year, month))
-            fulfillment.append(item)
-        _write(folder, "Fact_Internal_Fulfillment", fulfillment,
-               list(templates["Fact_Internal_Fulfillment"].columns))
-
-        ad_columns = list(_read(source / "Fact_Marketing_Costs.csv").columns)
-        ads = []
-        for day in range(1, last_day + 1):
-            for group in range(1, 6):
-                spend = rng.choice((8, 12, 18, 25, 32, 45))
-                ads.append({"Ad_Record_ID": f"AD-{year}{month:02d}{day:02d}-PG{group:02d}",
-                            "Record_Date": f"{year}-{month:02d}-{day:02d}",
-                            "Ad_Campaign_ID": f"AD{1 + group % 3}",
-                            "Product_Group_ID": f"PG{group:02d}",
-                            "Ad_Spend_Amount": spend,
-                            "Impressions": spend * rng.randint(16, 30),
-                            "Clicks": rng.randint(3, 24),
-                            "Conversions": rng.randint(0, 5),
-                            "Reported_Ads_GMV": "", "Reported_Ads_Orders": "",
-                            "Reported_Revenue_Basis": ""})
-        _write(folder, "Fact_Marketing_Costs", ads, ad_columns)
-        sample_columns = list(_read(source / "Fact_Free_Samples.csv").columns)
-        _write(folder, "Fact_Free_Samples", [], sample_columns)
-        target_columns = list(_read(target / "initial" / "Ref_Business_Target.csv").columns)
-        _write(folder, "Ref_Business_Target", [{"Target_Year_Month": f"{year}-{month:02d}",
-               "Revenue_Target": 120000, "Minimum_Profit_Protection_Rate": 0.10}], target_columns)
-        results.append({"batch": folder.name, "month": f"{year}-{month:02d}",
-                        "orders": len(orders), "ads_rows": len(ads)})
-    # Plans are separate synthetic Source inputs, dated before the sales week.
-    # Extend them alongside the later ER1 deliveries so retraining can use
-    # complete weeks after November rather than a fixed 2026 holdout.
-    plans_path = target / "ml_marketing_plan.csv"
-    plans = pd.read_csv(plans_path)
-    extra_plans = []
-    day = date(2026, 12, 1)
-    while day <= date(2027, 4, 30):
-        for group in range(1, 6):
-            group_id = f"PG{group:02d}"
-            rng = random.Random(f"{seed}:plan:{day}:{group_id}")
-            budget = rng.choice((0, 8, 18, 32, 45, 60))
-            if day.weekday() >= 5:
-                budget += 5
-            extra_plans.append({
-                "scenario_id": SCENARIO_ID, "product_group_id": group_id,
-                "plan_date": day.isoformat(), "plan_version": 1,
-                "planned_ads_spend": budget,
-                "planned_campaign_discount_rate": 0.0,
-                "plan_status": "HISTORICAL",
-                "plan_source": "SYNTHETIC_HISTORICAL_PLAN",
-                "recorded_at": (day - timedelta(days=35)).isoformat() + "T17:00:00+07:00",
-            })
-        day += timedelta(days=1)
-    pd.concat([plans, pd.DataFrame(extra_plans)], ignore_index=True).to_csv(
-        plans_path, index=False, encoding="utf-8-sig")
+    order_frame = source_frames["Fact_Orders"]
+    item_frame = source_frames["Fact_Order_Items"]
+    result_batches = []
+    for index, month_start in enumerate(BATCH_MONTHS):
+        month = month_start.strftime("%Y-%m")
+        folder = target / ("initial" if index == 0 else f"incremental_{index:02d}")
+        folder.mkdir(parents=True, exist_ok=True)
+        for table in SOURCE_ORDER:
+            frame = source_frames[table]
+            if table == "Fact_Orders":
+                order_months = frame.Order_Created_At.astype(str).str[:7]
+                chosen = frame[(order_months.ge("2025-02") & order_months.le("2026-01"))
+                               if index == 0 else order_months.eq(month)]
+            elif table == "Fact_Order_Items":
+                order_months = order_frame.Order_Created_At.astype(str).str[:7]
+                in_delivery = (order_months.ge("2025-02") & order_months.le("2026-01")
+                               if index == 0 else order_months.eq(month))
+                ids = set(order_frame.loc[in_delivery, "Order_ID"])
+                chosen = frame[frame.Order_ID.isin(ids)]
+            elif table == "Fact_Internal_Fulfillment":
+                order_months = order_frame.Order_Created_At.astype(str).str[:7]
+                in_delivery = (order_months.ge("2025-02") & order_months.le("2026-01")
+                               if index == 0 else order_months.eq(month))
+                ids = set(order_frame.loc[in_delivery, "Order_ID"])
+                chosen = frame[frame.Order_ID.isin(ids)]
+            elif table == "Fact_Marketing_Costs":
+                dates = frame.Record_Date.astype(str).str[:7]
+                chosen = frame[(dates.ge("2025-02") & dates.le("2026-01"))
+                               if index == 0 else dates.eq(month)]
+            elif table == "Fact_Free_Samples":
+                dates = frame.Request_Date.astype(str).str[:7]
+                chosen = frame[(dates.ge("2025-02") & dates.le("2026-01"))
+                               if index == 0 else dates.eq(month)]
+            elif table == "Fact_Claim_Header":
+                dates = frame.Claim_Date.astype(str).str[:7]
+                chosen = frame[(dates.ge("2025-02") & dates.le("2026-01"))
+                               if index == 0 else dates.eq(month)]
+            elif table == "Fact_Claim_Details":
+                claims = source_frames["Fact_Claim_Header"]
+                claim_months = claims.Claim_Date.astype(str).str[:7]
+                in_delivery = (claim_months.ge("2025-02") & claim_months.le("2026-01")
+                               if index == 0 else claim_months.eq(month))
+                claim_ids = set(claims.loc[in_delivery, "Claim_ID"])
+                chosen = frame[frame.Claim_ID.isin(claim_ids)]
+            elif table == "Ref_Business_Target":
+                target_months = frame.Target_Year_Month.astype(str)
+                chosen = frame[(target_months.ge("2025-02") & target_months.le("2026-01"))
+                               if index == 0 else target_months.eq(month)]
+            elif table in ("Fact_Goods_Receipt", "Fact_Goods_Receipt_Items"):
+                chosen = frame if index == 0 else frame.iloc[0:0]
+            elif table.startswith(("Dim_", "Bridge_", "Ref_")):
+                chosen = frame if index == 0 else frame.iloc[0:0]
+            else:
+                chosen = frame.iloc[0:0]
+            chosen.to_csv(folder / (table + ".csv"), index=False,
+                          columns=columns[table], encoding="utf-8-sig")
+        order_months = order_frame.Order_Created_At.astype(str).str[:7]
+        batch_orders = order_frame.loc[
+            order_months.between("2025-02", "2026-01") if index == 0
+            else order_months.eq(month)]
+        batch_order_ids = set(batch_orders.Order_ID)
+        batch_items = item_frame[item_frame.Order_ID.isin(batch_order_ids)]
+        result_batches.append({"batch": folder.name, "month": month,
+                               "orders": int(len(batch_orders)),
+                               "items": int(len(batch_items))})
+    shutil.rmtree(target / "incremental", ignore_errors=True)
+    # ML planning rows stay separate from ER1, but span the exact warehouse history.
+    plan_path = target / "ml_marketing_plan.csv"
+    plans = pd.read_csv(plan_path)
+    plans = plans[plans.plan_date.astype(str).str[:7].between("2025-02", "2026-07")]
+    plans.to_csv(plan_path, index=False, encoding="utf-8-sig")
     (target / "source_manifest.json").write_text(json.dumps({
+        "seed": seed,
+        "run_1_month": "2026-01", "run_1_history_range": ["2025-02", "2026-01"],
+        "incremental_months": [x["month"] for x in result_batches[1:]],
+        "source_tables": SOURCE_ORDER, "er1_tables": len(tables),
+        "derived_tables": sorted(derived), "batches": result_batches,
+        "master_policy": "Master/Ref/Bridge supplied on Run 1; monthly Ref_Business_Target and facts are supplied in each incremental delivery.",
         "classification": "SYNTHETIC_EDUCATIONAL_NOT_TIKTOK",
-        "seed": seed, "batches": list(BATCHES),
-        "initial_history_start": history["historical_start"],
-        "initial_history_end": "2026-10-31", "increments": results,
-        "note": "Generated Source CSV; reset preserves all deliveries."
+        "note": "Every delivery has the same 21 ER1 Source CSVs. Run 1 includes 12 months through January 2026 for ML history; each later delivery adds one month. Four derived ER1 tables are created by pipeline code; no ER changes. Reset preserves Source."
     }, ensure_ascii=False, indent=2), encoding="utf-8")
-    return {"initial_history": history["historical_start"],
-            "batches": list(BATCHES), "increments": results}
+    return {"historical_start": history["historical_start"],
+            "batches": result_batches, "source_tables": SOURCE_ORDER,
+            "derived_tables": sorted(derived), "er1_tables": len(tables)}
 
 
 if __name__ == "__main__":
@@ -179,4 +159,3 @@ if __name__ == "__main__":
     parser.add_argument("--output", default="output/classroom_source")
     args = parser.parse_args()
     print(json.dumps(build(ROOT / args.output), ensure_ascii=False))
-

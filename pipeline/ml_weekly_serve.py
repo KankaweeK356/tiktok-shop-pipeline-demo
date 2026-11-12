@@ -107,4 +107,3 @@ def serve_monitor_replay(
         json.dumps(monitor, ensure_ascii=False, indent=2), encoding="utf-8"
     )
     return monitor
-

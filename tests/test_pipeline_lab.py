@@ -72,4 +72,3 @@ def test_six_offline_error_cases_have_inspectable_recovery_evidence():
     assert all(x["passed"] for x in errors)
     assert len(report["error_case_details"])==6
     assert report["source_engine"]=="SQLITE_NOT_NEON"
-

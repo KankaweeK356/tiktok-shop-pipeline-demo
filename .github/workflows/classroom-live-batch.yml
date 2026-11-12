@@ -125,4 +125,3 @@ jobs:
           path: output/classroom_lab/warehouse_csv.zip
           if-no-files-found: error
           retention-days: 90
-

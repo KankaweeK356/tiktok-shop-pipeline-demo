@@ -50,4 +50,3 @@ jobs:
           name: classroom-ml-model
           path: output/classroom_ml/
           retention-days: 90
-

@@ -37,6 +37,19 @@ export default async function handler(req,res){
           sql.query("SELECT COUNT(*)::int AS n FROM demo_control.pipeline_runs WHERE dataset_key='classroom' AND cycle_number=(SELECT cycle_number FROM demo_control.dataset_state WHERE dataset_key='classroom') AND status='SUCCEEDED' AND run_type IN ('RUN1','RUN2')")]);
         const recent=await github("/actions/workflows/"+WORKFLOW+
           "/runs?branch="+encodeURIComponent(REF)+"&event=workflow_dispatch&per_page=30");
+        const workflowActive=(recent.workflow_runs||[]).find(run=>
+          /^Classroom complete (initial|incremental(?:_0[1-6])?) \/ previous /.test(run.display_title||"")&&
+          ["queued","in_progress","waiting","pending"].includes(run.status));
+        let activeStage=null;
+        if(workflowActive){
+          const jobs=await github("/actions/runs/"+workflowActive.id+"/jobs?per_page=20");
+          const steps=(jobs.jobs||[]).flatMap(job=>job.steps||[])
+            .filter(step=>/^[1-5] /.test(step.name));
+          const current=steps.find(step=>step.status==="in_progress")||
+            steps.find(step=>step.status==="queued");
+          activeStage=current?{name:current.name,status:current.status,
+            started_at:current.started_at}:null;
+        }
         const history=(recent.workflow_runs||[]).filter(run=>
           run.conclusion==="success"&&
           /^Classroom complete (initial|incremental(?:_0[1-6])?) \/ previous /.test(run.display_title||""))
@@ -57,7 +70,11 @@ export default async function handler(req,res){
         return res.status(200).json({ready:true,phase:latest.phase||"UNKNOWN",
           cycle:latest.cycle_number??null,orders:orders[0]?.n??null,
           current_run_id:currentRunId,current_run_type:currentRunId?latest.last_run_type:null,
-          running:Boolean(active.length),active_run_type:active[0]?.run_type||null,
+          running:Boolean(active.length||workflowActive),
+          active_run_type:active[0]?.run_type||
+            (workflowActive?(workflowActive.display_title.includes(" complete initial ")?"RUN1":"RUN2"):null),
+          active_run_id:workflowActive?.id||null,
+          active_stage:activeStage,
           previous_run_id:currentRunId,next_source_batch:nextSource,
           source_remaining:Math.max(0,DELIVERIES.length-successCount),
           source_exhausted:successCount>=DELIVERIES.length,
@@ -116,6 +133,13 @@ export default async function handler(req,res){
           prior.conclusion==="success"&&
           prior.html_url===state[0]?.runner_ref);
       if(!valid)return res.status(409).json({error:"Run ก่อนหน้าไม่ตรงกับการรันต่อ"});
+      if(!retry){
+        const saved=await github("/actions/runs/"+previous+"/artifacts?per_page=100");
+        const workspace=(saved.artifacts||[]).find(item=>
+          item.name==="classroom-lab-workspace"&&!item.expired);
+        if(!workspace)return res.status(409).json({error:
+          "ไฟล์ข้อมูลที่ใช้เติมรอบต่อหมดอายุแล้ว (เก็บไว้ 90 วัน) กรุณาเคลียร์ Lab แล้วเริ่ม Run 1 ใหม่"});
+      }
     }
     const recent=await github("/actions/workflows/"+WORKFLOW+
       "/runs?branch="+encodeURIComponent(REF)+"&event=workflow_dispatch&per_page=30");

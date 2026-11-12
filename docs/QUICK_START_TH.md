@@ -4,7 +4,7 @@
 
 [![เปิด Pipeline Demo ใน Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/KankaweeK356/tiktok-shop-pipeline-demo/blob/main/notebooks/TikTok_Shop_Step_by_Step_Demo.ipynb)
 
-## เริ่มรัน
+## ดาวน์โหลด Source รายเดือน\n\n[เปิด GitHub Release ที่มีไฟล์ ZIP มกราคม–ตุลาคม 2569](https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/releases/tag/classroom-source-v1).\n\n## เริ่มรัน
 
 1. ใน Colab เลือก **Runtime → Run all** เพื่อเตรียม Code และ Source
 2. กด **เริ่มรอบใหม่และรัน Run 1 · มกราคม**

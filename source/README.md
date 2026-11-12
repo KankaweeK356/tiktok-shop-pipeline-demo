@@ -2,7 +2,7 @@
 
 ข้อมูลทั้งหมดเป็นข้อมูลสังเคราะห์เพื่อการศึกษา ไม่ได้ดึงจาก TikTok Shop API และไม่มีข้อมูลลูกค้าหรือการเงินจริง
 
-## แยกชุดเก่ากับ Flow ปัจจุบัน
+## ดาวน์โหลด Source ZIP ปัจจุบัน\n\n[Source ZIP มกราคม–ตุลาคม 2569 ทั้ง 10 ชุด](https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/releases/tag/classroom-source-v1).\n\n## แยกชุดเก่ากับ Flow ปัจจุบัน
 
 ไฟล์ CSV ใน `source/initial/` และ `source/incremental/` เป็น fixture รุ่นเดิม: October 2026 มี 800 Orders และ November 2026 มี 100 Orders ใหม่ พร้อมกรณีเปลี่ยนสถานะ/ปรับข้อมูลปลายงวด. ใช้สำหรับการทดสอบ October→November รุ่นเดิม
 

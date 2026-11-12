@@ -10,7 +10,7 @@
 
 ## ทำไมยังเห็นตัวเลข 800/100 ใน GitHub?
 
-ไฟล์ `source/initial` และ `source/incremental` เป็น fixture รุ่นเดิม: ตุลาคม 800 ออเดอร์ และพฤศจิกายนเพิ่ม 100 ออเดอร์. เป็นชุดเก่าที่ใช้กับการสาธิต October→November ไม่ใช่จำนวนของ Run 1/Run 2 ปัจจุบัน. Flow รายเดือนสร้างจาก [Source generator](https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/blob/feature/classroom-demo-evidence-foundation/pipeline/generate_classroom_source.py); จำนวนของแต่ละเดือนดูจาก manifest และผลรันจริง ไม่ได้ล็อกไว้ที่ 800/100
+ไฟล์ `source/initial` และ `source/incremental` เป็น fixture รุ่นเดิม: ตุลาคม 800 ออเดอร์ และพฤศจิกายนเพิ่ม 100 ออเดอร์. เป็นชุดเก่าที่ใช้กับการสาธิต October→November ไม่ใช่จำนวนของ Run 1/Run 2 ปัจจุบัน. ดาวน์โหลด [Source ZIP 10 เดือนจาก GitHub Releases](https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/releases/tag/classroom-source-v1) หรือโหลดจากหน้า Test Pipeline. Flow รายเดือนสร้างจาก [Source generator](https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/blob/feature/classroom-demo-evidence-foundation/pipeline/generate_classroom_source.py); จำนวนของแต่ละเดือนดูจาก manifest และผลรันจริง ไม่ได้ล็อกไว้ที่ 800/100
 
 ## โครงสร้างและเอกสาร
 

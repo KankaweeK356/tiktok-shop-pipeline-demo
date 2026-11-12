@@ -2,7 +2,7 @@
 
 > ใช้ Flow รายเดือนปัจจุบัน: Run 1 = มกราคม 2569 และเติมเดือนถัดไปครั้งละหนึ่งเดือนจนถึงตุลาคม. ไฟล์ `source/initial` (800 ออเดอร์เดือนตุลาคม) และ `source/incremental` (100 ออเดอร์เดือนพฤศจิกายน) เป็น fixture เก่า ไม่ใช่จำนวน Run 1/Run 2 ปัจจุบัน
 
-[![เปิด Pipeline Demo ใน Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/KankaweeK356/tiktok-shop-pipeline-demo/blob/main/notebooks/TikTok_Shop_Step_by_Step_Demo.ipynb)
+[![เปิด Pipeline Demo ใน Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/KankaweeK356/tiktok-shop-pipeline-demo/blob/feature/classroom-demo-evidence-foundation/notebooks/TikTok_Shop_Step_by_Step_Demo.ipynb)
 
 ## ดาวน์โหลด Source รายเดือน\n\n[เปิด GitHub Release ที่มีไฟล์ ZIP มกราคม–ตุลาคม 2569](https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/releases/tag/classroom-source-v1).\n\n## เริ่มรัน
 

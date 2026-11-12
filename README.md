@@ -2,7 +2,7 @@
 
 > **Flow ปัจจุบันของ Classroom Demo คือ Source รายเดือนมกราคม–ตุลาคม 2569**: Run 1 เริ่มที่มกราคม และปุ่มเติมเพิ่มเดือนถัดไปครั้งละหนึ่งเดือน. ไม่ได้กำหนด Run 1 = 800 ออเดอร์ แล้ว Run 2 = เพิ่ม 100 ออเดอร์
 
-**[เปิด Colab Pipeline ปัจจุบัน](https://colab.research.google.com/github/KankaweeK356/tiktok-shop-pipeline-demo/blob/main/notebooks/TikTok_Shop_Step_by_Step_Demo.ipynb)** · [เปิดเว็บ Demo](https://tiktok-shop-mlops-dashboard-git-feature-classroom-dea39b-newja.vercel.app/) · [ดูโค้ด Flow รายเดือน](https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/tree/feature/classroom-demo-evidence-foundation)
+**[เปิด Colab Pipeline ปัจจุบัน](https://colab.research.google.com/github/KankaweeK356/tiktok-shop-pipeline-demo/blob/feature/classroom-demo-evidence-foundation/notebooks/TikTok_Shop_Step_by_Step_Demo.ipynb)** · [เปิดเว็บ Demo](https://tiktok-shop-mlops-dashboard-git-feature-classroom-dea39b-newja.vercel.app/) · [ดูโค้ด Flow รายเดือน](https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/tree/feature/classroom-demo-evidence-foundation)
 
 ## อ่านผลใน Colab
 

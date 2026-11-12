@@ -16,7 +16,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from .generate_ml_history import SCENARIO_ID, generate_ml_history
+from .generate_ml_history import SCENARIO_ID, HISTORY_END, generate_ml_history
 from .er1 import SOURCE_ORDER
 from .schema import ROOT, parse_dbml
 
@@ -55,9 +55,11 @@ def build(target: Path, seed: int = 8102) -> dict:
     # Run 1 is January 2026 only. Later deliveries add exactly one new month
     # each. ML training stays unavailable until enough real Warehouse months
     # have accumulated for chronological Train/Validation/Test evaluation.
+    # The built-in October Source records are already present in the fixture;
+    # extend the additional ML history only through September to avoid duplicates.
     history = generate_ml_history(target, seed=seed,
                                   start=INITIAL_HISTORY_START,
-                                  end=SOURCE_DATA_END)
+                                  end=min(SOURCE_DATA_END, HISTORY_END))
     initial = target / "initial"
     tables, _ = parse_dbml(ROOT / "schemas" / "ER1_V3.dbml")
     columns = {table.name: [column.name for column in table.columns] for table in tables}

@@ -67,9 +67,15 @@ export default async function handler(req,res){
         const githubRun=String(latest.runner_ref||"").match(/\/actions\/runs\/([1-9][0-9]*)\/?$/);
         const currentRunId=["RUN1_READY","RUN2_READY"].includes(latest.phase)&&
           latest.last_run_status==="SUCCEEDED"?githubRun?.[1]||null:null;
+        let sourceV2Ready=latest.phase==="EMPTY";
+        if(currentRunId){
+          const currentWorkflow=await github("/actions/runs/"+currentRunId);
+          sourceV2Ready=(currentWorkflow.display_title||"").endsWith(" / source-v2");
+        }
         return res.status(200).json({ready:true,phase:latest.phase||"UNKNOWN",
           cycle:latest.cycle_number??null,orders:orders[0]?.n??null,
           current_run_id:currentRunId,current_run_type:currentRunId?latest.last_run_type:null,
+          requires_reset:["RUN1_READY","RUN2_READY"].includes(latest.phase)&&!sourceV2Ready,
           running:Boolean(active.length||workflowActive),
           active_run_type:active[0]?.run_type||
             (workflowActive?(workflowActive.display_title.includes(" complete initial ")?"RUN1":"RUN2"):null),
@@ -111,6 +117,14 @@ export default async function handler(req,res){
       sql.query("SELECT d.phase,d.cycle_number,r.runner_ref FROM demo_control.dataset_state d LEFT JOIN demo_control.pipeline_runs r ON r.run_id=d.last_run_id WHERE d.dataset_key='classroom'"),
       sql.query("SELECT run_type FROM demo_control.pipeline_runs WHERE dataset_key='classroom' AND status IN ('RUNNING','QUEUED') LIMIT 1"),
       sql.query("SELECT COUNT(*)::int AS n FROM demo_control.pipeline_runs WHERE dataset_key='classroom' AND cycle_number=(SELECT cycle_number FROM demo_control.dataset_state WHERE dataset_key='classroom') AND status='SUCCEEDED' AND run_type IN ('RUN1','RUN2')")]);
+    if(["RUN1_READY","RUN2_READY"].includes(state[0]?.phase)){
+      const ref=String(state[0]?.runner_ref||"");
+      const id=ref.match(/\/actions\/runs\/([1-9][0-9]*)\/?$/)?.[1];
+      const latest=id?await github("/actions/runs/"+id):null;
+      if(!(latest?.display_title||"").endsWith(" / source-v2"))
+        return res.status(409).json({error:
+          "Lab ยังมีข้อมูลจาก Source รุ่นก่อน กรุณาเคลียร์ Lab ก่อนเริ่มชุดรายเดือนใหม่"});
+    }
     const sourceBatch=DELIVERIES[Number(completed[0]?.n||0)];
     if(!sourceBatch)return res.status(409).json({error:"Source ชุดนี้ใช้ครบแล้ว เคลียร์ Lab เพื่อเริ่มใหม่"});
     if(batch!==(sourceBatch==="initial"?"initial":"incremental"))
@@ -143,7 +157,7 @@ export default async function handler(req,res){
     }
     const recent=await github("/actions/workflows/"+WORKFLOW+
       "/runs?branch="+encodeURIComponent(REF)+"&event=workflow_dispatch&per_page=30");
-    const title="Classroom complete "+sourceBatch+" / previous "+previous;
+    const title="Classroom complete "+sourceBatch+" / previous "+previous+" / source-v2";
     if((recent.workflow_runs||[]).some(run=>run.display_title===title&&run.status!=="completed"))
       return res.status(409).json({error:"Run นี้ถูกสั่งแล้ว กรุณารอผล"});
     await github("/actions/workflows/"+WORKFLOW+"/dispatches","POST",{

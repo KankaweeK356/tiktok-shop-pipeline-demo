@@ -699,12 +699,13 @@
       state.sharedRun={running:Boolean(data.running),type:data.active_run_type||null,
         stage:data.active_stage||null};
       state.currentRunId=data.current_run_id||null;
+      state.requiresReset=Boolean(data.requires_reset);
       state.nextSourceBatch=data.next_source_batch||null;
       state.sourceRemaining=data.source_remaining??null;
       state.sourceExhausted=Boolean(data.source_exhausted);
       if((data.phase==="RUN1_READY"||data.phase==="RUN2_READY")&&
          !state.batchRun.status&&!state.notebookSelectionTouched)
-        state.notebookBatch="incremental";
+        state.notebookBatch=state.requiresReset?"initial":"incremental";
       state.batchResume={batch:data.resume_batch||"",runId:data.resume_run_id||null};
       state.recentRuns=data.history||[];
     }catch(_error){state.realReady=false;}
@@ -805,6 +806,8 @@
     else if(!state.realReady)content.append(notice(
       "ระบบสั่งรันยังไม่พร้อม กรุณาตรวจการเชื่อม GitHub และ Neon ของ Lab",true));
     const phase=state.realLabPhase;
+    if(state.requiresReset)root.append(notice(
+      "Lab นี้ยังมีผลจาก Source รุ่นก่อนอยู่ เพื่อเริ่มชุดรายเดือนใหม่ต้องเคลียร์รอบเดิมก่อน · ข้อมูลเดิมจะถูกลบจาก Lab และ Dashboard เมื่อเคลียร์สำเร็จ · Source ที่เตรียมไว้ยังอยู่",true));
     const expected=state.realBatch==="initial"?"EMPTY":"RUN1_READY";
     if(phase!==expected)content.append(notice(
       "Neon ปัจจุบันเป็น "+(phase||"ไม่ทราบสถานะ")+
@@ -1380,7 +1383,7 @@
         state.notebookSelectionTouched=true;state.notebookStage="ingest";
         state.savedLabReceipt=null;state.savedLabSelected="";renderPipeline();});batchPicker.append(button);
     });root.append(batchPicker);
-    const canStartBatch=state.realReady&&!state.sourceExhausted&&
+    const canStartBatch=state.realReady&&!state.requiresReset&&!state.sourceExhausted&&
       !state.sharedRun.running&&(state.notebookBatch==="initial"?phase==="EMPTY":
         ["RUN1_READY","RUN2_READY"].includes(phase)&&Boolean(state.currentRunId));
     const batchBusy=["submitting","queued","in_progress"].includes(state.batchRun.status);

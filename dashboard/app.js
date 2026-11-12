@@ -1,5 +1,1606 @@
-Y™Áäx-ÆÈ‹j◊ù¢Îi∫⁄+äßj[hëÈ‹¢ÈÌ„ø{Ò:-jZ.∂õ≠ñ)ﬁ≥RÚ¢ñÁFW&7FófR¬7FFñ2FV6ó6ñˆ‚F6Ü&ˆ&B‚∆¬fñÊÊ6Rˆ÷ˆFV¬÷WG&ñ726ˆ÷Rg&ˆ“•4Ù‚&W˜'B‚¢¢ÜgVÊ7Fñˆ‚Çí∞¢'W6R7G&ñ7B#∞¢6ˆÁ7BB“2”‚Fˆ7V÷VÁBÁVW'ï6V∆V7F˜"á2ì∞¢6ˆÁ7B7FFR“≤FF¶ÁV∆¬¬WfñFVÊ6S¶ÁV∆¬¬WfñFVÊ6T∆ñW#¢'6˜W&6R"¬WfñFVÊ6UF&∆S¢""¬ÊVˆÂ7FGW3¢&Ê˜Eˆ∆ˆFVB"¬ÊVˆÂF&∆W3•µ“¬ÊVˆÂF&∆S¢""¬ÊVˆ‰FF¶ÁV∆¬¬ÊVˆ‰W'&˜#¢""¬ÊVˆÂ'VÂ7FGW3¶ÁV∆¬¬ÊVˆ‰'Fñf7EGóS¢$ƒ¬"¬∆%7FvS£¬∆%F&∆S¢$f7EÙ˜&FW'2"¬∆%&W7V«G3ß∑“¬∆$'W7ì¶f«6R¬∆$W'&˜#¢""¬∆$∆ˆs•µ“¬&V≈&VGì¶f«6R¬&Vƒ6ˆÊfñt6ÜV6∂VC¶f«6R¬&Vƒ∆%Ü6S¢%T‰¥‰ıt‚"¬&Vƒ∆$7ñ6∆S¶ÁV∆¬¬&Vƒ∆$˜&FW'3¶ÁV∆¬¬&Vƒ&F6É¢&ñÊóFñ¬"¬&V≈7FvTñÊFWÉ£¬&V≈&Wfñ˜W5'V‰ñC¢""¬&V≈'V‰ñC¶ÁV∆¬¬&V≈7FGW3¢""¬&V≈W&√¢""¬&VƒW'&˜#¢""¬&V≈7F'FVDC¢""¬&VƒF÷ñ‰∂Wì¢""¬&VƒWfñFVÊ6S¶ÁV∆¬¬WFÙ&F6É¢""¬&F6Ö&W7V«G3ß∂ñÊóFñ√ß∑“∆ñÊ7&V÷VÁF√ß∑◊“¬&F6Ö7V÷÷&ñW3ß∂ñÊóFñ√¶ÁV∆¬∆ñÊ7&V÷VÁF√¶ÁV∆«“¬7W'&VÁD7ñ6∆U'VÁ3•µ“¬&W6WE7FGW3¢""¬&W6WE6ñÊ6S¢""¬&W6WEW&√¢""¬&W6WDW'&˜#¢""¬6fVD∆$÷ÊñfW7C¶ÁV∆¬¬6fVD∆%&V6VóC¶ÁV∆¬¬6fVD∆%6V∆V7FVC¢""¬6fVD∆$∆ˆFñÊs¶f«6R¬óV∆ñÊUF#¢&f∆˜r"¬Ê˜FV&ˆˆ¥&F6É¢&ñÊóFñ¬"¬Ê˜FV&ˆˆµ7FvS¢&ñÊvW7B"¬v&VÜ˜W6U7FGW3¢&Ê˜Eˆ∆ˆFVB"¬v&VÜ˜W6U6Ê6Ü˜C¶ÁV∆¬¬v&VÜ˜W6TW'&˜#¢""¬v&VÜ˜W6UF&∆S¢$f7Eı6∆W5Ù˜&FW%ÙóFV“"¬∆$ÊVˆ„¶ÁV∆¬¬∆$ÊVˆÂF&∆S¶ÁV∆¬¬∆$ÊVˆ‰'W7ì¶f«6R¬∆$ÊVˆ‰W'&˜#¢""¬W'&˜$66S¢$„"¬W'&˜%&W∆ñVC¶f«6R¬W'&˜$∆$˜V„¶f«6R¬fñWs¢&'W6ñÊW72"¬÷ˆÁFÉ¢""¬w&˜W¢$ƒ¬"¬6∑S¢""¬6∑U6˜'C¢&∆˜vW7Eˆ÷&vñ‚"¬÷ˆFV√¢""¬vVV≥¢""¬&W∆ì¶f«6R¬&˜w3•µ“¬6˜W&6UW∆ˆDñC¢""¬6˜W&6UW∆ˆD÷ˆÁFÉ¢""¬6˜W&6UW∆ˆDÊ÷S¢""¬6˜W&6UW∆ˆD'W7ì¶f«6R¬6˜W&6UW∆ˆDW'&˜#¢""”∞¢7FFRÊ&F6Ö'V„◊∂&F6É¢""«7FGW3¢""«6ñÊ6S¢""«'V‰ñC¶ÁV∆¬«W&√¢""«7FvW3•µ◊”∞¢7FFRÊ&F6Ö'V‰ñG3◊∂ñÊóFñ√¶ÁV∆¬∆ñÊ7&V÷VÁF√¶ÁV∆«”∞¢7FFRÊ&F6Ö&W7V÷S◊∂&F6É¢""«'V‰ñC¶ÁV∆«”∞¢7FFRÁ6V∆V7FVE&W7V«EF&∆S“"#∞¢7FFRÁ&V6VÁE'VÁ3’µ”∑7FFRÊÜó7F˜'ï'V„÷ÁV∆√∑7FFRÊÜó7F˜'î'W7ì÷f«6S∞¢7FFRÁ6Ü&VE'V„◊∑'VÊÊñÊs¶f«6R«GóS¶ÁV∆¬«7FvS¶ÁV∆«”∞¢7FFRÊW'&˜%'V„◊∑7FGW3¢""«6ñÊ6S¢""«W&√¢""«'V‰ñC¶ÁV∆¬«Ü6S¢""«&Wfñ˜W3¢#"¿¢fñƒWfñFVÊ6S¶ÁV∆¬∆fóÑWfñFVÊ6S¶ÁV∆¬∆W'&˜#¢""∆ÊVˆÂ&˜w3¶ÁV∆«”∞¢6ˆÁ7BÊ÷W2“∞¢'W6ñÊW73•≤.äã.âÓä>ä~äâéãéä>àãNàÇ"¬.ä.äﬁâNà.ã.ä.òâ~ã^ä.âÆòâæòûã"àã>òNä2òä^ãàéãéâNâ~ã^òéàNä~ä>â^ãâNäÆãNâûò>àéàéã.àv&VÜ˜W6RâæãàéàéãéâÆãâí"¬.äã.âÓä>ä~äâéãéä>àãNàÇ%“¿¢óV∆ñÊS•≤%FW7BóV∆ñÊR"¬.àéã.à6˜W&6RâŒòéã.âíFF&6Ròä^ãFF∆∂RäÆãûòÇv&VÜ˜W6R"¬%FW7BóV∆ñÊR%“¿¢÷√•≤$‘¬∆""¬.àéã.àv&VÜ˜W6RäÆãûòÇfVGW&R7F˜&Ròä^ãâŒä^â~ã>âûã.ä""¬$‘¬∆"%–¢”∞¢6ˆÁ7Bw&˜W3’≤%s"¬%s""¬%s2"¬%sB"¬%sR%”∞¢6ˆÁ7B6˜W&6T÷ˆÁFá3‘'&íÊg&ˆ“á∂∆VÊwFÉ£“¬ÖÚ∆íì”‚###b“"µ7G&ñÊrÜí≥íÁE7F'BÉ"¬#"íì∞¢6ˆÁ7B÷ˆÊWí“Ü‚∆FñvóG3”í”‚„””÷ÁV∆««∆„””◊VÊFVfñÊVG«¬ÁV÷&W"Êó4fñÊóFRÑÁV÷&W"Ü‚ííÚ.(	B"†¢ÊWrñÁF¬‰ÁV÷&W$f˜&÷BÇ'FÇ’DÇ"«∂÷ñÊñ◊V‘g&7Fñˆ‰FñvóG3¶FñvóG2∆÷Üñ◊V‘g&7Fñˆ‰FñvóG3¶FñvóG7“íÊf˜&÷BÑÁV÷&W"Ü‚íì∞¢6ˆÁ7B7C“Ü‚∆FñvóG3”ì”‚„””÷ÁV∆««∆„””◊VÊFVfñÊVCÚ.(	B#¶÷ˆÊWíÜ‚∆FñvóG2í≤"R#∞¢6ˆÁ7B6˜W&6T÷ˆÁFÑf˜$&F6É÷&F6É”Ê&F6É””“&ñÊóFñ¬#˜6˜W&6T÷ˆÁFá5≥”†¢ıÊñÊ7&V÷VÁF≈ı∆G≥'“BÚÁFW7BÜ&F6Çì˜6˜W&6T÷ˆÁFá5¥ÁV÷&W"Ü&F6ÇÁ6∆ñ6RÇ”"íï”¶ÁV∆√∞¢6ˆÁ7BFÜî÷ˆÁFÉ÷÷ˆÁFÉ”Ê÷ˆÁFÉˆÊWrñÁF¬‰FFUFñ÷Tf˜&÷BÇ'FÇ’DÇ"«∂÷ˆÁFÉ¢&∆ˆÊr"«ñV#¢&ÁV÷W&ñ2'“ê¢Êf˜&÷BÜÊWrFFRÜ÷ˆÁFÇ≤"”C££≥s£"íì¢"#∞¢6ˆÁ7BÊˆFS“áFr∆6«3“""∆∆&V√÷ÁV∆¬ì”Á∞¢6ˆÁ7BV√÷Fˆ7V÷VÁBÊ7&VFTV∆V÷VÁBáFrì∞¢ñbÜ6«2ñV¬Ê6∆74Ê÷S÷6«3∞¢ñbÜ∆&V¬”÷ÁV∆¬ñV¬ÁFWáD6ˆÁFVÁC’7G&ñÊrÜ∆&V¬ì∞¢&WGW&‚V√∞¢”∞¢gVÊ7Fñˆ‚FBá&VÁB¬‚‚Ê6Üñ∆G&V‚ó∂f˜"Ü6ˆÁ7B2ˆb6Üñ∆G&V‚ññbÜ2ó&VÁBÊVÊBÜ2ì∑&WGW&‚&VÁC∑–¢gVÊ7Fñˆ‚&˜ÇÜ6«2¬‚‚Ê6Üñ∆G&V‚ó∑&WGW&‚FBÜÊˆFRÇ&Fób"∆6«2í¬‚‚Ê6Üñ∆G&V‚ì∑–¢gVÊ7Fñˆ‚∆ñÊ≤áFWáB«W&¬ó∞¢6ˆÁ7B÷ÊˆFRÇ&"¬'6˜W&6R÷∆ñÊ≤"«FWáB≤"(ir"ì∂Êá&Vc◊W&√∂ÁF&vWC“%ˆ&∆Ê≤#∂Á&V√“&Êˆ˜VÊW"Ê˜&VfW'&W"#∑&WGW&‚∞¢–¢gVÊ7Fñˆ‚6÷∆¬áFWáB∆6«3“&◊WFVB"ó∑&WGW&‚ÊˆFRÇ&Fób"¬'6÷∆¬"∂6«2«FWáBì∑–¢gVÊ7Fñˆ‚Ê˜Fñ6RáFWáB«v&„÷f«6Ró∑&WGW&‚&˜ÇÇ&Ê˜Fñ6R"≤áv&„Ú&Ê˜Fñ6R◊v&ÊñÊr#¢&Ê˜Fñ6R÷ñÊfÚ"í∆ÊˆFRÇ'7‚"¬""«v&„Ú.)™#¢.)9Ç"í∆ÊˆFRÇ'7‚"¬""«FWáBíì∑–¢gVÊ7Fñˆ‚÷WG&ñ2Ü∆&V¬«f«VR∆FW67&óFñˆ‚∆∂ñÊC“""ó∞¢&WGW&‚&˜ÇÇ&÷WG&ñ2"∆ÊˆFRÇ&Fób"¬&÷WG&ñ2÷∆&V¬"∆∆&V¬í∆ÊˆFRÇ&Fób"¬&÷WG&ñ2◊f«VR"∂∂ñÊB«f«VRí∆ÊˆFRÇ&Fób"¬&÷WG&ñ2◊7V""∆FW67&óFñˆÁ«¬""íì∞¢–¢gVÊ7Fñˆ‚ÊV¬áFóF∆R∆FW67&óFñˆ‚∆6ˆÁFVÁB∆7Fñˆ„÷ÁV∆¬ó∞¢6ˆÁ7BÜVC÷&˜ÇÇ'ÊV¬÷ÜVB"∆&˜ÇÇ""∆ÊˆFRÇ&É""¬'ÊV¬÷ÜVFñÊr"«FóF∆Rí∆FW67&óFñˆ„ˆÊˆFRÇ'"¬'ÊV¬÷FW67&óFñˆ‚"∆FW67&óFñˆ‚ì¶ÁV∆¬í∆7Fñˆ‚ì∞¢&WGW&‚&˜ÇÇ'ÊV¬"∆ÜVB∆6ˆÁFVÁBì∞¢–¢gVÊ7Fñˆ‚6ˆÁFVÁD&VÇ‚‚Ê6Üñ∆G&V‚ó∑&WGW&‚&˜ÇÇ'ÊV¬÷&ˆGí"¬‚‚Ê6Üñ∆G&V‚ì∑–¢gVÊ7Fñˆ‚7FGW4∆&V¬áÇó∞¢6ˆÁ7BvˆˆC’≤%52"¬%5T44U52"¬$4Ù’ƒUDR"¬%$TEí%“ÊñÊ6«VFW2áÇì∞¢6ˆÁ7B&C’≤$dî¬"¬$î‰4Ù’ƒUDR"¬$î‰4Ù’ƒUDUÙ4ı5B%“ÊñÊ6«VFW2áÇì∞¢&WGW&‚ÊˆFRÇ'7‚"¬'7FGW2"≤ÜvˆˆCÚ'7FGW2◊72#¶&CÚ'7FGW2÷fñ¬#¢'7FGW2◊VÊFñÊr"í«á«¬%T‰¥‰ıt‚"ì∞¢–¢gVÊ7Fñˆ‚FFF&∆RÜ6ˆ«V÷Á2«&˜w2∆f˜&÷G3◊∑“ó∞¢ñbÇ&˜w2«¬&˜w2Ê∆VÊwFÇó&WGW&‚&˜ÇÇ&V◊Gí◊7FFR"∆ÊˆFRÇ'7‚"¬""¬.òNäòéäã^à.òûäﬁäãûä^ò>âûâ^ãä~àä>äﬁà~âûã^òíéòNäòéòâ^ãNäâ^ãä~òä^à.äÆääâ^ãBí"íì∞¢6ˆÁ7BF&∆S÷ÊˆFRÇ'F&∆R"ì∞¢6ˆÁ7BFÜVC÷ÊˆFRÇ'FÜVB"í∆á#÷ÊˆFRÇ'G""ì∞¢6ˆ«V÷Á2Êf˜$V6ÇÇÖ∂∂Wí∆∆&V≈“ì”ÊFBÜá"∆ÊˆFRÇ'FÇ"∆f˜&÷G5∂∂Wï”ÚÊ∆ñvÁ«¬""∆∆&V¬ííì∞¢FÜVBÊVÊBÜá"ì∑F&∆RÊVÊBáFÜVBì∞¢6ˆÁ7BF&ˆGì÷ÊˆFRÇ'F&ˆGí"ì∞¢&˜w2Êf˜$V6Çá&˜s”Á∞¢6ˆÁ7BG#÷ÊˆFRÇ'G""ì∞¢6ˆ«V÷Á2Êf˜$V6ÇÇÖ∂∂Wï“ì”Á∞¢6ˆÁ7B7V3÷f˜&÷G5∂∂Wï◊««∑”∞¢6ˆÁ7BFC÷ÊˆFRÇ'FB"«7V2Ê∆ñvÁ«¬""ì∞¢ñbá7V2Ê∂ñÊC””“'7FGW2"óFBÊVÊBá7FGW4∆&V¬á&˜u∂∂Wï“íì∞¢V«6Rñbá7V2Ê∂ñÊC””“&vˆ¬"óFBÊVÊBÜÊˆFRÇ'7‚"¬'7FGW2"∞¢á&˜u∂∂Wï”Ú'7FGW2◊72#¢'7FGW2÷fñ¬"í«&˜u∂∂Wï”Ú.âŒòéã.âí#¢.ä.ãà~òNäòéâŒòéã.âí"íì∞¢V«6Rñbá7V2Ê∂ñÊC””“'&ó6≤"ó∞¢6ˆÁ7B6ˆFS◊&˜u∂∂Wï“∆&C’≤%$ï4≤"¬$u$ıUÙ$Tƒır%“ÊñÊ6«VFW2Ü6ˆFRì∞¢FBÊVÊBÜÊˆFRÇ'7‚"¬'7FGW2"≤Ü&CÚ'7FGW2÷fñ¬#¶6ˆFS””“$u$ıUÙ$ıdR#Ú'7FGW2◊72#¢'7FGW2◊VÊFñÊr"í¿¢6ˆFS””“%$ï4≤#Ú.òäÆã^òéä.à~â^òéã>àä~òéã.òâæòûã"#¶6ˆFS””“$4ÑT4≤#Ú.ä>äﬁâ^òûâûâ~ãéâûàä^ãéòéä#†¢6ˆFS””“$u$ıUÙ$Tƒır#Ú.â^òéã>àä~òéã.òàâ>âòŒä>òûã.âí#¶6ˆFS””“$u$ıUÙ$ıdR#Ú.ânãnà~òàâ>âòŒä>òûã.âí#¢.à.òûäﬁäãûä^òNäòéâÓä“"íì∞¢–¢V«6Rñbá7V2Ê∂ñÊC””“&÷ˆÊWí"óFBÁFWáD6ˆÁFVÁC÷÷ˆÊWíá&˜u∂∂Wï“«7V2ÊFñvóG7«√ì∞¢V«6Rñbá7V2Ê∂ñÊC””“'W&6VÁB"óFBÁFWáD6ˆÁFVÁC◊7Bá&˜u∂∂Wï“«7V2ÊFñvóG3””◊VÊFVfñÊVCÛß7V2ÊFñvóG2ì∞¢V«6RFBÁFWáD6ˆÁFVÁC◊&˜u∂∂Wï”””÷ÁV∆«««&˜u∂∂Wï”””◊VÊFVfñÊVCÚ.(	B#•7G&ñÊrá&˜u∂∂Wï“ì∞¢G"ÊVÊBáFBì∞¢“ì∞¢F&ˆGíÊVÊBáG"ì∞¢“ì∞¢F&∆RÊVÊBáF&ˆGíì∞¢&WGW&‚&˜ÇÇ'F&∆R◊w&"«F&∆Rì∞¢–¢gVÊ7Fñˆ‚&$6Ü'BÜFF∆7FófS“""ó∞¢6ˆÁ7B∆ó7C÷ÊˆFRÇ&Fób"¬&&"÷∆ó7B"í∆÷É‘÷FÇÊ÷ÇÉ¬‚‚ÊFFÊ÷áÉ”‰ÁV÷&W"áÇÁf«VRó«√íì∞¢FFÊf˜$V6ÇáÉ”Á∞¢6ˆÁ7BG&6≥÷ÊˆFRÇ&Fób"¬&&"◊G&6≤"í∆fñ∆√÷ÊˆFRÇ&Fób"¬&&"÷fñ∆¬"≤áÇÊÊ÷S””÷7FófSÚ"&"÷7FófR#¢""íì∞¢fñ∆¬Á7Gñ∆RÁvñGFÉ‘÷FÇÊ÷ÇÉƒ÷FÇÊ÷ñ‚É¬ÑÁV÷&W"áÇÁf«VRó«√íˆ÷Ç£íí≤"R#∞¢G&6≤ÊVÊBÜfñ∆¬ì∞¢∆ó7BÊVÊBÜ&˜ÇÇ&&"÷VÁG'í"∆ÊˆFRÇ&Fób"¬&&"◊FóF∆R"«ÇÊÊ÷Rí«G&6≤∆ÊˆFRÇ&Fób"¬&&"◊f«VR"«ÇÊFó7∆ó«∆÷ˆÊWíáÇÁf«VRíííì∞¢“ì∞¢&WGW&‚∆ó7C∞¢–¢6ˆÁ7BFóF∆S÷ñC”Á∞¢6ˆÁ7Bw&˜W◊7FFRÊFFÚÊ'W6ñÊW72Êw&˜W2ÊfñÊBáÉ”ÁÇÁ&ˆGV7Eˆw&˜WˆñC””÷ñBì∞¢&WGW&‚w&˜WÚÁ&ˆGV7Eˆw&˜WˆÊ÷SˆñB≤"+r"∂w&˜WÁ&ˆGV7Eˆw&˜WˆÊ÷S¶ñC∞¢”∞¢gVÊ7Fñˆ‚∆&VƒñÁWBÜ∆&V≈FWáB«GóR«f«VR∆÷ñ‚∆÷Çó∞¢6ˆÁ7B∆&V√÷ÊˆFRÇ&∆&V¬"¬&fñV∆B"í«FóF∆S÷ÊˆFRÇ'7‚"¬""∆∆&V≈FWáBì∞¢6ˆÁ7BfñV∆C÷ÊˆFRÇ&ñÁWB"ì∂fñV∆BÁGóS◊GóS∂fñV∆BÁf«VS◊f«VS∂fñV∆BÊ÷ñ„÷÷ñ„∂fñV∆BÊ÷É÷÷É∂fñV∆BÁ7FW“#„R#∞¢FBÜ∆&V¬«FóF∆R∆fñV∆Bì∑&WGW&‚∂∆&V¬∆fñV∆G”∞¢–¢gVÊ7Fñˆ‚6Üˆ˜6TfñV∆BÜ∆&V≈FWáB∆˜FñˆÁ2∆7W'&VÁB∆ÜÊF∆W"ó∞¢6ˆÁ7B∆&V√÷ÊˆFRÇ&∆&V¬"¬&fñV∆B"í«6V∆V7C÷ÊˆFRÇ'6V∆V7B"ì∞¢˜FñˆÁ2Êf˜$V6ÇÇÖ∂ñB«FWáE“ì”Á∞¢6ˆÁ7B˜C÷ÊˆFRÇ&˜Fñˆ‚"¬""«FWáBì∂˜BÁf«VS÷ñC∞¢ñbÜñC””÷7W'&VÁBñ˜BÁ6V∆V7FVC◊G'VS∞¢6V∆V7BÊVÊBÜ˜Bì∞¢“ì∞¢6V∆V7BÊFDWfVÁD∆ó7FVÊW"Ç&6ÜÊvR"¬Çì”ÊÜÊF∆W"á6V∆V7BÁf«VRíì∞¢FBÜ∆&V¬∆ÊˆFRÇ'7‚"¬""∆∆&V≈FWáBí«6V∆V7Bì∞¢&WGW&‚∆&V√∞¢–†¢gVÊ7Fñˆ‚f6ÜñˆÂFáV÷"Çó∞¢6ˆÁ7Bñ÷vS÷ÊˆFRÇ&ñ÷r"¬&f6Üñˆ‚◊&WfñWr"ì∞¢ñ÷vRÁ7&3“"‚ˆ76WG2˜vˆ÷VÁ2◊F˜Á7fr#∞¢ñ÷vRÊ«C“.äã.âÓâæä>ãàäﬁâÆòäÆã~òûäﬁâŒãûòûäæàﬁãNàròNäòéò>àÆòéäã.âÓäÆãNâûàNòûã.àéä>ãNàr#∞¢ñ÷vRÊ∆ˆFñÊs“&∆ßí#∞¢&WGW&‚ñ÷vS∞¢–†¢7ñÊ2gVÊ7Fñˆ‚∆ˆEv&VÜ˜W6TF6Ü&ˆ&BÇó∞¢ñbá7FFRÁv&VÜ˜W6U7FGW3””“&∆ˆFñÊr"ó&WGW&„∞¢7FFRÁv&VÜ˜W6U7FGW3“&∆ˆFñÊr#∑7FFRÁv&VÜ˜W6U6Ê6Ü˜C÷ÁV∆√∑7FFRÁv&VÜ˜W6TW'&˜#“"#∞¢ñbá7FFRÁfñWs””“&'W6ñÊW72'««7FFRÁfñWs””“&÷¬"ó&VÊFW"Çì∞¢ñbá7FFRÁfñWs””“&÷¬"bg7FFRÁv&VÜ˜W6U6Ê6Ü˜CÚÁ&W7V«Bñ∆ˆD∆ófT‘¬Çì∞¢G'ó∞¢6ˆÁ7B7FGW5&W7ˆÁ6S÷vóBfWF6ÇÇ"ˆíˆ∆"÷&F6Ç"«∂66ÜS¢&ÊÚ◊7F˜&R'“ì∞¢6ˆÁ7B7FGW3÷vóB7FGW5&W7ˆÁ6RÊß6ˆ‚Çì∞¢ñbÇ7FGW5&W7ˆÁ6RÊˆ∑«¬7FGW2Á&VGíóFá&˜rW'&˜"á7FGW2ÊW'&˜'«¬.äﬁòéã.âûäÆânã.âûãv&VÜ˜W6RòNäòéòNâNòí"ì∞¢ñbá7FGW2Á'VÊÊñÊró∞¢7FFRÁv&VÜ˜W6U6Ê6Ü˜C◊≤‚‚Á7FGW2«'VÊÊñÊsßG'VW”∞¢÷V«6Rñbá7FGW2ÁÜ6S””“$T’Eí"ó∞¢7FFRÁv&VÜ˜W6U6Ê6Ü˜C◊≤‚‚Á7FGW2«&W7V«C¶ÁV∆«”∞¢÷V«6W∞¢ñbÇ7FGW2Ê7W'&VÁE˜'VÂˆñBóFá&˜rW'&˜"Ç.òNäòéâÓâ¢'V‚âæãàéàéãéâÆãâûâ~ã^òéòàÆã~òéäﬁäàãâ¢v&VÜ˜W6R"ì∞¢6ˆÁ7B&W7V«E&W7ˆÁ6S÷vóBfWF6ÇÇ"ˆíˆ∆"÷&F6Ç◊&W7V«C˜'VÂˆñC“"∞¢VÊ6ˆFUU$î6ˆ◊ˆÊVÁBá7FGW2Ê7W'&VÁE˜'VÂˆñBí«∂66ÜS¢&ÊÚ◊7F˜&R'“ì∞¢6ˆÁ7Bñ∆ˆC÷vóB&W7V«E&W7ˆÁ6RÊß6ˆ‚Çì∞¢ñbÇ&W7V«E&W7ˆÁ6RÊˆ∑«¬ñ∆ˆBÁ&W7V«BóFá&˜rW'&˜"áñ∆ˆBÊW'&˜'«¬.äﬁòéã.âûâŒäRv&VÜ˜W6RòNäòéòNâNòí"ì∞¢ñbÑÁV÷&W"áñ∆ˆBÁ&W7V«BÊ7ñ6∆Rí”‘ÁV÷&W"á7FGW2Ê7ñ6∆Ríê¢Fá&˜rW'&˜"Ç.âŒäRv&VÜ˜W6RòNäòéâ^ä>à~àãâÆä>äﬁâ¢∆"âæãàéàéãéâÆãâí"ì∞¢7FFRÁv&VÜ˜W6U6Ê6Ü˜C◊≤‚‚Á7FGW2«&W7V«Cßñ∆ˆBÁ&W7V«G”∞¢–¢7FFRÁv&VÜ˜W6U7FGW3“'&VGí#∞¢÷6F6ÇÜW'&˜"ó∞¢7FFRÁv&VÜ˜W6U7FGW3“&W'&˜"#∞¢7FFRÁv&VÜ˜W6U6Ê6Ü˜C÷ÁV∆√∞¢7FFRÁv&VÜ˜W6TW'&˜#÷W'&˜"Ê÷W76vW«¬.äﬁòéã.âûà.òûäﬁäãûäRv&VÜ˜W6RòNäòéòNâNòí#∞¢–¢ñbá7FFRÁfñWs””“&'W6ñÊW72'««7FFRÁfñWs””“&÷¬"ó&VÊFW"Çì∞¢–†¢gVÊ7Fñˆ‚&VÊFW$'W6ñÊW72Çó∞¢6ˆÁ7B&ˆ˜C“BÇ"6"ì∑&ˆ˜BÁ&W∆6T6Üñ∆G&V‚Çì∑7FFRÁ&˜w3’µ”∞¢6ˆÁ7B6Ê6Ü˜C◊7FFRÁv&VÜ˜W6U6Ê6Ü˜C∞¢6ˆÁ7BÜ6S◊6Ê6Ü˜CÚÁÜ6W«¬%T‰¥‰ıt‚#∞¢BÇ"6ÜVFW$÷ˆFR"íÁFWáD6ˆÁFVÁC◊7FFRÁv&VÜ˜W6U7FGW3””“'&VGí#¢Ü6S””“$T’Eí#Ú%v&VÜ˜W6Rä~òéã.àr#ß6Ê6Ü˜CÚÁ'VÊÊñÊsÚ%v&VÜ˜W6Ràã>ä^ãà~äﬁãâæòâNâR#¢%v&VÜ˜W6R+rà.òûäﬁäãûä^ä>äﬁâÆâæãàéàéãéâÆãâí#†¢.àã>ä^ãà~â^ä>ä~àÇv&VÜ˜W6R#∞¢6ˆÁ7BWÜV7WFVC◊6Ê6Ü˜CÚÁ&W7V«CÚÁ7FvW3ÚÊfñÊBáÉ”ÁÇÁ7FvS””“&∆ˆB"ìÚÊWfñFVÊ6SÚÊWÜV7WFVEˆC∞¢BÇ"76Ê6Ü˜E7F◊"íÁFWáD6ˆÁFVÁC÷WÜV7WFVC¢ÊWrñÁF¬‰FFUFñ÷Tf˜&÷BÇ'FÇ’DÇ"«∑Fñ÷U¶ˆÊS¢$6ñÙ&Êv∂ˆ≤"«ñV#¢&ÁV÷W&ñ2"∆÷ˆÁFÉ¢'6Ü˜'B"∆Fì¢&ÁV÷W&ñ2"∆Ü˜W#¢#"÷FñvóB"∆÷ñÁWFS¢#"÷FñvóB'“ê¢Êf˜&÷BÜÊWrFFRÜWÜV7WFVBíì†¢6Ê6Ü˜CÚÊ7ñ6∆SÚ.ä>äﬁâ¢∆""∑6Ê6Ü˜BÊ7ñ6∆S¢.(	B#∞¢BÇ"6fˆ˜FW%7FGW2"íÁFWáD6ˆÁFVÁC◊7FFRÁv&VÜ˜W6U7FGW3””“'&VGí#¢Ü6S””“$T’Eí#Ú%v&VÜ˜W6Rä~òéã.àr+rä.ãà~òNäòéäãR'V‚ò>âûä>äﬁâÆâûã^òí#†¢6Ê6Ü˜CÚÁ'VÊÊñÊsÚ.àã>ä^ãà~âæä>ãää~ä^âŒäR+ràéãòâæãNâNà.òûäﬁäãûä^òäã~òéä“'V‚äÆã>òä>ò~àÇ#†¢.à.òûäﬁäãûäRv&VÜ˜W6RâæãàéàéãéâÆãâí+r∆"ä>äﬁâ¢"≤á6Ê6Ü˜CÚÊ7ñ6∆SÛÚ.(	B"ì†¢.â^ä>ä~àéäÆäﬁâ¢v&VÜ˜W6R#∞¢ñbá7FFRÁv&VÜ˜W6U7FGW3””“&Ê˜Eˆ∆ˆFVB'««7FFRÁv&VÜ˜W6U7FGW3””“&∆ˆFñÊr"ó∞¢&ˆ˜BÊVÊBá6÷∆¬Ç.àã>ä^ãà~â^ä>ä~àéäÆânã.âûã∆"òä^ãv&VÜ˜W6^(
-b"íì∑&WGW&„∞¢–¢ñbá7FFRÁv&VÜ˜W6U7FGW3””“&W'&˜""ó∞¢&ˆ˜BÊVÊBÜÊ˜Fñ6RÇ.òNäòéäÆã.äã.ä>ânä.ã~âûä.ãâûà.òûäﬁäãûäRv&VÜ˜W6RòNâNòíàéãnà~òNäòéòäÆâNà~â^ãä~òä^à.òàòéã"+r"∑7FFRÁv&VÜ˜W6TW'&˜"«G'VRíì∞¢6ˆÁ7B&WG'ì÷ÊˆFRÇ&'WGFˆ‚"¬&'WGFˆ‚'WGFˆ‚÷˜WF∆ñÊR"¬.â^ä>ä~àéäÆânã.âûãäﬁã^ààNä>ãòûàr"ì∞¢&WG'íÁGóS“&'WGFˆ‚#∑&WG'íÊFDWfVÁD∆ó7FVÊW"Ç&6∆ñ6≤"∆∆ˆEv&VÜ˜W6TF6Ü&ˆ&Bì∑&ˆ˜BÊVÊBá&WG'íì∑&WGW&„∞¢–¢ñbá6Ê6Ü˜CÚÁ'VÊÊñÊró∞¢&ˆ˜BÊVÊBÜÊˆFRÇ&É""¬&∆"÷ÜVFñÊr"¬.àã>ä^ãà~âæä>ãää~ä^âŒä^à.òûäﬁäãûä^òà.òûã"v&VÜ˜W6R"íì∞¢&ˆ˜BÊVÊBá6÷∆¬Ç.òäã~òéä“'V‚äÆã>òä>ò~àÇF6Ü&ˆ&BàéãòäÆâNà~à.òûäﬁäãûä^ä>äﬁâÆâûã^òí+rä>ãäæä~òéã.à~âûã^òûàéãòNäòéòäÆâNà~â^ãä~òä^à.àéã.àä>äﬁâÆàòéäﬁâí"íì∞¢&WGW&„∞¢–¢ñbáÜ6S””“$T’Eí'«¬6Ê6Ü˜CÚÁ&W7V«Bó∞¢&ˆ˜BÊVÊBÜÊˆFRÇ&É""¬&∆"÷ÜVFñÊr"¬%v&VÜ˜W6Rä.ãà~òNäòéäã^à.òûäﬁäãûäR"íì∞¢&ˆ˜BÊVÊBá6÷∆¬Ç$∆"ä>äﬁâ¢"≤á6Ê6Ü˜CÚÊ7ñ6∆SÛÚ.(	B"í≤"ä~òéã.à~äﬁä.ãûòÇ+ràâB'V‚ò>âíFW7BóV∆ñÊRòâÓã~òéäﬁäÆä>òûã.à~à.òûäﬁäãûäRv&VÜ˜W6Rä>äﬁâÆò>äæäòÇ"íì∞¢6ˆÁ7B˜V„÷ÊˆFRÇ&'WGFˆ‚"¬&'WGFˆ‚'WGFˆ‚◊&ñ÷'í"¬.òNâæâ~ã^òÇFW7BóV∆ñÊR"ì∞¢˜V‚ÁGóS“&'WGFˆ‚#∂˜V‚ÊFDWfVÁD∆ó7FVÊW"Ç&6∆ñ6≤"¬Çì”Á6WEfñWrÇ'óV∆ñÊR"íì∑&ˆ˜BÊVÊBÜ˜V‚ì∑&WGW&„∞¢–¢6ˆÁ7B&W7V«C◊6Ê6Ü˜BÁ&W7V«C∞¢6ˆÁ7B∆ˆC◊&W7V«BÁ7FvW3ÚÊfñÊBáÉ”ÁÇÁ7FvS””“&∆ˆB"ìÚÊWfñFVÊ6SÚÊ˜WGWC∞¢ñbÇ∆ˆG«∆∆ˆBÊ˜&ñvñ‚”“$‰UuÙET4¥D%ıt$TÑıU4R"ó∞¢&ˆ˜BÊVÊBÜÊ˜Fñ6RÇ%'V‚âæãàéàéãéâÆãâûòNäòéäã^äæä^ãàâã.âív&VÜ˜W6Râ~ã^òéâ^ä>ä~àéäÆäﬁâÆòNâNòí+ròNäòéòäÆâNàr6Ê6Ü˜Bòàòéã""«G'VRíì∑&WGW&„∞¢–¢6ˆÁ7BF&∆W3‘'&íÊó4'&íÜ∆ˆBÁF&∆W2ìˆ∆ˆBÁF&∆W3•µ”∞¢6ˆÁ7B&WfñWw3÷∆ˆBÁF&∆U˜&WfñWw7««∑”∞¢6ˆÁ7BÊ÷W3◊F&∆W2Ê÷áÉ”ÁÇÊÊ÷Rì∞¢ñbÇÊ÷W2Ê∆VÊwFÇó∑&ˆ˜BÊVÊBÜÊ˜Fñ6RÇ%'V‚âûã^òûä.ãà~òNäòéäã^â^ã.ä>ã.à~ò>âív&VÜ˜W6R"íì∑&WGW&„∑–¢ñbÇÊ÷W2ÊñÊ6«VFW2á7FFRÁv&VÜ˜W6UF&∆Ríó7FFRÁv&VÜ˜W6UF&∆S–¢Ê÷W2ÊñÊ6«VFW2Ç$f7Eı6∆W5Ù˜&FW%ÙóFV“"ìÚ$f7Eı6∆W5Ù˜&FW%ÙóFV“#¶Ê÷W5≥”∞¢6ˆÁ7B&˜w3‘'&íÊó4'&íá&WfñWw5∑7FFRÁv&VÜ˜W6UF&∆U“ì˜&WfñWw5∑7FFRÁv&VÜ˜W6UF&∆U”•µ”∞¢7FFRÁ&˜w3◊&˜w3∞¢6ˆÁ7B'W6ñÊW73◊&W7V«BÊ'W6ñÊW73∞¢ñbÇ'W6ñÊW73ÚÊ÷ˆÁFá3ÚÊ∆VÊwFÇó∑&ˆ˜BÊVÊBÜÊ˜Fñ6RÇ.ä.ãà~òNäòéäã^äÆä>ãéâ≤µíàéã.àv&VÜ˜W6Rä>äﬁâÆâûã^òí"«G'VRíì∑&WGW&„∑–¢ñbá7FFRÊ'W6ñÊW75'V‰ñB”◊6Ê6Ü˜BÊ7W'&VÁE˜'VÂˆñBó∞¢7FFRÊ'W6ñÊW75'V‰ñC◊6Ê6Ü˜BÊ7W'&VÁE˜'VÂˆñC∞¢7FFRÊ÷ˆÁFÉ÷'W6ñÊW72Ê÷ˆÁFá2ÊBÇ”íÊ÷ˆÁFÉ∞¢7FFRÊw&˜W“$ƒ¬#∞¢–¢6ˆÁ7B7W'&VÁC÷'W6ñÊW72Ê÷ˆÁFá2ÊfñÊBáÉ”ÁÇÊ÷ˆÁFÉ””◊7FFRÊ÷ˆÁFÇó«∆'W6ñÊW72Ê÷ˆÁFá2ÊBÇ”ì∞¢6ˆÁ7B6˜fW&vS÷÷ˆÁFÉ”Á∞¢6ˆÁ7BFFW3’≤‚‚ÊÊWr6WBÜ'W6ñÊW72ÊFó2Êfñ«FW"áÉ”ÁÇÊ÷ˆÁFÉ””÷÷ˆÁFÇê¢Ê÷áÉ”Â7G&ñÊráÇÊFííÁ6∆ñ6RÉ√ííï“Á6˜'BÇì∞¢6ˆÁ7B∑ñV"∆ÁV÷&W%”÷÷ˆÁFÇÁ7∆óBÇ"“"íÊ÷ÑÁV÷&W"ì∞¢6ˆÁ7BF˜F√÷ÊWrFFRÑFFRÂUD2áñV"∆ÁV÷&W"√ííÊvWEUD4FFRÇì∞¢&WGW&‚∂∆7C¶FFW2ÊBÇ”ó«¬.(	B"∆6ˆ◊∆WFS¶FFW2Ê∆VÊwFÉ””◊F˜F«”∞¢”∞¢6ˆÁ7B÷ˆÁFÑ6˜fW&vS÷6˜fW&vRÜ7W'&VÁBÊ÷ˆÁFÇì∞¢6ˆÁ7Bw&˜W&˜w3÷'W6ñÊW72Êw&˜W2Êfñ«FW"áÉ”ÁÇÊ÷ˆÁFÉ””÷7W'&VÁBÊ÷ˆÁFÇì∞¢6ˆÁ7Bfó6ñ&∆Tw&˜W3◊7FFRÊw&˜W””“$ƒ¬#ˆw&˜W&˜w3¶w&˜W&˜w2Êfñ«FW"áÉ”ÁÇÊw&˜WˆñC””◊7FFRÊw&˜Wì∞¢6ˆÁ7BFó3÷'W6ñÊW72ÊFó2Êfñ«FW"áÉ”ÁÇÊ÷ˆÁFÉ””÷7W'&VÁBÊ÷ˆÁFÇb`¢á7FFRÊw&˜W””“$ƒ¬'««ÇÊw&˜WˆñC””◊7FFRÊw&˜Wíì∞¢6ˆÁ7B6∑W3÷'W6ñÊW72Á6∑RÊfñ«FW"áÉ”ÁÇÊ÷ˆÁFÉ””÷7W'&VÁBÊ÷ˆÁFÇb`¢á7FFRÊw&˜W””“$ƒ¬'««ÇÊw&˜WˆñC””◊7FFRÊw&˜Wíì∞¢&ˆ˜BÊVÊBÜ&˜ÇÇ&Ç◊7F6≤"¿¢6Üˆ˜6TfñV∆BÇ.òâNã~äﬁâí"∆'W6ñÊW72Ê÷ˆÁFá2Ê÷áÉ”Â∑ÇÊ÷ˆÁFÇ«ÇÊ÷ˆÁFÖ“í∆7W'&VÁBÊ÷ˆÁFÇ¿¢f«VS”Á∑7FFRÊ÷ˆÁFÉ◊f«VS∑&VÊFW$'W6ñÊW72Çó“í¿¢6Üˆ˜6TfñV∆BÇ.àä^ãéòéääÆãNâûàNòûã""≈µ≤$ƒ¬"¬.â~ãòûà~ä>òûã.âí%“¬‚‚Êw&˜W&˜w2Ê÷áÉ”‡¢∑ÇÊw&˜WˆñB«ÇÊw&˜WˆÊ÷W««ÇÊw&˜WˆñE“ï“«7FFRÊw&˜W¿¢f«VS”Á∑7FFRÊw&˜W◊f«VS∑&VÊFW$'W6ñÊW72Çó“ííì∞¢&ˆ˜BÊVÊBÜFBÜ&˜ÇÇ&÷WG&ñ72"í¿¢÷WG&ñ2Ç.ä.äﬁâNà.ã.ä.äÆãéâ~âéãB"¬.ãÚ"∂÷ˆÊWíÜ7W'&VÁBÊÊWBí¬.òâæòûã"ãÚ"∂÷ˆÊWíÜ7W'&VÁBÁF&vWBíí¿¢÷WG&ñ2Ç.òâ~ã^ä.âÆòâæòûã.ä>ã.ä.òâNã~äﬁâí"∆÷ˆÁFÑ6˜fW&vRÊ6ˆ◊∆WFS˜7BÜ7W'&VÁBÊ6ÜñWfV÷VÁE˜7Bì¢.ä>äﬁà.òûäﬁäãûä^àNä>âÆòâNã~äﬁâí"¿¢÷ˆÁFÑ6˜fW&vRÊ6ˆ◊∆WFSÚ.äÆòéä~âûâ^òéã.àr"≤ÑÁV÷&W"Ü7W'&VÁBÊvì„”Ú"≤#¢""í≤.ãÚ"∂÷ˆÊWíÜ7W'&VÁBÊvì†¢.à.òûäﬁäãûä^ânãnàr"∂÷ˆÁFÑ6˜fW&vRÊ∆7Bí¿¢÷WG&ñ2Ç.àã>òNä>äæä^ãà~â^òûâûâ~ãéâûâ~ã^òéòàã^òéä.ä~à.òûäﬁàr"¿¢7W'&VÁBÁ&ˆfóC””÷ÁV∆√Ú.ä>äﬁâ^ä>ä~àéâ^òûâûâ~ãéâí#¢.ãÚ"∂÷ˆÊWíÜ7W'&VÁBÁ&ˆfóBí¿¢.ä.ãà~òNäòéàä>ãàéã.ä.àNòéã"G2ä^àr4µR"í¿¢÷WG&ñ2Ç.àNãéòûäàNä>äﬁà~àã>òNä2"«7BÜ7W'&VÁBÁ&˜FV7FñˆÂ˜7Bí¿¢.òàâ>âò¬(öSRà.äﬁà~ä.äﬁâNä>ã.àNã.òâ^ò~ä+r"∂7W'&VÁBÁ&˜FV7FñˆÂ˜7FGW2ííì∞¢6ˆÁ7B&V∆˜uF&vWC÷7W'&VÁBÊv”÷ÁV∆¬bdÁV÷&W"Ü7W'&VÁBÊvì√∞¢6ˆÁ7B&ˆfóDfñ√÷7W'&VÁBÁ&˜FV7FñˆÂ˜7FGW3””“$dî¬#∞¢&ˆ˜BÊVÊBÜÊ˜Fñ6RÇ÷ˆÁFÑ6˜fW&vRÊ6ˆ◊∆WFS¢.à.òûäﬁäãûä^ânãnàr"∂÷ˆÁFÑ6˜fW&vRÊ∆7B≤"+ròâNã~äﬁâûä.ãà~òNäòéàNä>â¢àéãnà~ä.ãà~òNäòéäÆä>ãéâæòâ~ã^ä.âÆòâæòûã.â~ãòûà~òâNã~äﬁâí#†¢7W'&VÁBÁ&ˆfóEˆFF˜7FGW3””“$î‰4Ù’ƒUDR#¢.â^òûâûâ~ãéâûä.ãà~òNäòéàNä>â¢àéãnà~ä.ãà~äÆä>ãéâæàã>òNä>òNäòéòNâNòí#†¢&V∆˜uF&vWBbg&ˆfóDfñ√Ú.ä.äﬁâNà.ã.ä.â^òéã>àä~òéã.òâæòûã.òä^ãàã>òNä>â^òéã>àä~òéã.òàâ>âò¬â^ä>ä~àéàä^ãéòéääÆãNâûàNòûã.òä^ãâ^òûâûâ~ãéâûâNòûã.âûä^òéã.àr#†¢&V∆˜uF&vWCÚ.ä.äﬁâNà.ã.ä.â^òéã>àä~òéã.òâæòûã"â^ä>ä~àéàä^ãéòéääÆãNâûàNòûã.â~ã^òéòâæò~âûäÆòéä~âûâ^òéã.à~âNòûã.âûä^òéã.àr#†¢&ˆfóDfñ√Ú.ä.äﬁâNà.ã.ä.ânãnà~òâæòûã"òâ^òéàã>òNä>â^òéã>àä~òéã.òàâ>âò¬â^ä>ä~àéâ^òûâûâ~ãéâûòä^ãäÆòéä~âûä^âNâNòûã.âûä^òéã.àr#†¢.ä.äﬁâNà.ã.ä.òä^ãàã>òNä>âŒòéã.âûòàâ>âòŒà.äﬁà~òâNã~äﬁâûâ~ã^òéòä^ã~äﬁà"íì∞¢7FFRÁ&˜w3◊fó6ñ&∆Tw&˜W3∞¢6ˆÁ7B÷ˆÁFÖ&˜w3÷'W6ñÊW72Ê÷ˆÁFá2Ê÷á&˜s”Á∞¢6ˆÁ7B7FGW3÷6˜fW&vRá&˜rÊ÷ˆÁFÇì∞¢&WGW&‚7FGW2Ê6ˆ◊∆WFS˜&˜sß≤‚‚Á&˜r∆v¢.(	B'”∞¢“ì∞¢&ˆ˜BÊVÊBáÊV¬Ç.âŒä^à~ã.âûä>ã.ä.òâNã~äﬁâí"¬.ä>ãâNãâÆä>òûã.âí+ròâæä>ã^ä.âÆòâ~ã^ä.âÆä.äﬁâNàéä>ãNà~àãâÆòâæòûã""¿¢6ˆÁFVÁD&VÜFFF&∆RÖµ≤&÷ˆÁFÇ"¬.òâNã~äﬁâí%“≈≤&ÊWB"¬.ä.äﬁâNà.ã.ä.äÆãéâ~âéãB%“≈≤'F&vWB"¬.òâæòûã"%“¿¢≤&v"¬.äÆòéä~âûâ^òéã.àr%“≈≤'&˜FV7FñˆÂ˜7FGW2"¬.àã>òNä2(öSR%’“∆÷ˆÁFÖ&˜w2íííì∞¢&ˆ˜BÊVÊBáÊV¬Ç.òàéã.ãä^à~àä^ãéòéääÆãNâûàNòûã""¬.òä^ã~äﬁààä^ãéòéäâNòûã.âûâÆâûòâÓã~òéäﬁâNãûä~ãâûòä^ã4µR"¿¢6ˆÁFVÁD&VÜFFF&∆RÖµ≤&w&˜WˆÊ÷R"¬.àä^ãéòéä%“≈≤&ÊWB"¬.ä.äﬁâNà.ã.ä.äÆãéâ~âéãB%“¿¢≤'&ˆfóB"¬.àã>òNä2%“≈≤&G5ˆ6˜7B"¬$G2ä>ä~ää>ãâNãâÆàä^ãéòéä%“¿¢≤&6◊ñvÂ˜&VGV7Fñˆ‚"¬.äÆòéä~âûä^âNòàNäòâæà“%’“«fó6ñ&∆Tw&˜W2íííì∞¢&ˆ˜BÊVÊBáÊV¬Ç.ä>ã.ä.ä~ãâí"¬.à.òûäﬁäãûä^ä>ãâNãâÆä~ãâí9ràä^ãéòéääÆãNâûàNòûã"àéã.à÷'B"¿¢6ˆÁFVÁD&VÜFFF&∆RÖµ≤&Fí"¬.ä~ãâí%“≈≤&w&˜WˆñB"¬.àä^ãéòéä%“≈≤&ÊWB"¬.ä.äﬁâNà.ã.ä.äÆãéâ~âéãB%“¿¢≤'&ˆfóB"¬.àã>òNä2%“≈≤&G5ˆ6˜7B"¬.àNòéã"G2%’“∆Fó2íííì∞¢&ˆ˜BÊVÊBáÊV¬Ç.äÆãNâûàNòûã"4µR"¬.ä.äﬁâNà.ã.ä.òä^ãâ^òûâûâ~ãéâûäÆãNâûàNòûã"+ròNäòéàéãâNäÆä>ä>àNòéã"G2â~ã^òéä>ãâNãâ¢4µR"¿¢6ˆÁFVÁD&VÜFFF&∆RÖµ≤'6∑UˆñB"¬%4µR%“≈≤'6∑UˆÊ÷R"¬.äÆãNâûàNòûã"%“¿¢≤'ñEˆóFV◊2"¬.ä>ã.ä.àã.ä>à.ã.ä"%“≈≤&ÊWB"¬.ä.äﬁâNà.ã.ä.äÆãéâ~âéãB%“≈≤&6ˆw2"¬.â^òûâûâ~ãéâûäÆãNâûàNòûã"%’“«6∑W2íííì∞¢6ˆÁ7B6◊ñvÁ3÷'W6ñÊW72Ê6◊ñvÁ2Êfñ«FW"áÉ”ÁÇÊ÷ˆÁFÉ””÷7W'&VÁBÊ÷ˆÁFÇì∞¢6ˆÁ7BD6◊ñvÁ3÷'W6ñÊW72ÊEˆ6◊ñvÁ2Êfñ«FW"áÉ”ÁÇÊ÷ˆÁFÉ””÷7W'&VÁBÊ÷ˆÁFÇb`¢á7FFRÊw&˜W””“$ƒ¬'««ÇÊw&˜WˆñC””◊7FFRÊw&˜Wíì∞¢&ˆ˜BÊVÊBáÊV¬Ç.òàNäòâæàﬁà.ã.ä.òä^ãò.ànäûâ>ã""¬.äÆäﬁà~òäæä^òéà~à.òûäﬁäãûä^â^òéã.à~ä>ãâNãâ¢òNäòéä>ä~äG2t’bòâæò~âûä.äﬁâNà.ã.ä.àæòûã2"¿¢6ˆÁFVÁD&VÜÊˆFRÇ&É2"¬&∆"◊7V&ÜVFñÊr"¬.òàNäòâæàﬁä>ã.àNã.à.ã.ä""í¿¢FFF&∆RÖµ≤&6◊ñvÂˆÊ÷R"¬.òàNäòâæà“%“≈≤'ñEˆóFV◊2"¬.ä>ã.ä.àã.ä>à.ã.ä"%“¿¢≤&ÊWB"¬.ä.äﬁâNà.ã.ä.äÆãéâ~âéãB%“≈≤'&ñ6U˜&VGV7Fñˆ‚"¬.äÆòéä~âûä^âB%’“∆6◊ñvÁ2í¿¢ÊˆFRÇ&É2"¬&∆"◊7V&ÜVFñÊr"¬.òàNäòâæàﬁò.ànäûâ>ã""í¿¢FFF&∆RÖµ≤&6◊ñvÂˆÊ÷R"¬$G2%“≈≤&w&˜WˆñB"¬.àä^ãéòéä%“¿¢≤&G5ˆ6˜7B"¬.àNòéã.ò>àÆòûàéòéã.ä"%“≈≤&6∆ñ6∑2"¬.àNä^ãNà%’“∆D6◊ñvÁ2íííì∞¢&ˆ˜BÊVÊBáÊV¬Ç.â^ã.ä>ã.à~ò>âív&VÜ˜W6R"∆÷ˆÊWíáF&∆W2Ê∆VÊwFÇí≤"â^ã.ä>ã.àr+ràéã>âûä~âûòânä~àéã.àGV6¥D"v&VÜ˜W6Rä>äﬁâÆâæãàéàéãéâÆãâí"¿¢6ˆÁFVÁD&VÜFFF&∆RÖµ≤&Ê÷R"¬.àÆã~òéäﬁâ^ã.ä>ã.àr%“≈≤'&˜w2"¬.àéã>âûä~âûòânär%’“«F&∆W2íííì∞¢&ˆ˜BÊVÊBÜ6Üˆ˜6TfñV∆BÇ.òä^ã~äﬁàâ^ã.ä>ã.à~òâÓã~òéäﬁâNãûòânä~â^ãä~äﬁä.òéã.àr"¿¢F&∆W2Ê÷ÜóFV””Â∂óFV“ÊÊ÷R∆óFV“ÊÊ÷R≤"+r"∂÷ˆÊWíÜóFV“Á&˜w2í≤"òânär%“í¿¢7FFRÁv&VÜ˜W6UF&∆R«f«VS”Á∑7FFRÁv&VÜ˜W6UF&∆S◊f«VS∑&VÊFW$'W6ñÊW72Çì∑“íì∞¢&ˆ˜BÊVÊBáÊV¬Ç.â^ãä~äﬁä.òéã.à~òânä~àéä>ãNà~àéã.àv&VÜ˜W6R"«7FFRÁv&VÜ˜W6UF&∆R≤"+ròäÆâNà~òNâNòûäÆãûà~äÆãéâBRòânär"¿¢6ˆÁFVÁD&Vá&˜w2Ê∆VÊwFÉ¢FFF&∆RÑˆ&¶V7BÊ∂Wó2á&˜w5≥“íÁ6∆ñ6RÉ√íÊ÷Ü∂Wì”Â∂∂Wí∆∂Wï“í«&˜w2ì†¢Ê˜Fñ6RÇ.â^ã.ä>ã.à~âûã^òûä.ãà~òNäòéäã^òânä~à.òûäﬁäãûäR"íííì∞¢6ˆÁ7B&Vg&W6É÷ÊˆFRÇ&'WGFˆ‚"¬&'WGFˆ‚'WGFˆ‚÷˜WF∆ñÊR"¬.ä>ã^òâ˛ä>àÆà.òûäﬁäãûäRv&VÜ˜W6R"ì∞¢&Vg&W6ÇÁGóS“&'WGFˆ‚#∑&Vg&W6ÇÊFDWfVÁD∆ó7FVÊW"Ç&6∆ñ6≤"∆∆ˆEv&VÜ˜W6TF6Ü&ˆ&Bì∞¢&ˆ˜BÊVÊBá&Vg&W6Çì∞¢–†¢gVÊ7Fñˆ‚&VÊFW%66VÊ&ñÚá&ˆ˜Bó∞¢6ˆÁ7BC◊7FFRÊFF∞¢6ˆÁ7BÊVƒ&ˆGì÷ÊˆFRÇ&Fób"¬'ÊV¬÷&ˆGí"ì∞¢ÊVƒ&ˆGíÊVÊBÜÊ˜Fñ6RÇ%6ÊF&˜Çâûã^òûòâæä^ã^òéä.âûâ^ãä~òä^à.òâŒâûòNâNòíòâ^òéòNäòéäã^ò.äòâNäR6W6¬Ù6˜VÁFW&f7GV¬â~ã^òéä>äﬁà~ä>ãâÆàã.ä>àNã>âûä~â>ä.äﬁâNà.ã.ä.äæä>ã~ä“$Ùíàéã.ààã.ä>âæä>ãâ¢G2òä^ãäÆòéä~âûä^âB"«G'VRíì∞¢6ˆÁ7B6Üˆñ6W3÷6Üˆ˜6TfñV∆BÇ%&ˆGV7Bw&˜W"∆w&˜W2Ê÷ÜñC”Â∂ñB«FóF∆RÜñBï“í«7FFRÊw&˜W””“$ƒ¬#Ú%s#ß7FFRÊw&˜W¬Çì”Á&W6WBÇíì∞¢6ˆÁ7BG3÷∆&VƒñÁWBÇ%∆ÊÊVBG2â^òéäﬁäÆãâæâNã.äæò¬éâÆã.ârí"¬&ÁV÷&W""¬#"¬#"¬#"ì∞¢6ˆÁ7BFó66˜VÁC÷∆&VƒñÁWBÇ.äÆòéä~âûä^âB6◊ñv‚òàûä^ã^òéä"ÇRí"¬&ÁV÷&W""¬#"¬#"¬#"ì∞¢6ˆÁ7Bw&ñC÷&˜ÇÇ'66VÊ&ñÚ÷w&ñB"∆6Üˆñ6W2∆G2Ê∆&V¬∆Fó66˜VÁBÊ∆&V¬ì∞¢6ˆÁ7B7V÷÷'ì÷ÊˆFRÇ'7G&ˆÊr"¬""¬.(	B"í∆Wá∆ÊFñˆ„◊6÷∆¬Ç.òâæò~âûòâÓã^ä.à~àã.ä>òâæä>ã^ä.âÆòâ~ã^ä.âÆòâŒâíòNäòéò>àÆòéàã.ä>âÓä.ã.àä>â>òŒä.äﬁâNà.ã.ä.äæä>ã~äﬁàã>òNä2"í«&W6WD'WGFˆ„÷ÊˆFRÇ&'WGFˆ‚"¬&'WGFˆ‚'WGFˆ‚÷˜WF∆ñÊR"¬.ä>ã^òàæò~â^àNòéã""ì∞¢&W6WD'WGFˆ‚ÁGóS“&'WGFˆ‚#∞¢6ˆÁ7B&W7V«C÷&˜ÇÇ'66VÊ&ñÚ◊&W7V«G2"∆&˜ÇÇ""«6÷∆¬Ç.òâŒâûäﬁòûã.à~äﬁãNà~äÆãâæâNã.äæò¬"∂BÁ66VÊ&ñÚÁ&VfW&VÊ6U˜vVV≤í«7V÷÷'í∆Wá∆ÊFñˆ‚í«&W6WD'WGFˆ‚ì∞¢6ˆÁ7B&Vc“Çì”ÊBÁ66VÊ&ñÚÁ&VfW&VÊ6U˜∆Á2ÊfñÊBáÉ”ÁÇÁ&ˆGV7Eˆw&˜WˆñC””÷6Üˆñ6W2ÁVW'ï6V∆V7F˜"Ç'6V∆V7B"íÁf«VRì∞¢gVÊ7Fñˆ‚WFFRÇó∞¢6ˆÁ7Bf«VS‘ÁV÷&W"ÜG2ÊfñV∆BÁf«VRí∆Fó63‘ÁV÷&W"ÜFó66˜VÁBÊfñV∆BÁf«VRì∞¢ñbÜG2ÊfñV∆BÁf«VS””“"'«∆Fó66˜VÁBÊfñV∆BÁf«VS””“"'«¬ÁV÷&W"Êó4fñÊóFRáf«VRó««f«VS√«¬ÁV÷&W"Êó4fñÊóFRÜFó62ó«∆Fó63√«∆Fó63„ó∞¢7V÷÷'íÁFWáD6ˆÁFVÁC“.àä>ãéâ>ã.àä>äﬁàà~â¢(öSòä^ãäÆòéä~âûä^âB(	3R#∑&WGW&„∞¢–¢6ˆÁ7BFñffW&VÊ6S◊f«VR‘ÁV÷&W"á&VbÇìÚÁ∆ÊÊVEˆG5˜vVV∑«√ì∞¢7V÷÷'íÁFWáD6ˆÁFVÁC“.à~â¢ãÚ"∂÷ˆÊWíáf«VRí≤"Ç"≤ÜFñffW&VÊ6S„”Ú"≤#¢""í∂÷ˆÊWíÜFñffW&VÊ6Rí≤"àéã.àòâŒâûòâNãNäí+räÆòéä~âûä^âB"∑7BÜFó62ì∞¢–¢gVÊ7Fñˆ‚&W6WBÇó∞¢G2ÊfñV∆BÁf«VS‘ÁV÷&W"á&VbÇìÚÁ∆ÊÊVEˆG5˜vVV∑«√íÁFÙfóÜVBÉì∞¢Fó66˜VÁBÊfñV∆BÁf«VS“ÑÁV÷&W"á&VbÇìÚÁ∆ÊÊVEˆFó66˜VÁEˆ÷VÂ˜vVV∑«√í£íÁFÙfóÜVBÉì∞¢WFFRÇì∞¢–¢6Üˆñ6W2ÁVW'ï6V∆V7F˜"Ç'6V∆V7B"íÊFDWfVÁD∆ó7FVÊW"Ç&6ÜÊvR"«&W6WBì∞¢G2ÊfñV∆BÊFDWfVÁD∆ó7FVÊW"Ç&ñÁWB"«WFFRì∂Fó66˜VÁBÊfñV∆BÊFDWfVÁD∆ó7FVÊW"Ç&ñÁWB"«WFFRì∞¢&W6WD'WGFˆ‚ÊFDWfVÁD∆ó7FVÊW"Ç&6∆ñ6≤"«&W6WBì∞¢FBáÊVƒ&ˆGí∆w&ñB«&W7V«Bì∞¢&ˆ˜BÊVÊBáÊV¬Ç.â~âNä^äﬁà~ä~ã.à~òâŒâûàã.ä>â^ä^ã.âB"¬.â~âNä^äﬁà~àä>äﬁàòâŒâûòNâNòíòâ^òéä.ãà~òNäòéòNâNòûä>ãâí66VÊ&ñÚf˜&V67B"«ÊVƒ&ˆGííì∞¢&W6WBÇì∞¢–†¢gVÊ7Fñˆ‚&VÊFW$WfñFVÊ6TWá∆˜&W"á&ˆ˜Bó∞¢6ˆÁ7BWfñFVÊ6S◊7FFRÊWfñFVÊ6S∞¢ñbÇWfñFVÊ6Ró∞¢&ˆ˜BÊVÊBáÊV¬Ç.äÆã>ä>ä~àéâ^ã.ä>ã.à~òä^ãòNâ˛ä^òŒà.äﬁà~òâ^òéä^ãàÆãòûâûà.òûäﬁäãûäR"¿¢.ä.ãà~òNäòéäã^òNâ˛ä^òŒäæä^ãàâã.âûà.äﬁà~àã.ä>ä>ãâûâ~ã^òéäÆòéà~äﬁäﬁàò>âûàÆãéâNà.òûäﬁäãûä^âûã^òí"¿¢6ˆÁFVÁD&VÜÊ˜Fñ6RÇ.ä>ã.ä.àÆã~òéäﬁâ^ã.ä>ã.à~òä^ãà.òûäﬁäãûä^â^ãä~äﬁä.òéã.à~àéãâæä>ã.àà˛òäã~òéä“vóDáV"7FñˆÁ2äÆä>òûã.àr6∆77&ˆˆ’ˆWfñFVÊ6RÊß6ˆ‚äÆã>òä>ò~àÇ"íííì∞¢&WGW&„∞¢–¢6ˆÁ7B∆&V«3◊∑6˜W&6S¢.âã.âûà.òûäﬁäãûä^â^òûâûâ~ã.àrÖ5∆óFRí"∆∆ÊFñÊs¢$FF∆∂R(	B∆ÊFñÊr"¿¢&s¢$FF∆∂R(	B&r"«7FÊF&Fó¶VC¢$FF∆∂R(	B7FÊF&Fó¶VB"¿¢v&VÜ˜W6S¢$FFv&VÜ˜W6RÑGV6¥D"í"∆v˜fW&ÊÊ6S¢$v˜fW&ÊÊ6R"∆6ˆÁG&ˆ√¢$6ˆÁG&ˆ¬'”∞¢ñbÇWfñFVÊ6RÊ∆ñW'5∑7FFRÊWfñFVÊ6T∆ñW%“ó7FFRÊWfñFVÊ6T∆ñW#“'6˜W&6R#∞¢6ˆÁ7B∆ó7C÷WfñFVÊ6RÊ∆ñW'5∑7FFRÊWfñFVÊ6T∆ñW%◊«≈µ”∞¢6ˆÁ7B˜FñˆÁ3‘ˆ&¶V7BÊVÁG&ñW2Ü∆&V«2íÊ÷ÇÖ∂∂Wí∆∆&V≈“ì”‡¢∂∂Wí∆∆&V¬≤"+r"≤ÜWfñFVÊ6RÊ∆ñW'5∂∂Wï◊«≈µ“íÊ∆VÊwFÇ≤"ä>ã.ä.àã.ä2%“ì∞¢6ˆÁ7B∆ñW%6V∆V7C÷6Üˆ˜6TfñV∆BÇ.òä^ã~äﬁààÆãòûâûà.òûäﬁäãûäR"∆˜FñˆÁ2«7FFRÊWfñFVÊ6T∆ñW"«c”Á∞¢7FFRÊWfñFVÊ6T∆ñW#◊c∑7FFRÊWfñFVÊ6UF&∆S“"#∑&VÊFW%óV∆ñÊRÇì∞¢“ì∞¢ñbÇ∆ó7BÁ6ˆ÷RáÉ”ÁÇÊÊ÷S””◊7FFRÊWfñFVÊ6UF&∆Ríê¢7FFRÊWfñFVÊ6UF&∆S÷∆ó7E≥”ÚÊÊ÷W«¬"#∞¢6ˆÁ7BFF6WE6V∆V7C÷6Üˆ˜6TfñV∆BÇ.òä^ã~äﬁàâ^ã.ä>ã.àr˛àÆãéâNà.òûäﬁäãûäR"¿¢∆ó7BÊ÷áÉ”Â∑ÇÊÊ÷R«ÇÊÊ÷R≤áÇÊ&F6ÉÚ"+r"∑ÇÊ&F6É¢""ï“í¿¢7FFRÊWfñFVÊ6UF&∆R«c”Á∑7FFRÊWfñFVÊ6UF&∆S◊c∑&VÊFW%óV∆ñÊRÇó“ì∞¢6ˆÁ7BóFV”÷∆ó7BÊfñÊBáÉ”ÁÇÊÊ÷S””◊7FFRÊWfñFVÊ6UF&∆Ró«∆∆ó7E≥”∞¢6ˆÁ7BFWFñ«3÷óFV”ˆ&˜ÇÇ'66VÊ&ñÚ◊&W7V«G2"∆&˜ÇÇ""¿¢6÷∆¬Ç.ä>ãûâæòâÆâ£¢"∂óFV“ÁGóR≤ÜóFV“Ê&F6ÉÚ"+rä>äﬁâ¢"∂óFV“Ê&F6É¢""íí¿¢ÊˆFRÇ'7G&ˆÊr"¬""∆óFV“ÊÊ÷Rí¿¢6÷∆¬Ç.àéã>âûä~âûä>ã.ä.àã.ä3¢"≤ÜóFV“Á&V6˜&G3””◊VÊFVfñÊVCÚ.(	B#¶÷ˆÊWíÜóFV“Á&V6˜&G2íí∞¢"+ràNäﬁä^ãäâûò√¢"≤ÜóFV“Ê6ˆ«V÷Á3ÚÊ∆VÊwFÉÛÚ.(	B"íí¿¢6÷∆¬Ç.â^ã>òäæâûòéà~à.òûäﬁäãûäS¢"≤ÜóFV“ÁFá«¬%VW'íàéã.àâã.âûà.òûäﬁäãûä^àÆãòéä~àNä>ã.ä~ò>âí'VÊÊW""íê¢íìß6÷∆¬Ç.òNäòéâÓâÆä>ã.ä.àã.ä>à.òûäﬁäãûä^ò>âûàÆãòûâûâûã^òí"ì∞¢6ˆÁ7BÜVFW'3“ÜóFV”ÚÊ6ˆ«V÷Á7«≈µ“íÁ6∆ñ6RÉ√ÇíÊ÷Ü∂Wì”Â∂∂Wí∆∂Wï“ì∞¢6ˆÁ7B&WfñWs÷óFV”ÚÁ&WfñWsÚÊ∆VÊwFÉˆFFF&∆RÜÜVFW'2∆óFV“Á&WfñWrìß6÷∆¬Ç.òNäòéäã^òânä~â^ãä~äﬁä.òéã.à~äæä>ã~äﬁòâæò~âûòNâ˛ä^ò¬÷WFFF"ì∞¢&ˆ˜BÊVÊBáÊV¬Ç.äÆã>ä>ä~àéâ^ã.ä>ã.à~òä^ãòNâ˛ä^òŒà.äﬁà~òâ^òéä^ãàÆãòûâûà.òûäﬁäãûäR"¿¢.âNãûàÆã~òéäﬁàÆãéâNà.òûäﬁäãûäRò.àNä>à~äÆä>òûã.à~àNäﬁä^ãäâûò¬òä^ãâ^ãä~äﬁä.òéã.à~à.òûäﬁäãûä^àéã.àâŒä^ä>ãâûàéä>ãNàrÖ6Ê6Ü˜BòNäòéò>àÆòéà.òûäﬁäãûä^äÆâBí"¿¢6ˆÁFVÁD&VÜÊ˜Fñ6RÇ.äæä^ãàâã.âûâûã^òûäã.àéã.à5∆óFRÚ'VWBÚGV6¥D"à.äﬁàrvóDáV"7FñˆÁ2ä.ãà~òNäòéò>àÆòéàã.ä2VW'íÊVˆ‚ò.âNä.â^ä>àr"«G'VRí¿¢&˜ÇÇ'GvÚ÷6ˆ¬"∆∆ñW%6V∆V7B∆FF6WE6V∆V7Bí∆FWFñ«2«&WfñWr¿¢&˜ÇÇ&Ç◊7F6≤"¿¢∆ñÊ≤Ç.â^ä>ä~àÇv˜&∂f∆˜ròä^ãâNã.ä~âûòŒò.äæä^âNäæä^ãàâã.âí"¬&áGG3¢ÚˆvóFáV"Ê6ˆ“Ù∂Ê∂vVT≥3Sb˜Fñ∑Fˆ≤◊6Ü˜◊óV∆ñÊR÷FV÷Úˆ7FñˆÁ2˜v˜&∂f∆˜w2ˆFV6ó6ñˆ‚÷F6Ü&ˆ&B÷6íÁñ÷¬"í¿¢∆ñÊ≤Ç.òâæãNâBÊVˆ‚6ˆÁ6ˆ∆Réâ^òûäﬁà~äã^äÆãNâ~âéãNò¬í"¬&áGG3¢Úˆ6ˆÁ6ˆ∆RÊÊVˆ‚ÁFV6Çˆ˜&ˆ¶V7G2"íí¿¢6÷∆¬Ç.ò.âæä>òàéàâ^ò¬ÊVˆ‚FV÷Ú◊óV∆ñÊRä.ãà~òä.ààéã.à6Ê6Ü˜Bâûã^òí+räﬁä.òéã.â^ã^àNä~ã.ää~òéã.à.òûäﬁäãûä^â^ä>à~àãâûàéâûàä~òéã.àéãòàÆã~òéäﬁäòä^ãâ^ä>ä~àéä.äﬁâNàéä>ãNàr"íííì∞¢–†¢7ñÊ2gVÊ7Fñˆ‚∆ˆDÊVˆ‰WfñFVÊ6RáF&∆S“""ó∞¢ñbá7FFRÊÊVˆÂ7FGW3””“&∆ˆFñÊr"ó&WGW&„∞¢7FFRÊÊVˆÂ7FGW3“&∆ˆFñÊr#∑7FFRÊÊVˆ‰W'&˜#“"#∞¢ñbá7FFRÁfñWs””“'óV∆ñÊR"ó&VÊFW%óV∆ñÊRÇì∞¢G'í∞¢6ˆÁ7BW&√“"ˆíˆÊVˆ‚÷WfñFVÊ6R"≤áF&∆SÚ#˜F&∆S“"∂VÊ6ˆFUU$î6ˆ◊ˆÊVÁBáF&∆Rí≤"f∆ñ÷óC”#¢""ì∞¢6ˆÁ7B&W7ˆÁ6S÷vóBfWF6ÇáW&¬«∂66ÜS¢&ÊÚ◊7F˜&R'“ì∞¢6ˆÁ7Bñ∆ˆC÷vóB&W7ˆÁ6RÊß6ˆ‚Çì∞¢ñbÇ&W7ˆÁ6RÊˆ≤«¬ñ∆ˆBÊ6ˆÊÊV7FVB«¬ñ∆ˆBÊ˜&ñvñ‚”“$‰TÙÂÙƒïdR"ê¢Fá&˜rW'&˜"áñ∆ˆBÊW'&˜"«¬.ä.ãà~òNäòéäÆã.äã.ä>ânäﬁòéã.âíÊVˆ‚òNâNòí"ì∞¢ñbÇF&∆Ró∞¢7FFRÊÊVˆÂF&∆W3◊ñ∆ˆBÁF&∆W3∞¢7FFRÊÊVˆ‰FF÷ÁV∆√∞¢7FFRÊÊVˆÂF&∆S“"#∞¢G'í∞¢6ˆÁ7B7FGW5&W7ˆÁ6S÷vóBfWF6ÇÇ"ˆíˆÊVˆ‚◊7FGW2"«∂66ÜS¢&ÊÚ◊7F˜&R'“ì∞¢6ˆÁ7B∆ófS÷vóB7FGW5&W7ˆÁ6RÊß6ˆ‚Çì∞¢ñbá7FGW5&W7ˆÁ6RÊˆ≤bf∆ófRÊ6ˆÊÊV7FVBbf∆ófRÊ˜&ñvñ„””“$‰TÙÂÙƒïdR"ê¢7FFRÊÊVˆÂ'VÂ7FGW3÷∆ófS∞¢÷6F6ÇÖˆW'&˜"ó∑7FFRÊÊVˆÂ'VÂ7FGW3÷ÁV∆√∑–†¢÷V«6W∞¢7FFRÊÊVˆ‰FF◊ñ∆ˆC∞¢7FFRÊÊVˆÂF&∆S◊F&∆S∞¢–¢7FFRÊÊVˆÂ7FGW3“'&VGí#∞¢÷6F6ÇÜW'&˜"ó∞¢7FFRÊÊVˆÂ7FGW3“&W'&˜"#∞¢7FFRÊÊVˆ‰W'&˜#÷W'&˜"Ê÷W76vW«¬.òNäòéäÆã.äã.ä>ânâ^ãNâNâ^òéäﬁâã.âûà.òûäﬁäãûä^òNâNòí#∞¢–¢ñbá7FFRÁfñWs””“'óV∆ñÊR"ó&VÊFW%óV∆ñÊRÇì∞¢–†¢gVÊ7Fñˆ‚&VÊFW$ÊVˆ‰Wá∆˜&W"á&ˆ˜Bó∞¢6ˆÁ7Bw&÷6ˆÁFVÁD&VÇì∞¢w&ÊVÊBÜÊ˜Fñ6RÇ.à.òûäﬁäãûª˜ø-¢Gß≤⁄Óù∆≠y’‡πå‡∏ó‡∏µ‡πà‡πÄ‡∏•‡∏∑‡∏≠‡∏Å: "+(state.sourceUploadName||"Source ZIP")+" ¬∑ ‡πÉ‡∏ä‡πâ‡πÅ‡∏ó‡∏ô‡∏ä‡∏∏‡∏î‡∏ï‡∏±‡∏ß‡∏≠‡∏¢‡πà‡∏≤‡∏á‡πÄ‡∏î‡∏∑‡∏≠‡∏ô‡∏ô‡∏µ‡πâ"));
+/* Interactive, static Decision Dashboard. All finance/model metrics come from JSON report. */
+(function () {
+  "use strict";
+  const $ = s => document.querySelector(s);
+  const state = { data:null, evidence:null, evidenceLayer:"source", evidenceTable:"", neonStatus:"not_loaded", neonTables:[], neonTable:"", neonData:null, neonError:"", neonRunStatus:null, neonArtifactType:"ALL", labStage:0, labTable:"Fact_Orders", labResults:{}, labBusy:false, labError:"", labLog:[], realReady:false, realConfigChecked:false, realLabPhase:"UNKNOWN", realLabCycle:null, realLabOrders:null, realBatch:"initial", realStageIndex:0, realPreviousRunId:"", realRunId:null, realStatus:"", realUrl:"", realError:"", realStartedAt:"", realAdminKey:"", realEvidence:null, autoBatch:"", batchResults:{initial:{},incremental:{}}, batchSummaries:{initial:null,incremental:null}, currentCycleRuns:[], resetStatus:"", resetSince:"", resetUrl:"", resetError:"", savedLabManifest:null, savedLabReceipt:null, savedLabSelected:"", savedLabLoading:false, pipelineTab:"flow", notebookBatch:"initial", notebookStage:"ingest", warehouseStatus:"not_loaded", warehouseSnapshot:null, warehouseError:"", warehouseTable:"Fact_Sales_Order_Item", labNeon:null, labNeonTable:null, labNeonBusy:false, labNeonError:"", errorCase:"N01", errorReplayed:false, errorLabOpen:false, view:"business", month:"", group:"ALL", sku:"", skuSort:"lowest_margin", model:"", week:"", replay:false, rows:[], sourceUploadId:"", sourceUploadMonth:"", sourceUploadName:"", sourceUploadBusy:false, sourceUploadError:"" };
+  state.batchRun={batch:"",status:"",since:"",runId:null,url:"",stages:[]};
+  state.batchRunIds={initial:null,incremental:null};
+  state.batchResume={batch:"",runId:null};
+  state.selectedResultTable="";
+  state.recentRuns=[];state.historyRun=null;state.historyBusy=false;
+  state.sharedRun={running:false,type:null,stage:null};
+  state.errorRun={status:"",since:"",url:"",runId:null,phase:"",previous:"0",
+    failEvidence:null,fixEvidence:null,error:"",neonRows:null};
+  const names = {
+    business:["‡∏†‡∏≤‡∏û‡∏£‡∏ß‡∏°‡∏ò‡∏∏‡∏£‡∏Å‡∏¥‡∏à","‡∏¢‡∏≠‡∏î‡∏Ç‡∏≤‡∏¢‡πÄ‡∏ó‡∏µ‡∏¢‡∏ö‡πÄ‡∏õ‡πâ‡∏≤ ‡∏Å‡∏≥‡πÑ‡∏£ ‡πÅ‡∏•‡∏∞‡∏à‡∏∏‡∏î‡∏ó‡∏µ‡πà‡∏Ñ‡∏ß‡∏£‡∏ï‡∏±‡∏î‡∏™‡∏¥‡∏ô‡πÉ‡∏à‡∏à‡∏≤‡∏Å Warehouse ‡∏õ‡∏±‡∏à‡∏à‡∏∏‡∏ö‡∏±‡∏ô","‡∏†‡∏≤‡∏û‡∏£‡∏ß‡∏°‡∏ò‡∏∏‡∏£‡∏Å‡∏¥‡∏à"],
+    pipeline:["Test Pipeline","‡∏à‡∏≤‡∏Å Source ‡∏ú‡πà‡∏≤‡∏ô Database ‡πÅ‡∏•‡∏∞ Data Lake ‡∏™‡∏π‡πà Warehouse","Test Pipeline"],
+    ml:["ML Lab","‡∏à‡∏≤‡∏Å Warehouse ‡∏™‡∏π‡πà Feature Store ‡πÅ‡∏•‡∏∞‡∏ú‡∏•‡∏ó‡∏≥‡∏ô‡∏≤‡∏¢","ML Lab"]
+  };
+  const groups=["PG01","PG02","PG03","PG04","PG05"];
+  const sourceMonths=Array.from({length:10},(_,i)=>"2026-"+String(i+1).padStart(2,"0"));
+  const money = (n,digits=0) => n===null||n===undefined||!Number.isFinite(Number(n)) ? "‚Äî" :
+    new Intl.NumberFormat("th-TH",{minimumFractionDigits:digits,maximumFractionDigits:digits}).format(Number(n));
+  const pct=(n,digits=1)=> n===null||n===undefined?"‚Äî":money(n,digits)+"%";
+  const sourceMonthForBatch=batch=>batch==="initial"?sourceMonths[0]:
+    /^incremental_\d{2}$/.test(batch)?sourceMonths[Number(batch.slice(-2))]:null;
+  const thaiMonth=month=>month?new Intl.DateTimeFormat("th-TH",{month:"long",year:"numeric"})
+    .format(new Date(month+"-01T00:00:00+07:00")):"";
+  const node=(tag,cls="",label=null)=>{
+    const el=document.createElement(tag);
+    if(cls)el.className=cls;
+    if(label!==null)el.textContent=String(label);
+    return el;
+  };
+  function add(parent,...children){for(const c of children)if(c)parent.append(c);return parent;}
+  function box(cls,...children){return add(node("div",cls),...children);}
+  function link(text,url){
+    const a=node("a","source-link",text+" ‚Üó");a.href=url;a.target="_blank";a.rel="noopener noreferrer";return a;
+  }
+  function small(text,cls="muted"){return node("div","small "+cls,text);}
+  function notice(text,warn=false){return box("notice "+(warn?"notice-warning":"notice-info"),node("span","",warn?"‚ö†":"‚ìò"),node("span","",text));}
+  function metric(label,value,description,kind=""){
+    return box("metric",node("div","metric-label",label),node("div","metric-value "+kind,value),node("div","metric-sub",description||""));
+  }
+  function panel(title,description,content,action=null){
+    const head=box("panel-head",box("",node("h2","panel-heading",title),description?node("p","panel-description",description):null),action);
+    return box("panel",head,content);
+  }
+  function contentArea(...children){return box("panel-body",...children);}
+  function statusLabel(x){
+    const good=["PASS","SUCCESS","COMPLETE","READY"].includes(x);
+    const bad=["FAIL","INCOMPLETE","INCOMPLETE_COST"].includes(x);
+    return node("span","status "+(good?"status-pass":bad?"status-fail":"status-pending"),x||"UNKNOWN");
+  }
+  function dataTable(columns,rows,formats={}){
+    if(!rows || !rows.length)return box("empty-state",node("span","", "‡πÑ‡∏°‡πà‡∏°‡∏µ‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡πÉ‡∏ô‡∏ï‡∏±‡∏ß‡∏Å‡∏£‡∏≠‡∏á‡∏ô‡∏µ‡πâ (‡πÑ‡∏°‡πà‡πÄ‡∏ï‡∏¥‡∏°‡∏ï‡∏±‡∏ß‡πÄ‡∏•‡∏Ç‡∏™‡∏°‡∏°‡∏ï‡∏¥)"));
+    const table=node("table");
+    const thead=node("thead"),hr=node("tr");
+    columns.forEach(([key,label])=>add(hr,node("th",formats[key]?.align||"",label)));
+    thead.append(hr);table.append(thead);
+    const tbody=node("tbody");
+    rows.forEach(row=>{
+      const tr=node("tr");
+      columns.forEach(([key])=>{
+        const spec=formats[key]||{};
+        const td=node("td",spec.align||"");
+        if(spec.kind==="status")td.append(statusLabel(row[key]));
+        else if(spec.kind==="goal")td.append(node("span","status "+
+          (row[key]?"status-pass":"status-fail"),row[key]?"‡∏ú‡πà‡∏≤‡∏ô":"‡∏¢‡∏±‡∏á‡πÑ‡∏°‡πà‡∏ú‡πà‡∏≤‡∏ô"));
+        else if(spec.kind==="risk"){
+          const code=row[key],bad=["RISK","GROUP_BELOW"].includes(code);
+          td.append(node("span","status "+(bad?"status-fail":code==="GROUP_ABOVE"?"status-pass":"status-pending"),
+            code==="RISK"?"‡πÄ‡∏™‡∏µ‡πà‡∏¢‡∏á‡∏ï‡πà‡∏≥‡∏Å‡∏ß‡πà‡∏≤‡πÄ‡∏õ‡πâ‡∏≤":code==="CHECK"?"‡∏£‡∏≠‡∏ï‡πâ‡∏ô‡∏ó‡∏∏‡∏ô‡∏Å‡∏•‡∏∏‡πà‡∏°":
+            code==="GROUP_BELOW"?"‡∏ï‡πà‡∏≥‡∏Å‡∏ß‡πà‡∏≤‡πÄ‡∏Å‡∏ì‡∏ë‡πå‡∏£‡πâ‡∏≤‡∏ô":code==="GROUP_ABOVE"?"‡∏ñ‡∏∂‡∏á‡πÄ‡∏Å‡∏ì‡∏ë‡πå‡∏£‡πâ‡∏≤‡∏ô":"‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡πÑ‡∏°‡πà‡∏û‡∏≠"));
+        }
+        else if(spec.kind==="money")td.textContent=money(row[key],spec.digits||0);
+        else if(spec.kind==="percent")td.textContent=pct(row[key],spec.digits===undefined?1:spec.digits);
+        else td.textContent=row[key]===null||row[key]===undefined?"‚Äî":String(row[key]);
+        tr.append(td);
+      });
+      tbody.append(tr);
+    });
+    table.append(tbody);
+    return box("table-wrap",table);
+  }
+  function barChart(data,active=""){
+    const list=node("div","bar-list"),max=Math.max(1,...data.map(x=>Number(x.value)||0));
+    data.forEach(x=>{
+      const track=node("div","bar-track"),fill=node("div","bar-fill"+(x.name===active?" bar-active":""));
+      fill.style.width=Math.max(0,Math.min(100,(Number(x.value)||0)/max*100))+"%";
+      track.append(fill);
+      list.append(box("bar-entry",node("div","bar-title",x.name),track,node("div","bar-value",x.display||money(x.value))));
+    });
+    return list;
+  }
+  const title=id=>{
+    const group=state.data?.business.groups.find(x=>x.product_group_id===id);
+    return group?.product_group_name?id+" ¬∑ "+group.product_group_name:id;
+  };
+  function labelInput(labelText,type,value,min,max){
+    const label=node("label","field"),title=node("span","",labelText);
+    const field=node("input");field.type=type;field.value=value;field.min=min;field.max=max;field.step="0.5";
+    add(label,title,field);return {label,field};
+  }
+  function chooseField(labelText,options,current,handler){
+    const label=node("label","field"),select=node("select");
+    options.forEach(([id,text])=>{
+      const opt=node("option","",text);opt.value=id;
+      if(id===current)opt.selected=true;
+      select.append(opt);
+    });
+    select.addEventListener("change",()=>handler(select.value));
+    add(label,node("span","",labelText),select);
+    return label;
+  }
+
+  function fashionThumb(){
+    const image=node("img","fashion-preview");
+    image.src="./assets/womens-top.svg";
+    image.alt="‡∏†‡∏≤‡∏û‡∏õ‡∏£‡∏∞‡∏Å‡∏≠‡∏ö‡πÄ‡∏™‡∏∑‡πâ‡∏≠‡∏ú‡∏π‡πâ‡∏´‡∏ç‡∏¥‡∏á ‡πÑ‡∏°‡πà‡πÉ‡∏ä‡πà‡∏†‡∏≤‡∏û‡∏™‡∏¥‡∏ô‡∏Ñ‡πâ‡∏≤‡∏à‡∏£‡∏¥‡∏á";
+    image.loading="lazy";
+    return image;
+  }
+
+  async function loadWarehouseDashboard(){
+    if(state.warehouseStatus==="loading")return;
+    state.warehouseStatus="loading";state.warehouseSnapshot=null;state.warehouseError="";
+    if(state.view==="business"||state.view==="ml")render();
+    if(state.view==="ml"&&state.warehouseSnapshot?.result)loadLiveML();
+    try{
+      const statusResponse=await fetch("/api/lab-batch",{cache:"no-store"});
+      const status=await statusResponse.json();
+      if(!statusResponse.ok||!status.ready)throw Error(status.error||"‡∏≠‡πà‡∏≤‡∏ô‡∏™‡∏ñ‡∏≤‡∏ô‡∏∞ Warehouse ‡πÑ‡∏°‡πà‡πÑ‡∏î‡πâ");
+      if(status.running){
+        state.warehouseSnapshot={...status,running:true};
+      }else if(status.phase==="EMPTY"){
+        state.warehouseSnapshot={...status,result:null};
+      }else{
+        if(!status.current_run_id)throw Error("‡πÑ‡∏°‡πà‡∏û‡∏ö Run ‡∏õ‡∏±‡∏à‡∏à‡∏∏‡∏ö‡∏±‡∏ô‡∏ó‡∏µ‡πà‡πÄ‡∏ä‡∏∑‡πà‡∏≠‡∏°‡∏Å‡∏±‡∏ö Warehouse");
+        const resultResponse=await fetch("/api/lab-batch-result?run_id="+
+          encodeURIComponent(status.current_run_id),{cache:"no-store"});
+        const payload=await resultResponse.json();
+        if(!resultResponse.ok||!payload.result)throw Error(payload.error||"‡∏≠‡πà‡∏≤‡∏ô‡∏ú‡∏• Warehouse ‡πÑ‡∏°‡πà‡πÑ‡∏î‡πâ");
+        if(Number(payload.result.cycle)!==Number(status.cycle))
+          throw Error("‡∏ú‡∏• Warehouse ‡πÑ‡∏°‡πà‡∏ï‡∏£‡∏á‡∏Å‡∏±‡∏ö‡∏£‡∏≠‡∏ö Lab ‡∏õ‡∏±‡∏à‡∏à‡∏∏‡∏ö‡∏±‡∏ô");
+        state.warehouseSnapshot={...status,result:payload.result};
+      }
+      state.warehouseStatus="ready";
+    }catch(error){
+      state.warehouseStatus="error";
+      state.warehouseSnapshot=null;
+      state.warehouseError=error.message||"‡∏≠‡πà‡∏≤‡∏ô‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏• Warehouse ‡πÑ‡∏°‡πà‡πÑ‡∏î‡πâ";
+    }
+    if(state.view==="business"||state.view==="ml")render();
+  }
+
+  function renderBusiness(){
+    const root=$("#app");root.replaceChildren();state.rows=[];
+    const snapshot=state.warehouseSnapshot;
+    const phase=snapshot?.phase||"UNKNOWN";
+    $("#headerMode").textContent=state.warehouseStatus==="ready"?
+      phase==="EMPTY"?"Warehouse ‡∏ß‡πà‡∏≤‡∏á":snapshot?.running?"Warehouse ‡∏Å‡∏≥‡∏•‡∏±‡∏á‡∏≠‡∏±‡∏õ‡πÄ‡∏î‡∏ï":"Warehouse ¬∑ ‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏£‡∏≠‡∏ö‡∏õ‡∏±‡∏à‡∏à‡∏∏‡∏ö‡∏±‡∏ô":
+      "‡∏Å‡∏≥‡∏•‡∏±‡∏á‡∏ï‡∏£‡∏ß‡∏à Warehouse";
+    const executed=snapshot?.result?.stages?.find(x=>x.stage==="load")?.evidence?.executed_at;
+    $("#snapshotStamp").textContent=executed?
+      new Intl.DateTimeFormat("th-TH",{timeZone:"Asia/Bangkok",year:"numeric",month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})
+        .format(new Date(executed)):
+      snapshot?.cycle?"‡∏£‡∏≠‡∏ö Lab "+snapshot.cycle:"‚Äî";
+    $("#footerStatus").textContent=state.warehouseStatus==="ready"?
+      phase==="EMPTY"?"Warehouse ‡∏ß‡πà‡∏≤‡∏á ¬∑ ‡∏¢‡∏±‡∏á‡πÑ‡∏°‡πà‡∏°‡∏µ Run ‡πÉ‡∏ô‡∏£‡∏≠‡∏ö‡∏ô‡∏µ‡πâ":
+      snapshot?.running?"‡∏Å‡∏≥‡∏•‡∏±‡∏á‡∏õ‡∏£‡∏∞‡∏°‡∏ß‡∏•‡∏ú‡∏• ¬∑ ‡∏à‡∏∞‡πÄ‡∏õ‡∏¥‡∏î‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡πÄ‡∏°‡∏∑‡πà‡∏≠ Run ‡∏™‡∏≥‡πÄ‡∏£‡πá‡∏à":
+      "‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏• Warehouse ‡∏õ‡∏±‡∏à‡∏à‡∏∏‡∏ö‡∏±‡∏ô ¬∑ Lab ‡∏£‡∏≠‡∏ö "+(snapshot?.cycle??"‚Äî"):
+      "‡∏ï‡∏£‡∏ß‡∏à‡∏™‡∏≠‡∏ö Warehouse";
+    if(state.warehouseStatus==="not_loaded"||state.warehouseStatus==="loading"){
+      root.append(small("‡∏Å‡∏≥‡∏•‡∏±‡∏á‡∏ï‡∏£‡∏ß‡∏à‡∏™‡∏ñ‡∏≤‡∏ô‡∏∞ Lab ‡πÅ‡∏•‡∏∞ Warehouse‚Ä¶"));return;
+    }
+    if(state.warehouseStatus==="error"){
+      root.append(notice("‡πÑ‡∏°‡πà‡∏™‡∏≤‡∏°‡∏≤‡∏£‡∏ñ‡∏¢‡∏∑‡∏ô‡∏¢‡∏±‡∏ô‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏• Warehouse ‡πÑ‡∏î‡πâ ‡∏à‡∏∂‡∏á‡πÑ‡∏°‡πà‡πÅ‡∏™‡∏î‡∏á‡∏ï‡∏±‡∏ß‡πÄ‡∏•‡∏Ç‡πÄ‡∏Å‡πà‡∏≤ ¬∑ "+state.warehouseError,true));
+      const retry=node("button","button button-outline","‡∏ï‡∏£‡∏ß‡∏à‡∏™‡∏ñ‡∏≤‡∏ô‡∏∞‡∏≠‡∏µ‡∏Å‡∏Ñ‡∏£‡∏±‡πâ‡∏á");
+      retry.type="button";retry.addEventListener("click",loadWarehouseDashboard);root.append(retry);return;
+    }
+    if(snapshot?.running){
+      root.append(node("h2","lab-heading","‡∏Å‡∏≥‡∏•‡∏±‡∏á‡∏õ‡∏£‡∏∞‡∏°‡∏ß‡∏•‡∏ú‡∏•‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡πÄ‡∏Ç‡πâ‡∏≤ Warehouse"));
+      root.append(small("‡πÄ‡∏°‡∏∑‡πà‡∏≠ Run ‡∏™‡∏≥‡πÄ‡∏£‡πá‡∏à Dashboard ‡∏à‡∏∞‡πÅ‡∏™‡∏î‡∏á‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏£‡∏≠‡∏ö‡∏ô‡∏µ‡πâ ¬∑ ‡∏£‡∏∞‡∏´‡∏ß‡πà‡∏≤‡∏á‡∏ô‡∏µ‡πâ‡∏à‡∏∞‡πÑ‡∏°‡πà‡πÅ‡∏™‡∏î‡∏á‡∏ï‡∏±‡∏ß‡πÄ‡∏•‡∏Ç‡∏à‡∏≤‡∏Å‡∏£‡∏≠‡∏ö‡∏Å‡πà‡∏≠‡∏ô"));
+      return;
+    }
+    if(phase==="EMPTY"||!snapshot?.result){
+      root.append(node("h2","lab-heading","Warehouse ‡∏¢‡∏±‡∏á‡πÑ‡∏°‡πà‡∏°‡∏µ‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•"));
+      root.append(small("Lab ‡∏£‡∏≠‡∏ö "+(snapshot?.cycle??"‚Äî")+" ‡∏ß‡πà‡∏≤‡∏á‡∏≠‡∏¢‡∏π‡πà ¬∑ ‡∏Å‡∏î Run 1 ‡πÉ‡∏ô Test Pipeline ‡πÄ‡∏û‡∏∑‡πà‡∏≠‡∏™‡∏£‡πâ‡∏≤‡∏á‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏• Warehouse ‡∏£‡∏≠‡∏ö‡πÉ‡∏´‡∏°‡πà"));
+      const open=node("button","button button-primary","‡πÑ‡∏õ‡∏ó‡∏µ‡πà Test Pipeline");
+      open.type="button";open.addEventListener("click",()=>setView("pipeline"));root.append(open);return;
+    }
+    const result=snapshot.result;
+    const load=result.stages?.find(x=>x.stage==="load")?.evidence?.output;
+    if(!load||load.origin!=="NEW_DUCKDB_WAREHOUSE"){
+      root.append(notice("Run ‡∏õ‡∏±‡∏à‡∏à‡∏∏‡∏ö‡∏±‡∏ô‡πÑ‡∏°‡πà‡∏°‡∏µ‡∏´‡∏•‡∏±‡∏Å‡∏ê‡∏≤‡∏ô Warehouse ‡∏ó‡∏µ‡πà‡∏ï‡∏£‡∏ß‡∏à‡∏™‡∏≠‡∏ö‡πÑ‡∏î‡πâ ¬∑ ‡πÑ‡∏°‡πà‡πÅ‡∏™‡∏î‡∏á Snapshot ‡πÄ‡∏Å‡πà‡∏≤",true));return;
+    }
+    const tables=Array.isArray(load.tables)?load.tables:[];
+    const previews=load.table_previews||{};
+    const names=tables.map(x=>x.name);
+    if(!names.length){root.append(notice("Run ‡∏ô‡∏µ‡πâ‡∏¢‡∏±‡∏á‡πÑ‡∏°‡πà‡∏°‡∏µ‡∏ï‡∏≤‡∏£‡∏≤‡∏á‡πÉ‡∏ô Warehouse"));return;}
+    if(!names.includes(state.warehouseTable))state.warehouseTable=
+      names.includes("Fact_Sales_Order_Item")?"Fact_Sales_Order_Item":names[0];
+    const rows=Array.isArray(previews[state.warehouseTable])?previews[state.warehouseTable]:[];
+    state.rows=rows;
+    const business=result.business;
+    if(!business?.months?.length){root.append(notice("‡∏¢‡∏±‡∏á‡πÑ‡∏°‡πà‡∏°‡∏µ‡∏™‡∏£‡∏∏‡∏õ KPI ‡∏à‡∏≤‡∏Å Warehouse ‡∏£‡∏≠‡∏ö‡∏ô‡∏µ‡πâ",true));return;}
+    if(state.businessRunId!==snapshot.current_run_id){
+      state.businessRunId=snapshot.current_run_id;
+      state.month=business.months.at(-1).month;
+      state.group="ALL";
+    }
+    const current=business.months.find(x=>x.month===state.month)||business.months.at(-1);
+    const coverage=month=>{
+      const dates=[...new Set(business.days.filter(x=>x.month===month)
+        .map(x=>String(x.day).slice(0,10)))].sort();
+      const [year,number]=month.split("-").map(Number);
+      const total=new Date(Date.UTC(year,number,0)).getUTCDate();
+      return {last:dates.at(-1)||"‚Äî",complete:dates.length===total};
+    };
+    const monthCoverage=coverage(current.month);
+    const groupRows=business.groups.filter(x=>x.month===current.month);
+    const visibleGroups=state.group==="ALL"?groupRows:groupRows.filter(x=>x.group_id===state.group);
+    const days=business.days.filter(x=>x.month===current.month&&
+      (state.group==="ALL"||x.group_id===state.group));
+    const skus=business.sku.filter(x=>x.month===current.month&&
+      (state.group==="ALL"||x.group_id===state.group));
+    root.append(box("h-stack",
+      chooseField("‡πÄ‡∏î‡∏∑‡∏≠‡∏ô",business.months.map(x=>[x.month,x.month]),current.month,
+        value=>{state.month=value;renderBusiness()}),
+      chooseField("‡∏Å‡∏•‡∏∏‡πà‡∏°‡∏™‡∏¥‡∏ô‡∏Ñ‡πâ‡∏≤",[["ALL","‡∏ó‡∏±‡πâ‡∏á‡∏£‡πâ‡∏≤‡∏ô"],...groupRows.map(x=>
+        [x.group_id,x.group_name||x.group_id])],state.group,
+        value=>{state.group=value;renderBusiness()})));
+    root.append(add(box("metrics"),
+      metric("‡∏¢‡∏≠‡∏î‡∏Ç‡∏≤‡∏¢‡∏™‡∏∏‡∏ó‡∏ò‡∏¥","‡∏ø"+money(current.net),"‡πÄ‡∏õ‡πâ‡∏≤ ‡∏ø"+money(current.target)),
+      metric("‡πÄ‡∏ó‡∏µ‡∏¢‡∏ö‡πÄ‡∏õ‡πâ‡∏≤‡∏£‡∏≤‡∏¢‡πÄ‡∏î‡∏∑‡∏≠‡∏ô",monthCoverage.complete?pct(current.achievement_pct):"‡∏£‡∏≠‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏Ñ‡∏£‡∏ö‡πÄ‡∏î‡∏∑‡∏≠‡∏ô",
+        monthCoverage.complete?"‡∏™‡πà‡∏ß‡∏ô‡∏ï‡πà‡∏≤‡∏á "+(Number(current.gap)>=0?"+":"")+"‡∏ø"+money(current.gap):
+        "‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏ñ‡∏∂‡∏á "+monthCoverage.last),
+      metric("‡∏Å‡∏≥‡πÑ‡∏£‡∏´‡∏•‡∏±‡∏á‡∏ï‡πâ‡∏ô‡∏ó‡∏∏‡∏ô‡∏ó‡∏µ‡πà‡πÄ‡∏Å‡∏µ‡πà‡∏¢‡∏ß‡∏Ç‡πâ‡∏≠‡∏á",
+        current.profit===null?"‡∏£‡∏≠‡∏ï‡∏£‡∏ß‡∏à‡∏ï‡πâ‡∏ô‡∏ó‡∏∏‡∏ô":"‡∏ø"+money(current.profit),
+        "‡∏¢‡∏±‡∏á‡πÑ‡∏°‡πà‡∏Å‡∏£‡∏∞‡∏à‡∏≤‡∏¢‡∏Ñ‡πà‡∏≤ Ads ‡∏•‡∏á SKU"),
+      metric("‡∏Ñ‡∏∏‡πâ‡∏°‡∏Ñ‡∏£‡∏≠‡∏á‡∏Å‡∏≥‡πÑ‡∏£",pct(current.protection_pct),
+        "‡πÄ‡∏Å‡∏ì‡∏ë‡πå ‚â•10% ‡∏Ç‡∏≠‡∏á‡∏¢‡∏≠‡∏î‡∏£‡∏≤‡∏Ñ‡∏≤‡πÄ‡∏ï‡πá‡∏° ¬∑ "+current.protection_status)));
+    const belowTarget=current.gap!==null&&Number(current.gap)<0;
+    const profitFail=current.protection_status==="FAIL";
+    root.append(notice(!monthCoverage.complete?
+      "‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏ñ‡∏∂‡∏á "+monthCoverage.last+" ¬∑ ‡πÄ‡∏î‡∏∑‡∏≠‡∏ô‡∏¢‡∏±‡∏á‡πÑ‡∏°‡πà‡∏Ñ‡∏£‡∏ö ‡∏à‡∏∂‡∏á‡∏¢‡∏±‡∏á‡πÑ‡∏°‡πà‡∏™‡∏£‡∏∏‡∏õ‡πÄ‡∏ó‡∏µ‡∏¢‡∏ö‡πÄ‡∏õ‡πâ‡∏≤‡∏ó‡∏±‡πâ‡∏á‡πÄ‡∏î‡∏∑‡∏≠‡∏ô":
+      current.profit_data_status==="INCOMPLETE"?
+      "‡∏ï‡πâ‡∏ô‡∏ó‡∏∏‡∏ô‡∏¢‡∏±‡∏á‡πÑ‡∏°‡πà‡∏Ñ‡∏£‡∏ö ‡∏à‡∏∂‡∏á‡∏¢‡∏±‡∏á‡∏™‡∏£‡∏∏‡∏õ‡∏Å‡∏≥‡πÑ‡∏£‡πÑ‡∏°‡πà‡πÑ‡∏î‡πâ":
+      belowTarget&&profitFail?"‡∏¢‡∏≠‡∏î‡∏Ç‡∏≤‡∏¢‡∏ï‡πà‡∏≥‡∏Å‡∏ß‡πà‡∏≤‡πÄ‡∏õ‡πâ‡∏≤‡πÅ‡∏•‡∏∞‡∏Å‡∏≥‡πÑ‡∏£‡∏ï‡πà‡∏≥‡∏Å‡∏ß‡πà‡∏≤‡πÄ‡∏Å‡∏ì‡∏ë‡πå ‡∏ï‡∏£‡∏ß‡∏à‡∏Å‡∏•‡∏∏‡πà‡∏°‡∏™‡∏¥‡∏ô‡∏Ñ‡πâ‡∏≤‡πÅ‡∏•‡∏∞‡∏ï‡πâ‡∏ô‡∏ó‡∏∏‡∏ô‡∏î‡πâ‡∏≤‡∏ô‡∏•‡πà‡∏≤‡∏á":
+      belowTarget?"‡∏¢‡∏≠‡∏î‡∏Ç‡∏≤‡∏¢‡∏ï‡πà‡∏≥‡∏Å‡∏ß‡πà‡∏≤‡πÄ‡∏õ‡πâ‡∏≤ ‡∏ï‡∏£‡∏ß‡∏à‡∏Å‡∏•‡∏∏‡πà‡∏°‡∏™‡∏¥‡∏ô‡∏Ñ‡πâ‡∏≤‡∏ó‡∏µ‡πà‡πÄ‡∏õ‡πá‡∏ô‡∏™‡πà‡∏ß‡∏ô‡∏ï‡πà‡∏≤‡∏á‡∏î‡πâ‡∏≤‡∏ô‡∏•‡πà‡∏≤‡∏á":
+      profitFail?"‡∏¢‡∏≠‡∏î‡∏Ç‡∏≤‡∏¢‡∏ñ‡∏∂‡∏á‡πÄ‡∏õ‡πâ‡∏≤ ‡πÅ‡∏ï‡πà‡∏Å‡∏≥‡πÑ‡∏£‡∏ï‡πà‡∏≥‡∏Å‡∏ß‡πà‡∏≤‡πÄ‡∏Å‡∏ì‡∏ë‡πå ‡∏ï‡∏£‡∏ß‡∏à‡∏ï‡πâ‡∏ô‡∏ó‡∏∏‡∏ô‡πÅ‡∏•‡∏∞‡∏™‡πà‡∏ß‡∏ô‡∏•‡∏î‡∏î‡πâ‡∏≤‡∏ô‡∏•‡πà‡∏≤‡∏á":
+      "‡∏¢‡∏≠‡∏î‡∏Ç‡∏≤‡∏¢‡πÅ‡∏•‡∏∞‡∏Å‡∏≥‡πÑ‡∏£‡∏ú‡πà‡∏≤‡∏ô‡πÄ‡∏Å‡∏ì‡∏ë‡πå‡∏Ç‡∏≠‡∏á‡πÄ‡∏î‡∏∑‡∏≠‡∏ô‡∏ó‡∏µ‡πà‡πÄ‡∏•‡∏∑‡∏≠‡∏Å"));
+    state.rows=visibleGroups;
+    const monthRows=business.months.map(row=>{
+      const status=coverage(row.month);
+      return status.complete?row:{...row,gap:"‚Äî"};
+    });
+    root.append(panel("‡∏ú‡∏•‡∏á‡∏≤‡∏ô‡∏£‡∏≤‡∏¢‡πÄ‡∏î‡∏∑‡∏≠‡∏ô","‡∏£‡∏∞‡∏î‡∏±‡∏ö‡∏£‡πâ‡∏≤‡∏ô ¬∑ ‡πÄ‡∏õ‡∏£‡∏µ‡∏¢‡∏ö‡πÄ‡∏ó‡∏µ‡∏¢‡∏ö‡∏¢‡∏≠‡∏î‡∏à‡∏£‡∏¥‡∏á‡∏Å‡∏±‡∏ö‡πÄ‡∏õ‡πâ‡∏≤",
+      contentArea(dataTable([["month","‡πÄ‡∏î‡∏∑‡∏≠‡∏ô"],["net","‡∏¢‡∏≠‡∏î‡∏Ç‡∏≤‡∏¢‡∏™‡∏∏‡∏ó‡∏ò‡∏¥"],["target","‡πÄ‡∏õ‡πâ‡∏≤"],
+        ["gap","‡∏™‡πà‡∏ß‡∏ô‡∏ï‡πà‡∏≤‡∏á"],["protection_status","‡∏Å‡∏≥‡πÑ‡∏£ ‚â•10%"]],monthRows))));
+    root.append(panel("‡πÄ‡∏à‡∏≤‡∏∞‡∏•‡∏á‡∏Å‡∏•‡∏∏‡πà‡∏°‡∏™‡∏¥‡∏ô‡∏Ñ‡πâ‡∏≤","‡πÄ‡∏•‡∏∑‡∏≠‡∏Å‡∏Å‡∏•‡∏∏‡πà‡∏°‡∏î‡πâ‡∏≤‡∏ô‡∏ö‡∏ô‡πÄ‡∏û‡∏∑‡πà‡∏≠‡∏î‡∏π‡∏ß‡∏±‡∏ô‡πÅ‡∏•‡∏∞ SKU",
+      contentArea(dataTable([["group_name","‡∏Å‡∏•‡∏∏‡πà‡∏°"],["net","‡∏¢‡∏≠‡∏î‡∏Ç‡∏≤‡∏¢‡∏™‡∏∏‡∏ó‡∏ò‡∏¥"],
+        ["profit","‡∏Å‡∏≥‡πÑ‡∏£"],["ads_cost","Ads ‡∏£‡∏ß‡∏°‡∏£‡∏∞‡∏î‡∏±‡∏ö‡∏Å‡∏•‡∏∏‡πà‡∏°"],
+        ["campaign_reduction","‡∏™‡πà‡∏ß‡∏ô‡∏•‡∏î‡πÅ‡∏Ñ‡∏°‡πÄ‡∏õ‡∏ç"]],visibleGroups))));
+    root.append(panel("‡∏£‡∏≤‡∏¢‡∏ß‡∏±‡∏ô","‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏£‡∏∞‡∏î‡∏±‡∏ö‡∏ß‡∏±‡∏ô √ó ‡∏Å‡∏•‡∏∏‡πà‡∏°‡∏™‡∏¥‡∏ô‡∏Ñ‡πâ‡∏≤ ‡∏à‡∏≤‡∏Å Mart",
+      contentArea(dataTable([["day","‡∏ß‡∏±‡∏ô"],["group_id","‡∏Å‡∏•‡∏∏‡πà‡∏°"],["net","‡∏¢‡∏≠‡∏î‡∏Ç‡∏≤‡∏¢‡∏™‡∏∏‡∏ó‡∏ò‡∏¥"],
+        ["profit","‡∏Å‡∏≥‡πÑ‡∏£"],["ads_cost","‡∏Ñ‡πà‡∏≤ Ads"]],days))));
+    root.append(panel("‡∏™‡∏¥‡∏ô‡∏Ñ‡πâ‡∏≤ SKU","‡∏¢‡∏≠‡∏î‡∏Ç‡∏≤‡∏¢‡πÅ‡∏•‡∏∞‡∏ï‡πâ‡∏ô‡∏ó‡∏∏‡∏ô‡∏™‡∏¥‡∏ô‡∏Ñ‡πâ‡∏≤ ¬∑ ‡πÑ‡∏°‡πà‡∏à‡∏±‡∏î‡∏™‡∏£‡∏£‡∏Ñ‡πà‡∏≤ Ads ‡∏ó‡∏µ‡πà‡∏£‡∏∞‡∏î‡∏±‡∏ö SKU",
+      contentArea(dataTable([["sku_id","SKU"],["sku_name","‡∏™‡∏¥‡∏ô‡∏Ñ‡πâ‡∏≤"],
+        ["paid_items","‡∏£‡∏≤‡∏¢‡∏Å‡∏≤‡∏£‡∏Ç‡∏≤‡∏¢"],["net","‡∏¢‡∏≠‡∏î‡∏Ç‡∏≤‡∏¢‡∏™‡∏∏‡∏ó‡∏ò‡∏¥"],["cogs","‡∏ï‡πâ‡∏ô‡∏ó‡∏∏‡∏ô‡∏™‡∏¥‡∏ô‡∏Ñ‡πâ‡∏≤"]],skus))));
+    const campaigns=business.campaigns.filter(x=>x.month===current.month);
+    const adCampaigns=business.ad_campaigns.filter(x=>x.month===current.month&&
+      (state.group==="ALL"||x.group_id===state.group));
+    root.append(panel("‡πÅ‡∏Ñ‡∏°‡πÄ‡∏õ‡∏ç‡∏Ç‡∏≤‡∏¢‡πÅ‡∏•‡∏∞‡πÇ‡∏Ü‡∏©‡∏ì‡∏≤","‡∏™‡∏≠‡∏á‡πÅ‡∏´‡∏•‡πà‡∏á‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏ï‡πà‡∏≤‡∏á‡∏£‡∏∞‡∏î‡∏±‡∏ö ‡πÑ‡∏°‡πà‡∏£‡∏ß‡∏° Ads GMV ‡πÄ‡∏õ‡πá‡∏ô‡∏¢‡∏≠‡∏î‡∏Ç‡∏≤‡∏¢‡∏ã‡πâ‡∏≥",
+      contentArea(node("h3","lab-subheading","‡πÅ‡∏Ñ‡∏°‡πÄ‡∏õ‡∏ç‡∏£‡∏≤‡∏Ñ‡∏≤‡∏Ç‡∏≤‡∏¢"),
+        dataTable([["campaign_name","‡πÅ‡∏Ñ‡∏°‡πÄ‡∏õ‡∏ç"],["paid_items","‡∏£‡∏≤‡∏¢‡∏Å‡∏≤‡∏£‡∏Ç‡∏≤‡∏¢"],
+          ["net","‡∏¢‡∏≠‡∏î‡∏Ç‡∏≤‡∏¢‡∏™‡∏∏‡∏ó‡∏ò‡∏¥"],["price_reduction","‡∏™‡πà‡∏ß‡∏ô‡∏•‡∏î"]],campaigns),
+        node("h3","lab-subheading","‡πÅ‡∏Ñ‡∏°‡πÄ‡∏õ‡∏ç‡πÇ‡∏Ü‡∏©‡∏ì‡∏≤"),
+        dataTable([["campaign_name","Ads"],["group_id","‡∏Å‡∏•‡∏∏‡πà‡∏°"],
+          ["ads_cost","‡∏Ñ‡πà‡∏≤‡πÉ‡∏ä‡πâ‡∏à‡πà‡∏≤‡∏¢"],["clicks","‡∏Ñ‡∏•‡∏¥‡∏Å"]],adCampaigns))));
+    root.append(panel("‡∏ï‡∏≤‡∏£‡∏≤‡∏á‡πÉ‡∏ô Warehouse",money(tables.length)+" ‡∏ï‡∏≤‡∏£‡∏≤‡∏á ¬∑ ‡∏à‡∏≥‡∏ô‡∏ß‡∏ô‡πÅ‡∏ñ‡∏ß‡∏à‡∏≤‡∏Å DuckDB Warehouse ‡∏£‡∏≠‡∏ö‡∏õ‡∏±‡∏à‡∏à‡∏∏‡∏ö‡∏±‡∏ô",
+      contentArea(dataTable([["name","‡∏ä‡∏∑‡πà‡∏≠‡∏ï‡∏≤‡∏£‡∏≤‡∏á"],["rows","‡∏à‡∏≥‡∏ô‡∏ß‡∏ô‡πÅ‡∏ñ‡∏ß"]],tables))));
+    root.append(chooseField("‡πÄ‡∏•‡∏∑‡∏≠‡∏Å‡∏ï‡∏≤‡∏£‡∏≤‡∏á‡πÄ‡∏û‡∏∑‡πà‡∏≠‡∏î‡∏π‡πÅ‡∏ñ‡∏ß‡∏ï‡∏±‡∏ß‡∏≠‡∏¢‡πà‡∏≤‡∏á",
+      tables.map(item=>[item.name,item.name+" ¬∑ "+money(item.rows)+" ‡πÅ‡∏ñ‡∏ß"]),
+      state.warehouseTable,value=>{state.warehouseTable=value;renderBusiness();}));
+    root.append(panel("‡∏ï‡∏±‡∏ß‡∏≠‡∏¢‡πà‡∏≤‡∏á‡πÅ‡∏ñ‡∏ß‡∏à‡∏£‡∏¥‡∏á‡∏à‡∏≤‡∏Å Warehouse",state.warehouseTable+" ¬∑ ‡πÅ‡∏™‡∏î‡∏á‡πÑ‡∏î‡πâ‡∏™‡∏π‡∏á‡∏™‡∏∏‡∏î 5 ‡πÅ‡∏ñ‡∏ß",
+      contentArea(rows.length?
+        dataTable(Object.keys(rows[0]).slice(0,10).map(key=>[key,key]),rows):
+        notice("‡∏ï‡∏≤‡∏£‡∏≤‡∏á‡∏ô‡∏µ‡πâ‡∏¢‡∏±‡∏á‡πÑ‡∏°‡πà‡∏°‡∏µ‡πÅ‡∏ñ‡∏ß‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•"))));
+    const refresh=node("button","button button-outline","‡∏£‡∏µ‡πÄ‡∏ü‡∏£‡∏ä‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏• Warehouse");
+    refresh.type="button";refresh.addEventListener("click",loadWarehouseDashboard);
+    root.append(refresh);
+  }
+
+  function renderScenario(root){
+    const d=state.data;
+    const panelBody=node("div","panel-body");
+    panelBody.append(notice("Sandbox ‡∏ô‡∏µ‡πâ‡πÄ‡∏õ‡∏•‡∏µ‡πà‡∏¢‡∏ô‡∏ï‡∏±‡∏ß‡πÄ‡∏•‡∏Ç‡πÅ‡∏ú‡∏ô‡πÑ‡∏î‡πâ ‡πÅ‡∏ï‡πà‡πÑ‡∏°‡πà‡∏°‡∏µ‡πÇ‡∏°‡πÄ‡∏î‡∏• Causal/Counterfactual ‡∏ó‡∏µ‡πà‡∏£‡∏≠‡∏á‡∏£‡∏±‡∏ö‡∏Å‡∏≤‡∏£‡∏Ñ‡∏≥‡∏ô‡∏ß‡∏ì‡∏¢‡∏≠‡∏î‡∏Ç‡∏≤‡∏¢‡∏´‡∏£‡∏∑‡∏≠ ROI ‡∏à‡∏≤‡∏Å‡∏Å‡∏≤‡∏£‡∏õ‡∏£‡∏±‡∏ö Ads ‡πÅ‡∏•‡∏∞‡∏™‡πà‡∏ß‡∏ô‡∏•‡∏î",true));
+    const choices=chooseField("Product Group",groups.map(id=>[id,title(id)]),state.group==="ALL"?"PG01":state.group,()=>reset());
+    const ads=labelInput("Planned Ads ‡∏ï‡πà‡∏≠‡∏™‡∏±‡∏õ‡∏î‡∏≤‡∏´‡πå (‡∏ö‡∏≤‡∏ó)","number","0","0","1000000");
+    const discount=labelInput("‡∏™‡πà‡∏ß‡∏ô‡∏•‡∏î Campaign ‡πÄ‡∏â‡∏•‡∏µ‡πà‡∏¢ (%)","number","0","0","100");
+    const grid=box("scenario-grid",choices,ads.label,discount.label);
+    const summary=node("strong","", "‚Äî"),explanation=small("‡πÄ‡∏õ‡πá‡∏ô‡πÄ‡∏û‡∏µ‡∏¢‡∏á‡∏Å‡∏≤‡∏£‡πÄ‡∏õ‡∏£‡∏µ‡∏¢‡∏ö‡πÄ‡∏ó‡∏µ‡∏¢‡∏ö‡πÅ‡∏ú‡∏ô ‡πÑ‡∏°‡πà‡πÉ‡∏ä‡πà‡∏Å‡∏≤‡∏£‡∏û‡∏¢‡∏≤‡∏Å‡∏£‡∏ì‡πå‡∏¢‡∏≠‡∏î‡∏Ç‡∏≤‡∏¢‡∏´‡∏£‡∏∑‡∏≠‡∏Å‡∏≥‡πÑ‡∏£"),resetButton=node("button","button button-outline","‡∏£‡∏µ‡πÄ‡∏ã‡πá‡∏ï‡∏Ñ‡πà‡∏≤");
+    resetButton.type="button";
+    const result=box("scenario-results",box("",small("‡πÅ‡∏ú‡∏ô‡∏≠‡πâ‡∏≤‡∏á‡∏≠‡∏¥‡∏á‡∏™‡∏±‡∏õ‡∏î‡∏≤‡∏´‡πå "+d.scenario.reference_week),summary,explanation),resetButton);
+    const ref=()=>d.scenario.reference_plans.find(x=>x.product_group_id===choices.querySelector("select").value);
+    function update(){
+      const value=Number(ads.field.value),disc=Number(discount.field.value);
+      if(ads.field.value===""||discount.field.value===""||!Number.isFinite(value)||value<0||!Number.isFinite(disc)||disc<0||disc>100){
+        summary.textContent="‡∏Å‡∏£‡∏∏‡∏ì‡∏≤‡∏Å‡∏£‡∏≠‡∏Å‡∏á‡∏ö ‚â•0 ‡πÅ‡∏•‡∏∞‡∏™‡πà‡∏ß‡∏ô‡∏•‡∏î 0‚Äì100%";return;
+      }
+      const difference=value-Number(ref()?.planned_ads_week||0);
+      summary.textContent="‡∏á‡∏ö ‡∏ø"+money(value)+" ("+(difference>=0?"+":"")+money(difference)+" ‡∏à‡∏≤‡∏Å‡πÅ‡∏ú‡∏ô‡πÄ‡∏î‡∏¥‡∏°) ¬∑ ‡∏™‡πà‡∏ß‡∏ô‡∏•‡∏î "+pct(disc);
+    }
+    function reset(){
+      ads.field.value=Number(ref()?.planned_ads_week||0).toFixed(0);
+      discount.field.value=(Number(ref()?.planned_discount_mean_week||0)*100).toFixed(1);
+      update();
+    }
+    choices.querySelector("select").addEventListener("change",reset);
+    ads.field.addEventListener("input",update);discount.field.addEventListener("input",update);
+    resetButton.addEventListener("click",reset);
+    add(panelBody,grid,result);
+    root.append(panel("‡∏ó‡∏î‡∏•‡∏≠‡∏á‡∏ß‡∏≤‡∏á‡πÅ‡∏ú‡∏ô‡∏Å‡∏≤‡∏£‡∏ï‡∏•‡∏≤‡∏î","‡∏ó‡∏î‡∏•‡∏≠‡∏á‡∏Å‡∏£‡∏≠‡∏Å‡πÅ‡∏ú‡∏ô‡πÑ‡∏î‡πâ ‡πÅ‡∏ï‡πà‡∏¢‡∏±‡∏á‡πÑ‡∏°‡πà‡πÑ‡∏î‡πâ‡∏£‡∏±‡∏ô Scenario Forecast",panelBody));
+    reset();
+  }
+
+  function renderEvidenceExplorer(root){
+    const evidence=state.evidence;
+    if(!evidence){
+      root.append(panel("‡∏™‡∏≥‡∏£‡∏ß‡∏à‡∏ï‡∏≤‡∏£‡∏≤‡∏á‡πÅ‡∏•‡∏∞‡πÑ‡∏ü‡∏•‡πå‡∏Ç‡∏≠‡∏á‡πÅ‡∏ï‡πà‡∏•‡∏∞‡∏ä‡∏±‡πâ‡∏ô‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•",
+        "‡∏¢‡∏±‡∏á‡πÑ‡∏°‡πà‡∏°‡∏µ‡πÑ‡∏ü‡∏•‡πå‡∏´‡∏•‡∏±‡∏Å‡∏ê‡∏≤‡∏ô‡∏Ç‡∏≠‡∏á‡∏Å‡∏≤‡∏£‡∏£‡∏±‡∏ô‡∏ó‡∏µ‡πà‡∏™‡πà‡∏á‡∏≠‡∏≠‡∏Å‡πÉ‡∏ô‡∏ä‡∏∏‡∏î‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏ô‡∏µ‡πâ",
+        contentArea(notice("‡∏£‡∏≤‡∏¢‡∏ä‡∏∑‡πà‡∏≠‡∏ï‡∏≤‡∏£‡∏≤‡∏á‡πÅ‡∏•‡∏∞‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏ï‡∏±‡∏ß‡∏≠‡∏¢‡πà‡∏≤‡∏á‡∏à‡∏∞‡∏õ‡∏£‡∏≤‡∏Å‡∏è‡πÄ‡∏°‡∏∑‡πà‡∏≠ GitHub Actions ‡∏™‡∏£‡πâ‡∏≤‡∏á classroom_evidence.json ‡∏™‡∏≥‡πÄ‡∏£‡πá‡∏à"))));
+      return;
+    }
+    const labels={source:"‡∏ê‡∏≤‡∏ô‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏ï‡πâ‡∏ô‡∏ó‡∏≤‡∏á (SQLite)",landing:"Data Lake ‚Äî Landing",
+      raw:"Data Lake ‚Äî Raw",standardized:"Data Lake ‚Äî Standardized",
+      warehouse:"Data Warehouse (DuckDB)",governance:"Governance",control:"Control"};
+    if(!evidence.layers[state.evidenceLayer])state.evidenceLayer="source";
+    const list=evidence.layers[state.evidenceLayer]||[];
+    const options=Object.entries(labels).map(([key,label])=>
+      [key,label+" ¬∑ "+(evidence.layers[key]||[]).length+" ‡∏£‡∏≤‡∏¢‡∏Å‡∏≤‡∏£"]);
+    const layerSelect=chooseField("‡πÄ‡∏•‡∏∑‡∏≠‡∏Å‡∏ä‡∏±‡πâ‡∏ô‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•",options,state.evidenceLayer,v=>{
+      state.evidenceLayer=v;state.evidenceTable="";renderPipeline();
+    });
+    if(!list.some(x=>x.name===state.evidenceTable))
+      state.evidenceTable=list[0]?.name||"";
+    const datasetSelect=chooseField("‡πÄ‡∏•‡∏∑‡∏≠‡∏Å‡∏ï‡∏≤‡∏£‡∏≤‡∏á/‡∏ä‡∏∏‡∏î‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•",
+      list.map(x=>[x.name,x.name+(x.batch?" ¬∑ "+x.batch:"")]),
+      state.evidenceTable,v=>{state.evidenceTable=v;renderPipeline()});
+    const item=list.find(x=>x.name===state.evidenceTable)||list[0];
+    const details=item?box("scenario-results",box("",
+      small("‡∏£‡∏π‡∏õ‡πÅ‡∏ö‡∏ö: "+item.type+(item.batch?" ¬∑ ‡∏£‡∏≠‡∏ö "+item.batch:"")),
+      node("strong","",item.name),
+      small("‡∏à‡∏≥‡∏ô‡∏ß‡∏ô‡∏£‡∏≤‡∏¢‡∏Å‡∏≤‡∏£: "+(item.records===undefined?"‚Äî":money(item.records))+
+        " ¬∑ ‡∏Ñ‡∏≠‡∏•‡∏±‡∏°‡∏ô‡πå: "+(item.columns?.length??"‚Äî")),
+      small("‡∏ï‡∏≥‡πÅ‡∏´‡∏ô‡πà‡∏á‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•: "+(item.path||"Query ‡∏à‡∏≤‡∏Å‡∏ê‡∏≤‡∏ô‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏ä‡∏±‡πà‡∏ß‡∏Ñ‡∏£‡∏≤‡∏ß‡πÉ‡∏ô Runner"))
+    )):small("‡πÑ‡∏°‡πà‡∏û‡∏ö‡∏£‡∏≤‡∏¢‡∏Å‡∏≤‡∏£‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡πÉ‡∏ô‡∏ä‡∏±‡πâ‡∏ô‡∏ô‡∏µ‡πâ");
+    const headers=(item?.columns||[]).slice(0,8).map(key=>[key,key]);
+    const preview=item?.preview?.length?dataTable(headers,item.preview):small("‡πÑ‡∏°‡πà‡∏°‡∏µ‡πÅ‡∏ñ‡∏ß‡∏ï‡∏±‡∏ß‡∏≠‡∏¢‡πà‡∏≤‡∏á‡∏´‡∏£‡∏∑‡∏≠‡πÄ‡∏õ‡πá‡∏ô‡πÑ‡∏ü‡∏•‡πå Metadata");
+    root.append(panel("‡∏™‡∏≥‡∏£‡∏ß‡∏à‡∏ï‡∏≤‡∏£‡∏≤‡∏á‡πÅ‡∏•‡∏∞‡πÑ‡∏ü‡∏•‡πå‡∏Ç‡∏≠‡∏á‡πÅ‡∏ï‡πà‡∏•‡∏∞‡∏ä‡∏±‡πâ‡∏ô‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•",
+      "‡∏î‡∏π‡∏ä‡∏∑‡πà‡∏≠‡∏ä‡∏∏‡∏î‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏• ‡πÇ‡∏Ñ‡∏£‡∏á‡∏™‡∏£‡πâ‡∏≤‡∏á‡∏Ñ‡∏≠‡∏•‡∏±‡∏°‡∏ô‡πå ‡πÅ‡∏•‡∏∞‡∏ï‡∏±‡∏ß‡∏≠‡∏¢‡πà‡∏≤‡∏á‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏à‡∏≤‡∏Å‡∏ú‡∏•‡∏£‡∏±‡∏ô‡∏à‡∏£‡∏¥‡∏á (Snapshot ‡πÑ‡∏°‡πà‡πÉ‡∏ä‡πà‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏™‡∏î)",
+      contentArea(notice("‡∏´‡∏•‡∏±‡∏Å‡∏ê‡∏≤‡∏ô‡∏ô‡∏µ‡πâ‡∏°‡∏≤‡∏à‡∏≤‡∏Å SQLite / Parquet / DuckDB ‡∏Ç‡∏≠‡∏á GitHub Actions ‡∏¢‡∏±‡∏á‡πÑ‡∏°‡πà‡πÉ‡∏ä‡πà‡∏Å‡∏≤‡∏£ Query Neon ‡πÇ‡∏î‡∏¢‡∏ï‡∏£‡∏á",true),
+        box("two-col",layerSelect,datasetSelect),details,preview,
+        box("h-stack",
+          link("‡∏ï‡∏£‡∏ß‡∏à Workflow ‡πÅ‡∏•‡∏∞‡∏î‡∏≤‡∏ß‡∏ô‡πå‡πÇ‡∏´‡∏•‡∏î‡∏´‡∏•‡∏±‡∏Å‡∏ê‡∏≤‡∏ô","https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/actions/workflows/decision-dashboard-ci.yml"),
+          link("‡πÄ‡∏õ‡∏¥‡∏î Neon Console (‡∏ï‡πâ‡∏≠‡∏á‡∏°‡∏µ‡∏™‡∏¥‡∏ó‡∏ò‡∏¥‡πå)","https://console.neon.tech/app/projects")),
+        small("‡πÇ‡∏õ‡∏£‡πÄ‡∏à‡∏Å‡∏ï‡πå Neon demo-pipeline ‡∏¢‡∏±‡∏á‡πÅ‡∏¢‡∏Å‡∏à‡∏≤‡∏Å Snapshot ‡∏ô‡∏µ‡πâ ¬∑ ‡∏≠‡∏¢‡πà‡∏≤‡∏ï‡∏µ‡∏Ñ‡∏ß‡∏≤‡∏°‡∏ß‡πà‡∏≤‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏ï‡∏£‡∏á‡∏Å‡∏±‡∏ô‡∏à‡∏ô‡∏Å‡∏ß‡πà‡∏≤‡∏à‡∏∞‡πÄ‡∏ä‡∏∑‡πà‡∏≠‡∏°‡πÅ‡∏•‡∏∞‡∏ï‡∏£‡∏ß‡∏à‡∏¢‡∏≠‡∏î‡∏à‡∏£‡∏¥‡∏á"))));
+  }
+
+  async function loadNeonEvidence(table=""){
+    if(state.neonStatus==="loading")return;
+    state.neonStatus="loading";state.neonError="";
+    if(state.view==="pipeline")renderPipeline();
+    try {
+      const url="/api/neon-evidence"+(table?"?table="+encodeURIComponent(table)+"&limit=10":"");
+      const response=await fetch(url,{cache:"no-store"});
+      const payload=await response.json();
+      if(!response.ok || !payload.connected || payload.origin!=="NEON_LIVE")
+        throw Error(payload.error || "‡∏¢‡∏±‡∏á‡πÑ‡∏°‡πà‡∏™‡∏≤‡∏°‡∏≤‡∏£‡∏ñ‡∏≠‡πà‡∏≤‡∏ô Neon ‡πÑ‡∏î‡πâ");
+      if(!table){
+        state.neonTables=payload.tables;
+        state.neonData=null;
+        state.neonTable="";
+        try {
+          const statusResponse=await fetch("/api/neon-status",{cache:"no-store"});
+          const live=await statusResponse.json();
+          if(statusResponse.ok&&live.connected&&live.origin==="NEON_LIVE")
+            state.neonRunStatus=live;
+        }catch(_error){state.neonRunStatus=null;}
+
+      }else{
+        state.neonData=payload;
+        state.neonTable=table;
+      }
+      state.neonStatus="ready";
+    }catch(error){
+      state.neonStatus="error";
+      state.neonError=error.message||"‡πÑ‡∏°‡πà‡∏™‡∏≤‡∏°‡∏≤‡∏£‡∏ñ‡∏ï‡∏¥‡∏î‡∏ï‡πà‡∏≠‡∏ê‡∏≤‡∏ô‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡πÑ‡∏î‡πâ";
+    }
+    if(state.view==="pipeline")renderPipeline();
+  }
+
+  function renderNeonExplorer(root){
+    const wrap=contentArea();
+    wrap.append(notice("‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏™‡πà‡∏ß‡∏ô‡∏ô‡∏µ‡πâ‡∏≠‡πà‡∏≤‡∏ô‡∏à‡∏≤‡∏Å Neon Branch demo-pipeline ‡πÇ‡∏î‡∏¢‡∏ï‡∏£‡∏á ‡∏ú‡πà‡∏≤‡∏ô API ‡πÅ‡∏ö‡∏ö‡∏≠‡πà‡∏≤‡∏ô‡∏≠‡∏¢‡πà‡∏≤‡∏á‡πÄ‡∏î‡∏µ‡∏¢‡∏ß ‡πÑ‡∏°‡πà‡πÉ‡∏ä‡πà Snapshot ‡∏Ç‡∏≠‡∏á GitHub Actions"));
+    if(state.neonStatus==="loading"){
+      wrap.append(small("‡∏Å‡∏≥‡∏•‡∏±‡∏á‡∏ï‡∏£‡∏ß‡∏à‡∏™‡∏≠‡∏ö‡∏ê‡∏≤‡∏ô‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏• Neon‚Ä¶"));
+    }else if(state.neonStatus==="error"){
+      wrap.append(notice("‡∏¢‡∏±‡∏á‡πÄ‡∏ä‡∏∑‡πà‡∏≠‡∏° Neon ‡πÑ‡∏°‡πà‡∏™‡∏≥‡πÄ‡∏£‡πá‡∏à: "+state.neonError,true));
+    }else if(state.neonStatus==="not_loaded"){
+      wrap.append(small("‡∏Å‡∏î‡∏ï‡∏£‡∏ß‡∏à‡∏™‡∏≠‡∏ö‡πÄ‡∏û‡∏∑‡πà‡∏≠‡∏≠‡πà‡∏≤‡∏ô‡∏£‡∏≤‡∏¢‡∏ä‡∏∑‡πà‡∏≠‡∏ï‡∏≤‡∏£‡∏≤‡∏á‡∏à‡∏£‡∏¥‡∏á‡∏à‡∏≤‡∏Å Neon"));
+    }else{
+      wrap.append(small("‡πÄ‡∏ä‡∏∑‡πà‡∏≠‡∏°‡∏ï‡πà‡∏≠‡πÑ‡∏î‡πâ ¬∑ Schema demo_er1 ¬∑ "+state.neonTables.length+" ‡∏ï‡∏≤‡∏£‡∏≤‡∏á ¬∑ ‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏à‡∏≥‡∏•‡∏≠‡∏á"));
+      const live=state.neonRunStatus;
+      if(live?.state){
+        const phase=live.state.phase;
+        const translated={EMPTY:"‡∏¢‡∏±‡∏á‡πÑ‡∏°‡πà‡∏°‡∏µ‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏Å‡∏≤‡∏£‡∏ó‡∏î‡∏™‡∏≠‡∏ö",RUN1_READY:"Run 1 ‡∏ú‡πà‡∏≤‡∏ô‡πÅ‡∏•‡πâ‡∏ß",
+          RUN2_READY:"Run 2 ‡∏ú‡πà‡∏≤‡∏ô‡πÅ‡∏•‡πâ‡∏ß ¬∑ ‡∏û‡∏£‡πâ‡∏≠‡∏°‡∏ï‡∏£‡∏ß‡∏à‡∏ú‡∏•"};
+        wrap.append(box("pipeline-meta",
+          small("‡∏™‡∏ñ‡∏≤‡∏ô‡∏∞‡∏à‡∏£‡∏¥‡∏á: "+(translated[phase]||phase)),
+          small("‡∏£‡∏≠‡∏ö‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•: "+live.state.cycle_number),
+          small("‡∏≠‡∏≠‡πÄ‡∏î‡∏≠‡∏£‡πå‡πÉ‡∏ô Neon: "+money(live.counts.orders)),
+          small("‡∏£‡∏≤‡∏¢‡∏Å‡∏≤‡∏£‡∏™‡∏¥‡∏ô‡∏Ñ‡πâ‡∏≤: "+money(live.counts.order_items)),
+          small("‡∏´‡∏•‡∏±‡∏Å‡∏ê‡∏≤‡∏ô‡πÑ‡∏ü‡∏•‡πå‡∏ó‡∏µ‡πà‡∏•‡∏á‡∏ó‡∏∞‡πÄ‡∏ö‡∏µ‡∏¢‡∏ô: "+money(live.counts.artifacts))));
+        if(live.runs?.length){
+          const rows=live.runs.slice(0,8).map(row=>({
+            run_type:row.run_type,status:row.status,
+            evidence_type:row.evidence_type==="HISTORICAL_EVIDENCE_IMPORT"?
+              "‡∏ö‡∏±‡∏ô‡∏ó‡∏∂‡∏Å‡∏¢‡πâ‡∏≠‡∏ô‡∏´‡∏•‡∏±‡∏á‡∏à‡∏≤‡∏Å‡∏£‡∏≤‡∏¢‡∏á‡∏≤‡∏ô GitHub":"‡∏ö‡∏±‡∏ô‡∏ó‡∏∂‡∏Å‡∏à‡∏≤‡∏Å‡∏£‡∏∞‡∏ö‡∏ö",
+            runner_ref:row.runner_ref||"‚Äî"
+          }));
+          wrap.append(small("‡∏õ‡∏£‡∏∞‡∏ß‡∏±‡∏ï‡∏¥‡∏Å‡∏≤‡∏£‡∏õ‡∏£‡∏∞‡∏°‡∏ß‡∏•‡∏ú‡∏• (Neon Control)"));
+          wrap.append(dataTable([
+            ["run_type","‡∏Å‡∏≤‡∏£‡∏£‡∏±‡∏ô"],["status","‡∏ú‡∏•"],["evidence_type","‡∏ó‡∏µ‡πà‡∏°‡∏≤‡∏´‡∏•‡∏±‡∏Å‡∏ê‡∏≤‡∏ô"]
+          ],rows));
+        }
+        if(live.counts.artifacts===0)
+          wrap.append(notice("‡∏¢‡∏±‡∏á‡πÑ‡∏°‡πà‡∏°‡∏µ‡πÑ‡∏ü‡∏•‡πå Data Lake ‡∏ó‡∏µ‡πà‡∏•‡∏á‡∏ó‡∏∞‡πÄ‡∏ö‡∏µ‡∏¢‡∏ô‡πÉ‡∏ô‡∏û‡∏∑‡πâ‡∏ô‡∏ó‡∏µ‡πà‡∏à‡∏±‡∏î‡πÄ‡∏Å‡πá‡∏ö‡∏ñ‡∏≤‡∏ß‡∏£ ¬∑ ‡∏õ‡∏£‡∏∞‡∏ß‡∏±‡∏ï‡∏¥ Run ‡∏ö‡∏±‡∏ô‡∏ó‡∏∂‡∏Å‡πÅ‡∏•‡πâ‡∏ß ‡πÅ‡∏ï‡πà‡∏¢‡∏±‡∏á‡∏ï‡πâ‡∏≠‡∏á‡πÄ‡∏Å‡πá‡∏ö‡πÑ‡∏ü‡∏•‡πå Parquet/‡∏Ñ‡∏•‡∏±‡∏á‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•",true));
+        const files=live.archived_files||[];
+        if(files.length){
+          const types=["ALL",...new Set(files.map(f=>f.artifact_type))];
+          if(!types.includes(state.neonArtifactType))state.neonArtifactType="ALL";
+          wrap.append(chooseField("‡πÄ‡∏•‡∏∑‡∏≠‡∏Å‡∏õ‡∏£‡∏∞‡πÄ‡∏†‡∏ó‡πÑ‡∏ü‡∏•‡πå‡∏´‡∏•‡∏±‡∏Å‡∏ê‡∏≤‡∏ô",types.map(t=>
+            [t,t==="ALL"?"‡∏ó‡∏∏‡∏Å‡∏õ‡∏£‡∏∞‡πÄ‡∏†‡∏ó":t]),state.neonArtifactType,v=>{
+              state.neonArtifactType=v;renderPipeline();
+            }));
+          const filtered=files.filter(f=>state.neonArtifactType==="ALL"||
+            f.artifact_type===state.neonArtifactType);
+          const shown=filtered.map(f=>({
+            artifact_type:f.artifact_type,
+            filename:(f.artifact_uri||"").split("/").pop(),
+            bytes:f.size_bytes,
+            stage:f.stage_name
+          }));
+          wrap.append(dataTable([
+            ["artifact_type","‡∏õ‡∏£‡∏∞‡πÄ‡∏†‡∏ó‡πÑ‡∏ü‡∏•‡πå"],["filename","‡∏ä‡∏∑‡πà‡∏≠‡πÑ‡∏ü‡∏•‡πå"],
+            ["stage","‡∏Ç‡∏±‡πâ‡∏ô‡∏ï‡∏≠‡∏ô"],["bytes","‡∏Ç‡∏ô‡∏≤‡∏î (Bytes)"]
+          ],shown));
+          wrap.append(small("‡πÄ‡∏õ‡πá‡∏ô‡∏£‡∏≤‡∏¢‡∏Å‡∏≤‡∏£‡∏´‡∏•‡∏±‡∏Å‡∏ê‡∏≤‡∏ô‡∏à‡∏≤‡∏Å Neon Control ¬∑ ‡∏û‡∏∑‡πâ‡∏ô‡∏ó‡∏µ‡πà‡πÄ‡∏Å‡πá‡∏ö‡πÑ‡∏ü‡∏•‡πå‡πÄ‡∏õ‡πá‡∏ô Private ‡πÅ‡∏•‡∏∞‡∏ï‡∏£‡∏ß‡∏à‡∏ß‡πà‡∏≤‡∏°‡∏µ‡πÑ‡∏ü‡∏•‡πå‡∏à‡∏£‡∏¥‡∏á‡πÅ‡∏•‡πâ‡∏ß"));
+        }
+      }
+
+      if(state.neonTables.length){
+        wrap.append(chooseField("‡πÄ‡∏•‡∏∑‡∏≠‡∏Å‡∏ï‡∏≤‡∏£‡∏≤‡∏á‡πÉ‡∏ô Neon",
+          [["","‚Äî ‡πÄ‡∏•‡∏∑‡∏≠‡∏Å‡∏ï‡∏≤‡∏£‡∏≤‡∏á ‚Äî"],...state.neonTables.map(t=>[t,t])],
+          state.neonTable, name=>{if(name)loadNeonEvidence(name);}));
+      }
+      const d=state.neonData;
+      if(d?.table){
+        wrap.append(box("pipeline-meta",
+          small("‡∏ï‡∏≤‡∏£‡∏≤‡∏á: "+d.table),
+          small("‡∏à‡∏≥‡∏ô‡∏ß‡∏ô Records: "+money(d.row_count)),
+          small("‡πÄ‡∏ß‡∏•‡∏≤ Query: "+(d.generated_at||"‚Äî"))));
+        wrap.append(small("‡πÇ‡∏Ñ‡∏£‡∏á‡∏™‡∏£‡πâ‡∏≤‡∏á‡∏ï‡∏≤‡∏£‡∏≤‡∏á ("+d.columns.length+" ‡∏Ñ‡∏≠‡∏•‡∏±‡∏°‡∏ô‡πå)"));
+        wrap.append(dataTable([["column_name","‡∏ä‡∏∑‡πà‡∏≠‡∏Ñ‡∏≠‡∏•‡∏±‡∏°‡∏ô‡πå"],["data_type","‡∏ä‡∏ô‡∏¥‡∏î‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•"]],d.columns.slice(0,35)));
+        wrap.append(small("‡∏ï‡∏±‡∏ß‡∏≠‡∏¢‡πà‡∏≤‡∏á‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏™‡∏π‡∏á‡∏™‡∏∏‡∏î "+d.preview_limit+" ‡∏£‡∏≤‡∏¢‡∏Å‡∏≤‡∏£"));
+        const cols=d.columns.slice(0,8).map(x=>[x.column_name,x.column_name]);
+        wrap.append(d.preview_rows.length?dataTable(cols,d.preview_rows):
+          small("‡∏ï‡∏≤‡∏£‡∏≤‡∏á‡∏ô‡∏µ‡πâ‡∏¢‡∏±‡∏á‡πÑ‡∏°‡πà‡∏°‡∏µ‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏à‡∏£‡∏¥‡∏á‡πÉ‡∏ô Neon ¬∑ ‡∏Ç‡∏ì‡∏∞‡∏ô‡∏µ‡πâ‡∏¢‡∏±‡∏á‡πÑ‡∏°‡πà‡πÑ‡∏î‡πâ‡∏£‡∏±‡∏ô Cloud Pipeline"));
+      }
+    }
+    const button=node("button","button button-outline","‚Üª ‡∏ï‡∏£‡∏ß‡∏à‡∏™‡∏≠‡∏ö Neon ‡∏≠‡∏µ‡∏Å‡∏Ñ‡∏£‡∏±‡πâ‡∏á");
+    button.type="button";button.disabled=state.neonStatus==="loading";
+    button.addEventListener("click",()=>loadNeonEvidence());
+    wrap.append(button);
+    wrap.append(link("‡πÄ‡∏õ‡∏¥‡∏î Neon Console ‡πÄ‡∏û‡∏∑‡πà‡∏≠‡∏ï‡∏£‡∏ß‡∏à‡πÄ‡∏≠‡∏á (‡∏ï‡πâ‡∏≠‡∏á‡∏°‡∏µ‡∏™‡∏¥‡∏ó‡∏ò‡∏¥‡πå)","https://console.neon.tech/app/projects"));
+    root.append(panel("‡πÄ‡∏õ‡∏¥‡∏î‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏à‡∏£‡∏¥‡∏á‡∏à‡∏≤‡∏Å Neon PostgreSQL",
+      "‡πÇ‡∏Ñ‡∏£‡∏á‡∏™‡∏£‡πâ‡∏≤‡∏á‡∏ï‡∏≤‡∏£‡∏≤‡∏á ‡∏ï‡∏±‡∏ß‡∏≠‡∏¢‡πà‡∏≤‡∏á‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏• ‡πÅ‡∏•‡∏∞‡∏à‡∏≥‡∏ô‡∏ß‡∏ô‡∏£‡∏≤‡∏¢‡∏Å‡∏≤‡∏£‡∏ó‡∏µ‡πà Query ‡∏à‡∏≤‡∏Å‡∏ê‡∏≤‡∏ô‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏• ‡∏ì ‡∏Ç‡∏ì‡∏∞‡∏ô‡∏±‡πâ‡∏ô",wrap));
+  }
+
+  // Educational step runner. Only read-only queries / archive verification are authorized.
+  // A real new ETL cycle needs a separate authenticated GitHub Actions dispatcher.
+  const LAB_STEPS=[
+    {id:"ingest",title:"Ingest",path:"CSV ‚Üí Neon PostgreSQL",
+      why:"‡∏ï‡∏£‡∏ß‡∏à‡∏ß‡πà‡∏≤‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏ï‡πâ‡∏ô‡∏ó‡∏≤‡∏á‡∏ñ‡∏π‡∏Å‡∏ô‡∏≥‡πÄ‡∏Ç‡πâ‡∏≤‡∏Ñ‡∏£‡∏ö ‡πÅ‡∏•‡∏∞‡πÅ‡∏™‡∏î‡∏á‡∏ï‡∏±‡∏ß‡∏≠‡∏¢‡πà‡∏≤‡∏á‡πÅ‡∏ñ‡∏ß‡∏à‡∏£‡∏¥‡∏á‡∏à‡∏≤‡∏Å‡∏ê‡∏≤‡∏ô‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•",
+      input:"ER1 Source Database + ‡∏ï‡∏≤‡∏£‡∏≤‡∏á‡∏ó‡∏µ‡πà‡πÄ‡∏•‡∏∑‡∏≠‡∏Å",process:"‡∏ï‡∏£‡∏ß‡∏à 25 ‡∏ï‡∏≤‡∏£‡∏≤‡∏á / Schema / ‡∏à‡∏≥‡∏ô‡∏ß‡∏ô‡πÅ‡∏ñ‡∏ß",
+      output:"Neon table rows + ‡∏ï‡∏±‡∏ß‡∏≠‡∏¢‡πà‡∏≤‡∏á 5 ‡∏£‡∏≤‡∏¢‡∏Å‡∏≤‡∏£",
+      note:"‡∏ï‡∏£‡∏ß‡∏à‡∏ú‡∏•‡∏Ç‡∏≠‡∏á‡∏Å‡∏≤‡∏£‡∏ô‡∏≥‡πÄ‡∏Ç‡πâ‡∏≤‡πÄ‡∏î‡∏¥‡∏° ‡πÑ‡∏°‡πà‡πÑ‡∏î‡πâ INSERT ‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡πÉ‡∏´‡∏°‡πà"},
+    {id:"extract",title:"Extract",path:"Neon ‚Üí Private Raw Parquet",
+      why:"‡πÄ‡∏õ‡∏¥‡∏î‡πÑ‡∏ü‡∏•‡πå Raw Parquet ‡∏à‡∏≤‡∏Å Object Storage ‡πÅ‡∏•‡πâ‡∏ß‡πÄ‡∏ó‡∏µ‡∏¢‡∏ö‡∏Å‡∏±‡∏ö‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡πÉ‡∏ô Neon",
+      input:"Neon Source + Parquet ‡πÉ‡∏ô Private Bucket",process:"‡∏≠‡πà‡∏≤‡∏ô Parquet metadata ‡πÅ‡∏•‡∏∞‡∏ï‡∏£‡∏ß‡∏à‡∏à‡∏≥‡∏ô‡∏ß‡∏ô Records",
+      output:"‡∏à‡∏≥‡∏ô‡∏ß‡∏ô Rows + ‡∏ï‡∏≤‡∏£‡∏≤‡∏á‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏• Raw ‡∏ï‡∏±‡∏ß‡∏≠‡∏¢‡πà‡∏≤‡∏á",
+      note:"‡∏ï‡∏£‡∏ß‡∏à Snapshot ‡∏ó‡∏µ‡πà‡∏à‡∏±‡∏î‡πÄ‡∏Å‡πá‡∏ö ‡πÑ‡∏°‡πà‡∏™‡∏£‡πâ‡∏≤‡∏á‡πÑ‡∏ü‡∏•‡πå‡πÉ‡∏´‡∏°‡πà"},
+    {id:"transform",title:"Transform",path:"Raw ‚Üí Standardized",
+      why:"‡πÄ‡∏´‡πá‡∏ô‡∏Ñ‡∏ß‡∏≤‡∏°‡πÅ‡∏ï‡∏Å‡∏ï‡πà‡∏≤‡∏á‡∏Å‡πà‡∏≠‡∏ô‡πÅ‡∏•‡∏∞‡∏´‡∏•‡∏±‡∏á‡πÅ‡∏õ‡∏•‡∏á‡∏£‡∏≤‡∏¢‡∏Å‡∏≤‡∏£‡∏≠‡∏≠‡πÄ‡∏î‡∏≠‡∏£‡πå‡πÄ‡∏õ‡πá‡∏ô‡∏£‡∏≤‡∏¢‡∏Å‡∏≤‡∏£‡∏Ç‡∏≤‡∏¢‡∏ó‡∏µ‡πà‡∏ä‡∏≥‡∏£‡∏∞‡πÅ‡∏•‡πâ‡∏ß",
+      input:"Raw Fact_Order_Items",process:"‡∏≠‡πà‡∏≤‡∏ô Standardized ‡πÅ‡∏•‡∏∞‡πÄ‡∏ó‡∏µ‡∏¢‡∏ö Paid Items ‡∏à‡∏≤‡∏Å Neon",
+      output:"Before / After + ‡∏à‡∏≥‡∏ô‡∏ß‡∏ô‡∏£‡∏≤‡∏¢‡∏Å‡∏≤‡∏£‡πÄ‡∏õ‡∏£‡∏µ‡∏¢‡∏ö‡πÄ‡∏ó‡∏µ‡∏¢‡∏ö",
+      note:"‡πÄ‡∏•‡πà‡∏ô‡∏ã‡πâ‡∏≥‡∏´‡∏•‡∏±‡∏Å‡∏ê‡∏≤‡∏ô Transform ‡πÄ‡∏î‡∏¥‡∏° ‡πÑ‡∏°‡πà‡∏Ñ‡∏≥‡∏ô‡∏ß‡∏ì‡∏´‡∏£‡∏∑‡∏≠‡πÄ‡∏Ç‡∏µ‡∏¢‡∏ô Parquet ‡πÉ‡∏´‡∏°‡πà"},
+    {id:"load",title:"Load",path:"Standardized ‚Üí DuckDB Warehouse",
+      why:"‡∏¢‡∏∑‡∏ô‡∏¢‡∏±‡∏ô‡∏ß‡πà‡∏≤‡πÑ‡∏ü‡∏•‡πå Warehouse ‡∏°‡∏µ‡∏≠‡∏¢‡∏π‡πà‡∏à‡∏£‡∏¥‡∏á‡πÅ‡∏•‡∏∞‡∏ú‡∏•‡πÇ‡∏´‡∏•‡∏î Sales Fact ‡∏ï‡∏£‡∏á‡∏Å‡∏±‡∏ö‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏Å‡πà‡∏≠‡∏ô‡πÇ‡∏´‡∏•‡∏î",
+      input:"Standardized Sales Fact",process:"‡∏ï‡∏£‡∏ß‡∏à‡πÑ‡∏ü‡∏•‡πå DuckDB ‡∏à‡∏£‡∏¥‡∏á‡πÅ‡∏•‡∏∞‡∏ú‡∏• Load ‡πÉ‡∏ô Validation Report",
+      output:"‡∏Ç‡∏ô‡∏≤‡∏î‡πÑ‡∏ü‡∏•‡πå Warehouse ‡πÅ‡∏•‡∏∞‡∏à‡∏≥‡∏ô‡∏ß‡∏ô Sales Fact",
+      note:"‡πÑ‡∏°‡πà‡πÑ‡∏î‡πâ Query ‡∏ï‡∏≤‡∏£‡∏≤‡∏á DuckDB ‡πÉ‡∏´‡∏°‡πà; ‡πÉ‡∏ä‡πâ‡∏£‡∏≤‡∏¢‡∏á‡∏≤‡∏ô‡∏¢‡∏∑‡∏ô‡∏¢‡∏±‡∏ô‡∏ú‡∏•‡∏à‡∏≤‡∏Å‡∏á‡∏≤‡∏ô‡∏ó‡∏µ‡πà‡∏ú‡πà‡∏≤‡∏ô‡πÅ‡∏•‡πâ‡∏ß"},
+    {id:"validate",title:"Validate",path:"Neon ‚Üî Warehouse",
+      why:"‡∏Ñ‡∏≥‡∏ô‡∏ß‡∏ì Paid Items ‡πÅ‡∏•‡∏∞ Net Revenue ‡∏à‡∏≤‡∏Å Neon ‡∏≠‡∏µ‡∏Å‡∏Ñ‡∏£‡∏±‡πâ‡∏á‡πÄ‡∏û‡∏∑‡πà‡∏≠‡πÄ‡∏ó‡∏µ‡∏¢‡∏ö Warehouse",
+      input:"‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏• Neon ‡∏õ‡∏±‡∏à‡∏à‡∏∏‡∏ö‡∏±‡∏ô + Warehouse Validation Report",
+      process:"SQL Reconciliation + Compare counts + Compare Net Revenue",
+      output:"PASS/FAIL ‡∏Ç‡∏≠‡∏á‡∏¢‡∏≠‡∏î‡πÅ‡∏•‡∏∞‡∏à‡∏≥‡∏ô‡∏ß‡∏ô‡∏£‡∏≤‡∏¢‡∏Å‡∏≤‡∏£ + Gap",
+      note:"‡πÄ‡∏õ‡πá‡∏ô‡∏Å‡∏≤‡∏£‡∏ï‡∏£‡∏ß‡∏à‡∏¢‡∏≠‡∏î‡πÉ‡∏´‡∏°‡πà ‡πÑ‡∏°‡πà‡πÉ‡∏ä‡πà ETL ‡πÉ‡∏´‡∏°‡πà"}
+  ];
+
+  async function runLabStage(){
+    const index=state.labStage;
+    if(state.labBusy||index>0&&!state.labResults[LAB_STEPS[index-1].id]?.success)return;
+    const def=LAB_STEPS[index];
+    state.labBusy=true;state.labError="";
+    const started=Date.now();
+    state.labLog=[{at:new Date().toISOString(),stage:def.title,detail:"‡πÄ‡∏£‡∏¥‡πà‡∏°‡∏ï‡∏£‡∏ß‡∏à‡∏´‡∏•‡∏±‡∏Å‡∏ê‡∏≤‡∏ô",result:"RUNNING"},...state.labLog].slice(0,14);
+    renderPipeline();
+    try{
+      const args=new URLSearchParams({stage:def.id});
+      if(index<2)args.set("table",state.labTable);
+      const response=await fetch("/api/lab-step?"+args.toString(),{cache:"no-store"});
+      const payload=await response.json();
+      if(!response.ok)throw Error(payload.error||"HTTP "+response.status);
+      if(payload.mode!=="READ_ONLY_EVIDENCE_REPLAY"||
+         payload.classification!=="SYNTHETIC_EDUCATIONAL_NOT_TIKTOK")
+        throw Error("‡∏ú‡∏•‡∏£‡∏±‡∏ô‡πÑ‡∏°‡πà‡πÑ‡∏î‡πâ‡∏£‡∏∞‡∏ö‡∏∏‡∏ó‡∏µ‡πà‡∏°‡∏≤‡∏Ç‡∏≠‡∏á‡∏´‡∏•‡∏±‡∏Å‡∏ê‡∏≤‡∏ô‡∏≠‡∏¢‡πà‡∏≤‡∏á‡∏ñ‡∏π‡∏Å‡∏ï‡πâ‡∏≠‡∏á");
+      state.labResults[def.id]=payload;
+      if(!payload.success){
+        state.labError="‡∏û‡∏ö‡∏ú‡∏•‡∏ï‡∏£‡∏ß‡∏à FAIL ‡πÉ‡∏ô Step ‡∏ô‡∏µ‡πâ ‡∏î‡∏π‡∏£‡∏≤‡∏¢‡∏Å‡∏≤‡∏£‡∏ó‡∏µ‡πà‡πÑ‡∏°‡πà‡∏ú‡πà‡∏≤‡∏ô‡πÅ‡∏•‡πâ‡∏ß‡∏Å‡∏î Retry ‡πÑ‡∏î‡πâ";
+        state.labLog.unshift({at:payload.executed_at,stage:def.title,
+          detail:payload.checks.filter(x=>!x.pass).map(x=>x.label).join(" ¬∑ "),result:"FAIL"});
+        state.rows=payload.output?.preview||[];
+        state.labBusy=false;state.labLog=state.labLog.filter(x=>x.result!=="RUNNING").slice(0,14);
+        renderPipeline();return;
+      }
+      state.labLog.unshift({at:payload.executed_at,stage:def.title,
+        detail:"‡∏ï‡∏£‡∏ß‡∏à‡∏à‡∏£‡∏¥‡∏á‡∏à‡∏≤‡∏Å Neon / Private Storage ¬∑ "+Math.round(Date.now()-started)+" ms",
+        result:"PASS"});
+      state.rows=payload.output?.preview||[];
+    }catch(e){
+      state.labError=e.message||"‡πÑ‡∏°‡πà‡∏™‡∏≤‡∏°‡∏≤‡∏£‡∏ñ‡∏ï‡∏£‡∏ß‡∏à‡∏´‡∏•‡∏±‡∏Å‡∏ê‡∏≤‡∏ô‡πÑ‡∏î‡πâ";
+      state.labLog.unshift({at:new Date().toISOString(),stage:def.title,
+        detail:state.labError,result:"ERROR"});
+    }
+    state.labBusy=false;
+    state.labLog=state.labLog.filter(x=>x.result!=="RUNNING").slice(0,14);
+    renderPipeline();
+  }
+
+  function renderLabResult(result){
+    if(!result)return box("lab-placeholder",
+      node("span","lab-placeholder-icon","‚ñ∑"),
+      node("strong","","‡∏¢‡∏±‡∏á‡πÑ‡∏°‡πà‡∏ï‡∏£‡∏ß‡∏à Step ‡∏ô‡∏µ‡πâ"),
+      small("‡∏Å‡∏î‡∏ï‡∏£‡∏ß‡∏à‡∏´‡∏•‡∏±‡∏Å‡∏ê‡∏≤‡∏ô ‡πÄ‡∏û‡∏∑‡πà‡∏≠‡πÉ‡∏´‡πâ Server ‡∏≠‡πà‡∏≤‡∏ô Neon ‡πÅ‡∏•‡∏∞‡πÑ‡∏ü‡∏•‡πå‡πÄ‡∏Å‡πá‡∏ö‡∏ñ‡∏≤‡∏ß‡∏£‡πÇ‡∏î‡∏¢‡πÑ‡∏°‡πà‡∏õ‡∏£‡∏∞‡∏°‡∏ß‡∏•‡∏ú‡∏• ETL ‡πÉ‡∏´‡∏°‡πà"));
+    const wrap=box("lab-result");
+    wrap.append(box("lab-meta",
+      statusLabel(result.success?"PASS":"FAIL"),
+      small("‡∏ï‡∏£‡∏ß‡∏à‡∏•‡πà‡∏≤‡∏™‡∏∏‡∏î "+new Intl.DateTimeFormat("th-TH",{timeZone:"Asia/Bangkok",
+        hour:"2-digit",minute:"2-digit",second:"2-digit"}).format(new Date(result.executed_at))),
+      small(result.mode==="REAL_GITHUB_ACTIONS_STAGE"?
+        "‡∏ú‡∏•‡∏à‡∏≤‡∏Å GitHub Worker ‡∏ó‡∏µ‡πà‡∏õ‡∏£‡∏∞‡∏°‡∏ß‡∏•‡∏ú‡∏•‡πÉ‡∏´‡∏°‡πà":"‡∏≠‡πâ‡∏≤‡∏á‡∏≠‡∏¥‡∏á GitHub Run #"+result.historical_run)));
+    if(result.metrics?.length){
+      wrap.append(box("lab-metrics",...result.metrics.map(m=>
+        box("lab-stat",small(m.label),
+          node("strong","",typeof m.value==="number"?money(m.value,m.unit==="THB"?2:0):String(m.value)),
+          small(m.unit||"")))));
+    }
+    const summary=box("lab-checks");
+    result.checks.forEach(item=>summary.append(box("lab-check",
+      node("span","lab-check-icon "+(item.pass?"lab-ok":"lab-fail"),item.pass?"‚úì":"!"),
+      small(item.label),statusLabel(item.pass?"PASS":"FAIL"))));
+    wrap.append(summary);
+    const input=result.input;
+    if(input?.files?.length)wrap.append(small("‡πÑ‡∏ü‡∏•‡πå Source ‡∏ó‡∏µ‡πà‡∏≠‡πà‡∏≤‡∏ô‡∏à‡∏£‡∏¥‡∏á: "+input.files.length+" ‡πÑ‡∏ü‡∏•‡πå"));
+    if(input?.preview?.length){
+      const columns=Object.keys(input.preview[0]).slice(0,6).map(key=>[key,key]);
+      wrap.append(node("h3","lab-subheading","Input ¬∑ ‡∏ï‡∏±‡∏ß‡∏≠‡∏¢‡πà‡∏≤‡∏á‡∏Å‡πà‡∏≠‡∏ô‡∏õ‡∏£‡∏∞‡∏°‡∏ß‡∏•‡∏ú‡∏•"),
+        dataTable(columns,input.preview));
+    }
+    if(result.output?.preview?.length){
+      const columns=Object.keys(result.output.preview[0]).slice(0,7).map(key=>[key,key]);
+      wrap.append(node("h3","lab-subheading",
+        "Output ¬∑ ‡∏ï‡∏±‡∏ß‡∏≠‡∏¢‡πà‡∏≤‡∏á‡∏ú‡∏•‡∏•‡∏±‡∏û‡∏ò‡πå‡∏à‡∏≤‡∏Å "+(result.output.origin||"‡∏´‡∏•‡∏±‡∏Å‡∏ê‡∏≤‡∏ô‡∏à‡∏£‡∏¥‡∏á")),
+        dataTable(columns,result.output.preview));
+    }else if(result.output?.note){
+      wrap.append(notice(result.output.note,true));
+    }
+    if(result.output?.tables?.length){
+      wrap.append(node("h3","lab-subheading","‡∏ï‡∏≤‡∏£‡∏≤‡∏á‡πÅ‡∏•‡∏∞‡∏à‡∏≥‡∏ô‡∏ß‡∏ô‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏ó‡∏µ‡πà‡πÄ‡∏Å‡∏¥‡∏î‡∏Ç‡∏∂‡πâ‡∏ô‡πÉ‡∏ô‡∏Ç‡∏±‡πâ‡∏ô‡∏ô‡∏µ‡πâ"));
+      const previews=result.output.table_previews||{};
+      const table=node("table"),head=node("thead"),headRow=node("tr");
+      headRow.append(node("th","","‡∏ï‡∏≤‡∏£‡∏≤‡∏á / ‡πÑ‡∏ü‡∏•‡πå"),node("th","","‡∏à‡∏≥‡∏ô‡∏ß‡∏ô‡πÅ‡∏ñ‡∏ß"));
+      head.append(headRow);table.append(head);
+      const body=node("tbody");
+      result.output.tables.forEach(item=>{
+        const row=node("tr"),cell=node("td");
+        if(Object.prototype.hasOwnProperty.call(previews,item.name)){
+          const button=node("button","table-name-button",item.name+" ¬∑ ‡∏î‡∏π‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•");
+          button.type="button";
+          button.addEventListener("click",()=>{
+            const selected=result.batch+"/"+result.stage+"/"+item.name;
+            state.selectedResultTable=state.selectedResultTable===selected?"":selected;
+            renderPipeline();
+          });
+          cell.append(button);
+        }else cell.textContent=item.name;
+        row.append(cell,node("td","",money(item.rows)));body.append(row);
+      });
+      table.append(body);wrap.append(box("table-wrap",table));
+      const selectedName=state.selectedResultTable.startsWith(result.batch+"/"+result.stage+"/")?
+        state.selectedResultTable.split("/").slice(2).join("/"):"";
+      if(selectedName&&Object.prototype.hasOwnProperty.call(previews,selectedName)){
+        const rows=previews[selectedName];
+        wrap.append(node("h3","lab-subheading",selectedName+" ¬∑ ‡∏ï‡∏±‡∏ß‡∏≠‡∏¢‡πà‡∏≤‡∏á‡∏™‡∏π‡∏á‡∏™‡∏∏‡∏î 5 ‡πÅ‡∏ñ‡∏ß"));
+        wrap.append(rows.length?dataTable(Object.keys(rows[0]).map(key=>[key,key]),rows):
+          small("‡∏ï‡∏≤‡∏£‡∏≤‡∏á‡∏ô‡∏µ‡πâ‡∏¢‡∏±‡∏á‡πÑ‡∏°‡πà‡∏°‡∏µ‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•"));
+        wrap.append(small("‚Äî ‡∏´‡∏°‡∏≤‡∏¢‡∏ñ‡∏∂‡∏á‡πÑ‡∏°‡πà‡∏°‡∏µ‡∏Ñ‡πà‡∏≤ ¬∑ ‡∏Ñ‡∏≠‡∏•‡∏±‡∏°‡∏ô‡πå _KEY ‡πÄ‡∏õ‡πá‡∏ô‡∏£‡∏´‡∏±‡∏™‡∏≠‡πâ‡∏≤‡∏á‡∏≠‡∏¥‡∏á ‡πÑ‡∏°‡πà‡πÉ‡∏ä‡πà‡∏à‡∏≥‡∏ô‡∏ß‡∏ô"));
+      }else if(!Object.keys(previews).length)wrap.append(small(
+        "‡∏ú‡∏•‡∏£‡∏±‡∏ô‡πÄ‡∏Å‡πà‡∏≤‡∏ô‡∏µ‡πâ‡πÄ‡∏Å‡πá‡∏ö‡∏à‡∏≥‡∏ô‡∏ß‡∏ô‡πÅ‡∏ñ‡∏ß‡πÑ‡∏ß‡πâ ‡πÅ‡∏ï‡πà‡πÑ‡∏°‡πà‡πÑ‡∏î‡πâ‡πÄ‡∏Å‡πá‡∏ö‡∏ï‡∏±‡∏ß‡∏≠‡∏¢‡πà‡∏≤‡∏á‡∏ó‡∏∏‡∏Å‡∏ï‡∏≤‡∏£‡∏≤‡∏á ¬∑ Run ‡πÉ‡∏´‡∏°‡πà‡∏à‡∏∞‡∏Ñ‡∏•‡∏¥‡∏Å‡∏î‡∏π‡πÑ‡∏î‡πâ"));
+    }
+    if(result.output?.file){
+      wrap.append(small("‡πÑ‡∏ü‡∏•‡πå‡∏´‡∏•‡∏±‡∏Å‡∏ê‡∏≤‡∏ô: "+result.output.file.split("/").pop()));
+    }
+    wrap.append(node("div","lab-provenance",
+      "‡∏ä‡∏ô‡∏¥‡∏î‡∏ú‡∏•‡∏•‡∏±‡∏û‡∏ò‡πå: "+result.provenance+
+      (result.mode==="REAL_GITHUB_ACTIONS_STAGE"?" ¬∑ REAL PYTHON ETL EXECUTION":" ¬∑ READ-ONLY EVIDENCE REPLAY")));
+    return wrap;
+  }
+
+  function renderErrorRecoveryLab(root){
+    const details=node("details","lab-reference");
+    details.open=state.errorLabOpen;
+    details.addEventListener("toggle",()=>{state.errorLabOpen=details.open;});
+    details.append(node("summary","","Error Recovery Lab ¬∑ 6 ‡∏Å‡∏£‡∏ì‡∏µ (‡πÄ‡∏õ‡∏¥‡∏î‡∏î‡∏π‡∏ú‡∏• Fail ‚Üí Fix ‚Üí Retry)"));
+    const body=box("lab-reference-body");
+    body.append(notice("‡∏™‡πà‡∏ß‡∏ô‡∏ô‡∏µ‡πâ Replay ‡∏´‡∏•‡∏±‡∏Å‡∏ê‡∏≤‡∏ô‡∏Å‡∏≤‡∏£‡∏ó‡∏î‡∏™‡∏≠‡∏ö Error ‡∏à‡∏≤‡∏Å Python/SQLite Runner ‡∏ó‡∏µ‡πà‡∏ú‡πà‡∏≤‡∏ô‡πÅ‡∏•‡πâ‡∏ß ‡πÑ‡∏°‡πà‡πÑ‡∏î‡πâ‡∏â‡∏µ‡∏î Error ‡∏•‡∏á Neon ‡∏ó‡∏µ‡πà‡∏°‡∏µ 900 ‡∏≠‡∏≠‡πÄ‡∏î‡∏≠‡∏£‡πå",true));
+    const errors=state.evidence?.error_recovery_evidence||[];
+    const labels={
+      E01:"E01 ¬∑ ‡∏£‡∏≤‡∏¢‡∏Å‡∏≤‡∏£‡∏™‡∏±‡πà‡∏á‡∏ã‡∏∑‡πâ‡∏≠‡∏≠‡πâ‡∏≤‡∏á‡∏ñ‡∏∂‡∏á SKU ‡∏ó‡∏µ‡πà‡πÑ‡∏°‡πà‡∏°‡∏µ‡πÉ‡∏ô‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏´‡∏•‡∏±‡∏Å",
+      E02:"E02 ¬∑ ‡∏Ç‡∏≤‡∏î‡πÑ‡∏ü‡∏•‡πå Source",
+      T01:"T01 ¬∑ Voucher Rule ‡∏ú‡∏¥‡∏î",
+      T02:"T02 ¬∑ Campaign ‡∏ó‡∏±‡∏ö‡∏ã‡πâ‡∏≠‡∏ô",
+      L01:"L01 ¬∑ Rollback ‡πÄ‡∏°‡∏∑‡πà‡∏≠‡πÇ‡∏´‡∏•‡∏î‡∏ú‡∏¥‡∏î‡∏û‡∏•‡∏≤‡∏î",
+      L02:"L02 ¬∑ Replay ‡πÑ‡∏°‡πà‡πÄ‡∏û‡∏¥‡πà‡∏°‡∏¢‡∏≠‡∏î‡∏ã‡πâ‡∏≥"
+    };
+    if(!errors.length){
+      body.append(small("‡∏¢‡∏±‡∏á‡πÑ‡∏°‡πà‡∏°‡∏µ‡πÑ‡∏ü‡∏•‡πå‡∏ú‡∏•‡∏ó‡∏î‡∏™‡∏≠‡∏ö Error Suite ‡∏à‡∏≤‡∏Å GitHub CI ¬∑ ‡πÄ‡∏°‡∏∑‡πà‡∏≠ Workflow ‡∏ó‡∏î‡∏™‡∏≠‡∏ö‡∏Ñ‡∏£‡∏ö 6 ‡∏Å‡∏£‡∏ì‡∏µ‡∏à‡∏∞‡∏õ‡∏£‡∏≤‡∏Å‡∏è‡∏ú‡∏•‡∏ó‡∏µ‡πà‡∏ô‡∏µ‡πà"));
+    }else{
+      if(!errors.some(x=>x.case===state.errorCase))state.errorCase=errors[0].case;
+      body.append(chooseField("‡πÄ‡∏•‡∏∑‡∏≠‡∏Å‡∏Å‡∏£‡∏ì‡∏µ‡∏ú‡∏¥‡∏î‡∏û‡∏•‡∏≤‡∏î",errors.map(x=>[x.case,labels[x.case]||x.case]),
+        state.errorCase,v=>{state.errorCase=v;state.errorReplayed=false;renderPipeline();}));
+      const run=node("button","button button-outline","‚ñ∑ Replay ‡∏ú‡∏•‡∏ó‡∏î‡∏™‡∏≠‡∏ö Error + Retry");
+      run.type="button";run.addEventListener("click",()=>{state.errorReplayed=true;renderPipeline();});
+      body.append(run);
+      if(state.errorReplayed){
+        const c=errors.find(x=>x.case===state.errorCase);
+        const detail=(state.evidence.error_case_details||[]).find(x=>x.case_id===state.errorCase);
+        body.append(box("lab-metrics",
+          box("lab-stat",small("Detect"),node("strong","",String(c.detected||"‚Äî"))),
+          box("lab-stat",small("Retry from"),node("strong","",c.retry_from||"‡πÑ‡∏°‡πà‡∏°‡∏µ (Replay ‡∏™‡∏≥‡πÄ‡∏£‡πá‡∏à)")),
+          box("lab-stat",small("Result"),statusLabel(c.passed?"PASS":"FAIL"))));
+        body.append(dataTable([["stage","‡∏Ç‡∏±‡πâ‡∏ô‡∏ï‡∏≠‡∏ô"],["before","‡∏Å‡πà‡∏≠‡∏ô‡πÅ‡∏Å‡πâ"],["after","‡∏´‡∏•‡∏±‡∏á Retry"],
+          ["expected","‡∏ú‡∏•‡∏ó‡∏µ‡πà‡∏Ñ‡∏≤‡∏î‡∏´‡∏ß‡∏±‡∏á"]],[c]));
+        if(detail?.stage_events?.length){
+          const events=detail.stage_events.slice(-12).map(e=>({
+            stage:e.stage||"‚Äî",status:e.status||"‚Äî",code:e.error_code||"‚Äî",
+            date:e.at||"‚Äî"
+          }));
+          body.append(node("h3","lab-subheading","Stage Log ‡∏à‡∏≤‡∏Å‡∏Å‡∏≤‡∏£‡∏ó‡∏î‡∏™‡∏≠‡∏ö‡∏à‡∏£‡∏¥‡∏á"),
+            dataTable([["stage","Step"],["status","‡∏ú‡∏•"],["code","Error Code"],
+              ["date","‡∏ö‡∏±‡∏ô‡∏ó‡∏∂‡∏Å‡πÄ‡∏ß‡∏•‡∏≤"]],events));
+        }
+        if(detail?.detected_error)
+          body.append(small("‡∏´‡∏•‡∏±‡∏Å‡∏ê‡∏≤‡∏ô‡∏ï‡∏≠‡∏ô‡∏ï‡∏£‡∏ß‡∏à‡∏û‡∏ö: "+String(detail.detected_error.error_code||"‚Äî")+
+            " / "+String(detail.detected_error.stage||"‚Äî")));
+      }
+    }
+    details.append(body);root.append(details);
+  }
+
+  async function loadRealCapabilities(){
+    if(state.capabilitiesLoading)return;
+    state.capabilitiesLoading=true;
+    try{
+      const response=await fetch("/api/lab-batch",{cache:"no-store"});
+      const data=await response.json();
+      state.realReady=response.ok&&data.ready===true;
+      state.realLabPhase=data.phase||"UNKNOWN";
+      state.realLabCycle=data.cycle??null;
+      state.realLabOrders=data.orders??null;
+      state.sharedRun={running:Boolean(data.running),type:data.active_run_type||null,
+        stage:data.active_stage||null};
+      state.currentRunId=data.current_run_id||null;
+      state.requiresReset=Boolean(data.requires_reset);
+      state.nextSourceBatch=data.next_source_batch||null;
+      state.sourceRemaining=data.source_remaining??null;
+      state.sourceExhausted=Boolean(data.source_exhausted);
+      if((data.phase==="RUN1_READY"||data.phase==="RUN2_READY")&&
+         !state.batchRun.status&&!state.notebookSelectionTouched)
+        state.notebookBatch=state.requiresReset?"initial":"incremental";
+      state.batchResume={batch:data.resume_batch||"",runId:data.resume_run_id||null};
+      state.recentRuns=data.history||[];
+      await hydrateCurrentCycleRuns(data.current_cycle_runs||[],Boolean(data.current_run_id));
+    }catch(_error){state.realReady=false;}
+    state.capabilitiesLoading=false;
+    state.realConfigChecked=true;
+    if(state.view==="pipeline")renderPipeline();
+  }
+
+  async function hydrateCurrentCycleRuns(runs,hasCurrentRun){
+    state.currentCycleRuns=runs;
+    if(!hasCurrentRun){
+      state.batchResults={initial:{},incremental:{}};
+      state.batchSummaries={initial:null,incremental:null};
+      state.batchRunIds={initial:null,incremental:null};
+      return;
+    }
+    const latestByBatch={};
+    for(const run of runs){if(!latestByBatch[run.batch])latestByBatch[run.batch]=run;}
+    for(const batch of ["initial","incremental"]){
+      const run=latestByBatch[batch];if(!run)continue;
+      try{
+        const response=await fetch("/api/lab-batch-result?run_id="+encodeURIComponent(run.run_id),
+          {cache:"no-store"});
+        if(!response.ok)continue;
+        const payload=await response.json();
+        const result=payload.result;if(!result||result.status!=="SUCCESS")continue;
+        state.batchRunIds[batch]=String(run.run_id);
+        state.batchSummaries[batch]={runId:String(run.run_id),url:run.url,
+          sourceMonth:run.source_month,result};
+        state.batchResults[batch]=Object.fromEntries((result.stages||[]).map(item=>
+          [item.stage,{evidence:item.evidence,url:run.url,runId:String(run.run_id)}]));
+      }catch(_error){/* The live Lab state stays visible if a past artifact is unavailable. */}
+    }
+  }
+
+  async function dispatchRealStep(){
+    if(!state.realReady||state.labBusy||state.realStatus==="queued"||
+       state.realStatus==="in_progress")return;
+    const stage=LAB_STEPS[state.realStageIndex]?.id,batch=state.realBatch;
+    const prior=state.realStageIndex===0&&batch==="initial"?"0":
+      String(state.realPreviousRunId||"").trim();
+    if(!/^(0|[1-9][0-9]{0,18})$/.test(prior)||prior==="0"&&
+       !(batch==="initial"&&state.realStageIndex===0)){
+      state.realError="‡∏Å‡∏£‡∏∏‡∏ì‡∏≤‡πÉ‡∏™‡πà GitHub Run ID ‡∏Ç‡∏≠‡∏á‡∏Ç‡∏±‡πâ‡∏ô‡∏ó‡∏µ‡πà‡∏ú‡πà‡∏≤‡∏ô‡∏Å‡πà‡∏≠‡∏ô‡∏´‡∏ô‡πâ‡∏≤";
+      state.autoBatch="";
+      renderPipeline();return;
+    }
+    state.realError="";state.realStatus="submitting";
+    renderPipeline();
+    try{
+      const response=await fetch("/api/lab-dispatch",{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({stage,batch,previous_run_id:prior})
+      });
+      const result=await response.json();
+      if(!response.ok||!result.accepted)
+        throw Error(result.error||"GitHub ‡πÑ‡∏°‡πà‡∏£‡∏±‡∏ö‡∏Ñ‡∏≥‡∏™‡∏±‡πà‡∏á‡∏£‡∏±‡∏ô");
+      state.realStartedAt=new Date().toISOString();
+      state.realStatus="queued";state.realUrl=result.workflow_url;
+      state.realRunId=null;
+      renderPipeline();
+      window.setTimeout(checkRealRun,4000);
+    }catch(error){
+      state.realStatus="failure";state.realError=error.message||"‡∏™‡∏±‡πà‡∏á‡∏£‡∏±‡∏ô‡πÑ‡∏°‡πà‡πÑ‡∏î‡πâ";
+      state.autoBatch="";
+      renderPipeline();
+    }
+  }
+
+  async function checkRealRun(){
+    if(!state.realReady||!state.realStartedAt)return;
+    const stage=LAB_STEPS[state.realStageIndex]?.id,batch=state.realBatch;
+    const prior=state.realStageIndex===0&&batch==="initial"?"0":
+      state.realPreviousRunId;
+    try{
+      const url="/api/lab-dispatch?"+new URLSearchParams({
+        stage,batch,previous_run_id:String(prior),since:state.realStartedAt
+      });
+      const response=await fetch(url,{cache:"no-store"});
+      const data=await response.json();
+      if(!response.ok)throw Error(data.error||"‡∏ï‡∏¥‡∏î‡∏ï‡∏≤‡∏°‡∏á‡∏≤‡∏ô‡πÑ‡∏°‡πà‡πÑ‡∏î‡πâ");
+      if(data.found){
+        state.realRunId=data.run_id;state.realStatus=data.status;
+        state.realUrl=data.url;
+        if(data.status==="completed"){
+          state.realStatus=data.conclusion==="success"?"success":"failure";
+          if(state.realStatus==="success"){
+            state.realPreviousRunId=String(data.run_id);
+            try{
+              const evidenceResponse=await fetch("/api/lab-real-result?run_id="+encodeURIComponent(data.run_id),{
+                cache:"no-store"});
+              const receipt=await evidenceResponse.json();
+              if(evidenceResponse.ok&&receipt.mode==="REAL_GITHUB_ACTIONS_STAGE")
+                state.realEvidence=receipt.receipt;
+              else state.realError=receipt.error||"‡πÑ‡∏°‡πà‡∏™‡∏≤‡∏°‡∏≤‡∏£‡∏ñ‡∏≠‡πà‡∏≤‡∏ô Output ‡∏à‡∏≤‡∏Å Worker";
+            }catch(err){state.realError=err.message||"‡∏≠‡πà‡∏≤‡∏ô Artifact ‡πÑ‡∏°‡πà‡∏™‡∏≥‡πÄ‡∏£‡πá‡∏à";}
+            if(!state.realEvidence)state.autoBatch="";
+          }
+          if(state.realStatus==="failure")state.autoBatch="";
+        }
+      }
+      if(state.realStatus==="success"&&state.realEvidence){
+        state.batchResults[batch][stage]={evidence:state.realEvidence,url:state.realUrl,
+          runId:data.run_id};
+      }
+      renderPipeline();
+      if(["queued","in_progress"].includes(state.realStatus))
+        window.setTimeout(checkRealRun,4000);
+      if(state.autoBatch===batch&&state.realStatus==="success"&&state.realEvidence){
+        if(state.realStageIndex<LAB_STEPS.length-1){
+          state.realStageIndex++;state.notebookStage=LAB_STEPS[state.realStageIndex].id;
+          state.realStatus="";state.realEvidence=null;state.realStartedAt="";
+          window.setTimeout(dispatchRealStep,500);
+        }else state.autoBatch="";
+      }
+      if(state.realStatus==="success"&&stage==="validate")loadRealCapabilities();
+    }catch(error){state.realError=error.message||"‡πÑ‡∏°‡πà‡∏™‡∏≤‡∏°‡∏≤‡∏£‡∏ñ‡∏ï‡∏£‡∏ß‡∏à‡∏™‡∏ñ‡∏≤‡∏ô‡∏∞‡πÑ‡∏î‡πâ";
+      state.autoBatch="";renderPipeline();}
+  }
+
+  function renderRealRunner(root){
+    const content=box("lab-reference-body");
+    content.append(notice("Lab ‡πÉ‡∏ä‡πâ‡∏ê‡∏≤‡∏ô‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏ó‡∏î‡∏•‡∏≠‡∏á‡πÅ‡∏¢‡∏Å‡∏à‡∏≤‡∏Å‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏• Dashboard ‡∏´‡∏•‡∏±‡∏Å ¬∑ ‡πÄ‡∏£‡∏¥‡πà‡∏°‡∏à‡∏≤‡∏Å Source ‡∏ó‡∏µ‡πà‡πÄ‡∏ï‡∏£‡∏µ‡∏¢‡∏°‡πÑ‡∏ß‡πâ‡πÄ‡∏°‡∏∑‡πà‡∏≠‡∏Å‡∏î‡∏£‡∏±‡∏ô"));
+    if(!state.realConfigChecked)content.append(small("‡∏Å‡∏≥‡∏•‡∏±‡∏á‡∏ï‡∏£‡∏ß‡∏à‡∏™‡∏¥‡∏ó‡∏ò‡∏¥‡πå‡∏Å‡∏≤‡∏£‡∏™‡∏±‡πà‡∏á‡∏á‡∏≤‡∏ô‚Ä¶"));
+    else if(!state.realReady)content.append(notice(
+      "‡∏£‡∏∞‡∏ö‡∏ö‡∏™‡∏±‡πà‡∏á‡∏£‡∏±‡∏ô‡∏¢‡∏±‡∏á‡πÑ‡∏°‡πà‡∏û‡∏£‡πâ‡∏≠‡∏° ‡∏Å‡∏£‡∏∏‡∏ì‡∏≤‡∏ï‡∏£‡∏ß‡∏à‡∏Å‡∏≤‡∏£‡πÄ‡∏ä‡∏∑‡πà‡∏≠‡∏° GitHub ‡πÅ‡∏•‡∏∞ Neon ‡∏Ç‡∏≠‡∏á Lab",true));
+    const phase=state.realLabPhase;
+    if(state.requiresReset)root.append(notice(
+      "Lab ‡∏ô‡∏µ‡πâ‡∏¢‡∏±‡∏á‡∏°‡∏µ‡∏ú‡∏•‡∏à‡∏≤‡∏Å Source ‡∏£‡∏∏‡πà‡∏ô‡∏Å‡πà‡∏≠‡∏ô‡∏≠‡∏¢‡∏π‡πà ‡πÄ‡∏û‡∏∑‡πà‡∏≠‡πÄ‡∏£‡∏¥‡πà‡∏°‡∏ä‡∏∏‡∏î‡∏£‡∏≤‡∏¢‡πÄ‡∏î‡∏∑‡∏≠‡∏ô‡πÉ‡∏´‡∏°‡πà‡∏ï‡πâ‡∏≠‡∏á‡πÄ‡∏Ñ‡∏•‡∏µ‡∏¢‡∏£‡πå‡∏£‡∏≠‡∏ö‡πÄ‡∏î‡∏¥‡∏°‡∏Å‡πà‡∏≠‡∏ô ¬∑ ‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡πÄ‡∏î‡∏¥‡∏°‡∏à‡∏∞‡∏ñ‡∏π‡∏Å‡∏•‡∏ö‡∏à‡∏≤‡∏Å Lab ‡πÅ‡∏•‡∏∞ Dashboard ‡πÄ‡∏°‡∏∑‡πà‡∏≠‡πÄ‡∏Ñ‡∏•‡∏µ‡∏¢‡∏£‡πå‡∏™‡∏≥‡πÄ‡∏£‡πá‡∏à ¬∑ Source ‡∏ó‡∏µ‡πà‡πÄ‡∏ï‡∏£‡∏µ‡∏¢‡∏°‡πÑ‡∏ß‡πâ‡∏¢‡∏±‡∏á‡∏≠‡∏¢‡∏π‡πà",true));
+    const expected=state.realBatch==="initial"?"EMPTY":"RUN1_READY";
+    if(phase!==expected)content.append(notice(
+      "Neon ‡∏õ‡∏±‡∏à‡∏à‡∏∏‡∏ö‡∏±‡∏ô‡πÄ‡∏õ‡πá‡∏ô "+(phase||"‡πÑ‡∏°‡πà‡∏ó‡∏£‡∏≤‡∏ö‡∏™‡∏ñ‡∏≤‡∏ô‡∏∞")+
+      " ¬∑ ‡∏Å‡∏≤‡∏£‡∏£‡∏±‡∏ô "+state.realBatch+" ‡∏ï‡πâ‡∏≠‡∏á‡∏≠‡∏¢‡∏π‡πà‡πÉ‡∏ô‡∏™‡∏ñ‡∏≤‡∏ô‡∏∞ "+expected+
+      " ‡πÄ‡∏ó‡πà‡∏≤‡∏ô‡∏±‡πâ‡∏ô ‡πÑ‡∏°‡πà Reset ‡∏´‡∏£‡∏∑‡∏≠‡πÄ‡∏Ç‡∏µ‡∏¢‡∏ô‡∏ó‡∏±‡∏ö‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡πÉ‡∏î‡πÇ‡∏î‡∏¢‡∏≠‡∏±‡∏ï‡πÇ‡∏ô‡∏°‡∏±‡∏ï‡∏¥",true));
+    content.append(small("Neon Lab Status: "+phase+" ¬∑ ‡∏≠‡∏≠‡πÄ‡∏î‡∏≠‡∏£‡πå‡πÉ‡∏ô‡∏û‡∏∑‡πâ‡∏ô‡∏ó‡∏µ‡πà‡∏ó‡∏î‡∏•‡∏≠‡∏á: "+money(state.realLabOrders)));
+    content.append(box("two-col",
+      chooseField("‡πÄ‡∏•‡∏∑‡∏≠‡∏Å Batch",
+        [["initial","Run 1 ¬∑ Initial"],["incremental","Run 2 ¬∑ Incremental"]],
+        state.realBatch,v=>{state.realBatch=v;state.realStageIndex=0;
+          state.realStatus="";state.realStartedAt="";state.realRunId=null;state.realEvidence=null;
+          state.realPreviousRunId="";renderPipeline();}),
+      chooseField("‡∏Ç‡∏±‡πâ‡∏ô‡∏ï‡∏≠‡∏ô‡∏ó‡∏µ‡πà‡∏à‡∏∞‡∏õ‡∏£‡∏∞‡∏°‡∏ß‡∏•‡∏ú‡∏•",
+        LAB_STEPS.map((step,i)=>[String(i),String(i+1)+". "+step.title]),
+        String(state.realStageIndex),v=>{state.realStageIndex=Number(v);
+          state.realStatus="";state.realStartedAt="";state.realRunId=null;
+          renderPipeline();})));
+    if(!(state.realBatch==="initial"&&state.realStageIndex===0)){
+      const field=node("label","field");
+      const input=node("input");input.type="text";
+      input.placeholder="Run ID ‡∏Ç‡∏≠‡∏á Step ‡∏ó‡∏µ‡πà‡πÄ‡∏™‡∏£‡πá‡∏à‡πÅ‡∏•‡πâ‡∏ß";input.value=state.realPreviousRunId;
+      input.addEventListener("input",()=>{state.realPreviousRunId=input.value.trim();});
+      field.append(node("span","","GitHub Run ID ‡∏Å‡πà‡∏≠‡∏ô‡∏´‡∏ô‡πâ‡∏≤"),input);
+      content.append(field);
+    }
+    content.append(small("‡∏Å‡πà‡∏≠‡∏ô‡∏£‡∏±‡∏ô: "+LAB_STEPS[state.realStageIndex].input+
+      " ¬∑ ‡∏´‡∏•‡∏±‡∏á‡∏£‡∏±‡∏ô: "+LAB_STEPS[state.realStageIndex].output));
+    const controls=box("lab-actions");
+    const run=node("button","button button-primary","‚ñ∂ Execute Real ETL Step");
+    run.type="button";run.disabled=!state.realReady||phase!==expected||
+      ["queued","in_progress","submitting"].includes(state.realStatus);
+    run.addEventListener("click",dispatchRealStep);controls.append(run);
+    if(state.realStartedAt){
+      const refresh=node("button","button button-outline","‚Üª ‡πÄ‡∏ä‡πá‡∏Å GitHub Run");
+      refresh.type="button";refresh.addEventListener("click",checkRealRun);
+      controls.append(refresh);
+    }
+    if(state.realStatus==="success"&&state.realStageIndex<4){
+      const next=node("button","button button-outline","‡πÄ‡∏•‡∏∑‡∏≠‡∏Å Step ‡∏ñ‡∏±‡∏î‡πÑ‡∏õ ‚Üí");
+      next.type="button";next.addEventListener("click",()=>{
+        state.realStageIndex++;state.realStatus="";state.realStartedAt="";
+        state.realRunId=null;state.realEvidence=null;renderPipeline();
+      });controls.append(next);
+    }
+    content.append(controls);
+    if(state.realEvidence&&state.realStatus==="success"){
+      content.append(node("h3","lab-subheading","‡∏ú‡∏•‡∏£‡∏±‡∏ô‡∏à‡∏£‡∏¥‡∏á ¬∑ Input / Output ‡∏à‡∏≤‡∏Å GitHub Worker"));
+      content.append(renderLabResult(state.realEvidence));
+    }
+    if(state.realError)content.append(notice(state.realError,true));
+    if(state.realStatus)content.append(box("pipeline-meta",
+      small("GitHub status: "+state.realStatus),
+      small("GitHub Run ID: "+(state.realRunId||"‡∏Å‡∏≥‡∏•‡∏±‡∏á‡∏à‡∏±‡∏î‡∏Ñ‡∏¥‡∏ß")),
+      small("Step ‡∏ú‡πà‡∏≤‡∏ô‡πÑ‡∏î‡πâ‡πÄ‡∏°‡∏∑‡πà‡∏≠ GitHub workflow conclusion = success ‡πÄ‡∏ó‡πà‡∏≤‡∏ô‡∏±‡πâ‡∏ô")));
+    if(state.realUrl)content.append(link("‡πÄ‡∏õ‡∏¥‡∏î GitHub Actions ‡πÅ‡∏•‡∏∞‡∏î‡∏π Log",state.realUrl));
+    content.append(small("Worker ‡πÉ‡∏ä‡πâ Workflow: classroom-real-step.yml ¬∑ ‡πÑ‡∏°‡πà‡∏™‡∏±‡πà‡∏á Reset ‡πÅ‡∏•‡∏∞‡πÑ‡∏°‡πà‡πÅ‡∏ï‡∏∞ Analytics"));
+    root.append(panel("‡∏£‡∏±‡∏ô ETL ‡∏à‡∏£‡∏¥‡∏á ¬∑ ‡∏ó‡∏µ‡∏•‡∏∞‡∏Ç‡∏±‡πâ‡∏ô",
+      "‡πÅ‡∏¢‡∏Å‡∏à‡∏≤‡∏Å‡∏Å‡∏≤‡∏£‡∏ï‡∏£‡∏ß‡∏à‡∏´‡∏•‡∏±‡∏Å‡∏ê‡∏≤‡∏ô‡∏¢‡πâ‡∏≠‡∏ô‡∏´‡∏•‡∏±‡∏á ‚Ä¢ ‡∏ï‡πâ‡∏≠‡∏á‡∏°‡∏µ‡∏™‡∏¥‡∏ó‡∏ò‡∏¥‡πå‡∏ú‡∏π‡πâ‡∏Ñ‡∏ß‡∏ö‡∏Ñ‡∏∏‡∏°‡πÅ‡∏•‡∏∞‡∏™‡∏ñ‡∏≤‡∏ô‡∏∞ Neon ‡∏ó‡∏µ‡πà‡∏ñ‡∏π‡∏Å‡∏ï‡πâ‡∏≠‡∏á",
+      content));
+  }
+
+  async function loadSavedLabEvidence(){
+    try{
+      const response=await fetch("./data/lab_manifest.json",{cache:"no-cache"});
+      if(response.ok){
+        const manifest=await response.json();
+        if(manifest.schema_version==="real_lab_steps_v1" &&
+           manifest.data_classification==="SYNTHETIC_EDUCATIONAL_NOT_TIKTOK")
+          state.savedLabManifest=manifest;
+      }
+    }catch(_error){/* No completed real step snapshots yet. */}
+    if(state.view==="pipeline")renderPipeline();
+  }
+
+  async function selectSavedLabStage(item){
+    state.savedLabSelected=item.batch+"/"+item.stage;
+    state.savedLabLoading=true;renderPipeline();
+    try{
+      const result=await fetch(item.file,{cache:"no-cache"});
+      if(!result.ok)throw Error("HTTP "+result.status);
+      const data=await result.json();
+      if(data.evidence?.mode!=="REAL_GITHUB_ACTIONS_STAGE" ||
+         data.source_type!=="SYNTHETIC_EDUCATIONAL_NOT_TIKTOK" ||
+         data.batch!==item.batch||data.stage!==item.stage)
+        throw Error("Provenance ‡∏Ç‡∏≠‡∏á‡∏ú‡∏•‡∏£‡∏±‡∏ô‡πÑ‡∏°‡πà‡∏ñ‡∏π‡∏Å‡∏ï‡πâ‡∏≠‡∏á");
+      state.savedLabReceipt=data;
+    }catch(error){
+      state.savedLabReceipt=null;
+      state.labError="‡πÑ‡∏°‡πà‡∏™‡∏≤‡∏°‡∏≤‡∏£‡∏ñ‡∏≠‡πà‡∏≤‡∏ô‡∏ï‡∏±‡∏ß‡∏≠‡∏¢‡πà‡∏≤‡∏á‡∏à‡∏≤‡∏Å GitHub Run ‡∏à‡∏£‡∏¥‡∏á‡πÑ‡∏î‡πâ: "+error.message;
+    }
+    state.savedLabLoading=false;renderPipeline();
+  }
+
+  function renderSavedLab(root){
+    const manifest=state.savedLabManifest;
+    const body=contentArea();
+    body.append(notice("‡∏ú‡∏•‡∏™‡πà‡∏ß‡∏ô‡∏ô‡∏µ‡πâ‡∏°‡∏≤‡∏à‡∏≤‡∏Å‡∏Å‡∏≤‡∏£‡∏£‡∏±‡∏ô Python + Neon ‡∏à‡∏£‡∏¥‡∏á‡πÉ‡∏ô GitHub Actions ‡∏Ñ‡∏ô‡∏•‡∏∞ Job ‡∏û‡∏£‡πâ‡∏≠‡∏°‡∏ï‡∏±‡∏ß‡∏≠‡∏¢‡πà‡∏≤‡∏á‡πÅ‡∏ñ‡∏ß‡∏ó‡∏µ‡πà Worker ‡∏ö‡∏±‡∏ô‡∏ó‡∏∂‡∏Å‡πÑ‡∏ß‡πâ ‡πÑ‡∏°‡πà‡πÉ‡∏ä‡πà‡∏Å‡∏≤‡∏£‡∏™‡∏£‡πâ‡∏≤‡∏á ETL ‡πÉ‡∏´‡∏°‡πà‡πÄ‡∏°‡∏∑‡πà‡∏≠‡∏Ñ‡∏•‡∏¥‡∏Å‡∏î‡∏π"));
+    if(!manifest?.runs?.length){
+      body.append(small("‡∏¢‡∏±‡∏á‡πÑ‡∏°‡πà‡∏°‡∏µ‡∏ú‡∏• Step ‡∏ó‡∏µ‡πà‡πÄ‡∏ú‡∏¢‡πÅ‡∏û‡∏£‡πà‡πÄ‡∏õ‡πá‡∏ô Data Snapshot ‡∏à‡∏≤‡∏Å GitHub Worker"));
+    }else{
+      const options=box("lab-steps");
+      manifest.runs.forEach(entry=>{
+        const selected=state.savedLabSelected===entry.batch+"/"+entry.stage;
+        const btn=node("button","lab-step"+(selected?" lab-active":""));
+        btn.type="button";btn.disabled=state.savedLabLoading;
+        btn.append(node("span","lab-step-number",
+          String(LAB_STEPS.findIndex(x=>x.id===entry.stage)+1).padStart(2,"0")),
+          box("lab-step-text",
+            node("strong","",(entry.batch==="initial"?"Initial":"Incremental")+" ¬∑ "+
+              (LAB_STEPS.find(x=>x.id===entry.stage)?.title||entry.stage)),
+            small("GitHub Run #"+entry.run_id)),
+          node("span","lab-step-state",selected?"‡∏Å‡∏≥‡∏•‡∏±‡∏á‡πÅ‡∏™‡∏î‡∏á":"‡∏î‡∏π‡∏ú‡∏•‡∏à‡∏£‡∏¥‡∏á"));
+        btn.addEventListener("click",()=>selectSavedLabStage(entry));
+        options.append(btn);
+      });
+      body.append(options);
+      if(state.savedLabLoading)body.append(small("‡∏Å‡∏≥‡∏•‡∏±‡∏á‡πÇ‡∏´‡∏•‡∏î‡∏ú‡∏•‡∏•‡∏±‡∏û‡∏ò‡πå‡∏à‡∏≤‡∏Å Worker‚Ä¶"));
+      else if(state.savedLabReceipt && manifest.runs.some(entry=>
+          entry.run_id===state.savedLabReceipt.git_run_id))
+        body.append(renderLabResult(state.savedLabReceipt.evidence));
+      if(state.savedLabReceipt?.git_run_id)
+        body.append(link("‡πÄ‡∏õ‡∏¥‡∏î Log ‡∏Ç‡∏≠‡∏á GitHub Run ‡∏ô‡∏µ‡πâ",
+          "https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/actions/runs/"+
+          state.savedLabReceipt.git_run_id));
+    }
+    root.append(panel("‡∏ú‡∏•‡∏õ‡∏£‡∏∞‡∏°‡∏ß‡∏•‡∏ú‡∏•‡∏à‡∏£‡∏¥‡∏á‡∏ó‡∏µ‡∏•‡∏∞ Step ¬∑ ‡πÉ‡∏ä‡πâ‡∏™‡∏≤‡∏ò‡∏¥‡∏ï‡∏Å‡∏±‡∏ö‡∏≠‡∏≤‡∏à‡∏≤‡∏£‡∏¢‡πå",
+      "‡πÄ‡∏•‡∏∑‡∏≠‡∏Å Step ‡πÄ‡∏û‡∏∑‡πà‡∏≠‡∏î‡∏π Input, Output ‡∏ï‡∏±‡∏ß‡∏≠‡∏¢‡πà‡∏≤‡∏á‡πÅ‡∏ñ‡∏ß ‡πÅ‡∏•‡∏∞‡∏ú‡∏•‡∏ï‡∏£‡∏ß‡∏à‡∏™‡∏≠‡∏ö‡∏à‡∏≤‡∏Å Python Worker ‡∏à‡∏£‡∏¥‡∏á",body));
+  }
+
+  function renderLegacyPipeline(){
+    const root=$("#app");root.replaceChildren();
+    const live=state.neonRunStatus;
+    const summary=live?.state;
+    const hero=box("lab-hero",
+      box("lab-hero-main",
+        node("span","lab-kicker","INTERACTIVE PIPELINE LAB ¬∑ SOURCE-BACKED"),
+        node("h2","lab-heading","‡∏Å‡∏î‡∏ï‡∏£‡∏ß‡∏à‡∏ó‡∏µ‡∏•‡∏∞‡∏Ç‡∏±‡πâ‡∏ô ‡πÄ‡∏´‡πá‡∏ô‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏Å‡πà‡∏≠‡∏ô‡πÅ‡∏•‡∏∞‡∏´‡∏•‡∏±‡∏á"),
+        node("p","lab-description",
+          "‡∏™‡∏≠‡∏á‡πÇ‡∏´‡∏°‡∏î‡πÅ‡∏¢‡∏Å‡∏Å‡∏±‡∏ô: ‡∏™‡∏±‡πà‡∏á‡∏£‡∏±‡∏ô ETL ‡∏à‡∏£‡∏¥‡∏á‡πÅ‡∏ö‡∏ö‡∏ó‡∏µ‡∏•‡∏∞‡∏Ç‡∏±‡πâ‡∏ô ‡πÅ‡∏•‡∏∞‡∏ï‡∏£‡∏ß‡∏à‡∏´‡∏•‡∏±‡∏Å‡∏ê‡∏≤‡∏ô‡πÄ‡∏Å‡πà‡∏≤‡πÅ‡∏ö‡∏ö‡∏≠‡πà‡∏≤‡∏ô‡∏≠‡∏¢‡πà‡∏≤‡∏á‡πÄ‡∏î‡∏µ‡∏¢‡∏ß ‡∏û‡∏£‡πâ‡∏≠‡∏° Input ‚Üí Process ‚Üí Output")),
+      box("lab-hero-aside",
+        node("span","lab-hero-tag","‡πÇ‡∏´‡∏°‡∏î‡∏õ‡∏•‡∏≠‡∏î‡∏†‡∏±‡∏¢ ¬∑ ‡∏ï‡∏£‡∏ß‡∏à‡∏ã‡πâ‡∏≥‡∏´‡∏•‡∏±‡∏Å‡∏ê‡∏≤‡∏ô‡∏à‡∏£‡∏¥‡∏á"),
+        node("strong","",summary?.phase||"‡∏Å‡∏≥‡∏•‡∏±‡∏á‡∏≠‡πà‡∏≤‡∏ô‡∏™‡∏ñ‡∏≤‡∏ô‡∏∞"),
+        small(summary?"‡∏£‡∏≠‡∏ö‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏• "+summary.cycle_number+" ¬∑ "+money(live.counts.orders)+" ‡∏≠‡∏≠‡πÄ‡∏î‡∏≠‡∏£‡πå":"‡∏Å‡∏≥‡∏•‡∏±‡∏á‡πÄ‡∏ä‡∏∑‡πà‡∏≠‡∏° Neon")));
+    root.append(hero);
+    renderSavedLab(root);
+    renderRealRunner(root);
+    root.append(notice("‡∏™‡πà‡∏ß‡∏ô‡∏ï‡∏£‡∏ß‡∏à‡∏´‡∏•‡∏±‡∏Å‡∏ê‡∏≤‡∏ô‡∏î‡πâ‡∏≤‡∏ô‡∏•‡πà‡∏≤‡∏á‡πÄ‡∏õ‡πá‡∏ô Read-only Verification ‡πÑ‡∏°‡πà‡πÉ‡∏ä‡πà ETL ‡πÉ‡∏´‡∏°‡πà; ‡πÉ‡∏ä‡πâ Execute Real ETL Step ‡∏î‡πâ‡∏≤‡∏ô‡∏ö‡∏ô‡πÄ‡∏ó‡πà‡∏≤‡∏ô‡∏±‡πâ‡∏ô‡πÄ‡∏°‡∏∑‡πà‡∏≠‡∏°‡∏µ‡∏™‡∏¥‡∏ó‡∏ò‡∏¥‡πå‡πÅ‡∏•‡∏∞‡∏™‡∏ñ‡∏≤‡∏ô‡∏∞‡∏ê‡∏≤‡∏ô‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏û‡∏£‡πâ‡∏≠‡∏°"));
+    root.append(node("h3","lab-subheading","‡∏ï‡∏£‡∏ß‡∏à‡∏´‡∏•‡∏±‡∏Å‡∏ê‡∏≤‡∏ô‡∏à‡∏≤‡∏Å‡∏Å‡∏≤‡∏£‡∏£‡∏±‡∏ô‡∏ó‡∏µ‡πà‡∏ú‡πà‡∏≤‡∏ô‡∏°‡∏≤ (Read-only Verification)"));
+    const progress=box("lab-steps");
+    LAB_STEPS.forEach((def,i)=>{
+      const result=state.labResults[def.id];
+      const canOpen=i===0||Boolean(state.labResults[LAB_STEPS[i-1].id]?.success);
+      const action=node("button","lab-step"+(i===state.labStage?" lab-active":"")+
+        (result?.success?" lab-complete":""));
+      action.type="button";action.disabled=!canOpen||state.labBusy;
+      action.append(
+        node("span","lab-step-number",result?.success?"‚úì":String(i+1).padStart(2,"0")),
+        box("lab-step-text",node("strong","",def.title),small(def.path)),
+        node("span","lab-step-state",result?.success?"‡∏ú‡πà‡∏≤‡∏ô‡πÅ‡∏•‡πâ‡∏ß":canOpen?"‡πÄ‡∏•‡∏∑‡∏≠‡∏Å‡∏Ç‡∏±‡πâ‡∏ô‡∏ï‡∏≠‡∏ô":"‡∏£‡∏≠‡∏Ç‡∏±‡πâ‡∏ô‡∏Å‡πà‡∏≠‡∏ô"));
+      action.addEventListener("click",()=>{state.labStage=i;state.labError="";renderPipeline();});
+      progress.append(action);
+    });
+    root.append(progress);
+    const def=LAB_STEPS[state.labStage];
+    const completed=state.labResults[def.id];
+    const unlocked=state.labStage===0||Boolean(state.labResults[LAB_STEPS[state.labStage-1].id]?.success);
+    const main=contentArea();
+    main.append(node("div","lab-step-caption","STEP "+String(state.labStage+1).padStart(2,"0")+" / 05"),
+      node("h3","lab-step-detail-title",def.title+" ‚Äî "+def.path),
+      node("p","lab-description",def.why));
+    if(state.labStage<2 && state.neonTables.length){
+      const options=state.neonTables.map(x=>[x,x]);
+      if(!state.neonTables.includes(state.labTable))state.labTable="Fact_Orders";
+      main.append(chooseField("‡πÄ‡∏•‡∏∑‡∏≠‡∏Å Source Table ‡∏ó‡∏µ‡πà‡∏ï‡πâ‡∏≠‡∏á‡∏Å‡∏≤‡∏£‡∏ï‡∏£‡∏ß‡∏à",options,state.labTable,val=>{
+        state.labTable=val;
+        // Each table is its own evidence check. Change invalidates downstream.
+        state.labResults={};state.labStage=0;state.labLog=[];
+        renderPipeline();
+      }));
+    }
+    const io=box("lab-io");
+    io.append(
+      box("lab-io-card",node("span","lab-io-label","01 ¬∑ INPUT"),node("strong","",def.input)),
+      box("lab-io-card",node("span","lab-io-label","02 ¬∑ PROCESS"),node("strong","",def.process)),
+      box("lab-io-card",node("span","lab-io-label","03 ¬∑ OUTPUT"),node("strong","",def.output)));
+    main.append(io,node("p","lab-footnote",def.note));
+    const actionRow=box("lab-actions");
+    const run=node("button","button button-primary",state.labBusy?"‡∏Å‡∏≥‡∏•‡∏±‡∏á‡∏ï‡∏£‡∏ß‡∏à‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‚Ä¶":
+      (completed?"‚Üª ‡∏ï‡∏£‡∏ß‡∏à‡∏´‡∏•‡∏±‡∏Å‡∏ê‡∏≤‡∏ô Step "+(state.labStage+1)+" ‡∏≠‡∏µ‡∏Å‡∏Ñ‡∏£‡∏±‡πâ‡∏á":"‚ñ∑ ‡∏ï‡∏£‡∏ß‡∏à‡∏´‡∏•‡∏±‡∏Å‡∏ê‡∏≤‡∏ô Step "+(state.labStage+1)));
+    run.type="button";
+    run.disabled=!unlocked||state.labBusy||state.neonStatus!=="ready";
+    run.addEventListener("click",runLabStage);
+    actionRow.append(run);
+    if(completed?.success&&state.labStage<4){
+      const next=node("button","button button-outline","Step ‡∏ñ‡∏±‡∏î‡πÑ‡∏õ ‚Üí");
+      next.type="button";next.addEventListener("click",()=>{state.labStage++;renderPipeline();});
+      actionRow.append(next);
+    }
+    main.append(actionRow);
+    if(!unlocked)main.append(notice("‡∏ï‡πâ‡∏≠‡∏á‡∏ï‡∏£‡∏ß‡∏à‡∏´‡∏•‡∏±‡∏Å‡∏ê‡∏≤‡∏ô Step ‡∏Å‡πà‡∏≠‡∏ô‡∏´‡∏ô‡πâ‡∏≤‡πÉ‡∏´‡πâ‡∏ú‡πà‡∏≤‡∏ô‡∏Å‡πà‡∏≠‡∏ô",true));
+    if(state.neonStatus==="error")main.append(notice(state.neonError||"‡∏≠‡πà‡∏≤‡∏ô Neon ‡πÑ‡∏°‡πà‡∏™‡∏≥‡πÄ‡∏£‡πá‡∏à",true));
+    if(state.labError)main.append(notice(state.labError+" ¬∑ ‡∏™‡∏≤‡∏°‡∏≤‡∏£‡∏ñ‡∏ï‡∏£‡∏ß‡∏à‡∏´‡∏•‡∏±‡∏Å‡∏ê‡∏≤‡∏ô Step ‡πÄ‡∏î‡∏¥‡∏°‡∏ã‡πâ‡∏≥‡πÑ‡∏î‡πâ",true));
+    main.append(node("h3","lab-subheading","‡∏ú‡∏•‡∏Å‡∏≤‡∏£‡∏ï‡∏£‡∏ß‡∏à‡∏™‡∏≠‡∏ö"),renderLabResult(completed));
+    root.append(panel("‡∏ó‡∏î‡∏•‡∏≠‡∏á‡∏Ç‡∏±‡πâ‡∏ô‡∏ï‡∏≠‡∏ô‡∏ó‡∏µ‡πà "+(state.labStage+1),"‡∏ï‡∏£‡∏ß‡∏à‡πÅ‡∏´‡∏•‡πà‡∏á‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏à‡∏£‡∏¥‡∏á‡πÅ‡∏ö‡∏ö‡∏≠‡πà‡∏≤‡∏ô‡∏≠‡∏¢‡πà‡∏≤‡∏á‡πÄ‡∏î‡∏µ‡∏¢‡∏ß ‡πÑ‡∏°‡πà‡πÉ‡∏ä‡πà‡∏Å‡∏≤‡∏£‡∏£‡∏±‡∏ô ETL ‡πÉ‡∏´‡∏°‡πà",main));
+    if(state.labLog.length)root.append(panel("Execution Log ‡∏Ç‡∏≠‡∏á‡∏Å‡∏≤‡∏£‡∏ó‡∏î‡∏•‡∏≠‡∏á‡∏Ñ‡∏£‡∏±‡πâ‡∏á‡∏ô‡∏µ‡πâ",
+      "‡∏Å‡∏¥‡∏à‡∏Å‡∏£‡∏£‡∏°‡∏à‡∏≤‡∏Å‡∏Å‡∏≤‡∏£‡∏Å‡∏î‡πÉ‡∏ô‡∏´‡∏ô‡πâ‡∏≤‡πÄ‡∏ß‡πá‡∏ö ‡πÑ‡∏°‡πà‡πÉ‡∏ä‡πà Log ‡∏¢‡πâ‡∏≠‡∏ô‡∏´‡∏•‡∏±‡∏á‡∏Ç‡∏≠‡∏á GitHub Worker",
+      dataTable([["at","‡πÄ‡∏ß‡∏•‡∏≤ (UTC)"],["stage","Step"],["result","‡∏ú‡∏•"],["detail","‡∏£‡∏≤‡∏¢‡∏•‡∏∞‡πÄ‡∏≠‡∏µ‡∏¢‡∏î"]],
+        state.labLog,{result:{kind:"status"}})));
+    renderErrorRecoveryLab(root);
+    const detail=node("details","lab-reference");
+    const trigger=node("summary","","‡πÄ‡∏õ‡∏¥‡∏î‡∏î‡∏π Data Explorer / ‡∏£‡∏≤‡∏¢‡∏ä‡∏∑‡πà‡∏≠‡πÑ‡∏ü‡∏•‡πå / ‡∏´‡∏•‡∏±‡∏Å‡∏ê‡∏≤‡∏ô GitHub");
+    detail.append(trigger);
+    const explorer=box("lab-reference-body");
+    renderNeonExplorer(explorer);renderEvidenceExplorer(explorer);
+    detail.append(explorer);
+    root.append(detail);
+    root.append(box("lab-links",
+      link("‡∏Å‡∏≤‡∏£‡∏£‡∏±‡∏ô Neon Pipeline ‡∏à‡∏£‡∏¥‡∏á‡∏ó‡∏µ‡πà‡∏ú‡πà‡∏≤‡∏ô GitHub Actions","https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/actions/runs/42487488684"),
+      link("‡∏´‡∏•‡∏±‡∏Å‡∏ê‡∏≤‡∏ô Cloud Storage ‡∏ó‡∏µ‡πà‡∏ï‡∏£‡∏ß‡∏à‡∏Ñ‡∏£‡∏ö 64 ‡πÑ‡∏ü‡∏•‡πå","https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/actions/runs/42488944625")));
+    state.rows=completed?.output?.preview||[];
+  }
+
+  const NOTEBOOK_STAGES=[
+    ["ingest","Source ‚Üí Database","‡∏ô‡∏≥‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏à‡∏≥‡∏•‡∏≠‡∏á‡πÄ‡∏Ç‡πâ‡∏≤‡∏ê‡∏≤‡∏ô‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏ï‡πâ‡∏ô‡∏ó‡∏≤‡∏á ‡πÅ‡∏•‡∏∞ sync 25 ‡∏ï‡∏≤‡∏£‡∏≤‡∏á‡πÑ‡∏õ Neon"],
+    ["extract","Database ‚Üí Data Lake","‡∏ö‡∏±‡∏ô‡∏ó‡∏∂‡∏Å Landing ‡πÅ‡∏•‡∏∞ Raw Parquet ‡∏à‡∏≤‡∏Å‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡πÉ‡∏ô‡∏ê‡∏≤‡∏ô‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•"],
+    ["transform","Data Lake ¬∑ ‡∏à‡∏±‡∏î‡∏£‡∏π‡∏õ‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•","‡πÅ‡∏õ‡∏•‡∏á Raw ‡πÄ‡∏õ‡πá‡∏ô Standardized ‡πÅ‡∏•‡∏∞‡∏ï‡∏£‡∏ß‡∏à‡πÄ‡∏á‡∏∑‡πà‡∏≠‡∏ô‡πÑ‡∏Ç‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•"],
+    ["load","Data Lake ‚Üí Warehouse","‡πÇ‡∏´‡∏•‡∏î‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏ó‡∏µ‡πà‡πÄ‡∏õ‡∏•‡∏µ‡πà‡∏¢‡∏ô‡πÑ‡∏õ‡∏¢‡∏±‡∏á DuckDB ‡πÅ‡∏•‡∏∞‡∏õ‡∏£‡∏±‡∏ö Mart"],
+    ["validate","‡∏ï‡∏£‡∏ß‡∏à‡∏ú‡∏•‡∏ó‡∏±‡πâ‡∏á‡πÄ‡∏™‡πâ‡∏ô‡∏ó‡∏≤‡∏á","‡πÄ‡∏ó‡∏µ‡∏¢‡∏ö‡∏à‡∏≥‡∏ô‡∏ß‡∏ô‡πÅ‡∏•‡∏∞‡∏¢‡∏≠‡∏î‡∏£‡∏∞‡∏´‡∏ß‡πà‡∏≤‡∏á‡∏ê‡∏≤‡∏ô‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏ï‡πâ‡∏ô‡∏ó‡∏≤‡∏á‡∏Å‡∏±‡∏ö Warehouse"]
+  ];
+  function runWholeBatch(){
+    const batch=state.notebookBatch;
+    if(state.batchRun.status==="queued"||state.batchRun.status==="in_progress"||
+       state.batchRun.status==="submitting")return;
+    const previous=state.batchResume.batch===batch&&state.batchResume.runId?
+      String(state.batchResume.runId):batch==="initial"?"0":
+      String(state.currentRunId||"");
+    if(batch==="incremental"&&!/^[1-9][0-9]{0,18}$/.test(previous)){
+      state.realError="‡∏ï‡πâ‡∏≠‡∏á‡πÉ‡∏´‡πâ‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏ä‡∏∏‡∏î‡∏Å‡πà‡∏≠‡∏ô‡∏ú‡πà‡∏≤‡∏ô‡∏Ñ‡∏£‡∏ö‡∏Å‡πà‡∏≠‡∏ô";renderPipeline();return;
+    }
+    state.realError="";state.batchRun={batch,status:"submitting",since:"",runId:null,url:"",stages:[]};
+    renderPipeline();
+    const uploadId=state.sourceUploadMonth===sourceMonthForBatch(state.nextSourceBatch)?state.sourceUploadId:"";
+    fetch("/api/lab-batch",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({batch,previous_run_id:previous,source_upload_id:uploadId})})
+      .then(async response=>{const data=await response.json();
+        if(!response.ok||!data.accepted)throw Error(data.error||"‡∏™‡∏±‡πà‡∏á Run ‡πÑ‡∏°‡πà‡∏™‡∏≥‡πÄ‡∏£‡πá‡∏à");
+        state.batchRun.status="queued";state.batchRun.since=new Date().toISOString();
+        state.batchRun.sourceBatch=data.source_batch;
+        state.batchResults[batch]={};
+        state.batchSummaries[batch]=null;
+        state.batchRun.url=data.workflow_url;renderPipeline();
+        window.setTimeout(checkBatchRun,3000);
+      }).catch(error=>{state.batchRun.status="failure";state.realError=error.message;
+        renderPipeline();});
+  }
+  async function checkBatchRun(){
+    const current=state.batchRun;
+    if(!current.since||!["queued","in_progress"].includes(current.status))return;
+    try{
+      const query=new URLSearchParams({batch:current.batch,source_batch:current.sourceBatch,
+        since:current.since});
+      const response=await fetch("/api/lab-batch?"+query,{cache:"no-store"});
+      const data=await response.json();
+      if(!response.ok)throw Error(data.error||"‡∏ï‡∏¥‡∏î‡∏ï‡∏≤‡∏° Run ‡πÑ‡∏°‡πà‡πÑ‡∏î‡πâ");
+      if(data.found){
+        current.runId=data.run_id;current.url=data.url;current.stages=data.stages||[];
+        current.status=data.status==="completed"?
+          (data.conclusion==="success"?"success":"failure"):data.status;
+        const active=current.stages.find(x=>x.status==="in_progress");
+        const latest=[...current.stages].reverse().find(x=>x.conclusion==="success");
+        state.notebookStage=NOTEBOOK_STAGES[active?.index??latest?.index??0][0];
+        for(const step of current.stages.filter(x=>x.conclusion==="success")){
+          const stage=NOTEBOOK_STAGES[step.index]?.[0];
+          if(!stage||state.batchResults[current.batch]?.[stage])continue;
+          try{
+            const proofResponse=await fetch("/api/lab-batch-result?"+
+              new URLSearchParams({run_id:String(current.runId),stage}),{cache:"no-store"});
+            if(!proofResponse.ok)continue;
+            const proof=await proofResponse.json();
+            state.batchResults[current.batch][stage]={evidence:proof.evidence,
+              url:current.url,runId:current.runId};
+          }catch(_error){/* Stage artifact may still be uploading. */}
+        }
+      }
+      if(current.status==="success"){
+        const resultResponse=await fetch("/api/lab-batch-result?run_id="+
+          encodeURIComponent(current.runId),{cache:"no-store"});
+        const payload=await resultResponse.json();
+        if(!resultResponse.ok)throw Error(payload.error||"‡∏≠‡πà‡∏≤‡∏ô‡∏ú‡∏• Run ‡πÑ‡∏°‡πà‡∏™‡∏≥‡πÄ‡∏£‡πá‡∏à");
+        current.result=payload.result;
+        state.batchRunIds[current.batch]=current.runId;
+        state.batchSummaries[current.batch]={runId:String(current.runId),url:current.url,
+          sourceMonth:sourceMonthForBatch(current.sourceBatch),result:payload.result};
+        state.batchResults[current.batch]=Object.fromEntries(payload.result.stages.map(item=>
+          [item.stage,{evidence:item.evidence,url:current.url,runId:current.runId}]));
+        if(state.sourceUploadId&&state.sourceUploadMonth===sourceMonthForBatch(state.nextSourceBatch)){
+          state.sourceUploadId="";state.sourceUploadMonth="";
+          sessionStorage.removeItem("classroom_source_upload");
+        }
+        state.notebookStage="validate";
+        loadRealCapabilities();
+      }
+      if(current.status==="failure"){
+        state.realError="Run ‡πÑ‡∏°‡πà‡∏ú‡πà‡∏≤‡∏ô ¬∑ ‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏ä‡∏∏‡∏î‡∏ô‡∏µ‡πâ‡∏¢‡∏±‡∏á‡πÑ‡∏°‡πà‡πÄ‡∏™‡∏£‡πá‡∏à ‡∏Å‡∏î‡∏õ‡∏∏‡πà‡∏°‡πÄ‡∏î‡∏¥‡∏°‡πÄ‡∏û‡∏∑‡πà‡∏≠‡∏•‡∏≠‡∏á‡∏≠‡∏µ‡∏Å‡∏Ñ‡∏£‡∏±‡πâ‡∏á ‡∏´‡∏≤‡∏Å‡∏¢‡∏±‡∏á‡πÑ‡∏°‡πà‡∏ú‡πà‡∏≤‡∏ô‡πÉ‡∏´‡πâ‡∏î‡∏π‡∏™‡∏≤‡πÄ‡∏´‡∏ï‡∏∏‡πÉ‡∏ô Log";
+        state.batchResume={batch:current.batch,runId:current.runId};
+        loadRealCapabilities();
+      }
+      renderPipeline();
+      if(["queued","in_progress"].includes(current.status))
+        window.setTimeout(checkBatchRun,4000);
+    }catch(error){state.realError=error.message;renderPipeline();
+      if(["queued","in_progress"].includes(current.status))
+        window.setTimeout(checkBatchRun,8000);}
+  }
+  async function showHistoryRun(runId){
+    state.historyBusy=true;state.realError="";renderPipeline();
+    try{
+      const response=await fetch("/api/lab-batch-result?run_id="+encodeURIComponent(runId),
+        {cache:"no-store"});
+      const payload=await response.json();
+      if(!response.ok)throw Error(payload.error||"‡∏≠‡πà‡∏≤‡∏ô‡∏ú‡∏•‡∏£‡∏≠‡∏ö‡∏Å‡πà‡∏≠‡∏ô‡πÑ‡∏°‡πà‡πÑ‡∏î‡πâ");
+      state.historyRun={runId,result:payload.result};
+    }catch(error){state.realError=error.message;}
+    state.historyBusy=false;renderPipeline();
+  }
+  async function resetErrorLab(nextCase=state.errorCase){
+    state.errorRun.status="submitting";renderPipeline();
+    try{
+      const response=await fetch("/api/lab-error",{method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({phase:"reset"})});
+      const data=await response.json();
+      if(!response.ok||!data.ready)throw Error(data.error||"‡πÄ‡∏ï‡∏£‡∏µ‡∏¢‡∏° Error Lab ‡πÉ‡∏´‡∏°‡πà‡πÑ‡∏°‡πà‡πÑ‡∏î‡πâ");
+      state.errorCase=nextCase;
+      state.errorRun={status:"",since:"",url:"",runId:null,phase:"",
+        previous:"0",failEvidence:null,fixEvidence:null,error:"",neonRows:null};
+    }catch(error){state.errorRun.status="failure";state.errorRun.error=error.message;}
+    renderPipeline();
+  }
+  async function startErrorRun(phase="fail"){
+    const previous=phase==="fix"?String(state.errorRun.runId||""):"0";
+    if(phase==="fail")state.errorRun={status:"",since:"",url:"",runId:null,
+      phase:"",previous:"0",failEvidence:null,fixEvidence:null,error:"",neonRows:null};
+    state.errorRun.status="submitting";state.errorRun.phase=phase;
+    state.errorRun.previous=previous;state.errorRun.error="";
+    renderPipeline();
+    try{
+      const response=await fetch("/api/lab-error",{method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({case:state.errorCase,phase,previous_run_id:previous})});
+      const data=await response.json();
+      if(!response.ok||!data.accepted)throw Error(data.error||"‡πÄ‡∏£‡∏¥‡πà‡∏°‡∏ó‡∏î‡∏™‡∏≠‡∏ö Error ‡πÑ‡∏°‡πà‡∏™‡∏≥‡πÄ‡∏£‡πá‡∏à");
+      state.errorRun.status="queued";state.errorRun.since=new Date().toISOString();
+      state.errorRun.url=data.url;renderPipeline();
+      window.setTimeout(checkErrorRun,4000);
+    }catch(error){state.errorRun.status="failure";state.errorRun.error=error.message;
+      renderPipeline();}
+  }
+  async function checkErrorRun(){
+    const current=state.errorRun;
+    if(!current.since||!["queued","in_progress"].includes(current.status))return;
+    try{
+      const response=await fetch("/api/lab-error?"+
+        new URLSearchParams({since:current.since,case:state.errorCase,
+          phase:current.phase,previous_run_id:current.previous}),{cache:"no-store"});
+      const data=await response.json();
+      if(!response.ok)throw Error(data.error||"‡∏ï‡∏¥‡∏î‡∏ï‡∏≤‡∏°‡∏Å‡∏≤‡∏£‡∏ó‡∏î‡∏™‡∏≠‡∏ö‡πÑ‡∏°‡πà‡πÑ‡∏î‡πâ");
+      current.status=data.status==="completed"?
+        (data.conclusion==="success"?"success":"failure"):data.status;
+      current.url=data.url||current.url;
+      if(data.run_id)current.runId=data.run_id;
+      if(data.evidence){
+        if(current.phase==="fail")current.failEvidence=data.evidence;
+        else {
+          current.fixEvidence=data.evidence;
+          if(state.errorCase==="N01"){
+            fetch("/api/lab-error?table=1",{cache:"no-store"})
+              .then(response=>response.json())
+              .then(value=>{current.neonRows=value.rows||[];renderPipeline();})
+              .catch(()=>{});
+          }
+        }
+      }
+      if(current.status==="failure")current.error="‡∏Å‡∏≤‡∏£‡∏ó‡∏î‡∏™‡∏≠‡∏ö‡πÑ‡∏°‡πà‡∏ú‡πà‡∏≤‡∏ô ¬∑ ‡πÄ‡∏õ‡∏¥‡∏î Log ‡πÄ‡∏û‡∏∑‡πà‡∏≠‡∏ï‡∏£‡∏ß‡∏à‡∏™‡∏≤‡πÄ‡∏´‡∏ï‡∏∏";
+      renderPipeline();
+      if(["queued","in_progress"].includes(current.status)||
+         current.status==="success"&&
+           !(current.phase==="fail"?current.failEvidence:current.fixEvidence))
+        window.setTimeout(checkErrorRun,5000);
+    }catch(error){current.error=error.message;renderPipeline();
+      window.setTimeout(checkErrorRun,8000);}
+  }
+  async function requestNewCycle(){
+    if(!state.realReady||!["RUN1_READY","RUN2_READY"].includes(state.realLabPhase)||!state.realLabCycle)return;
+    const confirmation="RESET-DEMO-DATA";
+    state.resetStatus="submitting";state.resetError="";renderPipeline();
+    try{
+      const response=await fetch("/api/lab-reset",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({confirmation,
+          expected_cycle:Number(state.realLabCycle)})});
+      const data=await response.json();
+      if(!response.ok||!data.accepted)throw Error(data.error||"‡∏™‡πà‡∏á‡∏Ñ‡∏≥‡∏™‡∏±‡πà‡∏á‡πÄ‡∏Ñ‡∏•‡∏µ‡∏¢‡∏£‡πå‡πÑ‡∏°‡πà‡πÑ‡∏î‡πâ");
+      state.resetSince=new Date().toISOString();state.resetUrl=data.workflow_url;
+      state.resetStatus="queued";renderPipeline();
+      window.setTimeout(checkNewCycle,4000);
+    }catch(error){state.resetStatus="";state.resetError=error.message;renderPipeline();}
+  }
+  async function checkNewCycle(){
+    if(!state.resetSince)return;
+    try{
+      const query=new URLSearchParams({cycle:String(state.realLabCycle),since:state.resetSince});
+      const response=await fetch("/api/lab-reset?"+query,{cache:"no-store"});
+      const data=await response.json();
+      if(!response.ok)throw Error(data.error||"‡∏ï‡∏£‡∏ß‡∏à‡∏™‡∏ñ‡∏≤‡∏ô‡∏∞‡πÑ‡∏°‡πà‡πÑ‡∏î‡πâ");
+      if(data.found){state.resetStatus=data.status==="completed"?
+        (data.conclusion==="success"?"success":"failure"):data.status;
+        state.resetUrl=data.url||state.resetUrl;}
+      if(state.resetStatus==="success"){
+        state.realPreviousRunId="";state.realRunId=null;state.realStatus="";
+        state.realEvidence=null;state.notebookBatch="initial";
+        state.notebookSelectionTouched=false;state.notebookStage="ingest";
+        state.batchResults={initial:{},incremental:{}};
+        state.batchSummaries={initial:null,incremental:null};
+        state.batchRunIds={initial:null,incremental:null};
+        state.batchRun={batch:"",status:"",since:"",runId:null,url:"",stages:[]};
+        if(state.sourceUploadId)fetch("/api/lab-batch?id="+
+          encodeURIComponent(state.sourceUploadId),{method:"DELETE"}).catch(()=>{});
+        state.sourceUploadId="";state.sourceUploadMonth="";state.sourceUploadName="";
+        sessionStorage.removeItem("classroom_source_upload");
+        state.labNeon=null;state.labNeonTable=null;loadRealCapabilities();
+      }
+      renderPipeline();
+      if(["queued","in_progress"].includes(state.resetStatus))window.setTimeout(checkNewCycle,4000);
+    }catch(error){state.resetError=error.message;renderPipeline();}
+  }
+  async function loadLabNeon(schema="",table=""){
+    if(state.labNeonBusy)return;
+    state.labNeonBusy=true;state.labNeonError="";renderPipeline();
+    try{
+      const query=table?"?"+new URLSearchParams({schema,table}):"";
+      const response=await fetch("/api/lab-neon-evidence"+query,{cache:"no-store"});
+      const data=await response.json();
+      if(!response.ok||!data.connected)throw Error(data.error||"‡∏≠‡πà‡∏≤‡∏ô Neon ‡πÑ‡∏°‡πà‡∏™‡∏≥‡πÄ‡∏£‡πá‡∏à");
+      if(table)state.labNeonTable=data;else state.labNeon=data;
+    }catch(error){state.labNeonError=error.message||"‡∏≠‡πà‡∏≤‡∏ô Neon ‡πÑ‡∏°‡πà‡∏™‡∏≥‡πÄ‡∏£‡πá‡∏à";}
+    state.labNeonBusy=false;renderPipeline();
+  }
+  function renderPipeline(){
+    const root=$("#app");root.replaceChildren();
+    const tabs=box("notebook-tabs");
+    [["flow","‡∏Ç‡∏±‡πâ‡∏ô‡∏ï‡∏≠‡∏ô‡∏Å‡∏≤‡∏£‡∏£‡∏±‡∏ô"],["neon","Neon ¬∑ ‡∏ê‡∏≤‡∏ô‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏ï‡πâ‡∏ô‡∏ó‡∏≤‡∏á"],["files","Snapshot ‡πÄ‡∏Å‡πà‡∏≤ ¬∑ Data Lake / Warehouse"],
+      ["errors","‡∏ó‡∏î‡∏™‡∏≠‡∏ö‡∏Ç‡πâ‡∏≠‡∏ú‡∏¥‡∏î‡∏û‡∏•‡∏≤‡∏î"]].forEach(([id,label])=>{
+      const button=node("button","notebook-tab"+(state.pipelineTab===id?" is-active":""),label);
+      button.type="button";button.setAttribute("aria-pressed",String(state.pipelineTab===id));
+      button.addEventListener("click",()=>{state.pipelineTab=id;renderPipeline();
+        if(id==="neon"&&!state.labNeon)loadLabNeon();});tabs.append(button);
+    });
+    root.append(tabs);
+    if(state.pipelineTab==="neon"){
+      root.append(notice("‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏™‡∏î‡∏à‡∏≤‡∏Å branch classroom-live-run-lab ¬∑ Database tiktok_demo ¬∑ ‡∏≠‡πà‡∏≤‡∏ô‡∏≠‡∏¢‡πà‡∏≤‡∏á‡πÄ‡∏î‡∏µ‡∏¢‡∏ß"));
+      root.append(small("‡πÄ‡∏•‡∏∑‡∏≠‡∏Å‡∏ï‡∏≤‡∏£‡∏≤‡∏á Fact_Orders ‡πÄ‡∏û‡∏∑‡πà‡∏≠‡∏î‡∏π‡∏≠‡∏≠‡πÄ‡∏î‡∏≠‡∏£‡πå‡∏à‡∏£‡∏¥‡∏á‡πÉ‡∏ô Lab ‡∏´‡∏£‡∏∑‡∏≠‡πÄ‡∏•‡∏∑‡∏≠‡∏Å‡∏ï‡∏≤‡∏£‡∏≤‡∏á‡∏≠‡∏∑‡πà‡∏ô‡πÄ‡∏û‡∏∑‡πà‡∏≠‡∏î‡∏π‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡πÅ‡∏•‡∏∞‡∏à‡∏≥‡∏ô‡∏ß‡∏ô‡πÅ‡∏ñ‡∏ß"));
+      root.append(small("‡∏î‡∏π‡∏ï‡∏≤‡∏£‡∏≤‡∏á‡πÅ‡∏•‡∏∞‡πÅ‡∏ñ‡∏ß‡∏à‡∏£‡∏¥‡∏á‡πÑ‡∏î‡πâ‡∏à‡∏≤‡∏Å‡∏´‡∏ô‡πâ‡∏≤‡∏ô‡∏µ‡πâ‡πÄ‡∏•‡∏¢ ‡πÑ‡∏°‡πà‡∏ï‡πâ‡∏≠‡∏á‡πÄ‡∏Ç‡πâ‡∏≤ Neon Console ‡∏´‡∏£‡∏∑‡∏≠‡∏°‡∏µ‡∏ö‡∏±‡∏ç‡∏ä‡∏µ Neon"));
+      if(state.labNeonBusy)root.append(small("‡∏Å‡∏≥‡∏•‡∏±‡∏á‡∏≠‡πà‡∏≤‡∏ô‡∏£‡∏≤‡∏¢‡∏ä‡∏∑‡πà‡∏≠‡∏ï‡∏≤‡∏£‡∏≤‡∏á‚Ä¶"));
+      if(state.labNeonError)root.append(notice(state.labNeonError,true));
+      const tables=state.labNeon?.tables||[];
+      if(tables.length){
+        root.append(small("demo_er1 ¬∑ "+tables.filter(x=>x.table_schema==="demo_er1").length+
+          " ‡∏ï‡∏≤‡∏£‡∏≤‡∏á‡∏ò‡∏∏‡∏£‡∏Å‡∏¥‡∏à | demo_control ¬∑ "+tables.filter(x=>x.table_schema==="demo_control").length+" ‡∏ï‡∏≤‡∏£‡∏≤‡∏á‡∏Ñ‡∏ß‡∏ö‡∏Ñ‡∏∏‡∏°"));
+        root.append(chooseField("‡πÄ‡∏•‡∏∑‡∏≠‡∏Å‡∏ï‡∏≤‡∏£‡∏≤‡∏á‡∏ò‡∏∏‡∏£‡∏Å‡∏¥‡∏à‡πÉ‡∏ô Neon",[["","‚Äî ‡πÄ‡∏•‡∏∑‡∏≠‡∏Å‡∏ï‡∏≤‡∏£‡∏≤‡∏á ‚Äî"],...tables.filter(x=>x.table_schema==="demo_er1").map(x=>
+          [x.table_schema+"."+x.table_name,x.table_schema+" ¬∑ "+x.table_name])],
+          state.labNeonTable?state.labNeonTable.schema+"."+state.labNeonTable.table:"",value=>{
+            const [schema,table]=value.split(".");if(table)loadLabNeon(schema,table);
+          }));
+      }
+      if(state.labNeonTable){
+        const d=state.labNeonTable;
+        root.append(node("h3","lab-subheading",d.schema+"."+d.table+" ¬∑ "+money(d.row_count)+" ‡πÅ‡∏ñ‡∏ß"));
+        root.append(dataTable([["column_name","‡∏Ñ‡∏≠‡∏•‡∏±‡∏°‡∏ô‡πå"],["data_type","‡∏ä‡∏ô‡∏¥‡∏î‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•"]],d.columns));
+        root.append(node("h3","lab-subheading","‡∏ï‡∏±‡∏ß‡∏≠‡∏¢‡πà‡∏≤‡∏á‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏• 5 ‡πÅ‡∏ñ‡∏ß‡πÅ‡∏£‡∏Å"));
+        root.append(dataTable(d.columns.slice(0,8).map(x=>[x.column_name,x.column_name]),d.preview_rows));
+      }return;
+    }
+    if(state.pipelineTab==="files"){
+      root.append(notice("Data Lake ‡πÄ‡∏Å‡πá‡∏ö Landing / Raw / Standardized; DuckDB Warehouse ‡πÄ‡∏õ‡πá‡∏ô‡πÑ‡∏ü‡∏•‡πå‡∏à‡∏≤‡∏Å GitHub Worker ‡πÑ‡∏°‡πà‡πÉ‡∏ä‡πà‡∏ï‡∏≤‡∏£‡∏≤‡∏á‡πÉ‡∏ô Neon"));
+      root.append(small("‡∏ú‡∏•‡∏£‡∏±‡∏ô‡∏õ‡∏±‡∏à‡∏à‡∏∏‡∏ö‡∏±‡∏ô‡∏î‡∏π‡πÑ‡∏î‡πâ‡πÉ‡∏ô‡πÅ‡∏ó‡πá‡∏ö ‡∏Ç‡∏±‡πâ‡∏ô‡∏ï‡∏≠‡∏ô‡∏Å‡∏≤‡∏£‡∏£‡∏±‡∏ô ‡πÇ‡∏î‡∏¢‡πÄ‡∏õ‡∏¥‡∏î‡∏Ç‡∏±‡πâ‡∏ô‡πÅ‡∏•‡πâ‡∏ß‡∏Å‡∏î‡∏ä‡∏∑‡πà‡∏≠‡∏ï‡∏≤‡∏£‡∏≤‡∏á‡∏î‡πâ‡∏≤‡∏ô‡∏•‡πà‡∏≤‡∏á ¬∑ ‡∏™‡πà‡∏ß‡∏ô‡∏ï‡πà‡∏≠‡πÑ‡∏õ‡πÄ‡∏õ‡πá‡∏ô Snapshot ‡πÄ‡∏Å‡πà‡∏≤"));
+      renderEvidenceExplorer(root);return;
+    }
+    if(state.pipelineTab==="errors"){
+      const scenarios=[
+        ["N01","‡∏™‡∏¥‡∏ô‡∏Ñ‡πâ‡∏≤‡∏≠‡πâ‡∏≤‡∏á‡∏ñ‡∏∂‡∏á‡∏Å‡∏•‡∏∏‡πà‡∏°‡∏™‡∏¥‡∏ô‡∏Ñ‡πâ‡∏≤‡∏ó‡∏µ‡πà‡πÑ‡∏°‡πà‡∏°‡∏µ‡πÉ‡∏ô‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏´‡∏•‡∏±‡∏Å","Database ¬∑ Neon Error Lab ‡πÅ‡∏¢‡∏Å‡∏ï‡πà‡∏≤‡∏á‡∏´‡∏≤‡∏Å"],
+        ["E01","‡∏£‡∏≤‡∏¢‡∏Å‡∏≤‡∏£‡∏™‡∏±‡πà‡∏á‡∏ã‡∏∑‡πâ‡∏≠‡∏≠‡πâ‡∏≤‡∏á‡∏ñ‡∏∂‡∏á SKU ‡∏ó‡∏µ‡πà‡πÑ‡∏°‡πà‡∏°‡∏µ‡∏≠‡∏¢‡∏π‡πà","Source ‚Üí Database"],
+        ["E02","‡πÑ‡∏ü‡∏•‡πå‡∏≠‡∏≠‡πÄ‡∏î‡∏≠‡∏£‡πå‡∏ï‡πâ‡∏ô‡∏ó‡∏≤‡∏á‡∏´‡∏≤‡∏¢","Source ‚Üí Database"],
+        ["T01","‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏• Voucher ‡∏ú‡∏¥‡∏î‡∏Å‡∏é","Data Lake ‚Üí Standardized"],
+        ["T02","‡∏ä‡πà‡∏ß‡∏á‡πÄ‡∏ß‡∏•‡∏≤ Campaign ‡∏ã‡πâ‡∏≠‡∏ô‡∏Å‡∏±‡∏ô","Data Lake ‚Üí Standardized"],
+        ["L01","‡πÇ‡∏´‡∏•‡∏î Warehouse ‡πÑ‡∏°‡πà‡∏™‡∏≥‡πÄ‡∏£‡πá‡∏à","Data Lake ‚Üí Warehouse"]
+      ];
+      const selected=scenarios.find(x=>x[0]===state.errorCase)||scenarios[0];
+      const busy=["submitting","queued","in_progress"].includes(state.errorRun.status);
+      root.append(node("h2","lab-heading","‡∏™‡∏≤‡∏ò‡∏¥‡∏ï‡∏Å‡∏≤‡∏£‡∏£‡∏±‡∏ö‡∏°‡∏∑‡∏≠‡πÄ‡∏°‡∏∑‡πà‡∏≠‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏°‡∏µ‡∏õ‡∏±‡∏ç‡∏´‡∏≤"));
+      root.append(notice("‡πÉ‡∏ä‡πâ‡∏ä‡∏∏‡∏î‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏à‡∏≥‡∏•‡∏≠‡∏á‡πÉ‡∏ô Error Lab ‡∏ã‡∏∂‡πà‡∏á‡πÅ‡∏¢‡∏Å‡∏à‡∏≤‡∏Å Run 1/2 ‡πÄ‡∏û‡∏∑‡πà‡∏≠‡πÉ‡∏´‡πâ‡πÄ‡∏´‡πá‡∏ô‡∏ß‡πà‡∏≤‡∏£‡∏∞‡∏ö‡∏ö‡∏û‡∏ö‡∏õ‡∏±‡∏ç‡∏´‡∏≤‡∏≠‡∏∞‡πÑ‡∏£ ‡πÅ‡∏Å‡πâ‡∏≠‡∏¢‡πà‡∏≤‡∏á‡πÑ‡∏£ ‡πÅ‡∏•‡∏∞‡∏ú‡∏•‡∏´‡∏•‡∏±‡∏á‡πÅ‡∏Å‡πâ‡πÄ‡∏õ‡πá‡∏ô‡∏≠‡∏¢‡πà‡∏≤‡∏á‡πÑ‡∏£",false));
+      root.append(chooseField("‡πÄ‡∏•‡∏∑‡∏≠‡∏Å‡∏Å‡∏£‡∏ì‡∏µ",[...scenarios.map(x=>[x[0],x[1]])],
+        state.errorCase,value=>{
+          if(busy)return;
+          resetErrorLab(value);
+        }));
+      root.append(node("h3","lab-subheading","‡∏™‡∏ñ‡∏≤‡∏ô‡∏Å‡∏≤‡∏£‡∏ì‡πå‡∏ó‡∏µ‡πà‡∏à‡∏∞‡∏ó‡∏î‡∏•‡∏≠‡∏á ¬∑ "+selected[1]));
+      root.append(small("‡∏à‡∏∏‡∏î‡∏ó‡∏µ‡πà‡∏£‡∏∞‡∏ö‡∏ö‡∏à‡∏∞‡∏ï‡∏£‡∏ß‡∏à: "+selected[2]));
+      if(state.errorCase==="N01"){
+        root.append(small("‡∏ï‡∏±‡∏ß‡∏≠‡∏¢‡πà‡∏≤‡∏á‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•: ‡πÅ‡∏ñ‡∏ß‡∏™‡∏¥‡∏ô‡∏Ñ‡πâ‡∏≤‡∏≠‡πâ‡∏≤‡∏á Product_Group_ID = MISSING_GROUP ‡πÅ‡∏ï‡πà‡πÑ‡∏°‡πà‡∏°‡∏µ‡∏£‡∏´‡∏±‡∏™‡∏ô‡∏µ‡πâ‡πÉ‡∏ô‡∏ï‡∏≤‡∏£‡∏≤‡∏á‡∏Å‡∏•‡∏∏‡πà‡∏°‡∏™‡∏¥‡∏ô‡∏Ñ‡πâ‡∏≤"));
+        root.append(dataTable([["SKU_ID","SKU_ID"],["Product_Group_ID","Product_Group_ID"],
+          ["SKU_Name","SKU_Name"]],[{SKU_ID:"ERROR_TEST_SKU",
+            Product_Group_ID:"MISSING_GROUP",SKU_Name:"‡∏™‡∏¥‡∏ô‡∏Ñ‡πâ‡∏≤‡πÄ‡∏î‡πÇ‡∏°‡∏ó‡∏î‡∏™‡∏≠‡∏ö Error"}]));
+        root.append(small("‡∏Å‡∏é‡∏ó‡∏µ‡πà‡∏ï‡∏£‡∏ß‡∏à: ‡∏™‡∏¥‡∏ô‡∏Ñ‡πâ‡∏≤‡∏ï‡πâ‡∏≠‡∏á‡∏≠‡πâ‡∏≤‡∏á‡∏ñ‡∏∂‡∏á‡∏Å‡∏•‡∏∏‡πà‡∏°‡∏™‡∏¥‡∏ô‡∏Ñ‡πâ‡∏≤‡∏ó‡∏µ‡πà‡∏°‡∏µ‡∏≠‡∏¢‡∏π‡πà‡∏à‡∏£‡∏¥‡∏á ¬∑ ‡∏£‡∏∞‡∏ö‡∏ö‡πÑ‡∏°‡πà‡πÑ‡∏î‡πâ‡∏™‡∏£‡πâ‡∏≤‡∏á Group ‡πÉ‡∏´‡∏°‡πà"));
+      }else root.append(small("‡∏£‡∏∞‡∏ö‡∏ö‡∏à‡∏∞‡πÉ‡∏ä‡πâ‡∏ä‡∏∏‡∏î‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏ó‡∏î‡∏™‡∏≠‡∏ö‡πÅ‡∏¢‡∏Å‡∏ó‡∏µ‡πà‡∏à‡∏≥‡∏•‡∏≠‡∏á‡∏™‡∏ñ‡∏≤‡∏ô‡∏Å‡∏≤‡∏£‡∏ì‡πå‡∏ô‡∏µ‡πâ ‡πÅ‡∏•‡πâ‡∏ß‡∏ï‡∏£‡∏ß‡∏à‡∏à‡∏ô‡∏ñ‡∏∂‡∏á‡∏Ç‡∏±‡πâ‡∏ô‡∏ó‡∏µ‡πà‡∏û‡∏ö‡∏õ‡∏±‡∏ç‡∏´‡∏≤"));
+      if(!state.errorRun.failEvidence){
+        const button=node("button","button button-primary",
+          busy?"‡∏Å‡∏≥‡∏•‡∏±‡∏á‡∏ï‡∏£‡∏ß‡∏à‡∏ä‡∏∏‡∏î‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‚Ä¶":"‚ñ∂ ‡πÄ‡∏£‡∏¥‡πà‡∏°‡∏ó‡∏î‡∏™‡∏≠‡∏ö‡∏Å‡∏£‡∏ì‡∏µ‡∏ô‡∏µ‡πâ");
+        button.type="button";button.disabled=busy;
+        button.addEventListener("click",()=>startErrorRun("fail"));root.append(button);
+      }
+      if(busy)root.append(small(state.errorRun.phase==="fix"?
+        "‡∏Å‡∏≥‡∏•‡∏±‡∏á‡πÅ‡∏Å‡πâ‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡πÅ‡∏•‡∏∞‡∏£‡∏±‡∏ô‡∏ã‡πâ‡∏≥‚Ä¶":"‡∏Å‡∏≥‡∏•‡∏±‡∏á‡∏ï‡∏£‡∏ß‡∏à‡∏ä‡∏∏‡∏î‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡πÅ‡∏•‡∏∞‡∏´‡∏≤‡∏à‡∏∏‡∏î‡∏ó‡∏µ‡πà‡∏û‡∏ö‡∏õ‡∏±‡∏ç‡∏´‡∏≤‚Ä¶"));
+      if(state.errorRun.error)root.append(notice(state.errorRun.error,true));
+      if(state.errorRun.failEvidence){
+        const found=state.errorRun.failEvidence;
+        root.append(node("h3","lab-subheading","1 ¬∑ ‡∏£‡∏∞‡∏ö‡∏ö‡∏û‡∏ö‡∏õ‡∏±‡∏ç‡∏´‡∏≤‡∏ó‡∏µ‡πà‡∏Ç‡∏±‡πâ‡∏ô "+found.stage));
+        root.append(notice("‡∏™‡∏≤‡πÄ‡∏´‡∏ï‡∏∏: "+found.title+" ¬∑ "+(found.detail.error_message||found.detail.error_code),true));
+        if(found.detail.source_rows?.length){
+          const rows=found.detail.source_rows;
+          root.append(small("‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏ó‡∏µ‡πà‡∏ó‡∏≥‡πÉ‡∏´‡πâ‡πÄ‡∏Å‡∏¥‡∏î Error"));
+          root.append(dataTable(Object.keys(rows[0]).map(key=>[key,key]),rows));
+        }
+        if(found.detail.source_file)root.append(small("Source: "+found.detail.source_file));
+        root.append(small("‡∏ú‡∏•‡∏ï‡πà‡∏≠‡∏Å‡∏≤‡∏£‡∏£‡∏±‡∏ô: ‡∏Ç‡∏±‡πâ‡∏ô‡∏ô‡∏µ‡πâ‡πÑ‡∏°‡πà‡∏ú‡πà‡∏≤‡∏ô ‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏ä‡∏∏‡∏î‡∏ô‡∏µ‡πâ‡∏à‡∏∂‡∏á‡∏¢‡∏±‡∏á‡πÑ‡∏°‡πà‡∏ñ‡∏∑‡∏≠‡∏ß‡πà‡∏≤‡∏ú‡πà‡∏≤‡∏ô Pipeline ¬∑ ‡∏£‡∏´‡∏±‡∏™‡∏≠‡πâ‡∏≤‡∏á‡∏≠‡∏¥‡∏á: "+found.detail.error_code));
+        root.append(node("h3","lab-subheading","2 ¬∑ ‡πÅ‡∏ô‡∏ß‡∏ó‡∏≤‡∏á‡πÅ‡∏Å‡πâ"));
+        root.append(small(found.fix));
+        if(!state.errorRun.fixEvidence){
+          const fix=node("button","button button-primary",
+            busy?"‡∏Å‡∏≥‡∏•‡∏±‡∏á‡πÅ‡∏Å‡πâ‡∏ï‡∏≤‡∏°‡πÅ‡∏ô‡∏ß‡∏ó‡∏≤‡∏á‡πÅ‡∏•‡∏∞‡∏ï‡∏£‡∏ß‡∏à‡∏ï‡πà‡∏≠‚Ä¶":"‡πÉ‡∏´‡πâ‡∏£‡∏∞‡∏ö‡∏ö‡πÅ‡∏Å‡πâ‡∏ï‡∏≤‡∏°‡πÅ‡∏ô‡∏ß‡∏ó‡∏≤‡∏á ‡πÅ‡∏•‡πâ‡∏ß‡∏£‡∏±‡∏ô‡∏ï‡πà‡∏≠");
+          fix.type="button";fix.disabled=busy;
+          fix.addEventListener("click",()=>startErrorRun("fix"));root.append(fix);
+        }
+      }
+      if(state.errorRun.fixEvidence){
+        const fixed=state.errorRun.fixEvidence.detail;
+        root.append(node("h3","lab-subheading","3 ¬∑ ‡∏ú‡∏•‡∏´‡∏•‡∏±‡∏á‡πÅ‡∏Å‡πâ"));
+        root.append(small("‡∏£‡∏±‡∏ô‡∏ï‡πà‡∏≠‡∏à‡∏≤‡∏Å‡∏Ç‡∏±‡πâ‡∏ô‡∏ó‡∏µ‡πà‡∏û‡∏ö‡∏õ‡∏±‡∏ç‡∏´‡∏≤ ¬∑ ‡∏™‡∏ñ‡∏≤‡∏ô‡∏∞‡∏´‡∏•‡∏±‡∏á‡πÅ‡∏Å‡πâ: "+fixed.retry_status));
+        if(fixed.before&&fixed.after){
+          root.append(small("‡∏Å‡πà‡∏≠‡∏ô‡πÅ‡∏Å‡πâ"));
+          root.append(dataTable(Object.keys(fixed.before).map(key=>[key,key]),[fixed.before]));
+          root.append(small("‡∏´‡∏•‡∏±‡∏á‡πÅ‡∏Å‡πâ ‡πÅ‡∏•‡∏∞‡∏ö‡∏±‡∏ô‡∏ó‡∏∂‡∏Å‡∏™‡∏≥‡πÄ‡∏£‡πá‡∏à"));
+        }
+        if(fixed.result_rows?.length)
+          root.append(dataTable(Object.keys(fixed.result_rows[0]).slice(0,8)
+            .map(key=>[key,key]),fixed.result_rows));
+        if(state.errorCase==="N01"){
+          root.append(small("‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏à‡∏£‡∏¥‡∏á‡πÉ‡∏ô Neon ¬∑ classroom-error-lab ¬∑ demo_er1.Dim_SKU"));
+          if(state.errorRun.neonRows?.length)
+            root.append(dataTable(Object.keys(state.errorRun.neonRows[0])
+              .map(key=>[key,key]),state.errorRun.neonRows));
+          else root.append(small("‡∏Å‡∏≥‡∏•‡∏±‡∏á‡∏≠‡πà‡∏≤‡∏ô‡πÅ‡∏ñ‡∏ß‡∏à‡∏£‡∏¥‡∏á‡∏à‡∏≤‡∏Å‡∏ê‡∏≤‡∏ô‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏• Error Lab‚Ä¶"));
+          root.append(small("‡πÅ‡∏™‡∏î‡∏á‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏à‡∏≤‡∏Å‡∏ï‡∏≤‡∏£‡∏≤‡∏á‡∏à‡∏£‡∏¥‡∏á‡πÉ‡∏ô Error Lab ‡πÇ‡∏î‡∏¢‡∏ï‡∏£‡∏á ‡πÑ‡∏°‡πà‡∏ï‡πâ‡∏≠‡∏á‡πÄ‡∏õ‡∏¥‡∏î Neon Console"));
+        }
+        const again=node("button","button","‡πÄ‡∏£‡∏¥‡πà‡∏°‡∏™‡∏ñ‡∏≤‡∏ô‡∏Å‡∏≤‡∏£‡∏ì‡πå‡∏ô‡∏µ‡πâ‡∏≠‡∏µ‡∏Å‡∏Ñ‡∏£‡∏±‡πâ‡∏á");
+        again.type="button";again.addEventListener("click",()=>resetErrorLab());
+        root.append(again);
+      }
+      if(state.errorRun.url)root.append(link("‡∏î‡∏π‡∏£‡∏≤‡∏¢‡∏•‡∏∞‡πÄ‡∏≠‡∏µ‡∏¢‡∏î‡∏Å‡∏≤‡∏£‡∏£‡∏±‡∏ô‡πÉ‡∏ô GitHub",state.errorRun.url));
+      return;
+    }
+    if(state.pipelineTab==="operate"){
+      root.append(notice("Lab ‡πÉ‡∏´‡∏°‡πà‡πÄ‡∏£‡∏¥‡πà‡∏°‡∏à‡∏≤‡∏Å‡∏ê‡∏≤‡∏ô‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏ß‡πà‡∏≤‡∏á ‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏ï‡πâ‡∏ô‡∏ó‡∏≤‡∏á‡∏≠‡∏¢‡∏π‡πà‡πÉ‡∏ô‡πÑ‡∏ü‡∏•‡πå Source; ‡∏Å‡∏≤‡∏£‡∏Å‡∏î Run 1 ‡πÅ‡∏•‡∏∞ Run 2 ‡∏à‡∏∞‡∏õ‡∏£‡∏∞‡∏°‡∏ß‡∏•‡∏ú‡∏•‡∏à‡∏£‡∏¥‡∏á‡∏ú‡πà‡∏≤‡∏ô GitHub Actions"));
+      renderRealRunner(root);return;
+    }
+    const phase=state.realLabPhase;
+    renderSourcePicker(root);
+    root.append(box("notebook-intro",
+      node("h2","lab-heading","Source ‚Üí Database ‚Üí Data Lake ‚Üí Warehouse"),
+      node("p","lab-description","Run 1 ‡∏ô‡∏≥‡πÄ‡∏Ç‡πâ‡∏≤‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏ï‡∏±‡πâ‡∏á‡∏ï‡πâ‡∏ô ‡∏à‡∏≤‡∏Å‡∏ô‡∏±‡πâ‡∏ô‡∏Å‡∏î‡πÄ‡∏ï‡∏¥‡∏°‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡πÉ‡∏´‡∏°‡πà‡πÑ‡∏î‡πâ‡∏ó‡∏µ‡∏•‡∏∞‡∏ä‡∏∏‡∏î ‡∏ó‡∏∏‡∏Å‡∏Ñ‡∏£‡∏±‡πâ‡∏á‡πÄ‡∏î‡∏¥‡∏ô‡∏Ñ‡∏£‡∏ö‡∏ó‡∏±‡πâ‡∏á‡πÄ‡∏™‡πâ‡∏ô‡∏ó‡∏≤‡∏á"),
+      small("Lab ‡∏ó‡∏µ‡πà‡πÉ‡∏ä‡πâ‡∏£‡∏±‡∏ô: "+(phase==="UNKNOWN"?"‡∏Å‡∏≥‡∏•‡∏±‡∏á‡∏ï‡∏£‡∏ß‡∏à‡∏™‡∏≠‡∏ö":phase)+" ¬∑ "+money(state.realLabOrders||0)+" ‡∏≠‡∏≠‡πÄ‡∏î‡∏≠‡∏£‡πå")));
+    const batchPicker=box("notebook-runs");
+    const nextMonth=sourceMonthForBatch(state.nextSourceBatch);
+    const incrementalLabel=state.sourceExhausted?"‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏Ñ‡∏£‡∏ö‡∏ñ‡∏∂‡∏á‡∏ï‡∏∏‡∏•‡∏≤‡∏Ñ‡∏° 2569":
+      !state.currentRunId?"‡πÄ‡∏ï‡∏¥‡∏°‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏´‡∏•‡∏±‡∏á Run 1":
+      "‡πÄ‡∏ï‡∏¥‡∏°‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏• ¬∑ "+thaiMonth(nextMonth||"");
+    [["initial","Run 1 ¬∑ ‡∏°‡∏Å‡∏£‡∏≤‡∏Ñ‡∏° 2569","‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏ï‡∏±‡πâ‡∏á‡∏ï‡πâ‡∏ô‡πÅ‡∏•‡∏∞‡πÇ‡∏Ñ‡∏£‡∏á‡∏™‡∏£‡πâ‡∏≤‡∏á‡∏ò‡∏∏‡∏£‡∏Å‡∏¥‡∏à"],
+      ["incremental",incrementalLabel,
+        "‡πÄ‡∏û‡∏¥‡πà‡∏° Source ‡πÄ‡∏î‡∏∑‡∏≠‡∏ô‡∏ñ‡∏±‡∏î‡πÑ‡∏õ‡∏Ñ‡∏£‡∏±‡πâ‡∏á‡∏•‡∏∞‡∏´‡∏ô‡∏∂‡πà‡∏á‡πÄ‡∏î‡∏∑‡∏≠‡∏ô"]].forEach(([id,label,detail])=>{
+      const button=node("button","notebook-run"+(state.notebookBatch===id?" is-active":""));
+      button.type="button";button.setAttribute("aria-pressed",String(state.notebookBatch===id));
+      button.append(node("strong","",label),small(detail));
+      button.addEventListener("click",()=>{state.notebookBatch=id;
+        state.notebookSelectionTouched=true;state.notebookStage="ingest";
+        state.savedLabReceipt=null;state.savedLabSelected="";renderPipeline();});batchPicker.append(button);
+    });root.append(batchPicker);
+    const canStartBatch=state.realReady&&!state.requiresReset&&!state.sourceExhausted&&
+      !state.sharedRun.running&&(state.notebookBatch==="initial"?phase==="EMPTY":
+        ["RUN1_READY","RUN2_READY"].includes(phase)&&Boolean(state.currentRunId));
+    const batchBusy=["submitting","queued","in_progress"].includes(state.batchRun.status);
+    const alreadyDone=state.notebookBatch==="initial"&&Boolean(state.batchSummaries.initial);
+    const batchAction=node("button","button button-primary",batchBusy?
+      "‡∏Å‡∏≥‡∏•‡∏±‡∏á‡∏£‡∏±‡∏ô "+(state.batchRun.batch==="initial"?"Run 1":"‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡πÉ‡∏´‡∏°‡πà")+" ‡∏ó‡∏±‡πâ‡∏á‡∏£‡∏≠‡∏ö‚Ä¶":
+      alreadyDone?(state.notebookBatch==="initial"?"‚úì Run 1 ‡∏ú‡πà‡∏≤‡∏ô‡πÅ‡∏•‡πâ‡∏ß":"‚úì ‡πÄ‡∏î‡∏∑‡∏≠‡∏ô‡∏ô‡∏µ‡πâ‡∏£‡∏±‡∏ô‡∏ú‡πà‡∏≤‡∏ô‡πÅ‡∏•‡πâ‡∏ß"):
+      state.notebookBatch==="initial"?"‚ñ∂ ‡∏£‡∏±‡∏ô‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏ï‡∏±‡πâ‡∏á‡∏ï‡πâ‡∏ô":"‚ñ∂ ‡πÄ‡∏ï‡∏¥‡∏°‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡πÉ‡∏´‡∏°‡πà");
+    batchAction.type="button";batchAction.disabled=!canStartBatch||batchBusy;
+    batchAction.addEventListener("click",runWholeBatch);root.append(batchAction);
+    if(!canStartBatch)root.append(small(!state.realReady?
+      "‡∏£‡∏∞‡∏ö‡∏ö‡∏™‡∏±‡πà‡∏á‡∏á‡∏≤‡∏ô‡∏¢‡∏±‡∏á‡πÑ‡∏°‡πà‡∏û‡∏£‡πâ‡∏≠‡∏°":state.sourceExhausted?
+      "Source ‡∏ä‡∏∏‡∏î‡∏ô‡∏µ‡πâ‡πÉ‡∏ä‡πâ‡∏Ñ‡∏£‡∏ö‡πÅ‡∏•‡πâ‡∏ß ‡πÄ‡∏Ñ‡∏•‡∏µ‡∏¢‡∏£‡πå Lab ‡πÄ‡∏û‡∏∑‡πà‡∏≠‡πÄ‡∏£‡∏¥‡πà‡∏°‡πÉ‡∏´‡∏°‡πà":
+      "‡∏ï‡πâ‡∏≠‡∏á‡πÉ‡∏´‡πâ‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏ä‡∏∏‡∏î‡∏Å‡πà‡∏≠‡∏ô‡∏ú‡πà‡∏≤‡∏ô‡∏Ñ‡∏£‡∏ö‡∏Å‡πà‡∏≠‡∏ô"));
+    root.append(node("p","notebook-caption","‡∏Å‡∏î Run ‡∏´‡∏ô‡∏∂‡πà‡∏á‡∏Ñ‡∏£‡∏±‡πâ‡∏á ‡∏£‡∏∞‡∏ö‡∏ö‡∏à‡∏∞‡∏ß‡∏¥‡πà‡∏á‡∏Ñ‡∏£‡∏ö‡∏ó‡∏∏‡∏Å‡∏Ç‡∏±‡πâ‡∏ô ‡πÅ‡∏•‡πâ‡∏ß‡πÄ‡∏õ‡∏¥‡∏î‡∏î‡∏π‡∏ú‡∏•‡∏Ç‡∏≠‡∏á‡πÅ‡∏ï‡πà‡∏•‡∏∞‡∏Ç‡∏±‡πâ‡∏ô‡πÄ‡∏°‡∏∑‡πà‡∏≠‡πÄ‡∏™‡∏£‡πá‡∏à"));
+    if(state.batchRun.status){
+      root.append(small("‡∏™‡∏ñ‡∏≤‡∏ô‡∏∞ Run: "+state.batchRun.status+
+        (state.batchRun.runId?" ¬∑ GitHub Run #"+state.batchRun.runId:"")));
+      if(state.batchRun.url)root.append(link("‡∏î‡∏π‡∏Å‡∏≤‡∏£‡∏ó‡∏≥‡∏á‡∏≤‡∏ô‡πÅ‡∏•‡∏∞ Log ‡∏à‡∏£‡∏¥‡∏á",state.batchRun.url));
+      if(state.realError)root.append(notice(state.realError,true));
+    }
+    if(state.sharedRun.running&&!batchBusy){
+      const activeName=state.sharedRun.type==="RUN1"?"Run 1":"‡∏Å‡∏≤‡∏£‡πÄ‡∏ï‡∏¥‡∏°‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•";
+      const step=state.sharedRun.stage?.name?
+        " ¬∑ ‡∏Ç‡∏±‡πâ‡∏ô‡∏õ‡∏±‡∏à‡∏à‡∏∏‡∏ö‡∏±‡∏ô: "+state.sharedRun.stage.name.replace(/^[1-5] /,""):" ¬∑ ‡∏Å‡∏≥‡∏•‡∏±‡∏á‡πÄ‡∏£‡∏¥‡πà‡∏°‡∏á‡∏≤‡∏ô";
+      root.append(notice(activeName+" ‡∏Å‡∏≥‡∏•‡∏±‡∏á‡∏ó‡∏≥‡∏á‡∏≤‡∏ô‡∏≠‡∏¢‡∏π‡πà‡πÉ‡∏ô Lab"+step+
+        " ¬∑ ‡∏ó‡∏∏‡∏Å‡∏Ñ‡∏ô‡∏ó‡∏µ‡πà‡πÄ‡∏õ‡∏¥‡∏î‡∏•‡∏¥‡∏á‡∏Å‡πå‡∏ô‡∏µ‡πâ‡∏à‡∏∞‡πÄ‡∏´‡πá‡∏ô‡∏™‡∏ñ‡∏≤‡∏ô‡∏∞‡πÄ‡∏î‡∏µ‡∏¢‡∏ß‡∏Å‡∏±‡∏ô ‡∏£‡∏∞‡∏ö‡∏ö‡∏à‡∏∞‡πÄ‡∏õ‡∏¥‡∏î‡∏õ‡∏∏‡πà‡∏°‡∏£‡∏±‡∏ô‡∏≠‡∏µ‡∏Å‡∏Ñ‡∏£‡∏±‡πâ‡∏á‡πÄ‡∏°‡∏∑‡πà‡∏≠‡πÄ‡∏™‡∏£‡πá‡∏à"));
+    }
+    const runState={submitting:"‡∏Å‡∏≥‡∏•‡∏±‡∏á‡∏™‡πà‡∏á‡∏Ñ‡∏≥‡∏™‡∏±‡πà‡∏á",queued:"‡∏£‡∏≠ GitHub ‡πÄ‡∏£‡∏¥‡πà‡∏°",
+      in_progress:"‡∏Å‡∏≥‡∏•‡∏±‡∏á‡∏õ‡∏£‡∏∞‡∏°‡∏ß‡∏•‡∏ú‡∏•",success:"‡πÄ‡∏™‡∏£‡πá‡∏à‡πÅ‡∏•‡πâ‡∏ß",failure:"‡πÑ‡∏°‡πà‡∏™‡∏≥‡πÄ‡∏£‡πá‡∏à"};
+    const entries=state.savedLabManifest?.runs?.filter(x=>x.batch===state.notebookBatch)||[];
+    NOTEBOOK_STAGES.forEach(([id,title,description],index)=>{
+      const entry=entries.find(x=>x.stage===id),active=state.notebookStage===id;
+      const cell=node("section","notebook-cell"+(active?" is-open":""));
+      const head=node("button","notebook-cell-head");head.type="button";
+      head.setAttribute("aria-expanded",String(active));
+      const savedResult=state.batchResults[state.notebookBatch]?.[id];
+      const liveStep=state.batchRun.batch===state.notebookBatch?
+        state.batchRun.stages.find(x=>x.index===index):null;
+      const runningNow=liveStep?.status==="in_progress";
+      head.append(node("span","notebook-number",String(index+1)),
+        box("notebook-cell-title",node("strong","",title),small(description)),
+        node("span","notebook-cell-state",savedResult||liveStep?.conclusion==="success"?
+          "‡∏ú‡πà‡∏≤‡∏ô‡πÅ‡∏•‡πâ‡∏ß":runningNow?"‡∏Å‡∏≥‡∏•‡∏±‡∏á‡∏£‡∏±‡∏ô":liveStep?.conclusion==="failure"?"‡∏ú‡∏¥‡∏î‡∏û‡∏•‡∏≤‡∏î":"‡∏£‡∏≠‡∏£‡∏±‡∏ô"));
+      head.addEventListener("click",()=>{
+        state.notebookStage=id;state.savedLabReceipt=null;renderPipeline();
+      });cell.append(head);
+      if(active){
+        const body=box("notebook-cell-body");
+        body.append(small("Input: "+(index===0?"Source CSV ‡∏ä‡∏∏‡∏î"+(state.notebookBatch==="initial"?"‡∏ï‡∏±‡πâ‡∏á‡∏ï‡πâ‡∏ô":"‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡πÉ‡∏´‡∏°‡πà"):
+          index===1?"25 ‡∏ï‡∏≤‡∏£‡∏≤‡∏á‡πÉ‡∏ô Neon":index===2?"Raw Parquet":index===3?"Standardized Parquet":"Database ‡πÅ‡∏•‡∏∞ Warehouse")));
+        body.append(small("‡∏Ç‡∏±‡πâ‡∏ô‡∏ô‡∏µ‡πâ‡∏ó‡∏≥‡∏≠‡∏∞‡πÑ‡∏£: "+description));
+        if(liveStep?.started_at)body.append(small("‡πÄ‡∏£‡∏¥‡πà‡∏° "+
+          new Date(liveStep.started_at).toLocaleTimeString("th-TH")+
+          (liveStep.completed_at?" ¬∑ ‡πÄ‡∏™‡∏£‡πá‡∏à "+new Date(liveStep.completed_at).toLocaleTimeString("th-TH"):"")));
+        if(savedResult)body.append(box("notebook-output",
+          node("strong","","‡∏ú‡∏•‡∏à‡∏≤‡∏Å‡∏Å‡∏≤‡∏£‡∏£‡∏±‡∏ô‡∏Ñ‡∏£‡∏±‡πâ‡∏á‡∏ô‡∏µ‡πâ"),renderLabResult(savedResult.evidence),
+          link("‡∏î‡∏π Log ‡∏Ç‡∏≠‡∏á‡∏Ç‡∏±‡πâ‡∏ô‡∏ô‡∏µ‡πâ",savedResult.url)));
+        if(!savedResult)body.append(small(runningNow?"‡∏Å‡∏≥‡∏•‡∏±‡∏á‡∏õ‡∏£‡∏∞‡∏°‡∏ß‡∏•‡∏ú‡∏•‡∏Ç‡∏±‡πâ‡∏ô‡∏ô‡∏µ‡πâ‡∏à‡∏£‡∏¥‡∏á":
+          "‡∏ú‡∏•‡∏Ç‡∏≠‡∏á‡∏Ç‡∏±‡πâ‡∏ô‡∏ô‡∏µ‡πâ‡∏à‡∏∞‡πÅ‡∏™‡∏î‡∏á‡πÄ‡∏°‡∏∑‡πà‡∏≠ Run ‡∏à‡∏ö‡πÅ‡∏•‡∏∞‡∏´‡∏•‡∏±‡∏Å‡∏ê‡∏≤‡∏ô‡∏û‡∏£‡πâ‡∏≠‡∏°"));
+        if(entry){
+          const history=node("details","notebook-history");
+          history.open=state.savedLabReceipt?.batch===state.notebookBatch&&state.savedLabReceipt?.stage===id;
+          history.append(node("summary","","‡∏î‡∏π‡∏ï‡∏±‡∏ß‡∏≠‡∏¢‡πà‡∏≤‡∏á‡∏à‡∏≤‡∏Å Lab ‡πÄ‡∏î‡∏¥‡∏° (‡πÑ‡∏°‡πà‡πÉ‡∏ä‡πà‡∏ú‡∏•‡∏£‡∏≠‡∏ö‡∏ô‡∏µ‡πâ)"));
+          const historyBody=box("notebook-history-body");
+          if(state.savedLabLoading)historyBody.append(small("‡∏Å‡∏≥‡∏•‡∏±‡∏á‡∏≠‡πà‡∏≤‡∏ô‡∏ú‡∏•‡∏£‡∏≠‡∏ö‡∏Å‡πà‡∏≠‡∏ô‚Ä¶"));
+          else if(state.savedLabReceipt?.batch===state.notebookBatch&&state.savedLabReceipt?.stage===id){
+            const receipt=state.savedLabReceipt;
+            historyBody.append(renderLabResult(receipt.evidence),
+              link("‡∏î‡∏π GitHub Run ‡∏£‡∏≠‡∏ö‡∏Å‡πà‡∏≠‡∏ô","https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/actions/runs/"+receipt.git_run_id));
+          }else{
+            const open=node("button","button button-outline","‡πÄ‡∏õ‡∏¥‡∏î‡∏´‡∏•‡∏±‡∏Å‡∏ê‡∏≤‡∏ô‡πÄ‡∏î‡∏¥‡∏°");
+            open.type="button";open.addEventListener("click",()=>selectSavedLabStage(entry));historyBody.append(open);
+          }
+          history.append(historyBody);body.append(history);
+        }
+        if(id==="ingest"&&savedResult){
+          body.append(small("‡∏Ç‡∏±‡πâ‡∏ô‡∏ô‡∏µ‡πâ sync ‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏ò‡∏∏‡∏£‡∏Å‡∏¥‡∏à 25 ‡∏ï‡∏≤‡∏£‡∏≤‡∏á‡πÄ‡∏Ç‡πâ‡∏≤ Neon ¬∑ ‡∏Å‡∏î‡∏ä‡∏∑‡πà‡∏≠‡∏ï‡∏≤‡∏£‡∏≤‡∏á‡∏î‡πâ‡∏≤‡∏ô‡∏ö‡∏ô‡πÄ‡∏û‡∏∑‡πà‡∏≠‡∏î‡∏π‡∏ï‡∏±‡∏ß‡∏≠‡∏¢‡πà‡∏≤‡∏á‡∏à‡∏≤‡∏Å‡∏£‡∏±‡∏ô‡∏ô‡∏µ‡πâ"));
+          const neonButton=node("button","button button-outline","‡∏î‡∏π‡∏ï‡∏≤‡∏£‡∏≤‡∏á‡πÅ‡∏•‡∏∞‡πÅ‡∏ñ‡∏ß‡∏à‡∏£‡∏¥‡∏á‡πÉ‡∏ô Neon");
+          neonButton.type="button";
+          neonButton.addEventListener("click",()=>{
+            const prefix=state.notebookBatch+"/ingest/";
+            const selected=state.selectedResultTable.startsWith(prefix)?
+              state.selectedResultTable.slice(prefix.length):"Fact_Orders";
+            state.pipelineTab="neon";renderPipeline();
+            loadLabNeon("demo_er1",selected);
+          });
+          body.append(neonButton);
+        }
+        if(id==="extract")body.append(small("‡∏Å‡∏≤‡∏£‡∏ï‡∏£‡∏ß‡∏à‡∏Ñ‡∏ß‡∏≤‡∏°‡∏Ñ‡∏£‡∏ö‡∏ñ‡πâ‡∏ß‡∏ô‡∏£‡∏∞‡∏´‡∏ß‡πà‡∏≤‡∏á Database ‡∏Å‡∏±‡∏ö Raw ‡πÉ‡∏ä‡πâ‡∏à‡∏≥‡∏ô‡∏ß‡∏ô‡∏ï‡∏≤‡∏£‡∏≤‡∏á‡πÅ‡∏•‡∏∞‡πÑ‡∏ü‡∏•‡πå manifest"));
+        if(id==="validate")body.append(small("‡∏ú‡∏•‡∏ï‡∏£‡∏ß‡∏à‡∏ó‡πâ‡∏≤‡∏¢‡∏£‡∏≠‡∏ö‡πÄ‡∏ó‡∏µ‡∏¢‡∏ö Paid Items ‡πÅ‡∏•‡∏∞ Net Revenue ‡∏£‡∏∞‡∏´‡∏ß‡πà‡∏≤‡∏á‡∏ê‡∏≤‡∏ô‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏ï‡πâ‡∏ô‡∏ó‡∏≤‡∏á‡∏Å‡∏±‡∏ö Warehouse"));
+        cell.append(body);
+      }
+      root.append(cell);
+    });
+    const savedSummary=state.batchSummaries[state.notebookBatch];
+    const liveSummary=state.batchRun.status==="success"&&state.batchRun.batch===state.notebookBatch?
+      {runId:state.batchRun.runId,url:state.batchRun.url,sourceMonth:sourceMonthForBatch(state.batchRun.sourceBatch),result:state.batchRun.result}:null;
+    const displayedSummary=liveSummary||savedSummary;
+    if(displayedSummary){
+      const summary=displayedSummary.result;
+      if(state.notebookBatch==="incremental"&&displayedSummary.sourceMonth!==sourceMonthForBatch(state.nextSourceBatch))
+        root.append(small("‡∏ú‡∏•‡∏Ç‡∏±‡πâ‡∏ô‡∏ï‡∏≠‡∏ô‡∏î‡πâ‡∏≤‡∏ô‡∏•‡πà‡∏≤‡∏á‡∏Ñ‡∏∑‡∏≠‡∏Å‡∏≤‡∏£‡πÄ‡∏ï‡∏¥‡∏° Source ‡πÄ‡∏î‡∏∑‡∏≠‡∏ô "+thaiMonth(displayedSummary.sourceMonth||"")+" ‡∏ó‡∏µ‡πà‡∏ú‡πà‡∏≤‡∏ô‡∏•‡πà‡∏≤‡∏™‡∏∏‡∏î ¬∑ ‡πÄ‡∏î‡∏∑‡∏≠‡∏ô‡∏ñ‡∏±‡∏î‡πÑ‡∏õ‡∏Ñ‡∏∑‡∏≠ "+thaiMonth(sourceMonthForBatch(state.nextSourceBatch)||"")));
+      const download=node("a","button button-outline","‚Üì ‡∏î‡∏≤‡∏ß‡∏ô‡πå‡πÇ‡∏´‡∏•‡∏î Warehouse ‡∏Ñ‡∏£‡∏ö‡∏ó‡∏∏‡∏Å‡∏ï‡∏≤‡∏£‡∏≤‡∏á (ZIP/CSV)");
+      download.href="/api/lab-batch-result?download=warehouse&run_id="+encodeURIComponent(displayedSummary.runId);
+      root.append(box("lab-result",node("h3","lab-subheading","‡∏™‡∏£‡∏∏‡∏õ‡∏ú‡∏• Run ‡∏ô‡∏µ‡πâ"),
+        small("Source ‡πÄ‡∏î‡∏∑‡∏≠‡∏ô "+thaiMonth(displayedSummary.sourceMonth||"")),
+        small("‡∏ú‡πà‡∏≤‡∏ô‡∏Ñ‡∏£‡∏ö 5 ‡∏Ç‡∏±‡πâ‡∏ô ¬∑ ‡πÉ‡∏ä‡πâ‡πÄ‡∏ß‡∏•‡∏≤ "+money(summary?.elapsed_seconds,1)+" ‡∏ß‡∏¥‡∏ô‡∏≤‡∏ó‡∏µ"),
+        small("‡∏≠‡∏≠‡πÄ‡∏î‡∏≠‡∏£‡πå‡∏Å‡πà‡∏≠‡∏ô‡∏£‡∏±‡∏ô "+money(summary?.orders_before)+" ‚Üí ‡∏´‡∏•‡∏±‡∏á‡∏£‡∏±‡∏ô "+
+          money(summary?.orders_after)+" ¬∑ ‡πÄ‡∏û‡∏¥‡πà‡∏° "+money(summary?.orders_added)),
+        small("‡∏£‡∏≤‡∏¢‡∏Å‡∏≤‡∏£‡∏Ç‡∏≤‡∏¢‡πÉ‡∏ô Warehouse "+money(summary?.paid_sales_rows)+" ‡πÅ‡∏ñ‡∏ß"),
+        small(summary?.no_duplicate_sales_items?"‡∏ï‡∏£‡∏ß‡∏à‡πÅ‡∏•‡πâ‡∏ß: ‡πÑ‡∏°‡πà‡∏°‡∏µ‡∏£‡∏≤‡∏¢‡∏Å‡∏≤‡∏£‡∏Ç‡∏≤‡∏¢‡∏ã‡πâ‡∏≥":"‡∏¢‡∏±‡∏á‡πÑ‡∏°‡πà‡∏°‡∏µ‡∏ú‡∏•‡∏ï‡∏£‡∏ß‡∏à‡∏£‡∏≤‡∏¢‡∏Å‡∏≤‡∏£‡∏ã‡πâ‡∏≥"),
+        small("‡∏Å‡∏î‡πÄ‡∏õ‡∏¥‡∏î‡πÅ‡∏ï‡πà‡∏•‡∏∞‡∏Ç‡∏±‡πâ‡∏ô‡∏î‡πâ‡∏≤‡∏ô‡∏ö‡∏ô‡πÄ‡∏û‡∏∑‡πà‡∏≠‡∏î‡∏π‡∏ï‡∏≤‡∏£‡∏≤‡∏á‡πÅ‡∏•‡∏∞‡∏ï‡∏±‡∏ß‡∏≠‡∏¢‡πà‡∏≤‡∏á‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡∏à‡∏£‡∏¥‡∏á"),
+        displayedSummary.url?link("‡πÄ‡∏õ‡∏¥‡∏î Log ‡∏Ç‡∏≠‡∏á Run ‡∏ô‡∏µ‡πâ",displayedSummary.url):null,download));
+    }
+    root.append(notice("‡πÄ‡∏Ñ‡∏•‡∏µ‡∏¢‡∏£‡πå Lab = ‡∏•‡∏ö‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡πÉ‡∏ô Neon ‡∏ó‡∏±‡πâ‡∏á 25 ‡∏ï‡∏≤‡∏£‡∏≤‡∏á‡πÉ‡∏´‡πâ‡πÄ‡∏´‡∏•‡∏∑‡∏≠ 0 ¬∑ Source ‡πÅ‡∏¢‡∏Å‡πÑ‡∏ß‡πâ‡∏™‡∏≥‡∏´‡∏£‡∏±‡∏ö‡πÄ‡∏£‡∏¥‡πà‡∏°‡πÉ‡∏´‡∏°‡πà"));
+    if(["RUN1_READY","RUN2_READY"].includes(phase)){
+      const clear=node("button","button button-outline","‡πÄ‡∏£‡∏¥‡πà‡∏°‡∏£‡∏≠‡∏ö‡πÉ‡∏´‡∏°‡πà ¬∑ ‡πÄ‡∏Ñ‡∏•‡∏µ‡∏¢‡∏£‡πå‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏• Lab");
+      clear.type="button";clear.disabled=!state.realReady||["submitting","queued","in_progress"].includes(state.resetStatus);
+      clear.addEventListener("click",requestNewCycle);root.append(clear);
+    }
+    if(state.recentRuns.length){
+      const history=node("details","notebook-history");
+      history.append(node("summary","","‡∏ö‡∏±‡∏ô‡∏ó‡∏∂‡∏Å Run ‡πÄ‡∏Å‡πà‡∏≤‡πÉ‡∏ô GitHub ¬∑ ‡πÑ‡∏°‡πà‡πÉ‡∏ä‡πà‡∏Ç‡πâ‡∏≠‡∏°‡∏π‡∏•‡πÉ‡∏ô Lab ‡∏õ‡∏±‡∏à‡∏à‡∏∏‡∏ö‡∏±‡∏ô"));
+      const list=box("notebook-history-body");
+      state.recentRuns.forEach(item=>{
+        const button=node("button","button button-outline",
+          (item.batch==="initial"?"Run 1":"Run 2")+" ¬∑ #"+item.run_id);
+        button.type="button";button.disabled=state.historyBusy;
+        button.addEventListener("click",()=>showHistoryRun(item.run_id));list.append(button);
+      });
+      if(state.historyBusy)list.append(small("‡∏Å‡∏≥‡∏•‡∏±‡∏á‡∏≠‡πà‡∏≤‡∏ô‡∏ú‡∏• Run‚Ä¶"));
+      if(state.historyRun){
+        list.append(node("h3","lab-subheading","‡∏ú‡∏• Run #"+state.historyRun.runId));
+        state.historyRun.result.stages.forEach(item=>{
+          list.append(node("h4","",NOTEBOOK_STAGES.find(x=>x[0]===item.stage)?.[1]||item.stage),
+            renderLabResult(item.evidence));
+        });
+      }
+      history.append(list);root.append(history);
+    }
+    if(state.resetStatus)root.append(small("‡∏™‡∏ñ‡∏≤‡∏ô‡∏∞‡∏Å‡∏≤‡∏£‡πÄ‡∏Ñ‡∏•‡∏µ‡∏¢‡∏£‡πå Lab: "+state.resetStatus));
+    if(state.resetError)root.append(notice(state.resetError,true));
+    if(state.resetUrl)root.append(link("‡∏î‡∏π Log ‡∏Å‡∏≤‡∏£‡πÄ‡∏Ñ‡∏•‡∏µ‡∏¢‡∏£‡πå‡πÉ‡∏ô GitHub Actions",state.resetUrl));
+  }
+
+  function renderSourcePicker(root){
+    if(state.sourceExhausted)return;
+    const batch=state.nextSourceBatch||"initial";
+    const month=sourceMonthForBatch(batch);
+    if(!month)return;
+    const panelRoot=box("source-picker-panel");
+    panelRoot.append(node("h3","lab-subheading","Source ‡∏™‡∏≥‡∏´‡∏£‡∏±‡∏ö‡∏£‡∏≠‡∏ö‡∏ô‡∏µ‡πâ ¬∑ "+thaiMonth(month)));
+    panelRoot.append(small("‡∏ä‡∏∏‡∏î‡∏•‡∏∞ 1 ‡πÄ‡∏î‡∏∑‡∏≠‡∏ô ¬∑ ‡πÇ‡∏Ñ‡∏£‡∏á‡∏™‡∏£‡πâ‡∏≤‡∏á CSV ‡∏ï‡∏≤‡∏° ER ‡πÄ‡∏î‡∏µ‡∏¢‡∏ß‡∏Å‡∏±‡∏ô ¬∑ ‡∏£‡∏∞‡∏ö‡∏ö‡πÄ‡∏•‡∏∑‡∏≠‡∏Å‡πÄ‡∏î‡∏∑‡∏≠‡∏ô‡∏ñ‡∏±‡∏î‡πÑ‡∏õ‡πÉ‡∏´‡πâ‡∏≠‡∏±‡∏ï‡πÇ‡∏ô‡∏°‡∏±‡∏ï‡∏¥"));
+    const filename="classroom-source-"+month+".zip";
+    const download=node("a","button button-outline","‚Üì ‡∏î‡∏≤‡∏ß‡∏ô‡πå‡πÇ‡∏´‡∏•‡∏î Source "+thaiMonth(month));
+    download.href="https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/releases/download/classroom-source-v1/"+filename;
+    download.target="_blank";download.rel="noopener noreferrer";
+    panelRoot.append(download);
+    const controls=box("source-picker-actions");
+    const label=node("label","button button-outline source-upload-label","‡∏≠‡∏±‡∏õ‡πÇ‡∏´‡∏•‡∏î Source "+thaiMonth(month)+" (.zip)");
+    const file=node("input","source-upload-input");file.type="file";file.accept=".zip,application/zip";
+    label.append(file);controls.append(label);
+    if(state.sourceUploadId&&state.sourceUploadMonth===month){
+      controls.append(small("‡πÑ‡∏ü‡∏•‡πå‡∏ó‡∏µ‡πà‡πÄ‡∏•‡∏∑‡∏≠‡∏Å: "+(state.sourceUploadName||"Source ZIP")+" ¬∑ ‡πÉ‡∏ä‡πâ‡πÅ‡∏ó‡∏ô‡∏ä‡∏∏‡∏î‡∏ï‡∏±‡∏ß‡∏≠‡∏¢‡πà‡∏≤‡∏á‡πÄ‡∏î‡∏∑‡∏≠‡∏ô‡∏ô‡∏µ‡πâ"));
       const clear=node("button","button button-muted","‡∏Å‡∏•‡∏±‡∏ö‡πÑ‡∏õ‡πÉ‡∏ä‡πâ Source ‡πÄ‡∏ï‡∏£‡∏µ‡∏¢‡∏°‡πÑ‡∏ß‡πâ");clear.type="button";
       clear.addEventListener("click",()=>{fetch("/api/lab-batch?id="+
         encodeURIComponent(state.sourceUploadId),{method:"DELETE"}).catch(()=>{});

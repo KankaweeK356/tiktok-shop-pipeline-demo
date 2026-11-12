@@ -1,33 +1,33 @@
-# คู่มือเริ่มต้น — Pipeline Demo
+# คู่มือเริ่มต้น — Classroom Pipeline Demo
+
+> **ใช้ Notebook นี้สำหรับ Flow ปัจจุบัน:** Run 1 = Source เดือนมกราคม 2569 และเติม Source เดือนถัดไปครั้งละหนึ่งเดือนจนถึงตุลาคม. อย่าใช้ตัวเลข 800 orders + 100 orders เป็นจำนวน Run 1/Run 2; ตัวเลขนั้นมาจาก Source fixture รุ่นเก่า
 
 [![เปิด Pipeline Demo ใน Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/KankaweeK356/tiktok-shop-pipeline-demo/blob/feature/classroom-demo-evidence-foundation/notebooks/TikTok_Shop_Step_by_Step_Demo.ipynb)
 
-## ใช้หน้าเว็บ
+## Colab
 
-1. เปิด [Test Pipeline](https://tiktok-shop-mlops-dashboard-git-feature-classroom-dea39b-newja.vercel.app/)
-2. กด **Run 1** เพื่อรัน Source เดือนมกราคม 2569 ผ่าน 5 ขั้นครบในครั้งเดียว
-3. เปิดผลของแต่ละขั้นเมื่อ Run เสร็จ ดูตาราง ตัวอย่างข้อมูล และผลตรวจจริง
-4. กด **เติมข้อมูล** เพื่อเพิ่ม Source เดือนถัดไปทีละหนึ่งเดือนจนถึงตุลาคม
-5. หาก Run ไม่ผ่าน อ่านขั้น/สาเหตุ แล้วกดปุ่มเดิมเพื่อ Retry เดือนเดิม
-6. ใช้ **ทดสอบข้อผิดพลาด** แยกจากรันปกติ หากต้องการสาธิต Error Recovery
+1. เปิด Notebook แล้วเลือก **Runtime → Run all** เพื่อเตรียม Source และเครื่องมือ
+2. กด **เริ่มรอบใหม่และรัน Run 1 · มกราคม**
+3. รอผลทั้ง 5 ขั้น แล้วดูฐานข้อมูล, Lake และ Warehouse ในหัวข้อผลลัพธ์
+4. กด **เติมข้อมูลเดือนถัดไป** เพื่อเพิ่มอีกหนึ่งเดือน; จำนวนออเดอร์ที่เพิ่มแสดงตาม Source จริงของเดือนนั้น
+5. หาก Pipeline ไม่ผ่าน ให้อ่านขั้นและสาเหตุ แล้วกดปุ่มเดิมเพื่อลองเดือนเดิมอีกครั้ง
 
-Run บนเว็บใช้ Lab Neon และ GitHub Actions ร่วมกัน ผู้ชมที่เปิดลิงก์ไม่จำเป็นต้องมีบัญชี GitHub
+หลังรัน แต่ละชั้นแสดงรายชื่อตาราง/ไฟล์ จำนวนแถว และเลือกเปิดตัวอย่าง 5 แถวได้:
+- **Database · ER1** — ตารางฐานข้อมูลและจำนวนแถว
+- **Data Lake** — Landing CSV, Raw Parquet และ Standardized Parquet
+- **Warehouse · ER2** — ตารางและ View หลัง Transform/Load/Validate
 
-## ใช้ Colab เป็นช่องทางสำรอง
+Colab ใช้ SQLite, Parquet และ DuckDB ใน Runtime ของผู้รันเอง ไม่เชื่อม Neon และผลไม่แสดงใน Dashboard เว็บ
 
-เปิด Pipeline Notebook ด้านบน แล้วเลือก **Runtime → Run all** เพื่อเตรียมโปรเจกต์และ Source เท่านั้น จากนั้นใช้ปุ่ม:
+## จำนวนและโครงสร้าง Source
 
-- **เริ่มรอบใหม่และรัน Run 1 · มกราคม** — เคลียร์ผลเก่าเฉพาะ Colab Runtime แล้วรันเดือนมกราคม
-- **เติมข้อมูลเดือนถัดไป** — เพิ่มครั้งละหนึ่งเดือน ใช้ฐานข้อมูลของ Session เดิม
-- **ทดสอบ Error แยก** — ใช้ Workspace ทดสอบแยก ไม่ทำให้ผลปกติล้มเหลว
-- **เคลียร์ผลทดลองใน Colab** — ลบ Database, Data Lake, Warehouse และ Error Lab เฉพาะ Runtime นั้น; Source ยังอยู่
+ตัวสร้าง [Source รายเดือน](../pipeline/generate_classroom_source.py) สร้าง 10 ชุด มกราคม–ตุลาคม โดยทุกเดือนมี CSV 21 ตารางตามโครงสร้างและคอลัมน์ ER1 เดียวกัน. Run 1 ส่ง Master/Reference และข้อมูลธุรกิจเดือนมกราคม; Run ต่อไปส่งรายการธุรกิจของเดือนใหม่ โดยคงตาราง Master/Reference ไว้ใน ZIP ตาม Contract.
 
-Colab ใช้ SQLite, Parquet และ DuckDB ภายใน Runtime ผู้รัน ไม่เชื่อม Neon และผลไม่ขึ้น Dashboard เว็บโดยอัตโนมัติ
+จำนวนออเดอร์ไม่กำหนดเป็น 800, 900 หรือเพิ่มทีละ 100. ระบบใช้จำนวนตาม Source ของเดือนนั้นและรายงานก่อน–หลังจากผลรันจริง. ไฟล์ `source/initial` และ `source/incremental` เป็น fixture เก่าสำหรับกรณีตุลาคม 800 ออเดอร์/พฤศจิกายนเพิ่ม 100 ออเดอร์; ไม่ใช่คู่ Run 1/Run 2 ใน Flow รายเดือนปัจจุบัน. 800 ออเดอร์นั้นอยู่ใน delivery เดือนตุลาคม; 100 ออเดอร์พฤศจิกายนไม่ถูกรวมในช่วงมกราคม–ตุลาคม.
 
-## Source และ ER
+## ลิงก์สำคัญ
 
-มี 10 ชุดรายเดือน มกราคม–ตุลาคม 2569; ทุกชุดใช้โครงสร้าง Source CSV 21 ตารางและหัวคอลัมน์เดียวกันตาม ER1. Run 1 มีข้อมูลเดือนมกราคมและตั้ง Master/Reference; Run ถัดไปเพิ่มรายการธุรกิจของเดือนใหม่. ER1 มี 25 ตาราง โดย 4 ตารางเป็นผลที่ Pipeline สร้าง ไม่ได้มาจาก CSV.
-
-## ML
-
-ML ใช้ Feature ระดับสัปดาห์ × กลุ่มสินค้า จาก Warehouse เช่น ยอดขายย้อนหลังและแผน Ads/ส่วนลดที่ทราบก่อนช่วงทำนาย. ต้องมี Feature ที่สมบูรณ์อย่างน้อย 16 สัปดาห์: Train 6 + Validation 2 รอบ รอบละ 3 + Test 4. จึงไม่ถือว่า 1 เดือนเท่ากับ 1 ตัวอย่าง และไม่ฝึกก่อนข้อมูลพร้อม.
+- [README โครงการ](../README.md)
+- [ER1 / ER2](../schemas/)
+- [Source generator](../pipeline/generate_classroom_source.py)
+- [ผลใน Colab Runtime](../reports/README.md)

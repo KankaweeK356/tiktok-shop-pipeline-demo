@@ -1,4 +1,4 @@
-# Phase 2 — Historical Mock Data for ML
+# Phase 2 — Historical Mock Data for ML\n\n> **ขอบเขต:** ไฟล์นี้อธิบายชุด legacy October/November ที่ใช้เป็นฐานข้อมูลประวัติของ ML และใช้สร้าง Source รายเดือน. 800 Orders อยู่ใน October fixture และ 100 Orders อยู่ใน November fixture; ตัวเลขนี้ไม่ใช่จำนวนของ Run 1/Run 2 ปัจจุบันใน Colab ซึ่งเริ่ม January และเพิ่มทีละเดือนถึง October.
 
 ## วัตถุประสงค์
 เพิ่มข้อมูลสังเคราะห์ย้อนหลังสำหรับ Marketing-Aware Sales Forecasting โดยไม่เปลี่ยน Database 25 ตารางหรือ Data Warehouse 6 Dimensions / 4 Facts / Daily Mart และไม่เขียนทับ Source Demo เดิม

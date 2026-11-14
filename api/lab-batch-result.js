@@ -54,12 +54,20 @@ export default async function handler(req, res) {
     if (!rows.length) return res.status(404).json({ error: "ไม่พบ Run นี้ใน Neon Lab" });
     const run = rows[0];
     if (run.status === "FAILED") {
-      let failure = { status: "FAILED", run_id: id, message: "Pipeline หยุดก่อนจบ" };
+      let failure = { status: "FAILED", run_id: id,
+        failed_stage: run.result_summary?.failed_stage || null,
+        error_code: run.result_summary?.error_code || run.error_message || null,
+        message: "ระบบหยุดก่อนจบ · ข้อมูลเดือนนี้ยังไม่ถูกยืนยันว่าผ่านครบทุกขั้น" };
       try { failure = JSON.parse(Buffer.from(await readObject(`vercel-lab/failed/${id}.json`)).toString("utf8")); }
       catch (_error) { /* Keep the authoritative Neon failure status. */ }
       return res.status(200).json({ run_id: id, result: failure });
     }
-    if (run.status !== "SUCCEEDED") return res.status(409).json({ error: "Run นี้ยังทำงานไม่เสร็จ" });
+    if (run.status !== "SUCCEEDED" && !stage) return res.status(409).json({ error: "Run นี้ยังทำงานไม่เสร็จ" });
+    if (stage && run.status !== "SUCCEEDED") {
+      const completed = await sql.query(
+        "SELECT status FROM demo_control.stage_runs WHERE run_id::text=$1 AND stage_name=$2", [id, stage]);
+      if (completed[0]?.status !== "SUCCESS") return res.status(409).json({ error: "ขั้นนี้ยังทำงานไม่เสร็จ" });
+    }
     const key = `vercel-lab/results/${id}/${stage ? `${stage}.json` : "batch.json"}`;
     const evidence = JSON.parse(Buffer.from(await readObject(key)).toString("utf8"));
     return res.status(200).json(stage ? { run_id: id, stage, evidence } : {

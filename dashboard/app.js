@@ -1356,6 +1356,7 @@
         state.batchRun.status = "queued";
         state.batchRun.since = new Date().toISOString();
         state.batchRun.sourceBatch = data.source_batch;
+        state.batchRun.runId = data.run_id;
         state.batchRun.sourceMonth = data.source_month;
         state.batchRun.url = data.workflow_url || "";
         state.batchRun.sourceUploadId = uploadId || "";
@@ -1372,7 +1373,7 @@
           const worker = await workerResponse.json().catch(() => ({}));
           if (!workerResponse.ok || !worker.accepted) {
             const statusQuery = new URLSearchParams({ batch, source_batch: data.source_batch,
-              since: state.batchRun.since });
+              since: state.batchRun.since, run_id: data.run_id || "" });
             try {
               const statusResponse = await fetch("/api/lab-batch?" + statusQuery, { cache: "no-store" });
               const status = await statusResponse.json();
@@ -1404,7 +1405,7 @@
     if (!current.since || !["queued", "in_progress"].includes(current.status)) return;
     try {
       const query = new URLSearchParams({
-        batch: current.batch, source_batch: current.sourceBatch,
+        batch: current.batch, source_batch: current.sourceBatch, run_id: current.runId || "",
         since: current.since
       });
       const response = await fetch("/api/lab-batch?" + query, { cache: "no-store" });

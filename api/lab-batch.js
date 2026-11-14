@@ -109,8 +109,10 @@ export default async function handler(req, res) {
       if (!Number.isFinite(since) || !["initial", "incremental"].includes(batchQuery))
         return res.status(400).json({ error: "ข้อมูลติดตาม Run ไม่ถูกต้อง" });
       const type = batchQuery === "initial" ? "RUN1" : "RUN2";
-      const run = runs.find(row => row.run_type === type &&
-        Date.parse(row.started_at) >= since - 15000);
+      const requestedId = String(req.query?.run_id || "");
+      if (requestedId && !RUN_UUID.test(requestedId)) return res.status(400).json({ error: "Run ID ไม่ถูกต้อง" });
+      const run = runs.find(row => row.run_type === type && (requestedId ?
+        String(row.run_id) === requestedId : Date.parse(row.started_at) >= since - 15000));
       if (!run) return res.status(200).json({ found: false, status: "queued", stages: [] });
       let stageRows = [];
       try {
@@ -139,7 +141,7 @@ export default async function handler(req, res) {
           index, name,
           status: saved?.status === "SUCCESS" ? "completed" :
             saved?.status === "FAILED" ? "completed" :
-              pendingAfterFailure ? "pending" : run.status === "RUNNING" ? "in_progress" : "pending",
+              pendingAfterFailure ? "pending" : saved?.status === "RUNNING" ? "in_progress" : "pending",
           conclusion: saved?.status === "SUCCESS" ? "success" :
             saved?.status === "FAILED" ? "failure" : null,
           completed_at: saved?.finished_at || null
@@ -151,7 +153,7 @@ export default async function handler(req, res) {
         status: done ? "completed" : "in_progress",
         conclusion: run.status === "SUCCEEDED" ? "success" : run.status === "FAILED" ? "failure" : null,
         failed_stage: failureEvidence?.failed_stage || failedStage || null,
-        error_code: failureEvidence?.error_code || null,
+        error_code: failureEvidence?.error_code || run.result_summary?.error_code || run.error_message || null,
         error_message: failureEvidence?.message || run.error_message || null,
         source_batch: run.result_summary?.batch || null,
         url: executionUrl(req), execution_engine: "VERCEL_NATIVE"
@@ -213,7 +215,7 @@ export default async function handler(req, res) {
     .update(encoded).digest("hex");
   return res.status(202).json({
     accepted: true, execution: "VERCEL_NATIVE", ticket: encoded + "." + signature,
-    run_id: null, source_batch: requestedBatch, source_month: monthFor(requestedBatch),
+    run_id: claim.nonce, source_batch: requestedBatch, source_month: monthFor(requestedBatch),
     status: "queued", workflow_url: executionUrl(req)
   });
 }

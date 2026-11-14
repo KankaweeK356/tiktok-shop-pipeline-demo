@@ -10,7 +10,7 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import psycopg
 from psycopg.types.json import Jsonb
@@ -25,8 +25,8 @@ def begin_run(database_url: str, run_type: str, *, batch: str | None = None,
               expected_cycle: int | None = None) -> str:
     if run_type not in REQUIRED_PHASE:
         raise ValueError("Only RUN1, RUN2, REPLAY are allowed in live demo")
-    run_id = str(uuid4())
     engine = os.getenv("CLASSROOM_EXECUTION_ENGINE", "GITHUB_ACTIONS")
+    run_id = str(UUID(os.environ["CLASSROOM_RUN_ID"])) if engine == "VERCEL_NATIVE" and os.getenv("CLASSROOM_RUN_ID") else str(uuid4())
     run_number = os.getenv("GITHUB_RUN_ID", "local")
     attempt = os.getenv("GITHUB_RUN_ATTEMPT", "1")
     request_key = (f"vercel-{run_id}" if engine == "VERCEL_NATIVE"
@@ -81,7 +81,7 @@ def mark_stage_started(database_url: str, run_id: str, stage: str) -> None:
             cur.execute("""
                 UPDATE demo_control.pipeline_runs
                    SET result_summary=COALESCE(result_summary,'{}'::jsonb) ||
-                       jsonb_build_object('active_stage',%s)
+                       jsonb_build_object('active_stage',%s::text)
                  WHERE run_id=%s AND status='RUNNING'
             """, (stage, run_id))
 

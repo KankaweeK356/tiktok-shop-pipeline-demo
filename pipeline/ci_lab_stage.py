@@ -101,11 +101,26 @@ def _real_step_evidence(workspace: Path,batch: str,stage: str) -> dict:
                      "warehouse":report.get("warehouse_sales_item_count")},
                     {"check":"Net revenue","source":report.get("er1_net_revenue"),
                      "warehouse":report.get("er2_net_revenue")}]}
+    if stage == "extract":
+        input_data = {"label": "ตารางใน Neon ที่อ่านมาบันทึกเป็น Raw Parquet",
+                      "tables": output["tables"], "preview": []}
+    elif stage in ("transform", "load"):
+        source_layer = "raw" if stage == "transform" else "standardized"
+        paths = sorted((workspace / "lake" / source_layer / batch).glob("*.parquet"))
+        input_data["tables"] = [{"name": p.stem, "rows": parquet_result(p)["records"]} for p in paths]
+        input_data["label"] = "Raw Parquet" if stage == "transform" else "Standardized Parquet"
+    metrics = [{"label":"Output records","value":output.get("records",0)}]
+    if "files" in input_data:
+        metrics.append({"label": "ไฟล์ CSV ต้นทาง", "value": len(input_data["files"])})
+    if "tables" in input_data:
+        metrics.append({"label": "ตาราง/ไฟล์ก่อนประมวลผล", "value": len(input_data["tables"])})
+    if "tables" in output:
+        metrics.append({"label": "ตาราง/ไฟล์หลังประมวลผล", "value": len(output["tables"])})
     return {"classification":"SYNTHETIC_EDUCATIONAL_NOT_TIKTOK",
         "mode":"REAL_GITHUB_ACTIONS_STAGE","is_new_etl_run":True,"stage":stage,"batch":batch,
         "executed_at":pd.Timestamp.utcnow().isoformat(),
         "success":True,"input":input_data,"output":output,
-        "metrics":[{"label":"Output records","value":output.get("records",0)}],
+        "metrics":metrics,
         "checks":[{"label":"Actual orchestrator stage completed","pass":True}],
         "provenance":"NEW_WORKER_OUTPUT_NOT_HISTORICAL_REPLAY"}
 
@@ -140,6 +155,8 @@ def run_stage(stage: str, batch: str) -> dict:
         run_id = begin_run(db_url, "RUN1" if batch=="initial" else "RUN2", batch=batch,
                            expected_cycle=int(expected_cycle) if expected_cycle else None)
         data = {"batch":batch,"cycle":cycle,"run_id":run_id,"last_completed":None}
+        STATE_PATH.parent.mkdir(exist_ok=True, parents=True)
+        STATE_PATH.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
     else:
         if not STATE_PATH.exists():
             raise RuntimeError("Missing previous stage checkpoint; restore GitHub artifact")

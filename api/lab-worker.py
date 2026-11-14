@@ -11,6 +11,7 @@ import tempfile
 import time
 import urllib.request
 import zipfile
+import threading
 from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 from uuid import UUID
@@ -20,6 +21,7 @@ import psycopg
 
 ROOT = Path(__file__).resolve().parents[1]
 STAGES = ("ingest", "extract", "transform", "load", "validate")
+INVOCATION_LOCK = threading.Lock()
 SOURCE_RELEASE = "https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/releases/download/classroom-source-v1/classroom-source-{month}.zip"
 
 
@@ -150,6 +152,7 @@ def run_ticket(ticket: str) -> dict:
     if batch != "initial" and (not isinstance(previous, str) or previous == "0"):
         raise ValueError("PREVIOUS_RUN_REQUIRED")
     UUID(claim.get("nonce"))
+    os.environ["CLASSROOM_RUN_ID"] = claim["nonce"]
     os.environ["NEON_DEMO_DATABASE_URL"] = os.environ["CLASSROOM_LAB_WRITER_URL"]
     os.environ["CLASSROOM_EXECUTION_ENGINE"] = "VERCEL_NATIVE"
     os.environ["CLASSROOM_EXPECTED_CYCLE"] = str(int(cycle))
@@ -191,11 +194,18 @@ def run_ticket(ticket: str) -> dict:
 
         # Import after CLASSROOM_WORKSPACE is set so the real checkpoint files
         # live in this invocation's temporary directory, not the deployed bundle.
+        from pipeline import ci_lab_stage, ci_lab_batch, ci_lab_export
+        # Warm instances retain imported modules after /tmp has been removed.
+        # Each invocation must bind all readers to its own restored workspace.
+        for module in (ci_lab_stage, ci_lab_batch, ci_lab_export):
+            module.STATE_PATH = workspace / "lab_session.json"
         from pipeline.ci_lab_batch import run_stage_and_save, finalize
         from pipeline.ci_lab_export import main as export_warehouse
         try:
             for stage in STAGES:
-                run_stage_and_save(batch, stage)
+                receipt = run_stage_and_save(batch, stage)
+                put_json(client, bucket,
+                         f"vercel-lab/results/{receipt['run_id']}/{stage}.json", receipt)
             summary = finalize(batch)
             export_warehouse()
         except Exception as error:
@@ -204,7 +214,7 @@ def run_ticket(ticket: str) -> dict:
                 session = json.loads(session_path.read_text(encoding="utf-8"))
                 run_id = session.get("run_id")
                 if run_id:
-                    failed_stage = None
+                    failed_stage = stage
                     error_code = type(error).__name__
                     history = workspace / "lake" / "control" / "stage_history.jsonl"
                     if history.is_file():
@@ -294,7 +304,13 @@ class handler(BaseHTTPRequestHandler):
             if not 1 <= size <= 4096:
                 return self.reply(400, {"error": "คำขอ Run ไม่ถูกต้อง"})
             request = json.loads(self.rfile.read(size))
-            result = run_ticket(str(request.get("ticket", "")))
+            if not INVOCATION_LOCK.acquire(blocking=False):
+                return self.reply(409, {"accepted": False, "error_code": "WORKER_BUSY",
+                                        "error": "มีงานกำลังประมวลผล กรุณารอแล้วตรวจสถานะ"})
+            try:
+                result = run_ticket(str(request.get("ticket", "")))
+            finally:
+                INVOCATION_LOCK.release()
             self.reply(200, {"accepted": True, "status": "SUCCEEDED",
                              "run_id": result["run_id"], "batch": result["batch"]})
         except Exception as error:

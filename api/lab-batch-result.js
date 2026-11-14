@@ -1,6 +1,6 @@
 /** Return persisted evidence for a real Vercel-run batch only. */
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
-import labML from "../lib/lab-ml.js";
+import labML from "../lib/lab-ml-live.js";
 import { getNeonSql } from "../lib/neon-router.js";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

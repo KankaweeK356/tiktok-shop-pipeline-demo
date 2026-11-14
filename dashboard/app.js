@@ -941,15 +941,20 @@
   async function hydrateCurrentCycleRuns(runs, hasCurrentRun) {
     state.currentCycleRuns = runs;
     if (!hasCurrentRun) {
-      if (!state.batchSummaries.initial && !state.batchSummaries.incremental) {
-        state.batchResults = { initial: {}, incremental: {} };
-        state.batchSummaries = { initial: null, incremental: null };
-        state.batchRunIds = { initial: null, incremental: null };
-      }
+      state.batchResults = { initial: {}, incremental: {} };
+      state.batchSummaries = { initial: null, incremental: null };
+      state.batchRunIds = { initial: null, incremental: null };
+      if (!["submitting", "queued", "in_progress"].includes(state.batchRun.status))
+        state.batchRun = { batch: "", status: "", runId: null, stages: [] };
       return;
     }
     const latestByBatch = {};
-    for (const run of runs) { if (!latestByBatch[run.batch]) latestByBatch[run.batch] = run; }
+    for (const run of runs) {
+      if (run.status !== "SUCCEEDED") continue;
+      const prior = latestByBatch[run.batch];
+      if (!prior || Date.parse(run.created_at) > Date.parse(prior.created_at))
+        latestByBatch[run.batch] = run;
+    }
     for (const batch of ["initial", "incremental"]) {
       const run = latestByBatch[batch]; if (!run) continue;
       try {
@@ -967,7 +972,7 @@
           [item.stage, { evidence: item.evidence, url: run.url, runId: String(run.run_id) }]));
 
         // Ensure state.batchRun preserves status so the completed badge and execution runId remain visible!
-        if (!state.batchRun.status) {
+        if (!["submitting", "queued", "in_progress"].includes(state.batchRun.status)) {
           state.batchRun = {
             batch,
             status: "success",
@@ -1802,7 +1807,8 @@
     const canStartBatch = state.realReady && !state.requiresReset && !state.sourceExhausted &&
       !state.sharedRun.running && (state.notebookBatch === "initial" ? phase === "EMPTY" :
         ["RUN1_READY", "RUN2_READY"].includes(phase) && Boolean(state.currentRunId));
-    const batchBusy = ["submitting", "queued", "in_progress"].includes(state.batchRun.status);
+    const batchBusy = state.batchRun.batch === state.notebookBatch &&
+      ["submitting", "queued", "in_progress"].includes(state.batchRun.status);
     const alreadyDone = state.notebookBatch === "initial" ?
       Boolean(state.batchSummaries.initial) :
       Boolean(state.batchSummaries.incremental && state.batchSummaries.incremental.sourceMonth === nextMonth);
@@ -1838,7 +1844,7 @@
       }
     }
     root.append(node("p", "notebook-caption", "กด Run หนึ่งครั้ง ระบบจะวิ่งครบทุกขั้นบน Vercel แล้วเปิดดูผลของแต่ละขั้นเมื่อเสร็จ"));
-    if (state.batchRun.status) {
+    if (state.batchRun.status && state.batchRun.batch === state.notebookBatch) {
       root.append(small("สถานะ Run: " + state.batchRun.status +
         (state.batchRun.runId ? " · Vercel Execution #" + state.batchRun.runId : "")));
       if (state.batchRun.url) root.append(link("ดูการทำงานและ Log จริง", state.batchRun.url));

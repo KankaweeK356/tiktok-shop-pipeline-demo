@@ -147,31 +147,11 @@
       if (status.running) {
         state.warehouseSnapshot = { ...status, running: true };
       } else if (status.phase === "EMPTY") {
-        const localSummary = state.batchSummaries.initial || state.batchSummaries.incremental;
-        if (localSummary?.result || localSummary?.business) {
-          state.warehouseSnapshot = {
-            ...status,
-            phase: state.realLabPhase || "RUN1_READY",
-            current_run_id: localSummary.runId || localSummary.run_id || "vercel_session_run",
-            result: localSummary.result || localSummary
-          };
-        } else {
-          state.warehouseSnapshot = { ...status, result: null };
-        }
+        state.warehouseSnapshot = { ...status, current_run_id: null, result: null };
       } else {
         const runIdToFetch = status.current_run_id || state.currentRunId;
         if (!runIdToFetch) {
-          const localSummary = state.batchSummaries.initial || state.batchSummaries.incremental;
-          if (localSummary?.result || localSummary?.business) {
-            state.warehouseSnapshot = {
-              ...status,
-              phase: state.realLabPhase || "RUN1_READY",
-              current_run_id: localSummary.runId || localSummary.run_id,
-              result: localSummary.result || localSummary
-            };
-          } else {
-            throw Error("ไม่พบ Run ปัจจุบันที่เชื่อมกับ Warehouse");
-          }
+          throw Error("ไม่พบ Run ปัจจุบันที่เชื่อมกับ Warehouse");
         } else {
           const resultResponse = await fetch("/api/lab-batch-result?run_id=" +
             encodeURIComponent(runIdToFetch), { cache: "no-store" });
@@ -182,23 +162,9 @@
       }
       state.warehouseStatus = "ready";
     } catch (error) {
-      const localSummary = state.batchSummaries.initial || state.batchSummaries.incremental;
-      if (localSummary?.result || localSummary?.business) {
-        state.warehouseSnapshot = {
-          ready: true,
-          phase: state.realLabPhase || "RUN1_READY",
-          cycle: state.realLabCycle || 1,
-          orders: state.realLabOrders || 1250,
-          current_run_id: localSummary.runId || localSummary.run_id || "vercel_session_run",
-          running: false,
-          result: localSummary.result || localSummary
-        };
-        state.warehouseStatus = "ready";
-      } else {
-        state.warehouseStatus = "error";
-        state.warehouseSnapshot = null;
-        state.warehouseError = error.message || "อ่านข้อมูล Warehouse ไม่ได้";
-      }
+      state.warehouseStatus = "error";
+      state.warehouseSnapshot = null;
+      state.warehouseError = error.message || "อ่านข้อมูล Warehouse ไม่ได้";
     }
     if (state.view === "business" || state.view === "ml") render();
     if (state.view === "ml" && state.warehouseSnapshot?.result) loadLiveML();
@@ -948,16 +914,10 @@
       const response = await fetch("/api/lab-batch", { cache: "no-store" });
       const data = await response.json();
       state.realReady = response.ok && data.ready === true;
-      if (data.current_run_id) {
-        state.realLabPhase = data.phase || state.realLabPhase;
-        state.realLabCycle = data.cycle ?? state.realLabCycle;
-        state.realLabOrders = data.orders ?? state.realLabOrders;
-        state.currentRunId = data.current_run_id;
-      } else if (!state.currentRunId) {
-        state.realLabPhase = data.phase || "EMPTY";
-        state.realLabCycle = data.cycle ?? 1;
-        state.realLabOrders = data.orders ?? 0;
-      }
+      state.realLabPhase = data.phase || "UNKNOWN";
+      state.realLabCycle = data.cycle ?? null;
+      state.realLabOrders = data.orders ?? 0;
+      state.currentRunId = data.current_run_id || null;
       state.sharedRun = {
         running: Boolean(data.running), type: data.active_run_type || null,
         stage: data.active_stage || null
@@ -1029,7 +989,7 @@
             ready: true,
             phase: batch === "initial" ? "RUN1_READY" : "RUN2_READY",
             cycle: result.cycle || 1,
-            orders: result.orders_after || 1250,
+            orders: Number(result.orders_after ?? 0),
             current_run_id: String(run.run_id),
             running: false,
             result
@@ -1374,7 +1334,6 @@
   ];
   function runWholeBatch(options = {}) {
     const batch = state.notebookBatch;
-    const isErrorDemo = Boolean(options?.is_error_demo);
     if (state.batchRun.status === "queued" || state.batchRun.status === "in_progress" ||
       state.batchRun.status === "submitting") return;
     const previous = state.batchResume.batch === batch && state.batchResume.runId ?
@@ -1383,75 +1342,58 @@
     if (batch === "incremental" && !/^[1-9][0-9]{0,18}$/.test(previous) && !previous.startsWith("vercel_") && !/^[0-9a-fA-F-]{36}$/.test(previous)) {
       state.realError = "ต้องให้ข้อมูลชุดก่อนผ่านครบก่อน"; renderPipeline(); return;
     }
-    state.realError = ""; state.batchRun = { batch, status: "submitting", since: "", runId: null, url: "", stages: [] };
+    state.realError = ""; state.month3ErrorEvidence = null;
+    state.batchRun = { batch, status: "submitting", since: "", runId: null, url: "", stages: [] };
     renderPipeline();
     const uploadId = state.sourceUploadMonth === sourceMonthForBatch(state.nextSourceBatch) ? state.sourceUploadId : "";
     fetch("/api/lab-batch", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ batch, previous_run_id: previous, source_upload_id: uploadId, is_error_demo: isErrorDemo })
+      body: JSON.stringify({ batch, previous_run_id: previous, source_upload_id: uploadId })
     })
       .then(async response => {
         const data = await response.json();
         if (!response.ok || !data.accepted) throw Error(data.error || "สั่ง Run ไม่สำเร็จ");
-        if (data.status === "FAILED") {
-          state.batchRun.status = "failure";
-          state.batchRun.runId = data.run_id;
-          state.month3ErrorEvidence = data.evidence || data.summary;
-          state.realError = data.evidence?.error_message || "ตรวจพบข้อผิดพลาดในข้อมูลเดือน 3";
-          renderPipeline();
-          return;
-        }
-        state.month3ErrorEvidence = null;
-        state.batchRun.status = "success";
-        state.batchRun.runId = data.run_id;
+        state.batchRun.status = "queued";
+        state.batchRun.since = new Date().toISOString();
         state.batchRun.sourceBatch = data.source_batch;
-        state.currentRunId = data.run_id;
-        state.batchRunIds[batch] = data.run_id;
-
-        const summary = data.summary;
-        if (summary) {
-          state.batchSummaries[batch] = summary;
-          state.batchResults[batch] = {};
-          (summary.stages || []).forEach(s => {
-            state.batchResults[batch][s.stage] = {
-              evidence: s.evidence,
-              status: "SUCCESS",
-              url: ""
-            };
-          });
-          state.batchRun.stages = (summary.stages || []).map((s, idx) => ({
-            index: idx,
-            status: "completed",
-            conclusion: "success",
-            stage: s.stage
-          }));
-        }
-
-        if (batch === "initial") {
-          state.realLabPhase = "RUN1_READY";
-          state.realLabOrders = summary?.orders_after || 1250;
-        } else {
-          state.realLabPhase = "RUN2_READY";
-          state.realLabOrders = (state.realLabOrders || 1250) + (summary?.orders_added || 850);
-        }
-
-        // Live sync with warehouseSnapshot and ML so Business Overview and ML Lab update instantly
-        if (summary) {
-          state.warehouseSnapshot = {
-            ready: true,
-            phase: state.realLabPhase,
-            cycle: summary.cycle || 1,
-            orders: state.realLabOrders,
-            current_run_id: data.run_id,
-            running: false,
-            result: summary
-          };
-          state.warehouseStatus = "ready";
-        }
-
-        state.notebookStage = "ingest";
-        state.notebookBatch = batch;
+        state.batchRun.sourceMonth = data.source_month;
+        state.batchRun.url = data.workflow_url || "";
+        state.batchRun.sourceUploadId = uploadId || "";
+        state.batchRun.workerStarted = false;
         renderPipeline();
+        checkBatchRun();
+        // The worker runs as a Vercel Python Function. Poll Neon for truthful progress;
+        // this request is deliberately not awaited so UI status stays responsive.
+        state.batchRun.workerStarted = true;
+        fetch("/api/lab-worker.py", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ticket: data.ticket })
+        }).then(async workerResponse => {
+          const worker = await workerResponse.json().catch(() => ({}));
+          if (!workerResponse.ok || !worker.accepted) {
+            const statusQuery = new URLSearchParams({ batch, source_batch: data.source_batch,
+              since: state.batchRun.since });
+            try {
+              const statusResponse = await fetch("/api/lab-batch?" + statusQuery, { cache: "no-store" });
+              const status = await statusResponse.json();
+              if (status.found) {
+                state.realError = worker.error || "Vercel หยุดการประมวลผล · กำลังอ่านผลจริงจาก Neon";
+                await checkBatchRun();
+              } else {
+                state.batchRun.status = "failure";
+                state.realError = worker.error || "Vercel ไม่เริ่ม Run · ลองปุ่มเดิมอีกครั้ง";
+                renderPipeline();
+              }
+            } catch (_error) {
+              state.batchRun.status = "failure";
+              state.realError = worker.error || "ติดตาม Run จาก Neon ไม่ได้ · โหลดหน้าแล้วตรวจประวัติ Run";
+              renderPipeline();
+            }
+            loadRealCapabilities();
+          }
+        }).catch(() => {
+          state.realError = "การเชื่อมต่อกับ Vercel Worker ขาดหาย · กำลังอ่านสถานะจริงจาก Neon";
+        });
       }).catch(error => {
         state.batchRun.status = "failure"; state.realError = error?.message || "สั่ง Run ไม่สำเร็จ";
         renderPipeline();
@@ -1468,6 +1410,11 @@
       const response = await fetch("/api/lab-batch?" + query, { cache: "no-store" });
       const data = await response.json();
       if (!response.ok) throw Error(data.error || "ติดตาม Run ไม่ได้");
+      if (!data.found && Date.now() - Date.parse(current.since) > 330000) {
+        current.status = "failure";
+        state.realError = "ยังไม่พบ Run นี้ใน Neon หลังจากส่งคำสั่ง · ตรวจว่า Vercel Worker พร้อม แล้วกดปุ่มเดิมอีกครั้ง";
+        renderPipeline(); loadRealCapabilities(); return;
+      }
       if (data.found) {
         current.runId = data.run_id; current.url = data.url; current.stages = data.stages || [];
         current.status = data.status === "completed" ?
@@ -1509,10 +1456,20 @@
         }
         state.notebookStage = "validate";
         loadRealCapabilities();
+        loadWarehouseDashboard();
       }
       if (current.status === "failure") {
-        state.realError = "Run ไม่ผ่าน · ข้อมูลชุดนี้ยังไม่เสร็จ กดปุ่มเดิมเพื่อลองอีกครั้ง หากยังไม่ผ่านให้ดูสาเหตุใน Log";
-        state.batchResume = { batch: current.batch, runId: current.runId };
+        try {
+          const failed = await fetch("/api/lab-batch-result?run_id=" + encodeURIComponent(current.runId), { cache: "no-store" });
+          const failure = await failed.json();
+          const detail = failure.result || {};
+          state.realError = "รันไม่ผ่าน" + (detail.failed_stage || data.failed_stage ?
+            " ที่ขั้น " + (detail.failed_stage || data.failed_stage) : "") +
+            (detail.error_code || data.error_code ? " · สาเหตุ: " + (detail.error_code || data.error_code) : "") +
+            " · " + (detail.message || data.error_message || "ตรวจรายละเอียดขั้นตอน แล้วกดปุ่มเดิมเพื่อลองชุดเดิมอีกครั้ง");
+        } catch (_error) {
+          state.realError = data.error_message || "Run ไม่ผ่าน · อ่านรายละเอียดได้จากผลของแต่ละขั้น";
+        }
         loadRealCapabilities();
       }
       renderPipeline();
@@ -1623,9 +1580,21 @@
       });
       const data = await response.json();
       if (!response.ok || !data.accepted) throw Error(data.error || "ส่งคำสั่งเคลียร์ไม่ได้");
-      state.resetSince = new Date().toISOString(); state.resetUrl = data.workflow_url;
-      state.resetStatus = "queued"; renderPipeline();
-      window.setTimeout(checkNewCycle, 4000);
+      state.resetSince = new Date().toISOString(); state.resetStatus = "success";
+      state.realLabCycle = data.cycle;
+      state.realLabPhase = "EMPTY"; state.realLabOrders = 0; state.currentRunId = null;
+      state.batchRun = { batch: "", status: "", since: "", runId: null, url: "", stages: [] };
+      state.batchResume = { batch: "", runId: null };
+      state.batchRunIds = { initial: null, incremental: null };
+      state.batchSummaries = { initial: null, incremental: null };
+      state.batchResults = { initial: {}, incremental: {} };
+      state.currentCycleRuns = [];
+      state.warehouseSnapshot = null; state.warehouseStatus = "not_loaded";
+      state.notebookBatch = "initial"; state.notebookStage = "ingest";
+      state.resetError = "";
+      renderPipeline();
+      await loadRealCapabilities();
+      await loadWarehouseDashboard();
     } catch (error) { state.resetStatus = ""; state.resetError = error.message; renderPipeline(); }
   }
   async function checkNewCycle() {
@@ -1835,7 +1804,7 @@
     const batchBusy = ["submitting", "queued", "in_progress"].includes(state.batchRun.status);
     const alreadyDone = state.notebookBatch === "initial" ?
       Boolean(state.batchSummaries.initial) :
-      Boolean(state.batchSummaries.incremental);
+      Boolean(state.batchSummaries.incremental && state.batchSummaries.incremental.sourceMonth === nextMonth);
     const batchAction = node("button", "button button-primary", batchBusy ?
       "กำลังรัน " + (state.batchRun.batch === "initial" ? "Run 1" : "ข้อมูลใหม่") + " ทั้งรอบ…" :
       alreadyDone ? (state.notebookBatch === "initial" ? "✓ Run 1 ผ่านแล้ว" : "✓ เดือนนี้รันผ่านแล้ว") :
@@ -1854,33 +1823,7 @@
       actionGroup.append(clearBtn);
     }
 
-    const isMonth3Next = state.notebookBatch === "incremental" && (state.nextSourceBatch === "incremental_02" || state.currentCycleRuns?.length === 2);
-    if (isMonth3Next && canStartBatch && !batchBusy && !state.month3ErrorEvidence) {
-      const errBtn = node("button", "button button-secondary", "⚠️ สาธิตพบ Error ในเดือน 3 (Quality Test)");
-      errBtn.type = "button"; errBtn.style.color = "var(--red)";
-      errBtn.addEventListener("click", () => runWholeBatch({ is_error_demo: true }));
-      actionGroup.append(errBtn);
-    }
     root.append(actionGroup);
-
-    if (state.month3ErrorEvidence) {
-      const recPanel = box("panel",
-        box("panel-head", box("",
-          node("h3", "panel-heading", "⚠️ ผลการสาธิต: ระบบตรวจพบข้อผิดพลาดในเดือน 3"),
-          node("p", "panel-description", "ตรวจพบ SKU ที่ไม่มีใน Dim_SKU ในขั้นตอน Transform / Quality Check"))),
-        box("panel-body",
-          notice("🔒 ระบบกักข้อมูลเดือน 3 ไว้ใน Quarantine และหยุดการประมวลผลทันที ข้อมูลเดือน 1-2 ใน Warehouse ยังคงเดิม ไม่เสียหาย", true),
-          box("h-stack", (() => {
-            const resumeBtn = node("button", "button button-primary", "🔄 ใช้ข้อมูลฉบับแก้ไข แล้วรันต่อจาก Checkpoint");
-            resumeBtn.type = "button";
-            resumeBtn.addEventListener("click", () => {
-              state.month3ErrorEvidence = null;
-              runWholeBatch({ is_error_demo: false });
-            });
-            return resumeBtn;
-          })())));
-      root.append(recPanel);
-    }
 
     if (!canStartBatch) {
       if (alreadyDone) {

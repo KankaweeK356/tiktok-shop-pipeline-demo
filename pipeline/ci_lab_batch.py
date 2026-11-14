@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 from pathlib import Path
 import duckdb
@@ -120,8 +121,16 @@ def finalize(batch: str) -> dict:
     summary["no_duplicate_sales_items"] = total == distinct
     if not summary["no_duplicate_sales_items"]:
         raise RuntimeError("Warehouse contains duplicate sales item IDs")
-    summary["ml_readiness"] = weekly_readiness(
-        workspace / "er2.duckdb", ROOT / "output" / "classroom_source" / "ml_marketing_plan.csv")
+    plan = Path(os.getenv("CLASSROOM_ML_PLAN", str(
+        ROOT / "output" / "classroom_source" / "ml_marketing_plan.csv")))
+    if plan.is_file():
+        summary["ml_readiness"] = weekly_readiness(workspace / "er2.duckdb", plan)
+    else:
+        summary["ml_readiness"] = {
+            "status": "INSUFFICIENT_DATA", "complete_weeks": 0,
+            "minimum_weeks": 16,
+            "reason": "ยังไม่มีแผนการตลาดรายสัปดาห์สำหรับประเมินความพร้อม ML"
+        }
     (workspace / "batch_result.json").write_text(
         json.dumps(summary, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
     return summary

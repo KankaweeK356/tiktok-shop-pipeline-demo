@@ -1,124 +1,73 @@
-/** Read the completed result from Neon control or Vercel state, never requiring GitHub Actions. */
-import { unzipSync, strFromU8 } from "fflate";
-import warehouseDownload from "../lib/lab-warehouse-download.js";
+/** Return persisted evidence for a real Vercel-run batch only. */
+import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import labML from "../lib/lab-ml.js";
 import { getNeonSql } from "../lib/neon-router.js";
-import { buildStageEvidence } from "../lib/etl-engine.js";
-import reportData from "../dashboard/data/report.json" with { type: "json" };
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const STAGES = new Set(["ingest", "extract", "transform", "load", "validate"]);
+function storage() {
+  return new S3Client({
+    region: process.env.CLASSROOM_STORAGE_REGION || "auto",
+    endpoint: process.env.CLASSROOM_STORAGE_ENDPOINT,
+    forcePathStyle: true,
+    credentials: { accessKeyId: process.env.CLASSROOM_STORAGE_KEY_ID,
+      secretAccessKey: process.env.CLASSROOM_STORAGE_SECRET }
+  });
+}
+async function readObject(key) {
+  const response = await storage().send(new GetObjectCommand({
+    Bucket: process.env.CLASSROOM_STORAGE_BUCKET, Key: key
+  }));
+  return response.Body.transformToByteArray();
+}
+function notFound(error) {
+  return error?.$metadata?.httpStatusCode === 404 || error?.name === "NoSuchKey";
+}
 
 export default async function handler(req, res) {
   if (req.query?.ml === "1") return labML(req, res);
-  if (req.query?.download === "warehouse") return warehouseDownload(req, res);
   res.setHeader("Cache-Control", "no-store");
   if (req.method !== "GET") return res.status(405).json({ error: "GET only" });
+  if (req.query?.download === "warehouse") {
+    const id = String(req.query?.run_id || "");
+    if (!UUID.test(id)) return res.status(400).json({ error: "ต้องระบุ Run ID ที่ถูกต้อง" });
+    try {
+      const bytes = await readObject(`vercel-lab/results/${id}/warehouse.zip`);
+      res.setHeader("Content-Type", "application/zip");
+      res.setHeader("Content-Disposition", `attachment; filename="warehouse-${id}.zip"`);
+      return res.status(200).send(Buffer.from(bytes));
+    } catch (error) {
+      return res.status(notFound(error) ? 404 : 503).json({
+        error: notFound(error) ? "Run นี้ยังไม่มีไฟล์ Warehouse ที่สร้างจากข้อมูลจริง" : "อ่านไฟล์ Warehouse ไม่สำเร็จ"
+      });
+    }
+  }
 
   const id = String(req.query?.run_id || "");
   const stage = String(req.query?.stage || "");
-  if (!id || id.length > 100) return res.status(400).json({ error: "Run ID ไม่ถูกต้อง" });
-  if (stage && !["ingest", "extract", "transform", "load", "validate"].includes(stage)) {
-    return res.status(400).json({ error: "Step ไม่ถูกต้อง" });
-  }
-
-  // 1. Query result directly from Neon demo_control.pipeline_runs
+  if (!UUID.test(id)) return res.status(400).json({ error: "Run ID ไม่ถูกต้อง" });
+  if (stage && !STAGES.has(stage)) return res.status(400).json({ error: "Step ไม่ถูกต้อง" });
   try {
-    const sql = getNeonSql("readonly");
+    const sql = getNeonSql("live");
     const rows = await sql.query(
-      "SELECT run_id::text, run_type, status, result_summary, started_at FROM demo_control.pipeline_runs WHERE run_id::text = $1 LIMIT 1",
-      [id]
-    );
-
-    if (rows.length && rows[0].result_summary) {
-      const summary = rows[0].result_summary;
-      const batch = summary.batch || (rows[0].run_type === "RUN1" ? "initial" : "incremental_01");
-
-      if (stage) {
-        const found = (summary.stages || []).find(s => s.stage === stage);
-        const evidence = found?.evidence || buildStageEvidence(stage, batch);
-        return res.status(200).json({ run_id: id, stage, evidence });
-      }
-
-      return res.status(200).json({ run_id: id, result: summary, execution: "VERCEL_NATIVE" });
+      "SELECT status,result_summary,error_message FROM demo_control.pipeline_runs WHERE run_id::text=$1 LIMIT 1", [id]);
+    if (!rows.length) return res.status(404).json({ error: "ไม่พบ Run นี้ใน Neon Lab" });
+    const run = rows[0];
+    if (run.status === "FAILED") {
+      let failure = { status: "FAILED", run_id: id, message: "Pipeline หยุดก่อนจบ" };
+      try { failure = JSON.parse(Buffer.from(await readObject(`vercel-lab/failed/${id}.json`)).toString("utf8")); }
+      catch (_error) { /* Keep the authoritative Neon failure status. */ }
+      return res.status(200).json({ run_id: id, result: failure });
     }
-  } catch (neonErr) {
-    console.warn("Neon result lookup failed, using synthetic evidence fallback:", neonErr?.message);
-  }
-
-  // 2. Synthetic fallback for verified Vercel runs or offline demo
-  const fallbackBatch = String(req.query?.batch || (id.includes("incremental") ? "incremental_01" : "initial"));
-  if (stage) {
-    return res.status(200).json({
-      run_id: id,
-      stage,
-      evidence: buildStageEvidence(stage, fallbackBatch)
+    if (run.status !== "SUCCEEDED") return res.status(409).json({ error: "Run นี้ยังทำงานไม่เสร็จ" });
+    const key = `vercel-lab/results/${id}/${stage ? `${stage}.json` : "batch.json"}`;
+    const evidence = JSON.parse(Buffer.from(await readObject(key)).toString("utf8"));
+    return res.status(200).json(stage ? { run_id: id, stage, evidence } : {
+      run_id: id, result: evidence, execution: "VERCEL_NATIVE"
+    });
+  } catch (error) {
+    return res.status(notFound(error) ? 404 : 503).json({
+      error: notFound(error) ? "ไม่พบหลักฐานที่บันทึกไว้สำหรับ Run นี้" : "อ่านผลจริงจาก Neon หรือพื้นที่จัดเก็บไม่สำเร็จ"
     });
   }
-
-  const monthsNormalized = (reportData.business?.months || []).map(m => ({
-    month: m.month,
-    net: m.net_revenue ?? m.net ?? 81745.27,
-    target: m.revenue_target ?? m.target ?? 50000,
-    achievement_pct: m.revenue_achievement_pct ?? m.achievement_pct ?? 163.49,
-    gap: (m.net_revenue ?? m.net ?? 81745.27) - (m.revenue_target ?? m.target ?? 50000),
-    profit: m.contribution_profit ?? m.profit ?? 31053.39,
-    protection_pct: m.profit_protection_rate_pct ?? m.protection_pct ?? 36.7,
-    protection_status: m.profit_protection_status ?? m.protection_status ?? "PASS",
-    profit_data_status: m.profit_data_status || "COMPLETE"
-  }));
-
-  const groupsNormalized = (reportData.business?.groups || []).map(g => ({
-    month: g.month,
-    group_id: g.product_group_id || g.group_id || "PG01",
-    group_name: g.product_group_name || g.group_name || "คอกลม",
-    gross: g.gross_reference_sales ?? g.gross ?? 13532,
-    net: g.net_revenue ?? g.net ?? 12833.51,
-    profit: g.contribution_profit ?? g.profit ?? 4632.33,
-    margin_pct: 38
-  }));
-
-  const skuNormalized = (reportData.business?.sku_performance || []).slice(0, 100).map(s => ({
-    month: s.month,
-    group_id: s.product_group_id,
-    sku_id: s.sku_id,
-    sku_name: s.sku_name,
-    gross: s.gross_reference_sales,
-    net: s.net_revenue,
-    profit: s.contribution_before_group_costs,
-    margin_pct: 40
-  }));
-
-  const daysNormalized = [];
-  monthsNormalized.forEach(m => {
-    for (let d = 1; d <= 28; d++) {
-      daysNormalized.push({
-        month: m.month,
-        day: `${m.month}-${String(d).padStart(2, "0")}`,
-        group_id: "PG01",
-        net: Math.round(m.net / 28)
-      });
-    }
-  });
-
-  return res.status(200).json({
-    run_id: id,
-    result: {
-      batch: fallbackBatch,
-      status: "SUCCESS",
-      run_id: id,
-      stages: ["ingest", "extract", "transform", "load", "validate"].map(s => ({
-        stage: s,
-        evidence: buildStageEvidence(s, fallbackBatch)
-      })),
-      business: {
-        months: monthsNormalized,
-        groups: groupsNormalized,
-        sku: skuNormalized,
-        days: daysNormalized
-      },
-      ml_readiness: {
-        complete_weeks: 18,
-        minimum_weeks: 16,
-        status: "READY"
-      }
-    }
-  });
 }

@@ -1,4 +1,4 @@
-"""One *real* ETL stage per GitHub Actions run.
+"""One real ETL stage, shared by GitHub workers and the Vercel one-click runner.
 
 Previous workspace is restored from a GitHub Actions artifact by the workflow.
 The same SQLite, Parquet, checkpoints and DuckDB files survive between jobs.
@@ -22,7 +22,7 @@ from .schema import ROOT
 from .neon_source import _ordered_source_tables
 from .generate_classroom_source import BATCHES
 
-STATE_PATH = ROOT / "output" / "classroom_lab" / "lab_session.json"
+STATE_PATH = Path(os.environ.get("CLASSROOM_WORKSPACE", str(ROOT / "output" / "classroom_lab"))) / "lab_session.json"
 
 
 def _phase(db_url: str) -> tuple[str, int]:
@@ -136,7 +136,9 @@ def run_stage(stage: str, batch: str) -> dict:
             prior_batch=BATCHES[BATCHES.index(batch)-1]
             if previous.get("batch")!=prior_batch or previous.get("last_completed")!="validate":
                 raise RuntimeError("Previous Source delivery must validate before the next one")
-        run_id = begin_run(db_url, "RUN1" if batch=="initial" else "RUN2")
+        expected_cycle = os.getenv("CLASSROOM_EXPECTED_CYCLE")
+        run_id = begin_run(db_url, "RUN1" if batch=="initial" else "RUN2", batch=batch,
+                           expected_cycle=int(expected_cycle) if expected_cycle else None)
         data = {"batch":batch,"cycle":cycle,"run_id":run_id,"last_completed":None}
     else:
         if not STATE_PATH.exists():
@@ -147,26 +149,29 @@ def run_stage(stage: str, batch: str) -> dict:
         if data.get("last_completed")!=STAGES[index-1]:
             raise RuntimeError("Step order violated; expected "+STAGES[index-1])
     try:
+        from .neon_control import mark_stage_started
+        mark_stage_started(db_url, data["run_id"], stage)
         result=run_batch(workspace,batch,stop_after=stage)
     except Exception as error:
-        # A failed first stage has no saved session to resume. Release the
-        # Neon run lock so a corrected Source can start a fresh attempt.
-        if stage=="ingest":
-            fail_run(db_url,data["run_id"],"RUN1" if batch=="initial" else "RUN2",
-                     workspace,error,batch=batch)
+        fail_run(db_url,data["run_id"],"RUN1" if batch=="initial" else "RUN2",
+                 workspace,error,batch=batch)
         raise
     if stage!="validate" and result.get("status")!="PARTIAL":
         raise RuntimeError("Unexpected state: intermediate step must be PARTIAL")
     if stage=="validate":
         if result.get("status")!="SUCCESS" or result.get("functional_fails"):
-            raise RuntimeError("Validation did not pass; Neon state is not advanced")
-        complete_run(db_url,data["run_id"],"RUN1" if batch=="initial" else "RUN2",result,workspace)
+            error = RuntimeError("Validation did not pass; Neon state is not advanced")
+            fail_run(db_url,data["run_id"],"RUN1" if batch=="initial" else "RUN2",
+                     workspace,error,batch=batch)
+            raise error
+    from .neon_control import complete_stage
+    complete_stage(db_url, data["run_id"], stage, result.get("metrics", {}).get(stage, {}).get("result", {}))
     data["last_completed"]=stage
     STATE_PATH.parent.mkdir(exist_ok=True,parents=True)
     STATE_PATH.write_text(json.dumps(data,indent=2,ensure_ascii=False),encoding="utf-8")
     receipt = {
       "classification":"SYNTHETIC_EDUCATIONAL_NOT_TIKTOK",
-      "execution":"GITHUB_ACTIONS_REAL_PIPELINE_STAGE",
+      "execution":os.getenv("CLASSROOM_EXECUTION_ENGINE", "GITHUB_ACTIONS_REAL_PIPELINE_STAGE"),
       "stage":stage,"batch":batch,"cycle":cycle,"run_id":data["run_id"],
       "result":result,
       "checkpoint":str(workspace/"lake"/"control"/f"checkpoint_{batch}.json"),

@@ -21,21 +21,33 @@ REQUIRED_PHASE = {"RUN1": "EMPTY", "RUN2": ("RUN1_READY","RUN2_READY"), "REPLAY"
 NEXT_PHASE = {"RUN1": "RUN1_READY", "RUN2": "RUN2_READY", "REPLAY": "RUN2_READY"}
 
 
-def begin_run(database_url: str, run_type: str) -> str:
+def begin_run(database_url: str, run_type: str, *, batch: str | None = None,
+              expected_cycle: int | None = None) -> str:
     if run_type not in REQUIRED_PHASE:
         raise ValueError("Only RUN1, RUN2, REPLAY are allowed in live demo")
     run_id = str(uuid4())
-    run_number = os.getenv("GITHUB_RUN_ID","local")
-    attempt = os.getenv("GITHUB_RUN_ATTEMPT","1")
-    request_key = f"github-{run_number}-{attempt}-{run_type.lower()}"
+    engine = os.getenv("CLASSROOM_EXECUTION_ENGINE", "GITHUB_ACTIONS")
+    run_number = os.getenv("GITHUB_RUN_ID", "local")
+    attempt = os.getenv("GITHUB_RUN_ATTEMPT", "1")
+    request_key = (f"vercel-{run_id}" if engine == "VERCEL_NATIVE"
+                   else f"github-{run_number}-{attempt}-{run_type.lower()}")
     repo = os.getenv("GITHUB_REPOSITORY","KankaweeK356/tiktok-shop-pipeline-demo")
-    runner_ref = (f"https://github.com/{repo}/actions/runs/{run_number}"
-                  if run_number != "local" else "local-run")
+    runner_ref = (f"https://{os.getenv('VERCEL_URL')}" if engine == "VERCEL_NATIVE" and
+                  os.getenv("VERCEL_URL") else
+                  f"https://github.com/{repo}/actions/runs/{run_number}"
+                  if engine != "VERCEL_NATIVE" and run_number != "local" else engine)
     with psycopg.connect(database_url) as db:
         with db.cursor() as cur:
-            cur.execute("SELECT phase,cycle_number FROM demo_control.dataset_state "
-                        "WHERE dataset_key='classroom' FOR UPDATE")
+            if expected_cycle is None:
+                cur.execute("SELECT phase,cycle_number FROM demo_control.dataset_state "
+                            "WHERE dataset_key='classroom' FOR UPDATE")
+            else:
+                cur.execute("SELECT phase,cycle_number FROM demo_control.dataset_state "
+                            "WHERE dataset_key='classroom' AND cycle_number=%s FOR UPDATE",
+                            (expected_cycle,))
             row = cur.fetchone()
+            if expected_cycle is not None and not row:
+                raise RuntimeError("CYCLE_CHANGED: Lab was cleared or advanced before this run started")
             allowed=REQUIRED_PHASE[run_type]
             if not row or row[0] not in (allowed if isinstance(allowed,tuple) else (allowed,)):
                 raise RuntimeError(f"{run_type}: wrong phase; expected {REQUIRED_PHASE[run_type]}")
@@ -48,10 +60,41 @@ def begin_run(database_url: str, run_type: str) -> str:
                 INSERT INTO demo_control.pipeline_runs
                  (run_id,dataset_key,cycle_number,run_type,request_key,
                   status,runner_ref,triggered_by,started_at,result_summary)
-                VALUES (%s,'classroom',%s,%s,%s,'RUNNING',%s,'github-actions',now(),
-                   '{"recorded_live":true}'::jsonb)
-            """,(run_id,cycle,run_type,request_key,runner_ref))
+                VALUES (%s,'classroom',%s,%s,%s,'RUNNING',%s,%s,now(),%s::jsonb)
+            """,(run_id,cycle,run_type,request_key,runner_ref,
+                 "vercel-web" if engine == "VERCEL_NATIVE" else "github-actions",
+                 Jsonb({"recorded_live":True,"execution_engine":engine,
+                        "batch":batch,"active_stage":None})))
     return run_id
+
+
+def mark_stage_started(database_url: str, run_id: str, stage: str) -> None:
+    with psycopg.connect(database_url) as db:
+        with db.cursor() as cur:
+            cur.execute("""
+                INSERT INTO demo_control.stage_runs(run_id,stage_name,status,metrics)
+                VALUES (%s,%s,'RUNNING',%s)
+                ON CONFLICT (run_id,stage_name) DO UPDATE
+                  SET status='RUNNING',finished_at=NULL,metrics=EXCLUDED.metrics
+            """, (run_id, stage, Jsonb({"execution_engine":os.getenv(
+                "CLASSROOM_EXECUTION_ENGINE", "GITHUB_ACTIONS")})))
+            cur.execute("""
+                UPDATE demo_control.pipeline_runs
+                   SET result_summary=COALESCE(result_summary,'{}'::jsonb) ||
+                       jsonb_build_object('active_stage',%s)
+                 WHERE run_id=%s AND status='RUNNING'
+            """, (stage, run_id))
+
+
+def complete_stage(database_url: str, run_id: str, stage: str, result: dict) -> None:
+    with psycopg.connect(database_url) as db:
+        with db.cursor() as cur:
+            cur.execute("""
+                INSERT INTO demo_control.stage_runs(run_id,stage_name,status,finished_at,metrics)
+                VALUES (%s,%s,'SUCCESS',now(),%s)
+                ON CONFLICT (run_id,stage_name) DO UPDATE
+                  SET status='SUCCESS',finished_at=now(),metrics=EXCLUDED.metrics
+            """, (run_id, stage, Jsonb({"result":result,"recorded_live":True})))
 
 
 def _stage_log_records(workspace: Path, batch: str):
@@ -97,6 +140,9 @@ def complete_run(database_url: str, run_id: str, run_type: str,
                     INSERT INTO demo_control.stage_runs
                        (run_id,stage_name,status,finished_at,metrics)
                     VALUES (%s,%s,%s,%s,%s)
+                    ON CONFLICT (run_id,stage_name) DO UPDATE
+                       SET status=EXCLUDED.status,finished_at=EXCLUDED.finished_at,
+                           metrics=EXCLUDED.metrics
                 """,(run_id,stage,status,event_at,Jsonb(detail)))
                 cur.execute("""
                     INSERT INTO demo_control.stage_events
@@ -107,16 +153,17 @@ def complete_run(database_url: str, run_id: str, run_type: str,
                     event_at,"Recorded automatically during live Neon demo",
                     Jsonb({"recorded_live":True,"replay":run_type=="REPLAY"})))
             summary={"recorded_live":True,"source":"NEON_POSTGRESQL",
+                     "execution_engine":os.getenv("CLASSROOM_EXECUTION_ENGINE", "GITHUB_ACTIONS"),
                      "run_type":run_type,"batch":batch,
                      "paid_items":result.get("paid_sales_rows"),
                      "net_revenue":result.get("net_revenue"),
                      "replay_idempotent":True if run_type=="REPLAY" else None,
-                     "stage_count":len(STAGES)}
+                     "stage_count":len(STAGES),"active_stage":None}
             cur.execute("""
                 UPDATE demo_control.pipeline_runs
                    SET status='SUCCEEDED',finished_at=now(),result_summary=%s
                  WHERE run_id=%s
-            """,(Jsonb(summary),run_id))
+                """,(Jsonb(summary),run_id))
             cur.execute("""
                 UPDATE demo_control.dataset_state
                    SET phase=%s,last_run_id=%s,lock_version=lock_version+1,updated_at=now()
@@ -143,9 +190,12 @@ def fail_run(database_url: str, run_id: str, run_type: str,
                 WHERE run_id=%s AND status='RUNNING'
             """,(type(error).__name__,Jsonb({
                 "recorded_live":True,"failed_stage":failed_stage,
-                "note":"See GitHub Actions logs for sanitized error evidence"
+                "batch":batch,
+                "error_code":stage_logs.get(failed_stage,{}).get("error_code") if failed_stage else type(error).__name__,
+                "note":"Inspect the Vercel run result for sanitized stage evidence"
             }),run_id))
-            if failed_stage:
+            run_was_active = cur.rowcount == 1
+            if failed_stage and run_was_active:
                 item=stage_logs[failed_stage]
                 cur.execute("""
                     INSERT INTO demo_control.stage_runs(run_id,stage_name,status,metrics)

@@ -7,6 +7,10 @@
       "maxDuration": 60,
       "memory": 1024,
       "includeFiles": "source/**"
+    },
+    "api/lab-worker.py": {
+      "maxDuration": 300,
+      "includeFiles": "{pipeline/**,schemas/**,dashboard/data/classroom_source_contract.json,output/classroom_source/ml_marketing_plan.csv}"
     }
   }
 }

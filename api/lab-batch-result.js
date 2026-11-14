@@ -43,7 +43,7 @@ export default async function handler(req, res) {
   }
 
   // 2. Synthetic fallback for verified Vercel runs or offline demo
-  const fallbackBatch = id.includes("initial") ? "initial" : "incremental_01";
+  const fallbackBatch = String(req.query?.batch || (id.includes("incremental") ? "incremental_01" : "initial"));
   if (stage) {
     return res.status(200).json({
       run_id: id,

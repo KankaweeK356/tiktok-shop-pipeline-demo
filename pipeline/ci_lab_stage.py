@@ -94,9 +94,15 @@ def _real_step_evidence(workspace: Path,batch: str,stage: str) -> dict:
                 "tables":table_counts,"table_previews":table_previews}
     else:
         report=json.loads((workspace/"reports"/("functional_"+batch+".json")).read_text())
+        import csv
+        lineage_path = workspace / "reports" / ("lineage_" + batch + ".csv")
+        with lineage_path.open(encoding="utf-8-sig", newline="") as lineage_file:
+            lineage_preview = list(__import__("itertools").islice(csv.DictReader(lineage_file), 5))
         output={"table":"Validation","records":report.get("checks"),
                 "origin":"NEW_FUNCTIONAL_VALIDATION",
-                "preview":[{"check":"Checks","passed":report.get("passed"),"failed":report.get("failed")},
+                "lineage_preview":lineage_preview,
+                "preview":[{"check":"Checks","source":report.get("checks"),"warehouse":report.get("passed")},
+                    {"check":"Failed checks","source":0,"warehouse":report.get("failed")},
                     {"check":"Paid items","source":report.get("source_paid_item_count"),
                      "warehouse":report.get("warehouse_sales_item_count")},
                     {"check":"Net revenue","source":report.get("er1_net_revenue"),

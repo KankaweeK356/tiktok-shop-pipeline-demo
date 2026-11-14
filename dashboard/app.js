@@ -628,26 +628,29 @@
 
     // Stage I/O Summary Banner (Teacher Comments #2, #3, #4, #5, #6, #7)
     let ioInputText = "", ioOutputText = "", ioDesc = "";
+    const sourceFiles = result.input?.files?.length;
+    const inputTables = result.input?.tables?.length;
+    const outputTables = result.output?.tables?.length;
     if (result.stage === "ingest") {
-      ioInputText = "📥 รับ 21 ไฟล์ CSV";
-      ioOutputText = "📤 โหลด 25 ตาราง Database";
+      ioInputText = "📥 รับ " + (sourceFiles ?? "—") + " ไฟล์ CSV";
+      ioOutputText = "📤 โหลด " + (outputTables ?? "—") + " ตาราง Database";
       ioDesc = "นำเข้าข้อมูลจากไฟล์ CSV สู่ Neon PostgreSQL (ER1) พร้อมสร้างตารางคลังและคำนวณอีก 4 ตาราง";
     } else if (result.stage === "extract") {
-      ioInputText = "📥 รับ 25 ตาราง Database";
-      ioOutputText = "📤 สกัด 25 ไฟล์ Data Lake Parquet";
+      ioInputText = "📥 รับ " + (inputTables ?? "—") + " ตาราง Database";
+      ioOutputText = "📤 สกัด " + (outputTables ?? "—") + " ไฟล์ Data Lake Parquet";
       ioDesc = "สกัดจาก Database เป็นไฟล์ Apache Parquet (Snappy Columnar) ใน lake/raw/{batch}/";
     } else if (result.stage === "transform") {
-      ioInputText = "📥 รับ 25 ไฟล์ Data Lake Raw";
-      ioOutputText = "📤 ส่งต่อ Data Lake Standardized";
+      ioInputText = "📥 รับ " + (inputTables ?? "—") + " ไฟล์ Data Lake Raw";
+      ioOutputText = "📤 ส่งต่อ " + (outputTables ?? "—") + " ไฟล์ Standardized";
       ioDesc = "แยก 2 ส่วน: จัดมาตรฐานข้อมูล (Transform) และตรวจความครบถ้วน Foreign Key/Null (Quality Check)";
     } else if (result.stage === "load") {
-      ioInputText = "📥 รับ Data Lake Standardized";
-      ioOutputText = "📤 โหลดเข้า ตาราง Warehouse (DuckDB)";
+      ioInputText = "📥 รับ " + (inputTables ?? "—") + " ไฟล์ Standardized";
+      ioOutputText = "📤 โหลดเข้า " + (outputTables ?? "—") + " ตาราง Warehouse";
       ioDesc = "สร้าง Star Schema Fact & Dimension และ Data Marts เพื่อป้อนข้อมูลให้ Dashboard & KPI";
     } else if (result.stage === "validate") {
       ioInputText = "📥 ตรวจสอบทั้ง 4 เลเยอร์";
       ioOutputText = "📤 ผลกระทบยอด (Reconciliation)";
-      ioDesc = "ตรวจเทียบ Source ➔ Database ➔ Data Lake ➔ Warehouse พร้อมยืนยัน Net Revenue 100%";
+      ioDesc = "ตรวจเทียบ Source ➔ Database ➔ Data Lake ➔ Warehouse ตามจำนวนรายการและยอดเงินจริงที่คำนวณได้";
     }
 
     if (ioInputText) {
@@ -674,6 +677,15 @@
         dataTable(columns, result.output.preview));
     } else if (result.output?.note) {
       wrap.append(notice(result.output.note, true));
+    }
+    if (result.stage === "validate" && result.output?.lineage_preview?.length) {
+      wrap.append(node("h3", "lab-subheading", "ตัวอย่างเส้นทางรายการขายที่ตรวจสอบได้"));
+      wrap.append(dataTable([
+        ["Source_Order_Item_ID", "รายการต้นทาง"], ["Source", "ไฟล์ Source"],
+        ["Lake_Raw", "ไฟล์ Raw"], ["Lake_Standardized", "ไฟล์ที่จัดรูป"],
+        ["ER2_Sales_Item_ID", "รายการใน Warehouse"],
+        ["ER2_Net_Revenue", "ยอดสุทธิใน Warehouse"]
+      ], result.output.lineage_preview));
     }
 
     // Master-Detail Two-Column Split Screen (Teacher Comment #1)

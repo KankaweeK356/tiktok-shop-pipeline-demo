@@ -54,12 +54,12 @@ export default async function handler(req, res) {
       const isErrorDemo = batch === "incremental_02_error";
       const sourceBatch = String(req.query?.source_batch || batch);
 
-      // Check Neon demo_control.pipeline_runs
+      // Check Neon demo_control.pipeline_runs for current cycle
       let runRow = null;
       if (sql) {
         try {
           const rows = await sql.query(
-            "SELECT run_id, status, started_at, finished_at, result_summary FROM demo_control.pipeline_runs WHERE dataset_key='classroom' ORDER BY started_at DESC LIMIT 5"
+            "SELECT run_id, status, started_at, finished_at, result_summary FROM demo_control.pipeline_runs WHERE dataset_key='classroom' AND cycle_number = (SELECT cycle_number FROM demo_control.dataset_state WHERE dataset_key='classroom') ORDER BY started_at DESC LIMIT 5"
           );
           runRow = rows[0] || null;
         } catch (_err) {}
@@ -92,7 +92,7 @@ export default async function handler(req, res) {
         const [stateRows, orderCounts, comp] = await Promise.all([
           sql.query("SELECT d.phase, d.cycle_number, r.status AS last_run_status, r.run_type AS last_run_type, r.run_id FROM demo_control.dataset_state d LEFT JOIN demo_control.pipeline_runs r ON r.run_id=d.last_run_id WHERE d.dataset_key='classroom' LIMIT 1"),
           sql.query('SELECT COUNT(*)::int AS n FROM demo_er1."Fact_Orders"'),
-          sql.query("SELECT run_id, run_type, started_at, status, result_summary FROM demo_control.pipeline_runs WHERE dataset_key='classroom' AND status='SUCCEEDED' ORDER BY started_at ASC")
+          sql.query("SELECT run_id, run_type, started_at, status, result_summary FROM demo_control.pipeline_runs WHERE dataset_key='classroom' AND status='SUCCEEDED' AND cycle_number = (SELECT cycle_number FROM demo_control.dataset_state WHERE dataset_key='classroom') ORDER BY started_at ASC")
         ]);
 
         if (stateRows.length) {

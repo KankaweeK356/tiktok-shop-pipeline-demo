@@ -1814,11 +1814,10 @@ function renderPipeline() {
       displayedSummary.url ? link("เปิด Log ของ Run นี้", displayedSummary.url) : null, download));
   }
   root.append(notice("เคลียร์ Lab = ลบข้อมูลใน Neon ทั้ง 25 ตารางให้เหลือ 0 · Source แยกไว้สำหรับเริ่มใหม่"));
-  if (["RUN1_READY", "RUN2_READY"].includes(phase)) {
-    const clear = node("button", "button button-outline", "เริ่มรอบใหม่ · เคลียร์ข้อมูล Lab");
-    clear.type = "button"; clear.disabled = !state.realReady || ["submitting", "queued", "in_progress"].includes(state.resetStatus);
-    clear.addEventListener("click", requestNewCycle); root.append(clear);
-  }
+  const canClear = state.realReady && !["submitting", "queued", "in_progress"].includes(state.resetStatus);
+  const clear = node("button", "button " + (state.sourceExhausted ? "button-primary" : "button-outline"), "เริ่มรอบใหม่ · เคลียร์ข้อมูล Lab");
+  clear.type = "button"; clear.disabled = !canClear;
+  clear.addEventListener("click", requestNewCycle); root.append(clear);
   if (state.recentRuns.length) {
     const history = node("details", "notebook-history");
     history.append(node("summary", "", "บันทึก Run เก่าใน GitHub · ไม่ใช่ข้อมูลใน Lab ปัจจุบัน"));

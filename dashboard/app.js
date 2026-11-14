@@ -132,7 +132,12 @@
 
   async function loadWarehouseDashboard() {
     if (state.warehouseStatus === "loading") return;
-    state.warehouseStatus = "loading"; state.warehouseSnapshot = null; state.warehouseError = "";
+    state.warehouseStatus = "loading";
+    // Preserve current snapshot if already available to avoid screen flickering
+    if (!state.warehouseSnapshot?.result) {
+      state.warehouseSnapshot = null;
+    }
+    state.warehouseError = "";
     if (state.view === "business" || state.view === "ml") render();
     if (state.view === "ml" && state.warehouseSnapshot?.result) loadLiveML();
     try {
@@ -1000,6 +1005,37 @@
         };
         state.batchResults[batch] = Object.fromEntries((result.stages || []).map(item =>
           [item.stage, { evidence: item.evidence, url: run.url, runId: String(run.run_id) }]));
+
+        // Ensure state.batchRun preserves status so the completed badge and execution runId remain visible!
+        if (!state.batchRun.status) {
+          state.batchRun = {
+            batch,
+            status: "success",
+            runId: String(run.run_id),
+            url: run.url || "",
+            since: "",
+            stages: (result.stages || []).map((s, idx) => ({
+              index: idx,
+              status: "completed",
+              conclusion: "success",
+              stage: s.stage
+            }))
+          };
+        }
+
+        // Live hydrate warehouseSnapshot so Business Dashboard and ML Lab work immediately
+        if (!state.warehouseSnapshot || !state.warehouseSnapshot.result) {
+          state.warehouseSnapshot = {
+            ready: true,
+            phase: batch === "initial" ? "RUN1_READY" : "RUN2_READY",
+            cycle: result.cycle || 1,
+            orders: result.orders_after || 1250,
+            current_run_id: String(run.run_id),
+            running: false,
+            result
+          };
+          state.warehouseStatus = "ready";
+        }
       } catch (_error) {/* The live Lab state stays visible if a past artifact is unavailable. */ }
     }
   }
@@ -1344,7 +1380,7 @@
     const previous = state.batchResume.batch === batch && state.batchResume.runId ?
       String(state.batchResume.runId) : batch === "initial" ? "0" :
         String(state.currentRunId || "");
-    if (batch === "incremental" && !/^[1-9][0-9]{0,18}$/.test(previous) && !previous.startsWith("vercel_")) {
+    if (batch === "incremental" && !/^[1-9][0-9]{0,18}$/.test(previous) && !previous.startsWith("vercel_") && !/^[0-9a-fA-F-]{36}$/.test(previous)) {
       state.realError = "ต้องให้ข้อมูลชุดก่อนผ่านครบก่อน"; renderPipeline(); return;
     }
     state.realError = ""; state.batchRun = { batch, status: "submitting", since: "", runId: null, url: "", stages: [] };
@@ -1575,7 +1611,7 @@
     }
   }
   async function requestNewCycle() {
-    if (!state.realReady || !["RUN1_READY", "RUN2_READY"].includes(state.realLabPhase) || !state.realLabCycle) return;
+    if (!state.realReady) return;
     const confirmation = "RESET-DEMO-DATA";
     state.resetStatus = "submitting"; state.resetError = ""; renderPipeline();
     try {
@@ -1797,7 +1833,9 @@
       !state.sharedRun.running && (state.notebookBatch === "initial" ? phase === "EMPTY" :
         ["RUN1_READY", "RUN2_READY"].includes(phase) && Boolean(state.currentRunId));
     const batchBusy = ["submitting", "queued", "in_progress"].includes(state.batchRun.status);
-    const alreadyDone = state.notebookBatch === "initial" && Boolean(state.batchSummaries.initial);
+    const alreadyDone = state.notebookBatch === "initial" ?
+      Boolean(state.batchSummaries.initial) :
+      Boolean(state.batchSummaries.incremental);
     const batchAction = node("button", "button button-primary", batchBusy ?
       "กำลังรัน " + (state.batchRun.batch === "initial" ? "Run 1" : "ข้อมูลใหม่") + " ทั้งรอบ…" :
       alreadyDone ? (state.notebookBatch === "initial" ? "✓ Run 1 ผ่านแล้ว" : "✓ เดือนนี้รันผ่านแล้ว") :
@@ -1806,6 +1844,16 @@
     batchAction.addEventListener("click", () => runWholeBatch());
 
     const actionGroup = box("h-stack", batchAction);
+    const canClear = state.realReady && !["submitting", "queued", "in_progress"].includes(state.resetStatus);
+    if (alreadyDone || state.sourceExhausted || (state.realLabOrders && state.realLabOrders > 0)) {
+      const clearBtn = node("button", "button " + (state.sourceExhausted ? "button-primary" : "button-outline"),
+        state.resetStatus === "submitting" || state.resetStatus === "queued" ? "กำลังเคลียร์ Lab…" : "🔄 เคลียร์ Lab เพื่อเริ่มใหม่");
+      clearBtn.type = "button";
+      clearBtn.disabled = !canClear;
+      clearBtn.addEventListener("click", requestNewCycle);
+      actionGroup.append(clearBtn);
+    }
+
     const isMonth3Next = state.notebookBatch === "incremental" && (state.nextSourceBatch === "incremental_02" || state.currentCycleRuns?.length === 2);
     if (isMonth3Next && canStartBatch && !batchBusy && !state.month3ErrorEvidence) {
       const errBtn = node("button", "button button-secondary", "⚠️ สาธิตพบ Error ในเดือน 3 (Quality Test)");
@@ -1834,10 +1882,17 @@
       root.append(recPanel);
     }
 
-    if (!canStartBatch) root.append(small(!state.realReady ?
-      "ระบบสั่งงานยังไม่พร้อม" : state.sourceExhausted ?
-        "Source ชุดนี้ใช้ครบแล้ว เคลียร์ Lab เพื่อเริ่มใหม่" :
-        "ต้องให้ข้อมูลชุดก่อนผ่านครบก่อน"));
+    if (!canStartBatch) {
+      if (alreadyDone) {
+        root.append(small("✓ " + (state.notebookBatch === "initial" ? "Run 1 ข้อมูลตั้งต้น" : "ข้อมูลใหม่") +
+          " ประมวลผลเรียบร้อยแล้ว · สลับไปที่ 'เติมข้อมูล' ด้านบน หรือกด 'เคลียร์ Lab' เพื่อเริ่มรอบใหม่"));
+      } else {
+        root.append(small(!state.realReady ?
+          "ระบบสั่งงานยังไม่พร้อม" : state.sourceExhausted ?
+            "Source ชุดนี้ใช้ครบแล้ว เคลียร์ Lab เพื่อเริ่มใหม่" :
+            "ต้องให้ข้อมูลชุดก่อนผ่านครบก่อน"));
+      }
+    }
     root.append(node("p", "notebook-caption", "กด Run หนึ่งครั้ง ระบบจะวิ่งครบทุกขั้นบน Vercel แล้วเปิดดูผลของแต่ละขั้นเมื่อเสร็จ"));
     if (state.batchRun.status) {
       root.append(small("สถานะ Run: " + state.batchRun.status +
@@ -1942,7 +1997,6 @@
         displayedSummary.url ? link("เปิด Log ของ Run นี้", displayedSummary.url) : null, download));
     }
     root.append(notice("เคลียร์ Lab = ลบข้อมูลใน Neon ทั้ง 25 ตารางให้เหลือ 0 · Source แยกไว้สำหรับเริ่มใหม่"));
-    const canClear = state.realReady && !["submitting", "queued", "in_progress"].includes(state.resetStatus);
     const clear = node("button", "button " + (state.sourceExhausted ? "button-primary" : "button-outline"), "เริ่มรอบใหม่ · เคลียร์ข้อมูล Lab");
     clear.type = "button"; clear.disabled = !canClear;
     clear.addEventListener("click", requestNewCycle); root.append(clear);

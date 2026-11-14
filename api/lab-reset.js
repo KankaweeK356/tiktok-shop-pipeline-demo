@@ -56,16 +56,14 @@ export default async function handler(req, res) {
   const body = typeof req.body === "string" ? JSON.parse(req.body) : (req.body || {});
   const { confirmation, expected_cycle } = body;
 
-  if (confirmation !== "RESET-DEMO-DATA" || !Number.isSafeInteger(expected_cycle) || expected_cycle < 1) {
-    return res.status(400).json({ error: "ต้องยืนยัน RESET-DEMO-DATA และรอบข้อมูลที่ถูกต้อง" });
+  if (confirmation !== "RESET-DEMO-DATA") {
+    return res.status(400).json({ error: "ต้องยืนยัน RESET-DEMO-DATA เพื่อเคลียร์ข้อมูล Lab" });
   }
 
   try {
     // Check current state
     const [state] = await sql.query("SELECT phase, cycle_number FROM demo_control.dataset_state WHERE dataset_key='classroom'");
-    if (state && Number(state.cycle_number) !== expected_cycle) {
-      return res.status(409).json({ error: "รอบข้อมูลปัจจุบันเปลี่ยนไปแล้ว ไม่สามารถเคลียร์ได้" });
-    }
+    const currentCycle = Number(state?.cycle_number || expected_cycle || 1);
 
     // Check no active runs
     const active = await sql.query("SELECT COUNT(*)::int AS n FROM demo_control.pipeline_runs WHERE dataset_key='classroom' AND status='RUNNING'");
@@ -82,7 +80,7 @@ export default async function handler(req, res) {
       }
     }
 
-    const nextCycle = expected_cycle + 1;
+    const nextCycle = currentCycle + 1;
 
     // Advance dataset state
     await sql.query(`

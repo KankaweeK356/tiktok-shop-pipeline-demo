@@ -23,7 +23,7 @@ export default async function handler(req, res) {
   try {
     const sql = getNeonSql("readonly");
     const rows = await sql.query(
-      "SELECT run_id, run_type, status, result_summary, started_at FROM demo_control.pipeline_runs WHERE run_id = $1 LIMIT 1",
+      "SELECT run_id::text, run_type, status, result_summary, started_at FROM demo_control.pipeline_runs WHERE run_id::text = $1 LIMIT 1",
       [id]
     );
 

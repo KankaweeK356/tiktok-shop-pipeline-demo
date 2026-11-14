@@ -59,7 +59,7 @@ export default async function handler(req, res) {
       if (sql) {
         try {
           const rows = await sql.query(
-            "SELECT run_id, status, started_at, finished_at, result_summary FROM demo_control.pipeline_runs WHERE dataset_key='classroom' AND cycle_number = (SELECT cycle_number FROM demo_control.dataset_state WHERE dataset_key='classroom') ORDER BY started_at DESC LIMIT 5"
+            "SELECT run_id, status, started_at, finished_at, result_summary FROM demo_control.pipeline_runs WHERE dataset_key='classroom' AND (cycle_number = COALESCE((SELECT cycle_number FROM demo_control.dataset_state WHERE dataset_key='classroom'), 1) OR cycle_number IS NULL) ORDER BY started_at DESC LIMIT 5"
           );
           runRow = rows[0] || null;
         } catch (_err) {}
@@ -90,18 +90,27 @@ export default async function handler(req, res) {
     if (sql) {
       try {
         const [stateRows, orderCounts, comp] = await Promise.all([
-          sql.query("SELECT d.phase, d.cycle_number, r.status AS last_run_status, r.run_type AS last_run_type, r.run_id FROM demo_control.dataset_state d LEFT JOIN demo_control.pipeline_runs r ON r.run_id=d.last_run_id WHERE d.dataset_key='classroom' LIMIT 1"),
+          sql.query("SELECT d.phase, d.cycle_number, d.last_run_id, r.status AS last_run_status, r.run_type AS last_run_type, r.run_id FROM demo_control.dataset_state d LEFT JOIN demo_control.pipeline_runs r ON r.run_id=d.last_run_id WHERE d.dataset_key='classroom' LIMIT 1"),
           sql.query('SELECT COUNT(*)::int AS n FROM demo_er1."Fact_Orders"'),
-          sql.query("SELECT run_id, run_type, started_at, status, result_summary FROM demo_control.pipeline_runs WHERE dataset_key='classroom' AND status='SUCCEEDED' AND cycle_number = (SELECT cycle_number FROM demo_control.dataset_state WHERE dataset_key='classroom') ORDER BY started_at ASC")
+          sql.query("SELECT run_id::text, run_type, started_at, status, result_summary, cycle_number FROM demo_control.pipeline_runs WHERE dataset_key='classroom' AND status='SUCCEEDED' AND (cycle_number = COALESCE((SELECT cycle_number FROM demo_control.dataset_state WHERE dataset_key='classroom'), 1) OR cycle_number IS NULL) ORDER BY started_at ASC")
         ]);
 
         if (stateRows.length) {
           lab.phase = stateRows[0].phase || "EMPTY";
           lab.cycle = Number(stateRows[0].cycle_number) || 1;
-          lab.last_run_id = stateRows[0].run_id || null;
-          lab.last_run_status = stateRows[0].last_run_status || null;
+          lab.last_run_id = stateRows[0].run_id ? String(stateRows[0].run_id) : (stateRows[0].last_run_id ? String(stateRows[0].last_run_id) : null);
+          lab.last_run_status = stateRows[0].last_run_status || (lab.last_run_id ? "SUCCEEDED" : null);
+        } else if (comp && comp.length > 0) {
+          const lastComp = comp[comp.length - 1];
+          lab.phase = comp.length === 1 ? "RUN1_READY" : "RUN2_READY";
+          lab.cycle = 1;
+          lab.last_run_id = String(lastComp.run_id);
+          lab.last_run_status = "SUCCEEDED";
         }
         lab.orders = orderCounts[0]?.n ?? 0;
+        if (lab.orders > 0 && lab.phase === "EMPTY") {
+          lab.phase = "RUN1_READY";
+        }
         completedRuns = comp || [];
       } catch (_e) {}
     }
@@ -112,7 +121,7 @@ export default async function handler(req, res) {
     const currentCycleRuns = completedRuns.map((r, index) => {
       const b = DELIVERIES[index] || "initial";
       return {
-        run_id: r.run_id,
+        run_id: String(r.run_id),
         batch: b === "initial" ? "initial" : "incremental",
         source_batch: b,
         source_month: "2026-" + String(index + 1).padStart(2, "0"),

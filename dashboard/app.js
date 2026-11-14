@@ -2175,7 +2175,10 @@
         { feature: "planned_discount_mean_week", use: "ส่วนลดที่วางแผนไว้สำหรับสัปดาห์เป้าหมาย" }]))));
     if (needsReset) root.append(notice("Lab ปัจจุบันยังเป็น Source รุ่นเดิม · เคลียร์ Lab ก่อนเพื่อให้ ML ใช้ Warehouse ชุดรายเดือนใหม่", true));
     else if (weekCount < requiredWeeks) root.append(notice(
-      "มีสัปดาห์ข้อมูลที่ครบและใช้ได้ " + weekCount + " จาก " + requiredWeeks + " สัปดาห์ · เติม Source เดือนถัดไปเพื่อให้ข้อมูลย้อนหลังต่อเนื่องก่อนฝึกโมเดล", false));
+      "มีสัปดาห์ข้อมูลที่ครบและใช้ได้ " + weekCount + " จาก " + requiredWeeks + " สัปดาห์ · " +
+      (warehouse.phase === "RUN1_READY" && weekCount === 0
+        ? "Run 1 มีข้อมูลเดือนมกราคม 31 วัน แต่ Feature แรกต้องใช้ย้อนหลัง 28 วันและสัปดาห์เป้าหมายครบ 7 วัน จึงต้องเติมเดือนกุมภาพันธ์ก่อน"
+        : warehouse.result.ml_readiness?.reason || "เติม Source เดือนถัดไปเพื่อให้ข้อมูลย้อนหลังต่อเนื่องก่อนฝึกโมเดล"), false));
     const train = node("button", "button button-primary", state.mlLoading ?
       "กำลังเตรียมโมเดล…" : "▶ ฝึกโมเดลจาก Warehouse");
     train.type = "button"; train.disabled = state.mlLoading ||
@@ -2380,5 +2383,4 @@
   }
   init();
 })();
-
 

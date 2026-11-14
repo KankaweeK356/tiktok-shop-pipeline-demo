@@ -712,6 +712,17 @@
       result.output.tables.forEach(item => {
         const isSelected = item.name === selectedName;
         const row = node("tr", isSelected ? "table-row-selected" : "");
+        const selectTable = () => {
+          state.selectedResultTable = result.batch + "/" + result.stage + "/" + item.name;
+          renderPipeline();
+        };
+        row.tabIndex = 0;
+        row.addEventListener("click", selectTable);
+        row.addEventListener("keydown", event => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault(); selectTable();
+          }
+        });
         const cell = node("td");
         cell.textContent = item.name;
 
@@ -721,10 +732,7 @@
         button.type = "button";
         button.style.fontSize = "11px";
         button.style.padding = "3px 8px";
-        button.addEventListener("click", () => {
-          state.selectedResultTable = result.batch + "/" + result.stage + "/" + item.name;
-          renderPipeline();
-        });
+        button.addEventListener("click", event => { event.stopPropagation(); selectTable(); });
         actionCell.append(button);
         row.append(cell, countCell, actionCell);
         body.append(row);
@@ -2372,4 +2380,5 @@
   }
   init();
 })();
+
 

@@ -339,7 +339,7 @@
     if (!evidence) {
       root.append(panel("สำรวจตารางและไฟล์ของแต่ละชั้นข้อมูล",
         "ยังไม่มีไฟล์หลักฐานของการรันที่ส่งออกในชุดข้อมูลนี้",
-        contentArea(notice("รายชื่อตารางและข้อมูลตัวอย่างจะปรากฏเมื่อ GitHub Actions สร้าง classroom_evidence.json สำเร็จ"))));
+        contentArea(notice("รายชื่อตารางและข้อมูลตัวอย่างจะปรากฏเมื่อระบบประมวลผล classroom_evidence.json สำเร็จ"))));
       return;
     }
     const labels = {
@@ -371,7 +371,7 @@
     const preview = item?.preview?.length ? dataTable(headers, item.preview) : small("ไม่มีแถวตัวอย่างหรือเป็นไฟล์ Metadata");
     root.append(panel("สำรวจตารางและไฟล์ของแต่ละชั้นข้อมูล",
       "ดูชื่อชุดข้อมูล โครงสร้างคอลัมน์ และตัวอย่างข้อมูลจากผลรันจริง (Snapshot ไม่ใช่ข้อมูลสด)",
-      contentArea(notice("หลักฐานนี้มาจาก SQLite / Parquet / DuckDB ของ GitHub Actions ยังไม่ใช่การ Query Neon โดยตรง", true),
+      contentArea(notice("หลักฐานนี้มาจาก SQLite / Parquet / DuckDB ของ Pipeline โดยตรง ยังไม่ใช่การ Query Neon", true),
         box("two-col", layerSelect, datasetSelect), details, preview,
         box("h-stack",
           link("ตรวจ Workflow และดาวน์โหลดหลักฐาน", "https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/actions/workflows/decision-dashboard-ci.yml"),
@@ -1081,7 +1081,7 @@
   function renderSavedLab(root) {
     const manifest = state.savedLabManifest;
     const body = contentArea();
-    body.append(notice("ผลส่วนนี้มาจากการรัน Python + Neon จริงใน GitHub Actions คนละ Job พร้อมตัวอย่างแถวที่ Worker บันทึกไว้ ไม่ใช่การสร้าง ETL ใหม่เมื่อคลิกดู"));
+    body.append(notice("ผลส่วนนี้มาจากการรัน ETL Engine จริงบน Vercel + Neon พร้อมตัวอย่างแถวที่บันทึกไว้ ไม่ใช่การสร้าง ETL ใหม่เมื่อคลิกดู"));
     if (!manifest?.runs?.length) {
       body.append(small("ยังไม่มีผล Step ที่เผยแพร่เป็น Data Snapshot จาก GitHub Worker"));
     } else {
@@ -1272,19 +1272,13 @@
           state.currentRunId = data.run_id;
           if (batch === "initial") state.realLabPhase = "RUN1_READY";
           else state.realLabPhase = "RUN2_READY";
+          await loadRealCapabilities();
           renderPipeline();
         }, 1200);
       }).catch(error => {
         state.batchRun.status = "failure"; state.realError = error?.message || "สั่ง Run ไม่สำเร็จ";
         renderPipeline();
       });
-  }
-  state.batchRun.url = data.workflow_url; renderPipeline();
-  window.setTimeout(checkBatchRun, 3000);
-}).catch(error => {
-  state.batchRun.status = "failure"; state.realError = error.message;
-  renderPipeline();
-});
   }
 async function checkBatchRun() {
   const current = state.batchRun;
@@ -1632,7 +1626,7 @@ function renderPipeline() {
     return;
   }
   if (state.pipelineTab === "operate") {
-    root.append(notice("Lab ใหม่เริ่มจากฐานข้อมูลว่าง ข้อมูลต้นทางอยู่ในไฟล์ Source; การกด Run 1 และ Run 2 จะประมวลผลจริงผ่าน GitHub Actions"));
+    root.append(notice("Lab ใหม่เริ่มจากฐานข้อมูลว่าง ข้อมูลต้นทางอยู่ในไฟล์ Source; การกด Run 1 และเติมข้อมูลจะประมวลผลจริงบน Vercel Native Runner"));
     renderRealRunner(root); return;
   }
   const phase = state.realLabPhase;

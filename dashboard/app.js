@@ -992,7 +992,8 @@
           [item.stage, { evidence: item.evidence, url: run.url, runId: String(run.run_id) }]));
 
         // Ensure state.batchRun preserves status so the completed badge and execution runId remain visible!
-        if (!["submitting", "queued", "in_progress"].includes(state.batchRun.status)) {
+        if (!["submitting", "queued", "in_progress"].includes(state.batchRun.status) ||
+          state.batchRun.runId === String(run.run_id)) {
           state.batchRun = {
             batch,
             status: "success",
@@ -1359,8 +1360,8 @@
   ];
   function runWholeBatch(options = {}) {
     const batch = state.notebookBatch;
-    if (state.batchRun.status === "queued" || state.batchRun.status === "in_progress" ||
-      state.batchRun.status === "submitting") return;
+    if (state.sharedRun.running || (state.batchRun.batch === batch &&
+      ["submitting", "queued", "in_progress"].includes(state.batchRun.status))) return;
     const previous = state.batchResume.batch === batch && state.batchResume.runId ?
       String(state.batchResume.runId) : batch === "initial" ? "0" :
         String(state.currentRunId || "");
@@ -2001,7 +2002,8 @@
     const month = sourceMonthForBatch(batch);
     if (!month) return;
     const panelRoot = box("source-picker-panel");
-    panelRoot.append(node("h3", "lab-subheading", "Source สำหรับรอบนี้ · " + thaiMonth(month)));
+    panelRoot.append(node("h3", "lab-subheading", (state.realLabPhase === "EMPTY" ?
+      "Source สำหรับ Run 1 · " : "Source เดือนถัดไป · ") + thaiMonth(month)));
     panelRoot.append(small("ชุดละ 1 เดือน · โครงสร้าง CSV ตาม ER เดียวกัน · ระบบเลือกเดือนถัดไปให้อัตโนมัติ"));
     const filename = "classroom-source-" + month + ".zip";
     const download = node("a", "button button-outline", "↓ ดาวน์โหลด Source " + thaiMonth(month));
@@ -2175,7 +2177,8 @@
         { feature: "planned_discount_mean_week", use: "ส่วนลดที่วางแผนไว้สำหรับสัปดาห์เป้าหมาย" }]))));
     if (needsReset) root.append(notice("Lab ปัจจุบันยังเป็น Source รุ่นเดิม · เคลียร์ Lab ก่อนเพื่อให้ ML ใช้ Warehouse ชุดรายเดือนใหม่", true));
     else if (weekCount < requiredWeeks) root.append(notice(
-      "มีสัปดาห์ข้อมูลที่ครบและใช้ได้ " + weekCount + " จาก " + requiredWeeks + " สัปดาห์ · " +
+      "สัปดาห์ที่ใช้ฝึกได้ " + weekCount + "/" + requiredWeeks +
+      " (นับเฉพาะสัปดาห์จันทร์–อาทิตย์ที่ข้อมูลครบและมีข้อมูลย้อนหลัง 28 วัน) · " +
       (warehouse.phase === "RUN1_READY" && weekCount === 0
         ? "Run 1 มีข้อมูลเดือนมกราคม 31 วัน แต่ Feature แรกต้องใช้ย้อนหลัง 28 วันและสัปดาห์เป้าหมายครบ 7 วัน จึงต้องเติมเดือนกุมภาพันธ์ก่อน"
         : warehouse.result.ml_readiness?.reason || "เติม Source เดือนถัดไปเพื่อให้ข้อมูลย้อนหลังต่อเนื่องก่อนฝึกโมเดล"), false));

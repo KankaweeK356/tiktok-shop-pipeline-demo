@@ -1421,939 +1421,939 @@
         renderPipeline();
       });
   }
-async function checkBatchRun() {
-  const current = state.batchRun;
-  if (!current.since || !["queued", "in_progress"].includes(current.status)) return;
-  try {
-    const query = new URLSearchParams({
-      batch: current.batch, source_batch: current.sourceBatch,
-      since: current.since
-    });
-    const response = await fetch("/api/lab-batch?" + query, { cache: "no-store" });
-    const data = await response.json();
-    if (!response.ok) throw Error(data.error || "ติดตาม Run ไม่ได้");
-    if (data.found) {
-      current.runId = data.run_id; current.url = data.url; current.stages = data.stages || [];
-      current.status = data.status === "completed" ?
-        (data.conclusion === "success" ? "success" : "failure") : data.status;
-      const active = current.stages.find(x => x.status === "in_progress");
-      const latest = [...current.stages].reverse().find(x => x.conclusion === "success");
-      state.notebookStage = NOTEBOOK_STAGES[active?.index ?? latest?.index ?? 0][0];
-      for (const step of current.stages.filter(x => x.conclusion === "success")) {
-        const stage = NOTEBOOK_STAGES[step.index]?.[0];
-        if (!stage || state.batchResults[current.batch]?.[stage]) continue;
-        try {
-          const proofResponse = await fetch("/api/lab-batch-result?" +
-            new URLSearchParams({ run_id: String(current.runId), stage }), { cache: "no-store" });
-          if (!proofResponse.ok) continue;
-          const proof = await proofResponse.json();
-          state.batchResults[current.batch][stage] = {
-            evidence: proof.evidence,
-            url: current.url, runId: current.runId
-          };
-        } catch (_error) {/* Stage artifact may still be uploading. */ }
-      }
-    }
-    if (current.status === "success") {
-      const resultResponse = await fetch("/api/lab-batch-result?run_id=" +
-        encodeURIComponent(current.runId), { cache: "no-store" });
-      const payload = await resultResponse.json();
-      if (!resultResponse.ok) throw Error(payload.error || "อ่านผล Run ไม่สำเร็จ");
-      current.result = payload.result;
-      state.batchRunIds[current.batch] = current.runId;
-      state.batchSummaries[current.batch] = {
-        runId: String(current.runId), url: current.url,
-        sourceMonth: sourceMonthForBatch(current.sourceBatch), result: payload.result
-      };
-      state.batchResults[current.batch] = Object.fromEntries(payload.result.stages.map(item =>
-        [item.stage, { evidence: item.evidence, url: current.url, runId: current.runId }]));
-      if (state.sourceUploadId && state.sourceUploadMonth === sourceMonthForBatch(state.nextSourceBatch)) {
-        state.sourceUploadId = ""; state.sourceUploadMonth = "";
-        sessionStorage.removeItem("classroom_source_upload");
-      }
-      state.notebookStage = "validate";
-      loadRealCapabilities();
-    }
-    if (current.status === "failure") {
-      state.realError = "Run ไม่ผ่าน · ข้อมูลชุดนี้ยังไม่เสร็จ กดปุ่มเดิมเพื่อลองอีกครั้ง หากยังไม่ผ่านให้ดูสาเหตุใน Log";
-      state.batchResume = { batch: current.batch, runId: current.runId };
-      loadRealCapabilities();
-    }
-    renderPipeline();
-    if (["queued", "in_progress"].includes(current.status))
-      window.setTimeout(checkBatchRun, 4000);
-  } catch (error) {
-    state.realError = error.message; renderPipeline();
-    if (["queued", "in_progress"].includes(current.status))
-      window.setTimeout(checkBatchRun, 8000);
-  }
-}
-async function showHistoryRun(runId) {
-  state.historyBusy = true; state.realError = ""; renderPipeline();
-  try {
-    const response = await fetch("/api/lab-batch-result?run_id=" + encodeURIComponent(runId),
-      { cache: "no-store" });
-    const payload = await response.json();
-    if (!response.ok) throw Error(payload.error || "อ่านผลรอบก่อนไม่ได้");
-    state.historyRun = { runId, result: payload.result };
-  } catch (error) { state.realError = error.message; }
-  state.historyBusy = false; renderPipeline();
-}
-async function resetErrorLab(nextCase = state.errorCase) {
-  state.errorCase = nextCase;
-  state.errorRun = {
-    status: "", since: "", url: "", runId: null, phase: "",
-    previous: "0", failEvidence: null, fixEvidence: null, error: "", neonRows: null
-  };
-  try { sessionStorage.removeItem("classroom_error_run"); } catch (_error) { }
-  renderPipeline();
-}
-async function startErrorRun(phase = "fail") {
-  const previous = phase === "fix" ? String(state.errorRun.runId || "") : "0";
-  if (phase === "fail") state.errorRun = {
-    status: "", since: "", url: "", runId: null,
-    phase: "", previous: "0", failEvidence: null, fixEvidence: null, error: "", neonRows: null
-  };
-  state.errorRun.status = "submitting"; state.errorRun.phase = phase;
-  state.errorRun.previous = previous; state.errorRun.error = "";
-  renderPipeline();
-  try {
-    const response = await fetch("/api/lab-error", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ case: state.errorCase, phase, previous_run_id: previous })
-    });
-    const data = await response.json();
-    if (!response.ok || !data.accepted) throw Error(data.error || "เริ่มทดสอบ Error ไม่สำเร็จ");
-    state.errorRun.status = "queued"; state.errorRun.since = new Date().toISOString();
-    state.errorRun.url = data.url; renderPipeline();
-    window.setTimeout(checkErrorRun, 4000);
-  } catch (error) {
-    state.errorRun.status = "failure"; state.errorRun.error = error.message;
-    renderPipeline();
-  }
-}
-async function checkErrorRun() {
-  const current = state.errorRun;
-  if (!current.since || !["queued", "in_progress"].includes(current.status)) return;
-  try {
-    const response = await fetch("/api/lab-error?" +
-      new URLSearchParams({
-        since: current.since, case: state.errorCase,
-        phase: current.phase, previous_run_id: current.previous
-      }), { cache: "no-store" });
-    const data = await response.json();
-    if (!response.ok) throw Error(data.error || "ติดตามการทดสอบไม่ได้");
-    current.status = data.status === "completed" ?
-      (data.conclusion === "success" ? "success" : "failure") : data.status;
-    current.url = data.url || current.url;
-    if (data.run_id) current.runId = data.run_id;
-    if (data.evidence?.phase === "fail") {
-      const found = data.evidence.detected || {};
-      current.failEvidence = {
-        stage: found.stage, title: found.title, fix: found.fix,
-        detail: {
-          error_message: found.error_message, error_code: found.error_code,
-          source_rows: found.source_rows || [], source_file: found.source_file || null
-        }
-      };
-      current.fixEvidence = null;
-      saveErrorRun();
-    } else if (data.evidence?.phase === "fix") {
-      current.fixEvidence = { detail: data.evidence.recovery || {} };
-      saveErrorRun();
-    }
-    if (current.status === "failure") current.error = "การทดสอบไม่ผ่าน · เปิด Log เพื่อตรวจสาเหตุ";
-    renderPipeline();
-    if (["queued", "in_progress"].includes(current.status) ||
-      current.status === "success" &&
-      !(current.phase === "fail" ? current.failEvidence : current.fixEvidence))
-      window.setTimeout(checkErrorRun, 5000);
-  } catch (error) {
-    current.error = error.message; renderPipeline();
-    window.setTimeout(checkErrorRun, 8000);
-  }
-}
-async function requestNewCycle() {
-  if (!state.realReady || !["RUN1_READY", "RUN2_READY"].includes(state.realLabPhase) || !state.realLabCycle) return;
-  const confirmation = "RESET-DEMO-DATA";
-  state.resetStatus = "submitting"; state.resetError = ""; renderPipeline();
-  try {
-    const response = await fetch("/api/lab-reset", {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
-        confirmation,
-        expected_cycle: Number(state.realLabCycle)
-      })
-    });
-    const data = await response.json();
-    if (!response.ok || !data.accepted) throw Error(data.error || "ส่งคำสั่งเคลียร์ไม่ได้");
-    state.resetSince = new Date().toISOString(); state.resetUrl = data.workflow_url;
-    state.resetStatus = "queued"; renderPipeline();
-    window.setTimeout(checkNewCycle, 4000);
-  } catch (error) { state.resetStatus = ""; state.resetError = error.message; renderPipeline(); }
-}
-async function checkNewCycle() {
-  if (!state.resetSince) return;
-  try {
-    const query = new URLSearchParams({ cycle: String(state.realLabCycle), since: state.resetSince });
-    const response = await fetch("/api/lab-reset?" + query, { cache: "no-store" });
-    const data = await response.json();
-    if (!response.ok) throw Error(data.error || "ตรวจสถานะไม่ได้");
-    if (data.found) {
-      state.resetStatus = data.status === "completed" ?
-        (data.conclusion === "success" ? "success" : "failure") : data.status;
-      state.resetUrl = data.url || state.resetUrl;
-    }
-    if (state.resetStatus === "success") {
-      state.realPreviousRunId = ""; state.realRunId = null; state.realStatus = "";
-      state.realEvidence = null; state.notebookBatch = "initial";
-      state.notebookSelectionTouched = false; state.notebookStage = "ingest";
-      state.batchResults = { initial: {}, incremental: {} };
-      state.batchSummaries = { initial: null, incremental: null };
-      state.batchRunIds = { initial: null, incremental: null };
-      state.batchRun = { batch: "", status: "", since: "", runId: null, url: "", stages: [] };
-      if (state.sourceUploadId) fetch("/api/lab-batch?id=" +
-        encodeURIComponent(state.sourceUploadId), { method: "DELETE" }).catch(() => { });
-      state.sourceUploadId = ""; state.sourceUploadMonth = ""; state.sourceUploadName = "";
-      sessionStorage.removeItem("classroom_source_upload");
-      state.labNeon = null; state.labNeonTable = null; loadRealCapabilities();
-    }
-    renderPipeline();
-    if (["queued", "in_progress"].includes(state.resetStatus)) window.setTimeout(checkNewCycle, 4000);
-  } catch (error) { state.resetError = error.message; renderPipeline(); }
-}
-async function loadLabNeon(schema = "", table = "") {
-  if (state.labNeonBusy) return;
-  state.labNeonBusy = true; state.labNeonError = ""; renderPipeline();
-  try {
-    const query = table ? "?" + new URLSearchParams({ schema, table }) : "";
-    const response = await fetch("/api/lab-neon-evidence" + query, { cache: "no-store" });
-    const data = await response.json();
-    if (!response.ok || !data.connected) throw Error(data.error || "อ่าน Neon ไม่สำเร็จ");
-    if (table) state.labNeonTable = data; else state.labNeon = data;
-  } catch (error) { state.labNeonError = error.message || "อ่าน Neon ไม่สำเร็จ"; }
-  state.labNeonBusy = false; renderPipeline();
-}
-function renderPipeline() {
-  const root = $("#app"); root.replaceChildren();
-  const tabs = box("notebook-tabs");
-  [["flow", "ขั้นตอนการรัน"], ["neon", "Neon · ฐานข้อมูลต้นทาง"], ["files", "Snapshot เก่า · Data Lake / Warehouse"],
-  ["errors", "ทดสอบข้อผิดพลาด"]].forEach(([id, label]) => {
-    const button = node("button", "notebook-tab" + (state.pipelineTab === id ? " is-active" : ""), label);
-    button.type = "button"; button.setAttribute("aria-pressed", String(state.pipelineTab === id));
-    button.addEventListener("click", () => {
-      state.pipelineTab = id; renderPipeline();
-      if (id === "neon" && !state.labNeon) loadLabNeon();
-    }); tabs.append(button);
-  });
-  root.append(tabs);
-  if (state.pipelineTab === "neon") {
-    root.append(notice("ข้อมูลสดจาก branch classroom-live-run-lab · Database tiktok_demo · อ่านอย่างเดียว"));
-    root.append(small("เลือกตาราง Fact_Orders เพื่อดูออเดอร์จริงใน Lab หรือเลือกตารางอื่นเพื่อดูข้อมูลและจำนวนแถว"));
-    root.append(small("ดูตารางและแถวจริงได้จากหน้านี้เลย ไม่ต้องเข้า Neon Console หรือมีบัญชี Neon"));
-    if (state.labNeonBusy) root.append(small("กำลังอ่านรายชื่อตาราง…"));
-    if (state.labNeonError) root.append(notice(state.labNeonError, true));
-    const tables = state.labNeon?.tables || [];
-    if (tables.length) {
-      root.append(small("demo_er1 · " + tables.filter(x => x.table_schema === "demo_er1").length +
-        " ตารางธุรกิจ | demo_control · " + tables.filter(x => x.table_schema === "demo_control").length + " ตารางควบคุม"));
-      root.append(chooseField("เลือกตารางธุรกิจใน Neon", [["", "— เลือกตาราง —"], ...tables.filter(x => x.table_schema === "demo_er1").map(x =>
-        [x.table_schema + "." + x.table_name, x.table_schema + " · " + x.table_name])],
-        state.labNeonTable ? state.labNeonTable.schema + "." + state.labNeonTable.table : "", value => {
-          const [schema, table] = value.split("."); if (table) loadLabNeon(schema, table);
-        }));
-    }
-    if (state.labNeonTable) {
-      const d = state.labNeonTable;
-      root.append(node("h3", "lab-subheading", d.schema + "." + d.table + " · " + money(d.row_count) + " แถว"));
-      root.append(dataTable([["column_name", "คอลัมน์"], ["data_type", "ชนิดข้อมูล"]], d.columns));
-      root.append(node("h3", "lab-subheading", "ตัวอย่างข้อมูล 5 แถวแรก"));
-      root.append(dataTable(d.columns.slice(0, 8).map(x => [x.column_name, x.column_name]), d.preview_rows));
-    } return;
-  }
-  if (state.pipelineTab === "files") {
-    root.append(notice("Data Lake เก็บ Landing / Raw / Standardized; DuckDB Warehouse เป็นไฟล์จาก GitHub Worker ไม่ใช่ตารางใน Neon"));
-    root.append(small("ผลรันปัจจุบันดูได้ในแท็บ ขั้นตอนการรัน โดยเปิดขั้นแล้วกดชื่อตารางด้านล่าง · ส่วนต่อไปเป็น Snapshot เก่า"));
-    renderEvidenceExplorer(root); return;
-  }
-  if (state.pipelineTab === "errors") {
-    const scenarios = [
-      ["N01", "สินค้าอ้างถึงกลุ่มสินค้าที่ไม่มีในข้อมูลหลัก", "Database · Neon Error Lab แยกต่างหาก"],
-      ["E01", "รายการสั่งซื้ออ้างถึง SKU ที่ไม่มีอยู่", "Source → Database"],
-      ["E02", "ไฟล์ออเดอร์ต้นทางหาย", "Source → Database"],
-      ["T01", "ข้อมูล Voucher ผิดกฎ", "Data Lake → Standardized"],
-      ["T02", "ช่วงเวลา Campaign ซ้อนกัน", "Data Lake → Standardized"],
-      ["L01", "โหลด Warehouse ไม่สำเร็จ", "Data Lake → Warehouse"]
-    ];
-    const selected = scenarios.find(x => x[0] === state.errorCase) || scenarios[0];
-    const busy = ["submitting", "queued", "in_progress"].includes(state.errorRun.status);
-    root.append(node("h2", "lab-heading", "สาธิตการรับมือเมื่อข้อมูลมีปัญหา"));
-    root.append(notice("ใช้ชุดข้อมูลจำลองใน Error Lab ซึ่งแยกจาก Run 1/2 เพื่อให้เห็นว่าระบบพบปัญหาอะไร แก้อย่างไร และผลหลังแก้เป็นอย่างไร", false));
-    root.append(chooseField("เลือกกรณี", [...scenarios.map(x => [x[0], x[1]])],
-      state.errorCase, value => {
-        if (busy) return;
-        resetErrorLab(value);
-      }));
-    root.append(node("h3", "lab-subheading", "สถานการณ์ที่จะทดลอง · " + selected[1]));
-    root.append(small("จุดที่ระบบจะตรวจ: " + selected[2]));
-    if (state.errorCase === "N01") {
-      root.append(small("ตัวอย่างข้อมูล: แถวสินค้าอ้าง Product_Group_ID = MISSING_GROUP แต่ไม่มีรหัสนี้ในตารางกลุ่มสินค้า"));
-      root.append(dataTable([["SKU_ID", "SKU_ID"], ["Product_Group_ID", "Product_Group_ID"],
-      ["SKU_Name", "SKU_Name"]], [{
-        SKU_ID: "ERROR_TEST_SKU",
-        Product_Group_ID: "MISSING_GROUP", SKU_Name: "สินค้าเดโมทดสอบ Error"
-      }]));
-      root.append(small("กฎที่ตรวจ: สินค้าต้องอ้างถึงกลุ่มสินค้าที่มีอยู่จริง · ระบบไม่ได้สร้าง Group ใหม่"));
-    } else root.append(small("ระบบจะใช้ชุดข้อมูลทดสอบแยกที่จำลองสถานการณ์นี้ แล้วตรวจจนถึงขั้นที่พบปัญหา"));
-    if (!state.errorRun.failEvidence) {
-      const button = node("button", "button button-primary",
-        busy ? "กำลังตรวจชุดข้อมูล…" : "▶ เริ่มทดสอบกรณีนี้");
-      button.type = "button"; button.disabled = busy;
-      button.addEventListener("click", () => startErrorRun("fail")); root.append(button);
-    }
-    if (busy) root.append(small(state.errorRun.phase === "fix" ?
-      "กำลังแก้ข้อมูลและรันซ้ำ…" : "กำลังตรวจชุดข้อมูลและหาจุดที่พบปัญหา…"));
-    if (state.errorRun.error) root.append(notice(state.errorRun.error, true));
-    if (state.errorRun.failEvidence) {
-      const found = state.errorRun.failEvidence;
-      const detail = found.detail || {};
-      root.append(node("h3", "lab-subheading", "1 · ระบบพบปัญหาที่ขั้น " + (found.stage || "กำลังตรวจสอบ")));
-      root.append(notice("สาเหตุ: " + (found.title || "ไม่พบชื่อกรณีทดสอบ") + " · " +
-        (detail.error_message || detail.error_code || "ไม่มีรายละเอียดเพิ่มเติม"), true));
-      if (detail.source_rows?.length) {
-        const rows = detail.source_rows;
-        root.append(small("ข้อมูลที่ทำให้เกิด Error"));
-        root.append(dataTable(Object.keys(rows[0]).map(key => [key, key]), rows));
-      }
-      if (detail.source_file) root.append(small("Source: " + detail.source_file));
-      root.append(small("ผลต่อการรัน: " + (detail.error_code || "ดูรายละเอียดจากผลทดสอบ") +
-        " · การทดสอบนี้แยกจากข้อมูล Run 1/2"));
-      root.append(node("h3", "lab-subheading", "2 · แนวทางแก้"));
-      root.append(small(found.fix || "ตรวจข้อมูลตามสาเหตุ แล้วรันการทดสอบเดิมอีกครั้ง"));
-      if (!state.errorRun.fixEvidence) {
-        const fix = node("button", "button button-primary",
-          busy ? "กำลังแก้ตามแนวทางและตรวจต่อ…" : "ให้ระบบแก้ตามแนวทาง แล้วรันต่อ");
-        fix.type = "button"; fix.disabled = busy;
-        fix.addEventListener("click", () => startErrorRun("fix")); root.append(fix);
-      }
-    }
-    if (state.errorRun.fixEvidence) {
-      const fixed = state.errorRun.fixEvidence.detail;
-      root.append(node("h3", "lab-subheading", "3 · ผลหลังแก้"));
-      root.append(small("รันต่อจากขั้นที่พบปัญหา · สถานะหลังแก้: " + fixed.retry_status));
-      if (fixed.before && fixed.after) {
-        root.append(small("ก่อนแก้"));
-        root.append(dataTable(Object.keys(fixed.before).map(key => [key, key]), [fixed.before]));
-        root.append(small(state.errorCase === "N01" ?
-          "หลังแก้ · ตรวจผ่านแล้ว และย้อนข้อมูลทดสอบออกจาก Neon เรียบร้อย" :
-          "หลังแก้ · รันซ้ำจากขั้นที่พบปัญหาแล้ว"));
-      }
-      if (fixed.result_rows?.length)
-        root.append(dataTable(Object.keys(fixed.result_rows[0]).slice(0, 8)
-          .map(key => [key, key]), fixed.result_rows));
-      if (state.errorCase === "N01") {
-        root.append(small("ข้อมูลจริงใน Neon · classroom-error-lab · demo_er1.Dim_SKU"));
-        if (state.errorRun.neonRows?.length)
-          root.append(dataTable(Object.keys(state.errorRun.neonRows[0])
-            .map(key => [key, key]), state.errorRun.neonRows));
-        else root.append(small("กำลังอ่านแถวจริงจากฐานข้อมูล Error Lab…"));
-        root.append(small("แสดงข้อมูลจากตารางจริงใน Error Lab โดยตรง ไม่ต้องเปิด Neon Console"));
-      }
-      const again = node("button", "button", "เริ่มสถานการณ์นี้อีกครั้ง");
-      again.type = "button"; again.addEventListener("click", () => resetErrorLab());
-      root.append(again);
-    }
-    if (state.errorRun.url) root.append(link("ดูรายละเอียดการรันใน GitHub", state.errorRun.url));
-    return;
-  }
-  if (state.pipelineTab === "operate") {
-    root.append(notice("Lab ใหม่เริ่มจากฐานข้อมูลว่าง ข้อมูลต้นทางอยู่ในไฟล์ Source; การกด Run 1 และเติมข้อมูลจะประมวลผลจริงบน Vercel Native Runner"));
-    renderRealRunner(root); return;
-  }
-  const phase = state.realLabPhase;
-  renderSourcePicker(root);
-  root.append(box("notebook-intro",
-    node("h2", "lab-heading", "Source → Database → Data Lake → Warehouse"),
-    node("p", "lab-description", "Run 1 นำเข้าข้อมูลตั้งต้น จากนั้นกดเติมข้อมูลใหม่ได้ทีละชุด ทุกครั้งเดินครบทั้งเส้นทาง"),
-    small("Lab ที่ใช้รัน: " + (phase === "UNKNOWN" ? "กำลังตรวจสอบ" : phase) + " · " + money(state.realLabOrders || 0) + " ออเดอร์")));
-  const batchPicker = box("notebook-runs");
-  const nextMonth = sourceMonthForBatch(state.nextSourceBatch);
-  const incrementalLabel = state.sourceExhausted ? "ข้อมูลครบถึงตุลาคม 2569" :
-    !state.currentRunId ? "เติมข้อมูลหลัง Run 1" :
-      "เติมข้อมูล · " + thaiMonth(nextMonth || "");
-  [["initial", "Run 1 · มกราคม 2569", "ข้อมูลตั้งต้นและโครงสร้างธุรกิจ"],
-  ["incremental", incrementalLabel,
-    "เพิ่ม Source เดือนถัดไปครั้งละหนึ่งเดือน"]].forEach(([id, label, detail]) => {
-      const button = node("button", "notebook-run" + (state.notebookBatch === id ? " is-active" : ""));
-      button.type = "button"; button.setAttribute("aria-pressed", String(state.notebookBatch === id));
-      button.append(node("strong", "", label), small(detail));
-      button.addEventListener("click", () => {
-        state.notebookBatch = id;
-        state.notebookSelectionTouched = true; state.notebookStage = "ingest";
-        state.savedLabReceipt = null; state.savedLabSelected = ""; renderPipeline();
-      }); batchPicker.append(button);
-    }); root.append(batchPicker);
-  const canStartBatch = state.realReady && !state.requiresReset && !state.sourceExhausted &&
-    !state.sharedRun.running && (state.notebookBatch === "initial" ? phase === "EMPTY" :
-      ["RUN1_READY", "RUN2_READY"].includes(phase) && Boolean(state.currentRunId));
-  const batchBusy = ["submitting", "queued", "in_progress"].includes(state.batchRun.status);
-  const alreadyDone = state.notebookBatch === "initial" && Boolean(state.batchSummaries.initial);
-  const batchAction = node("button", "button button-primary", batchBusy ?
-    "กำลังรัน " + (state.batchRun.batch === "initial" ? "Run 1" : "ข้อมูลใหม่") + " ทั้งรอบ…" :
-    alreadyDone ? (state.notebookBatch === "initial" ? "✓ Run 1 ผ่านแล้ว" : "✓ เดือนนี้รันผ่านแล้ว") :
-      state.notebookBatch === "initial" ? "▶ รันข้อมูลตั้งต้น" : "▶ เติมข้อมูลใหม่");
-  batchAction.type = "button"; batchAction.disabled = !canStartBatch || batchBusy;
-  batchAction.addEventListener("click", () => runWholeBatch());
-
-  const actionGroup = box("h-stack", batchAction);
-  const isMonth3Next = state.notebookBatch === "incremental" && (state.nextSourceBatch === "incremental_02" || state.currentCycleRuns?.length === 2);
-  if (isMonth3Next && canStartBatch && !batchBusy && !state.month3ErrorEvidence) {
-    const errBtn = node("button", "button button-secondary", "⚠️ สาธิตพบ Error ในเดือน 3 (Quality Test)");
-    errBtn.type = "button"; errBtn.style.color = "var(--red)";
-    errBtn.addEventListener("click", () => runWholeBatch({ is_error_demo: true }));
-    actionGroup.append(errBtn);
-  }
-  root.append(actionGroup);
-
-  if (state.month3ErrorEvidence) {
-    const recPanel = box("panel",
-      box("panel-head", box("",
-        node("h3", "panel-heading", "⚠️ ผลการสาธิต: ระบบตรวจพบข้อผิดพลาดในเดือน 3"),
-        node("p", "panel-description", "ตรวจพบ SKU ที่ไม่มีใน Dim_SKU ในขั้นตอน Transform / Quality Check"))),
-      box("panel-body",
-        notice("🔒 ระบบกักข้อมูลเดือน 3 ไว้ใน Quarantine และหยุดการประมวลผลทันที ข้อมูลเดือน 1-2 ใน Warehouse ยังคงเดิม ไม่เสียหาย", true),
-        box("h-stack", (() => {
-          const resumeBtn = node("button", "button button-primary", "🔄 ใช้ข้อมูลฉบับแก้ไข แล้วรันต่อจาก Checkpoint");
-          resumeBtn.type = "button";
-          resumeBtn.addEventListener("click", () => {
-            state.month3ErrorEvidence = null;
-            runWholeBatch({ is_error_demo: false });
-          });
-          return resumeBtn;
-        })())));
-    root.append(recPanel);
-  }
-
-  if (!canStartBatch) root.append(small(!state.realReady ?
-    "ระบบสั่งงานยังไม่พร้อม" : state.sourceExhausted ?
-      "Source ชุดนี้ใช้ครบแล้ว เคลียร์ Lab เพื่อเริ่มใหม่" :
-      "ต้องให้ข้อมูลชุดก่อนผ่านครบก่อน"));
-  root.append(node("p", "notebook-caption", "กด Run หนึ่งครั้ง ระบบจะวิ่งครบทุกขั้นบน Vercel แล้วเปิดดูผลของแต่ละขั้นเมื่อเสร็จ"));
-  if (state.batchRun.status) {
-    root.append(small("สถานะ Run: " + state.batchRun.status +
-      (state.batchRun.runId ? " · Vercel Execution #" + state.batchRun.runId : "")));
-    if (state.batchRun.url) root.append(link("ดูการทำงานและ Log จริง", state.batchRun.url));
-    if (state.realError) root.append(notice(state.realError, true));
-  }
-  if (state.sharedRun.running && !batchBusy) {
-    const activeName = state.sharedRun.type === "RUN1" ? "Run 1" : "การเติมข้อมูล";
-    const step = state.sharedRun.stage?.name ?
-      " · ขั้นปัจจุบัน: " + state.sharedRun.stage.name.replace(/^[1-5] /, "") : " · กำลังเริ่มงาน";
-    root.append(notice(activeName + " กำลังทำงานอยู่ใน Lab" + step +
-      " · ทุกคนที่เปิดลิงก์นี้จะเห็นสถานะเดียวกัน ระบบจะเปิดปุ่มรันอีกครั้งเมื่อเสร็จ"));
-  }
-  const runState = {
-    submitting: "กำลังส่งคำสั่ง", queued: "กำลังเตรียม Vercel Function",
-    in_progress: "กำลังประมวลผลบน Vercel", success: "เสร็จแล้ว", failure: "ไม่สำเร็จ"
-  };
-  const entries = state.savedLabManifest?.runs?.filter(x => x.batch === state.notebookBatch) || [];
-  NOTEBOOK_STAGES.forEach(([id, title, description], index) => {
-    const entry = entries.find(x => x.stage === id), active = state.notebookStage === id;
-    const cell = node("section", "notebook-cell" + (active ? " is-open" : ""));
-    const head = node("button", "notebook-cell-head"); head.type = "button";
-    head.setAttribute("aria-expanded", String(active));
-    const savedResult = state.batchResults[state.notebookBatch]?.[id];
-    const liveStep = state.batchRun.batch === state.notebookBatch ?
-      state.batchRun.stages.find(x => x.index === index) : null;
-    const runningNow = liveStep?.status === "in_progress";
-    head.append(node("span", "notebook-number", String(index + 1)),
-      box("notebook-cell-title", node("strong", "", title), small(description)),
-      node("span", "notebook-cell-state", savedResult || liveStep?.conclusion === "success" ?
-        "ผ่านแล้ว" : runningNow ? "กำลังรัน" : liveStep?.conclusion === "failure" ? "ผิดพลาด" : "รอรัน"));
-    head.addEventListener("click", () => {
-      state.notebookStage = id; state.savedLabReceipt = null; renderPipeline();
-    }); cell.append(head);
-    if (active) {
-      const body = box("notebook-cell-body");
-      body.append(small("Input: " + (index === 0 ? "Source CSV ชุด" + (state.notebookBatch === "initial" ? "ตั้งต้น" : "ข้อมูลใหม่") :
-        index === 1 ? "25 ตารางใน Neon" : index === 2 ? "Raw Parquet" : index === 3 ? "Standardized Parquet" : "Database และ Warehouse")));
-      body.append(small("ขั้นนี้ทำอะไร: " + description));
-      if (liveStep?.started_at) body.append(small("เริ่ม " +
-        new Date(liveStep.started_at).toLocaleTimeString("th-TH") +
-        (liveStep.completed_at ? " · เสร็จ " + new Date(liveStep.completed_at).toLocaleTimeString("th-TH") : "")));
-      if (savedResult) body.append(box("notebook-output",
-        node("strong", "", "ผลจากการรันครั้งนี้"), renderLabResult(savedResult.evidence),
-        savedResult.url ? link("ดู Log ของขั้นนี้", savedResult.url) : null));
-      if (!savedResult) body.append(small(runningNow ? "กำลังประมวลผลขั้นนี้จริง" :
-        "ผลของขั้นนี้จะแสดงเมื่อ Run จบและหลักฐานพร้อม"));
-      if (entry) {
-        const history = node("details", "notebook-history");
-        history.open = state.savedLabReceipt?.batch === state.notebookBatch && state.savedLabReceipt?.stage === id;
-        history.append(node("summary", "", "ดูตัวอย่างจาก Lab เดิม (ไม่ใช่ผลรอบนี้)"));
-        const historyBody = box("notebook-history-body");
-        if (state.savedLabLoading) historyBody.append(small("กำลังอ่านผลรอบก่อน…"));
-        else if (state.savedLabReceipt?.batch === state.notebookBatch && state.savedLabReceipt?.stage === id) {
-          const receipt = state.savedLabReceipt;
-          historyBody.append(renderLabResult(receipt.evidence),
-            link("ดู GitHub Run รอบก่อน", "https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/actions/runs/" + receipt.git_run_id));
-        } else {
-          const open = node("button", "button button-outline", "เปิดหลักฐานเดิม");
-          open.type = "button"; open.addEventListener("click", () => selectSavedLabStage(entry)); historyBody.append(open);
-        }
-        history.append(historyBody); body.append(history);
-      }
-      if (id === "ingest" && savedResult) {
-        body.append(small("ขั้นนี้ sync ข้อมูลธุรกิจ 25 ตารางเข้า Neon · กดชื่อตารางด้านบนเพื่อดูตัวอย่างจากรันนี้"));
-        const neonButton = node("button", "button button-outline", "ดูตารางและแถวจริงใน Neon");
-        neonButton.type = "button";
-        neonButton.addEventListener("click", () => {
-          const prefix = state.notebookBatch + "/ingest/";
-          const selected = state.selectedResultTable.startsWith(prefix) ?
-            state.selectedResultTable.slice(prefix.length) : "Fact_Orders";
-          state.pipelineTab = "neon"; renderPipeline();
-          loadLabNeon("demo_er1", selected);
-        });
-        body.append(neonButton);
-      }
-      if (id === "extract") body.append(small("การตรวจความครบถ้วนระหว่าง Database กับ Raw ใช้จำนวนตารางและไฟล์ manifest"));
-      if (id === "validate") body.append(small("ผลตรวจท้ายรอบเทียบ Paid Items และ Net Revenue ระหว่างฐานข้อมูลต้นทางกับ Warehouse"));
-      cell.append(body);
-    }
-    root.append(cell);
-  });
-  const savedSummary = state.batchSummaries[state.notebookBatch];
-  const liveSummary = state.batchRun.status === "success" && state.batchRun.batch === state.notebookBatch ?
-    { runId: state.batchRun.runId, url: state.batchRun.url, sourceMonth: sourceMonthForBatch(state.batchRun.sourceBatch), result: state.batchRun.result } : null;
-  const displayedSummary = liveSummary || savedSummary;
-  if (displayedSummary) {
-    const summary = displayedSummary.result;
-    if (state.notebookBatch === "incremental" && displayedSummary.sourceMonth !== sourceMonthForBatch(state.nextSourceBatch))
-      root.append(small("ผลขั้นตอนด้านล่างคือการเติม Source เดือน " + thaiMonth(displayedSummary.sourceMonth || "") + " ที่ผ่านล่าสุด · เดือนถัดไปคือ " + thaiMonth(sourceMonthForBatch(state.nextSourceBatch) || "")));
-    const download = node("a", "button button-outline", "↓ ดาวน์โหลด Warehouse ครบทุกตาราง (ZIP/CSV)");
-    download.href = "/api/lab-batch-result?download=warehouse&run_id=" + encodeURIComponent(displayedSummary.runId);
-    root.append(box("lab-result", node("h3", "lab-subheading", "สรุปผล Run นี้"),
-      small("Source เดือน " + thaiMonth(displayedSummary.sourceMonth || "")),
-      small("ผ่านครบ 5 ขั้น · ใช้เวลา " + money(summary?.elapsed_seconds, 1) + " วินาที"),
-      small("ออเดอร์ก่อนรัน " + money(summary?.orders_before) + " → หลังรัน " +
-        money(summary?.orders_after) + " · เพิ่ม " + money(summary?.orders_added)),
-      small("รายการขายใน Warehouse " + money(summary?.paid_sales_rows) + " แถว"),
-      small(summary?.no_duplicate_sales_items ? "ตรวจแล้ว: ไม่มีรายการขายซ้ำ" : "ยังไม่มีผลตรวจรายการซ้ำ"),
-      small("กดเปิดแต่ละขั้นด้านบนเพื่อดูตารางและตัวอย่างข้อมูลจริง"),
-      displayedSummary.url ? link("เปิด Log ของ Run นี้", displayedSummary.url) : null, download));
-  }
-  root.append(notice("เคลียร์ Lab = ลบข้อมูลใน Neon ทั้ง 25 ตารางให้เหลือ 0 · Source แยกไว้สำหรับเริ่มใหม่"));
-  const canClear = state.realReady && !["submitting", "queued", "in_progress"].includes(state.resetStatus);
-  const clear = node("button", "button " + (state.sourceExhausted ? "button-primary" : "button-outline"), "เริ่มรอบใหม่ · เคลียร์ข้อมูล Lab");
-  clear.type = "button"; clear.disabled = !canClear;
-  clear.addEventListener("click", requestNewCycle); root.append(clear);
-  if (state.recentRuns.length) {
-    const history = node("details", "notebook-history");
-    history.append(node("summary", "", "บันทึก Run เก่าใน GitHub · ไม่ใช่ข้อมูลใน Lab ปัจจุบัน"));
-    const list = box("notebook-history-body");
-    state.recentRuns.forEach(item => {
-      const button = node("button", "button button-outline",
-        (item.batch === "initial" ? "Run 1" : "Run 2") + " · #" + item.run_id);
-      button.type = "button"; button.disabled = state.historyBusy;
-      button.addEventListener("click", () => showHistoryRun(item.run_id)); list.append(button);
-    });
-    if (state.historyBusy) list.append(small("กำลังอ่านผล Run…"));
-    if (state.historyRun) {
-      list.append(node("h3", "lab-subheading", "ผล Run #" + state.historyRun.runId));
-      state.historyRun.result.stages.forEach(item => {
-        list.append(node("h4", "", NOTEBOOK_STAGES.find(x => x[0] === item.stage)?.[1] || item.stage),
-          renderLabResult(item.evidence));
-      });
-    }
-    history.append(list); root.append(history);
-  }
-  if (state.resetStatus) root.append(small("สถานะการเคลียร์ Lab: " + state.resetStatus));
-  if (state.resetError) root.append(notice(state.resetError, true));
-  if (state.resetUrl) root.append(link("ดู Log การเคลียร์ใน GitHub Actions", state.resetUrl));
-}
-
-function renderSourcePicker(root) {
-  if (state.sourceExhausted) return;
-  const batch = state.nextSourceBatch || "initial";
-  const month = sourceMonthForBatch(batch);
-  if (!month) return;
-  const panelRoot = box("source-picker-panel");
-  panelRoot.append(node("h3", "lab-subheading", "Source สำหรับรอบนี้ · " + thaiMonth(month)));
-  panelRoot.append(small("ชุดละ 1 เดือน · โครงสร้าง CSV ตาม ER เดียวกัน · ระบบเลือกเดือนถัดไปให้อัตโนมัติ"));
-  const filename = "classroom-source-" + month + ".zip";
-  const download = node("a", "button button-outline", "↓ ดาวน์โหลด Source " + thaiMonth(month));
-  download.href = "https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/releases/download/classroom-source-v1/" + filename;
-  download.target = "_blank"; download.rel = "noopener noreferrer";
-  panelRoot.append(download);
-  const controls = box("source-picker-actions");
-  const label = node("label", "button button-outline source-upload-label", "อัปโหลด Source " + thaiMonth(month) + " (.zip)");
-  const file = node("input", "source-upload-input"); file.type = "file"; file.accept = ".zip,application/zip";
-  label.append(file); controls.append(label);
-  if (state.sourceUploadId && state.sourceUploadMonth === month) {
-    controls.append(small("ไฟล์ที่เลือก: " + (state.sourceUploadName || "Source ZIP") + " · ใช้แทนชุดตัวอย่างเดือนนี้"));
-    const clear = node("button", "button button-muted", "กลับไปใช้ Source เตรียมไว้"); clear.type = "button";
-    clear.addEventListener("click", () => {
-      fetch("/api/lab-batch?id=" +
-        encodeURIComponent(state.sourceUploadId), { method: "DELETE" }).catch(() => { });
-      state.sourceUploadId = ""; state.sourceUploadMonth = ""; state.sourceUploadName = "";
-      sessionStorage.removeItem("classroom_source_upload"); state.sourceUploadError = ""; renderPipeline();
-    });
-    controls.append(clear);
-  } else controls.append(small("ถ้าไม่อัปโหลด ระบบใช้ Source ที่เตรียมไว้ให้อัตโนมัติ"));
-  file.disabled = state.sourceUploadBusy || state.sharedRun.running || !state.realReady;
-  file.addEventListener("change", async () => {
-    const selected = file.files?.[0]; if (!selected) return;
-    state.sourceUploadBusy = true; state.sourceUploadError = ""; renderPipeline();
+  async function checkBatchRun() {
+    const current = state.batchRun;
+    if (!current.since || !["queued", "in_progress"].includes(current.status)) return;
     try {
-      if (!selected.name.toLowerCase().endsWith(".zip")) throw Error("เลือกไฟล์ ZIP ของ Source รายเดือน");
-      const response = await fetch("/api/lab-batch", {
+      const query = new URLSearchParams({
+        batch: current.batch, source_batch: current.sourceBatch,
+        since: current.since
+      });
+      const response = await fetch("/api/lab-batch?" + query, { cache: "no-store" });
+      const data = await response.json();
+      if (!response.ok) throw Error(data.error || "ติดตาม Run ไม่ได้");
+      if (data.found) {
+        current.runId = data.run_id; current.url = data.url; current.stages = data.stages || [];
+        current.status = data.status === "completed" ?
+          (data.conclusion === "success" ? "success" : "failure") : data.status;
+        const active = current.stages.find(x => x.status === "in_progress");
+        const latest = [...current.stages].reverse().find(x => x.conclusion === "success");
+        state.notebookStage = NOTEBOOK_STAGES[active?.index ?? latest?.index ?? 0][0];
+        for (const step of current.stages.filter(x => x.conclusion === "success")) {
+          const stage = NOTEBOOK_STAGES[step.index]?.[0];
+          if (!stage || state.batchResults[current.batch]?.[stage]) continue;
+          try {
+            const proofResponse = await fetch("/api/lab-batch-result?" +
+              new URLSearchParams({ run_id: String(current.runId), stage }), { cache: "no-store" });
+            if (!proofResponse.ok) continue;
+            const proof = await proofResponse.json();
+            state.batchResults[current.batch][stage] = {
+              evidence: proof.evidence,
+              url: current.url, runId: current.runId
+            };
+          } catch (_error) {/* Stage artifact may still be uploading. */ }
+        }
+      }
+      if (current.status === "success") {
+        const resultResponse = await fetch("/api/lab-batch-result?run_id=" +
+          encodeURIComponent(current.runId), { cache: "no-store" });
+        const payload = await resultResponse.json();
+        if (!resultResponse.ok) throw Error(payload.error || "อ่านผล Run ไม่สำเร็จ");
+        current.result = payload.result;
+        state.batchRunIds[current.batch] = current.runId;
+        state.batchSummaries[current.batch] = {
+          runId: String(current.runId), url: current.url,
+          sourceMonth: sourceMonthForBatch(current.sourceBatch), result: payload.result
+        };
+        state.batchResults[current.batch] = Object.fromEntries(payload.result.stages.map(item =>
+          [item.stage, { evidence: item.evidence, url: current.url, runId: current.runId }]));
+        if (state.sourceUploadId && state.sourceUploadMonth === sourceMonthForBatch(state.nextSourceBatch)) {
+          state.sourceUploadId = ""; state.sourceUploadMonth = "";
+          sessionStorage.removeItem("classroom_source_upload");
+        }
+        state.notebookStage = "validate";
+        loadRealCapabilities();
+      }
+      if (current.status === "failure") {
+        state.realError = "Run ไม่ผ่าน · ข้อมูลชุดนี้ยังไม่เสร็จ กดปุ่มเดิมเพื่อลองอีกครั้ง หากยังไม่ผ่านให้ดูสาเหตุใน Log";
+        state.batchResume = { batch: current.batch, runId: current.runId };
+        loadRealCapabilities();
+      }
+      renderPipeline();
+      if (["queued", "in_progress"].includes(current.status))
+        window.setTimeout(checkBatchRun, 4000);
+    } catch (error) {
+      state.realError = error.message; renderPipeline();
+      if (["queued", "in_progress"].includes(current.status))
+        window.setTimeout(checkBatchRun, 8000);
+    }
+  }
+  async function showHistoryRun(runId) {
+    state.historyBusy = true; state.realError = ""; renderPipeline();
+    try {
+      const response = await fetch("/api/lab-batch-result?run_id=" + encodeURIComponent(runId),
+        { cache: "no-store" });
+      const payload = await response.json();
+      if (!response.ok) throw Error(payload.error || "อ่านผลรอบก่อนไม่ได้");
+      state.historyRun = { runId, result: payload.result };
+    } catch (error) { state.realError = error.message; }
+    state.historyBusy = false; renderPipeline();
+  }
+  async function resetErrorLab(nextCase = state.errorCase) {
+    state.errorCase = nextCase;
+    state.errorRun = {
+      status: "", since: "", url: "", runId: null, phase: "",
+      previous: "0", failEvidence: null, fixEvidence: null, error: "", neonRows: null
+    };
+    try { sessionStorage.removeItem("classroom_error_run"); } catch (_error) { }
+    renderPipeline();
+  }
+  async function startErrorRun(phase = "fail") {
+    const previous = phase === "fix" ? String(state.errorRun.runId || "") : "0";
+    if (phase === "fail") state.errorRun = {
+      status: "", since: "", url: "", runId: null,
+      phase: "", previous: "0", failEvidence: null, fixEvidence: null, error: "", neonRows: null
+    };
+    state.errorRun.status = "submitting"; state.errorRun.phase = phase;
+    state.errorRun.previous = previous; state.errorRun.error = "";
+    renderPipeline();
+    try {
+      const response = await fetch("/api/lab-error", {
         method: "POST",
-        headers: { "Content-Type": "application/zip" }, body: selected
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ case: state.errorCase, phase, previous_run_id: previous })
       });
       const data = await response.json();
-      if (!response.ok || !data.upload_id) throw Error(data.error || "อัปโหลด Source ไม่สำเร็จ");
-      if (data.month !== month) {
-        fetch("/api/lab-batch?id=" + encodeURIComponent(data.upload_id), { method: "DELETE" }).catch(() => { });
-        throw Error("ไฟล์นี้เป็นเดือน " + thaiMonth(data.month) + " แต่รอบนี้ต้องใช้ " + thaiMonth(month));
-      }
-      state.sourceUploadId = data.upload_id; state.sourceUploadMonth = data.month; state.sourceUploadName = selected.name;
-      sessionStorage.setItem("classroom_source_upload", JSON.stringify({ id: data.upload_id, month: data.month, name: selected.name }));
-    } catch (error) { state.sourceUploadError = error.message || "อัปโหลด Source ไม่สำเร็จ"; }
-    state.sourceUploadBusy = false; renderPipeline();
-  });
-  panelRoot.append(controls);
-  panelRoot.append(small(state.sourceUploadBusy ? "กำลังตรวจและอัปโหลด ZIP…" :
-    "ตรวจเดือน รายชื่อ 21 ตาราง และหัวคอลัมน์ทันที จากนั้นตรวจแถวและความสัมพันธ์ในพื้นที่ชั่วคราวก่อนเขียนเข้า Neon"));
-  if (state.sourceUploadError) panelRoot.append(notice(state.sourceUploadError, true));
-  root.append(panelRoot);
-}
-
-function renderMLLegacy() {
-  const root = $("#app"); root.replaceChildren();
-  const ml = state.data.ml, chosen = ml.registry.selected_model;
-  const group = state.mlGroup || "PG01";
-  const score = ml.test_metrics.find(x => x.model === chosen) || {};
-  const features = (ml.feature_preview || []).filter(x => x.product_group_id === group).slice(0, 5);
-  const predicted = (ml.serving_predictions || []).filter(x => x.product_group_id === group);
-  const checked = (ml.test_predictions || []).filter(x => x.model === chosen && x.product_group_id === group).slice(0, 5);
-  state.rows = predicted;
-  $("#headerMode").textContent = "ML Lab · ข้อมูลจำลอง";
-  $("#snapshotStamp").textContent = state.data.generated_at_utc ?
-    new Intl.DateTimeFormat("th-TH", { timeZone: "Asia/Bangkok", year: "numeric", month: "short", day: "numeric" })
-      .format(new Date(state.data.generated_at_utc)) : "—";
-  $("#footerStatus").textContent = "โมเดลทำนายได้ · ผลประเมินยังไม่ผ่านเกณฑ์";
-  const step = (title, opened, ...children) => {
-    const details = node("details", "notebook-history"); details.open = opened;
-    details.append(node("summary", "", title), box("notebook-history-body", ...children));
-    return details;
-  };
-  root.append(notice("โจทย์ ML: ใช้ข้อมูลจาก Warehouse ทำนายยอดขายสุทธิรายสัปดาห์แยกตามกลุ่มสินค้า · ชุดนี้เป็นข้อมูลจำลองเพื่อการศึกษา"));
-  root.append(small("เลือกกลุ่มสินค้า แล้วกดเปิดแต่ละขั้นเพื่อดูข้อมูลที่ใช้ วิธีทำ และผลที่ได้"));
-  root.append(chooseField("กลุ่มสินค้าที่จะดู", groups.map(id => [id, title(id)]), group, v => { state.mlGroup = v; renderML(); }));
-  root.append(step("1 · ข้อมูลจาก Warehouse", true,
-    small("Source ประวัติจำลองผ่าน Database และ Data Lake ก่อนโหลดเข้า DuckDB Warehouse"),
-    small("ตารางที่ใช้: Mart_Product_Group_Daily_Performance · " + money(ml.backtest.weeks) +
-      " สัปดาห์ · " + money(ml.backtest.groups) + " กลุ่มสินค้า"),
-    small("ML Lab นี้ใช้ Warehouse ประวัติแยกจาก Lab ที่ทดสอบ Run 1/2"),
-    link("ดู workflow ที่สร้าง Warehouse", state.data.links.ml)));
-  root.append(step("2 · สร้าง Feature Store", false,
-    small(money(ml.feature_count) + " แถว · คีย์คือกลุ่มสินค้า สัปดาห์ที่จะทำนาย และวันที่ตัดข้อมูล"),
-    small("ยอดขายย้อนหลัง ค่า Ads ย้อนหลัง และแผน Ads ที่ทราบก่อนวันทำนาย เป็นตัวอย่างข้อมูลเข้าโมเดล"),
-    dataTable([["as_of_date", "ข้อมูลถึงวันที่"], ["forecast_week_start", "สัปดาห์ที่จะทำนาย"],
-    ["product_group_id", "กลุ่มสินค้า"], ["revenue_last_week", "ยอดขายสัปดาห์ก่อน"],
-    ["planned_ads_week", "แผน Ads"]], features,
-      { revenue_last_week: { kind: "money" }, planned_ads_week: { kind: "money" } })));
-  root.append(step("3 · เตรียมชุดฝึกและฝึกโมเดล", false,
-    small("ค่าที่ทำนาย: ยอดขายสุทธิของสัปดาห์ถัดไป แยกตามกลุ่มสินค้า"),
-    small("แบ่งข้อมูลตามเวลา · Validation: " + (ml.backtest.validation_folds || []).join(", ") +
-      " · Test: " + (ml.backtest.final_test_window || []).join(" ถึง ")),
-    small("เปรียบเทียบวิธีพื้นฐานกับโมเดลที่ใช้ยอดขายย้อนหลังและข้อมูลการตลาด"),
-    small("โมเดลที่เลือกจาก Validation: " + chosen + " · รุ่น " + ml.registry.model_version)));
-  root.append(step("4 · ตรวจความคลาดเคลื่อน", false,
-    small("WAPE คือสัดส่วนยอดที่ทำนายคลาดจากยอดจริง ยิ่งต่ำยิ่งดี"),
-    add(box("metrics"),
-      metric("WAPE รายกลุ่ม", pct(score.group_wape_pct, 2), "เกณฑ์ไม่เกิน 20%"),
-      metric("WAPE ทั้งร้าน", pct(score.shop_wape_pct, 2), "เกณฑ์ไม่เกิน 15%")),
-    notice("ผลทดสอบยังไม่ผ่านเกณฑ์ทั้งสองข้อ จึงยังไม่ใช้โมเดลนี้แนะนำแผนการตลาด", true),
-    dataTable([["model", "วิธีทำนาย"], ["group_wape_pct", "WAPE รายกลุ่ม"],
-    ["shop_wape_pct", "WAPE ทั้งร้าน"]], ml.test_metrics,
-      { group_wape_pct: { kind: "percent", digits: 2 }, shop_wape_pct: { kind: "percent", digits: 2 } })));
-  root.append(step("5 · ดูผลทำนายและเทียบยอดจริง", false,
-    small("ตัวอย่างผลทำนายที่โมเดลบันทึกไว้สำหรับ " + group),
-    dataTable([["forecast_week_start", "สัปดาห์"], ["predicted_net_revenue_week", "ยอดขายสุทธิคาดการณ์"]],
-      predicted, { predicted_net_revenue_week: { kind: "money", digits: 2 } }),
-    small("ตัวอย่างช่วง Test ที่มียอดจริงแล้ว"),
-    dataTable([["forecast_week_start", "สัปดาห์"], ["actual_net_revenue_week", "ยอดจริง"],
-    ["predicted_net_revenue_week", "ยอดที่ทำนาย"]], checked,
-      { actual_net_revenue_week: { kind: "money", digits: 2 }, predicted_net_revenue_week: { kind: "money", digits: 2 } })));
-  root.append(notice("ผลนี้แสดงการทำ ML จาก Warehouse ได้จริง แต่ยังไม่ใช่การจำลองผลของการเปลี่ยนงบ Ads หรือส่วนลด"));
-}
-
-async function loadLiveML() {
-  const runId = state.warehouseSnapshot?.current_run_id;
-  if (!runId || state.mlLoading) return;
-  state.mlLoading = true;
-  try {
-    const query = new URLSearchParams({ warehouse_run_id: String(runId) });
-    const response = await fetch("/api/lab-batch-result?ml=1&" + query, { cache: "no-store" });
-    const data = await response.json();
-    if (!response.ok) throw Error(data.error || "อ่านผล ML ไม่ได้");
-    state.liveML = data;
-    state.mlError = "";
-    if (["queued", "in_progress", "processing"].includes(data.status))
-      window.setTimeout(loadLiveML, 5000);
-  } catch (error) { state.mlError = error.message || "อ่านผล ML ไม่ได้"; }
-  state.mlLoading = false;
-  if (state.view === "ml") renderML();
-}
-async function trainLiveML() {
-  const runId = state.warehouseSnapshot?.current_run_id;
-  if (!runId || state.mlLoading) return;
-  state.mlLoading = true; state.mlError = ""; renderML();
-  try {
-    const response = await fetch("/api/lab-batch-result?ml=1", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ warehouse_run_id: String(runId) })
-    });
-    const data = await response.json();
-    if (!response.ok || !data.accepted) throw Error(data.error || "เริ่ม Train ไม่ได้");
-    state.liveML = { status: data.status || "queued" };
-    window.setTimeout(loadLiveML, 4000);
-  } catch (error) { state.mlError = error.message || "เริ่ม Train ไม่ได้"; }
-  state.mlLoading = false; renderML();
-}
-function renderML() {
-  const root = $("#app"); root.replaceChildren(); state.rows = [];
-  const warehouse = state.warehouseSnapshot;
-  $("#headerMode").textContent = "ML Lab · Warehouse ปัจจุบัน";
-  $("#footerStatus").textContent = warehouse?.result ?
-    "Feature และโมเดลจาก Lab รอบ " + warehouse.cycle : "ยังไม่มี Warehouse สำหรับ ML";
-  if (state.warehouseStatus === "loading" || state.warehouseStatus === "not_loaded") {
-    root.append(small("กำลังตรวจ Warehouse ปัจจุบัน…")); return;
-  }
-  if (!warehouse?.result || warehouse.phase === "EMPTY") {
-    root.append(node("h2", "lab-heading", "ยังไม่มีข้อมูลสำหรับฝึกโมเดล"));
-    root.append(small("รันข้อมูลใน Test Pipeline ก่อน เมื่อ Warehouse มีข้อมูลแล้วจึงฝึกโมเดลได้"));
-    return;
-  }
-  const runId = warehouse.current_run_id;
-  if (state.liveMLRunId !== runId) { state.liveMLRunId = runId; state.liveML = null; }
-  const weekCount = Number(warehouse.result.ml_readiness?.complete_weeks || 0);
-  const requiredWeeks = Number(warehouse.result.ml_readiness?.minimum_weeks || 16);
-  const needsReset = Boolean(warehouse.requires_reset);
-  root.append(notice("ทำนายยอดขายสุทธิรายสัปดาห์ × กลุ่มสินค้า จาก Warehouse รอบปัจจุบัน · ข้อมูลจำลองเพื่อการศึกษา"));
-  root.append(panel("ข้อมูลที่โมเดลใช้เป็น Feature", "คำนวณจาก Warehouse ไม่ได้ใส่ตัวเลขผลลัพธ์ไว้ล่วงหน้า",
-    contentArea(dataTable([["feature", "Feature"], ["use", "ข้อมูลที่นำมาใช้"]], [
-      { feature: "revenue_last_week", use: "ยอดขายสุทธิกลุ่มสินค้าในสัปดาห์ก่อน" },
-      { feature: "revenue_mean_4weeks", use: "ค่าเฉลี่ยยอดขาย 4 สัปดาห์ย้อนหลัง" },
-      { feature: "historical_ads_last_week", use: "ค่า Ads จริงในสัปดาห์ก่อน" },
-      { feature: "planned_ads_week", use: "แผน Ads ที่บันทึกก่อนสัปดาห์เป้าหมาย" },
-      { feature: "planned_discount_mean_week", use: "ส่วนลดที่วางแผนไว้สำหรับสัปดาห์เป้าหมาย" }]))));
-  if (needsReset) root.append(notice("Lab ปัจจุบันยังเป็น Source รุ่นเดิม · เคลียร์ Lab ก่อนเพื่อให้ ML ใช้ Warehouse ชุดรายเดือนใหม่", true));
-  else if (weekCount < requiredWeeks) root.append(notice(
-    "มีสัปดาห์ข้อมูลที่ครบและใช้ได้ " + weekCount + " จาก " + requiredWeeks + " สัปดาห์ · เติม Source เดือนถัดไปเพื่อให้ข้อมูลย้อนหลังต่อเนื่องก่อนฝึกโมเดล", false));
-  const train = node("button", "button button-primary", state.mlLoading ?
-    "กำลังเตรียมโมเดล…" : "▶ ฝึกโมเดลจาก Warehouse");
-  train.type = "button"; train.disabled = state.mlLoading ||
-    needsReset || weekCount < requiredWeeks ||
-    ["queued", "in_progress", "processing"].includes(state.liveML?.status);
-  train.addEventListener("click", trainLiveML); root.append(train);
-  if (state.mlError) root.append(notice(state.mlError, true));
-  if (["queued", "in_progress", "processing"].includes(state.liveML?.status)) {
-    root.append(small("กำลังสร้าง Feature, แบ่งข้อมูลตามเวลา, ฝึกโมเดล และตรวจผลจริง…"));
-    return;
-  }
-  if (state.liveML?.status === "failure") {
-    root.append(notice("การฝึกไม่ผ่าน · กดปุ่มเดิมเพื่อลองอีกครั้ง และเปิด Log ดูสาเหตุ", true));
-    if (state.liveML.url) root.append(link("ดู Log การฝึก", state.liveML.url));
-    return;
-  }
-  const result = state.liveML?.result;
-  if (!result) { root.append(small("กดฝึกโมเดลเพื่อดู Feature, คะแนนทดสอบ และคำทำนายจากข้อมูลรอบนี้")); return; }
-  const summary = result.summary;
-  root.append(box("h-stack", small("Warehouse Run #" + runId),
-    small(money(summary.dataset_rows) + " แถว Feature · " + money(summary.weeks) + " สัปดาห์ · " +
-      money(summary.groups) + " กลุ่ม")));
-  root.append(panel("1 · Feature Store", "ข้อมูลระดับสัปดาห์ × กลุ่มสินค้า · สร้างจาก Mart และแผนจำลองที่บันทึกก่อนวันทำนาย",
-    contentArea(dataTable([["as_of_date", "ข้อมูลถึง"], ["forecast_week_start", "สัปดาห์เป้าหมาย"],
-    ["product_group_id", "กลุ่ม"], ["revenue_last_week", "ยอดสัปดาห์ก่อน"],
-    ["planned_ads_week", "แผน Ads"]], result.feature_preview))));
-  root.append(panel("2 · ฝึกและเลือกโมเดล", "แบ่ง Train/Validation/Test ตามเวลา · เลือกจาก Validation ก่อนเปิด Test",
-    contentArea(small("โมเดลที่เลือก: " + summary.selected_by_validation),
-      small("ช่วง Test: " + summary.final_test_window.join(" ถึง ")),
-      dataTable([["model", "วิธี"], ["validation_group_wape_pct", "Validation WAPE"]],
-        summary.validation_model_comparison,
-        { validation_group_wape_pct: { kind: "percent", digits: 1 } }))));
-  const selectedScore = result.test_metrics.find(x => x.model === summary.selected_by_validation);
-  if (selectedScore && (!selectedScore.group_target_20pct || !selectedScore.shop_target_15pct))
-    root.append(notice("คะแนนช่วง Test ยังไม่ถึงเกณฑ์ที่ตั้งไว้ ใช้ผลทำนายเพื่อสาธิตวิธีทำ ML และตรวจสอบแนวโน้มเท่านั้น", true));
-  root.append(panel("3 · ตรวจผลทำนาย", "WAPE ยิ่งต่ำยิ่งดี · คะแนนจากช่วง Test ที่กันไว้",
-    contentArea(dataTable([["model", "โมเดล"], ["group_wape_pct", "WAPE รายกลุ่ม"],
-    ["shop_wape_pct", "WAPE ทั้งร้าน"], ["group_target_20pct", "รายกลุ่ม ≤20%"],
-    ["shop_target_15pct", "ทั้งร้าน ≤15%"]], result.test_metrics,
-      {
-        group_wape_pct: { kind: "percent", digits: 1 }, shop_wape_pct: { kind: "percent", digits: 1 },
-        group_target_20pct: { kind: "goal" }, shop_target_15pct: { kind: "goal" }
-      }),
-      small("ผลจริงถูกใช้ตรวจหลังทำนาย · " + result.monitor.monitoring_mode))));
-  root.append(panel("4 · ตัวอย่างยอดจริงเทียบคำทำนาย", "ข้อมูลช่วง Test ที่เก็บไว้ตรวจความคลาดเคลื่อน",
-    contentArea(dataTable([["forecast_week_start", "สัปดาห์"], ["product_group_id", "กลุ่ม"],
-    ["actual_net_revenue_week", "ยอดจริง"],
-    ["predicted_net_revenue_week", "คำทำนาย"]], result.test_predictions))));
-  const scenarios = result.scenarios;
-  if (scenarios?.status === "READY") {
-    const options = scenarios.grid;
-    const group = state.scenarioGroup && options.some(x => x.group_id === state.scenarioGroup) ?
-      state.scenarioGroup : options[0].group_id;
-    const ratio = state.scenarioRatio ?? 1, campaign = state.scenarioCampaign ?? 0;
-    const selected = options.find(x => x.group_id === group && x.budget_ratio === ratio &&
-      x.campaign_discount_pct === campaign);
-    const baseline = options.filter(x => x.budget_ratio === 1 && x.campaign_discount_pct === 0);
-    const shopBaseline = baseline.reduce((sum, x) => sum + x.predicted_net_revenue_week, 0);
-    const groupBaseline = baseline.find(x => x.group_id === group);
-    const shopScenario = shopBaseline - (groupBaseline?.predicted_net_revenue_week || 0) +
-      (selected?.predicted_net_revenue_week || 0);
-    state.rows = options;
-    root.append(panel("5 · ทดลองแผนการตลาด", "ใช้โมเดลที่ฝึกจาก Warehouse คำนวณทางเลือกของกลุ่มสินค้าที่เลือก",
-      contentArea(box("h-stack",
-        chooseField("กลุ่มสินค้า", [...new Set(options.map(x => x.group_id))].map(x => [x, title(x)]),
-          group, value => { state.scenarioGroup = value; renderML() }),
-        chooseField("งบ Ads เทียบกับ 7 วันล่าสุด", [[0, "0%"], [0.5, "50%"], [1, "เท่าเดิม"],
-        [1.5, "150%"], [2, "200%"]].map(([value, label]) => [String(value), label]),
-          String(ratio), value => { state.scenarioRatio = Number(value); renderML() }),
-        chooseField("แผนลดราคา", [["0", "ไม่ลด"], ["10", "ลด 10%"]], String(campaign),
-          value => { state.scenarioCampaign = Number(value); renderML() })),
-        selected ? add(box("metrics"),
-          metric("งบ Ads ที่เลือก", "฿" + money(selected.planned_ads_week),
-            "ค่าใช้จ่ายตามแผนรายสัปดาห์"),
-          metric("คาดการณ์ยอดขายกลุ่มนี้", "฿" + money(selected.predicted_net_revenue_week),
-            "ฐานเดิม ฿" + money(groupBaseline?.predicted_net_revenue_week)),
-          metric("คาดการณ์ยอดขายทั้งร้าน", "฿" + money(shopScenario),
-            "เป้ารายสัปดาห์ ฿" + money(scenarios.weekly_shop_target))) :
-          notice("ยังคำนวณทางเลือกนี้ไม่ได้", true),
-        small("จุดตัดข้อมูล " + scenarios.as_of_date + " · พยากรณ์สัปดาห์ " +
-          scenarios.forecast_week_start + " ถึง " + scenarios.forecast_week_end),
-        small(scenarios.model_uses_plan ?
-          "โมเดลใช้ตัวแปรแผน Ads และส่วนลด แต่ผลต่างเป็นความสัมพันธ์จากข้อมูลจำลอง ไม่ใช่ผลเพิ่มยอดขายที่พิสูจน์แล้ว" :
-          "โมเดลที่ Validation เลือกไม่ใช้ตัวแปรแผน ตัวเลขคาดการณ์จึงอาจไม่เปลี่ยนตามงบ"),
-        notice("โมเดลนี้ทำนายยอดขาย ยังไม่ทำนายกำไร · เกณฑ์กำไร ≥10% ต้องดูข้อมูลต้นทุนจริงในภาพรวมธุรกิจ", true))));
-  } else root.append(notice("ยังจำลองแผนไม่ได้: ข้อมูลรายวันย้อนหลังไม่ครบ 28 วัน ณ จุดตัดข้อมูลที่ใช้ได้", true));
-  root.append(notice("โมเดลเรียนรู้ความสัมพันธ์จากข้อมูลจำลอง ไม่ได้พิสูจน์ว่างบ Ads ที่เพิ่มจะทำให้ยอดขายเพิ่ม และข้อมูลย้อนหลังนี้ยังไม่ผ่านการยืนยัน point-in-time", true));
-  if (state.liveML.url) root.append(link("ดูงานฝึกและไฟล์โมเดล", state.liveML.url));
-}
-
-function render() {
-  if (!state.data) return;
-  if (state.view === "business") renderBusiness();
-  if (state.view === "pipeline") renderPipeline();
-  if (state.view === "ml") renderML();
-  $("#exportCurrent").textContent = state.view === "business" ?
-    "↓ ดาวน์โหลดแถวตัวอย่างจาก Warehouse (CSV)" : state.view === "ml" ?
-      "↓ ดาวน์โหลดผล Scenario (CSV)" : "↓ ดาวน์โหลดข้อมูลตัวอย่างที่แสดง (CSV)";
-  $("#exportCurrent").disabled = state.view === "pipeline" || !state.rows.length;
-}
-function setView(value) {
-  if (!names[value]) return;
-  state.view = value; state.replay = false;
-  if (value === "ml" && (!state.mlGroup || !groups.includes(state.mlGroup))) state.mlGroup = "PG01";
-  document.querySelectorAll("[data-view]").forEach(btn => {
-    const active = btn.dataset.view === value;
-    btn.classList.toggle("is-active", active);
-    if (active) btn.setAttribute("aria-current", "page"); else btn.removeAttribute("aria-current");
-  });
-  $("#pageTitle").textContent = names[value][0];
-  $("#pageSubtitle").textContent = names[value][1];
-  $("#crumbView").textContent = names[value][2];
-  $("#monthFilterWrap").classList.add("hidden");
-  $("#groupFilterWrap").classList.add("hidden");
-  $("#modelFilterWrap").classList.add("hidden");
-  render();
-  if (value === "business" || value === "ml") loadWarehouseDashboard();
-  if (value === "pipeline" && state.neonStatus === "not_loaded") loadNeonEvidence();
-  if (value === "pipeline" && !state.realConfigChecked) loadRealCapabilities();
-  if (value === "pipeline" && state.savedLabManifest === null) loadSavedLabEvidence();
-}
-function exportCsv() {
-  const rows = state.rows; if (!rows.length) return;
-  const columns = [...new Set(rows.flatMap(x => Object.keys(x)))];
-  const cell = x => {
-    const s = x === null || x === undefined ? "" : String(x);
-    return /[,\"\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
-  };
-  const csv = [columns.map(cell).join(","), ...rows.map(x => columns.map(k => cell(x[k])).join(","))].join("\r\n");
-  const blob = new Blob(["\ufeff", csv], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob), a = document.createElement("a");
-  a.href = url; a.download = state.view === "business" ? ("warehouse_" + (state.warehouseSnapshot?.current_run_id || "current") + "_" + state.warehouseTable + ".csv") : "tiktok_" + state.view + "_" + state.month + ".csv";
-  document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-async function init() {
-  document.querySelectorAll("[data-view]").forEach(btn => btn.addEventListener("click", () => setView(btn.dataset.view)));
-  try {
-    const upload = JSON.parse(sessionStorage.getItem("classroom_source_upload") || "null");
-    if (upload?.id && upload?.month) { state.sourceUploadId = upload.id; state.sourceUploadMonth = upload.month; state.sourceUploadName = upload.name || ""; }
-    const errorState = JSON.parse(sessionStorage.getItem("classroom_error_run") || "null");
-    if (errorState?.case && errorState?.run) {
-      state.errorCase = errorState.case;
-      state.errorRun = { ...state.errorRun, ...errorState.run };
+      if (!response.ok || !data.accepted) throw Error(data.error || "เริ่มทดสอบ Error ไม่สำเร็จ");
+      state.errorRun.status = "queued"; state.errorRun.since = new Date().toISOString();
+      state.errorRun.url = data.url; renderPipeline();
+      window.setTimeout(checkErrorRun, 4000);
+    } catch (error) {
+      state.errorRun.status = "failure"; state.errorRun.error = error.message;
+      renderPipeline();
     }
-  } catch (_error) {
-    sessionStorage.removeItem("classroom_source_upload");
-    sessionStorage.removeItem("classroom_error_run");
   }
-  window.setInterval(() => {
-    if (state.view === "pipeline") loadRealCapabilities();
-  }, 10000);
-  $("#exportCurrent").addEventListener("click", exportCsv);
-  try {
-    const res = await fetch("./data/report.json", { cache: "no-cache" });
-    if (!res.ok) throw Error("HTTP " + res.status);
-    const d = await res.json();
-    if (d.schema_version !== "decision_dashboard_v1" ||
-      d.source_classification !== "SYNTHETIC_EDUCATIONAL_NOT_TIKTOK" ||
-      !Array.isArray(d.business?.months) || !Array.isArray(d.ml?.test_predictions) ||
-      !Array.isArray(d.pipeline?.stages) || !d.business.months.length || !d.ml.test_predictions.length)
-      throw Error("รูปแบบ Report ไม่ถูกต้องหรือไม่มีข้อมูลจริงจาก Pipeline");
-    state.data = d;
-    const months = d.business.months.map(x => x.month);
-    state.month = months.includes("2026-10") ? "2026-10" : months[months.length - 1];
-    $("#monthFilter").replaceChildren(...months.map(x => { const opt = node("option", "", x); opt.value = x; return opt; }));
-    $("#monthFilter").value = state.month;
-    $("#groupFilter").replaceChildren(...[["ALL", "ทุกกลุ่มสินค้า"], ...groups.map(x => [x, title(x)])].map(x => {
-      const opt = node("option", "", x[1]); opt.value = x[0]; return opt;
-    }));
-    state.model = d.ml.registry.selected_model;
-    $("#modelFilter").replaceChildren(...d.ml.test_metrics.map(x => {
-      const opt = node("option", "", x.model); opt.value = x.model; return opt;
-    }));
-    $("#modelFilter").value = state.model;
-    $("#monthFilter").addEventListener("change", e => { state.month = e.target.value; render() });
-    $("#groupFilter").addEventListener("change", e => { state.group = e.target.value; state.sku = ""; render() });
-    $("#modelFilter").addEventListener("change", e => { state.model = e.target.value; state.replay = false; render() });
-    $("#snapshotStamp").textContent = d.generated_at_utc ? new Intl.DateTimeFormat("th-TH", {
-      timeZone: "Asia/Bangkok", year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
-    }).format(new Date(d.generated_at_utc)) : "Batch Snapshot";
-    $("#headerMode").textContent = "Warehouse · ตรวจสถานะสด";
-    $("#footerStatus").textContent = "กำลังตรวจข้อมูล Warehouse";
-    $("#repoLink").href = d.links.repo;
-    setView("business");
+  async function checkErrorRun() {
+    const current = state.errorRun;
+    if (!current.since || !["queued", "in_progress"].includes(current.status)) return;
     try {
-      const evidenceResponse = await fetch("./data/classroom_evidence.json", { cache: "no-cache" });
-      if (evidenceResponse.ok) {
-        const evidence = await evidenceResponse.json();
-        if (evidence.classification === "SYNTHETIC_EDUCATIONAL_NOT_TIKTOK"
-          && evidence.layers?.source && evidence.layers?.warehouse) state.evidence = evidence;
+      const response = await fetch("/api/lab-error?" +
+        new URLSearchParams({
+          since: current.since, case: state.errorCase,
+          phase: current.phase, previous_run_id: current.previous
+        }), { cache: "no-store" });
+      const data = await response.json();
+      if (!response.ok) throw Error(data.error || "ติดตามการทดสอบไม่ได้");
+      current.status = data.status === "completed" ?
+        (data.conclusion === "success" ? "success" : "failure") : data.status;
+      current.url = data.url || current.url;
+      if (data.run_id) current.runId = data.run_id;
+      if (data.evidence?.phase === "fail") {
+        const found = data.evidence.detected || {};
+        current.failEvidence = {
+          stage: found.stage, title: found.title, fix: found.fix,
+          detail: {
+            error_message: found.error_message, error_code: found.error_code,
+            source_rows: found.source_rows || [], source_file: found.source_file || null
+          }
+        };
+        current.fixEvidence = null;
+        saveErrorRun();
+      } else if (data.evidence?.phase === "fix") {
+        current.fixEvidence = { detail: data.evidence.recovery || {} };
+        saveErrorRun();
+      }
+      if (current.status === "failure") current.error = "การทดสอบไม่ผ่าน · เปิด Log เพื่อตรวจสาเหตุ";
+      renderPipeline();
+      if (["queued", "in_progress"].includes(current.status) ||
+        current.status === "success" &&
+        !(current.phase === "fail" ? current.failEvidence : current.fixEvidence))
+        window.setTimeout(checkErrorRun, 5000);
+    } catch (error) {
+      current.error = error.message; renderPipeline();
+      window.setTimeout(checkErrorRun, 8000);
+    }
+  }
+  async function requestNewCycle() {
+    if (!state.realReady || !["RUN1_READY", "RUN2_READY"].includes(state.realLabPhase) || !state.realLabCycle) return;
+    const confirmation = "RESET-DEMO-DATA";
+    state.resetStatus = "submitting"; state.resetError = ""; renderPipeline();
+    try {
+      const response = await fetch("/api/lab-reset", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
+          confirmation,
+          expected_cycle: Number(state.realLabCycle)
+        })
+      });
+      const data = await response.json();
+      if (!response.ok || !data.accepted) throw Error(data.error || "ส่งคำสั่งเคลียร์ไม่ได้");
+      state.resetSince = new Date().toISOString(); state.resetUrl = data.workflow_url;
+      state.resetStatus = "queued"; renderPipeline();
+      window.setTimeout(checkNewCycle, 4000);
+    } catch (error) { state.resetStatus = ""; state.resetError = error.message; renderPipeline(); }
+  }
+  async function checkNewCycle() {
+    if (!state.resetSince) return;
+    try {
+      const query = new URLSearchParams({ cycle: String(state.realLabCycle), since: state.resetSince });
+      const response = await fetch("/api/lab-reset?" + query, { cache: "no-store" });
+      const data = await response.json();
+      if (!response.ok) throw Error(data.error || "ตรวจสถานะไม่ได้");
+      if (data.found) {
+        state.resetStatus = data.status === "completed" ?
+          (data.conclusion === "success" ? "success" : "failure") : data.status;
+        state.resetUrl = data.url || state.resetUrl;
+      }
+      if (state.resetStatus === "success") {
+        state.realPreviousRunId = ""; state.realRunId = null; state.realStatus = "";
+        state.realEvidence = null; state.notebookBatch = "initial";
+        state.notebookSelectionTouched = false; state.notebookStage = "ingest";
+        state.batchResults = { initial: {}, incremental: {} };
+        state.batchSummaries = { initial: null, incremental: null };
+        state.batchRunIds = { initial: null, incremental: null };
+        state.batchRun = { batch: "", status: "", since: "", runId: null, url: "", stages: [] };
+        if (state.sourceUploadId) fetch("/api/lab-batch?id=" +
+          encodeURIComponent(state.sourceUploadId), { method: "DELETE" }).catch(() => { });
+        state.sourceUploadId = ""; state.sourceUploadMonth = ""; state.sourceUploadName = "";
+        sessionStorage.removeItem("classroom_source_upload");
+        state.labNeon = null; state.labNeonTable = null; loadRealCapabilities();
+      }
+      renderPipeline();
+      if (["queued", "in_progress"].includes(state.resetStatus)) window.setTimeout(checkNewCycle, 4000);
+    } catch (error) { state.resetError = error.message; renderPipeline(); }
+  }
+  async function loadLabNeon(schema = "", table = "") {
+    if (state.labNeonBusy) return;
+    state.labNeonBusy = true; state.labNeonError = ""; renderPipeline();
+    try {
+      const query = table ? "?" + new URLSearchParams({ schema, table }) : "";
+      const response = await fetch("/api/lab-neon-evidence" + query, { cache: "no-store" });
+      const data = await response.json();
+      if (!response.ok || !data.connected) throw Error(data.error || "อ่าน Neon ไม่สำเร็จ");
+      if (table) state.labNeonTable = data; else state.labNeon = data;
+    } catch (error) { state.labNeonError = error.message || "อ่าน Neon ไม่สำเร็จ"; }
+    state.labNeonBusy = false; renderPipeline();
+  }
+  function renderPipeline() {
+    const root = $("#app"); root.replaceChildren();
+    const tabs = box("notebook-tabs");
+    [["flow", "ขั้นตอนการรัน"], ["neon", "Neon · ฐานข้อมูลต้นทาง"], ["files", "Snapshot เก่า · Data Lake / Warehouse"],
+    ["errors", "ทดสอบข้อผิดพลาด"]].forEach(([id, label]) => {
+      const button = node("button", "notebook-tab" + (state.pipelineTab === id ? " is-active" : ""), label);
+      button.type = "button"; button.setAttribute("aria-pressed", String(state.pipelineTab === id));
+      button.addEventListener("click", () => {
+        state.pipelineTab = id; renderPipeline();
+        if (id === "neon" && !state.labNeon) loadLabNeon();
+      }); tabs.append(button);
+    });
+    root.append(tabs);
+    if (state.pipelineTab === "neon") {
+      root.append(notice("ข้อมูลสดจาก branch classroom-live-run-lab · Database tiktok_demo · อ่านอย่างเดียว"));
+      root.append(small("เลือกตาราง Fact_Orders เพื่อดูออเดอร์จริงใน Lab หรือเลือกตารางอื่นเพื่อดูข้อมูลและจำนวนแถว"));
+      root.append(small("ดูตารางและแถวจริงได้จากหน้านี้เลย ไม่ต้องเข้า Neon Console หรือมีบัญชี Neon"));
+      if (state.labNeonBusy) root.append(small("กำลังอ่านรายชื่อตาราง…"));
+      if (state.labNeonError) root.append(notice(state.labNeonError, true));
+      const tables = state.labNeon?.tables || [];
+      if (tables.length) {
+        root.append(small("demo_er1 · " + tables.filter(x => x.table_schema === "demo_er1").length +
+          " ตารางธุรกิจ | demo_control · " + tables.filter(x => x.table_schema === "demo_control").length + " ตารางควบคุม"));
+        root.append(chooseField("เลือกตารางธุรกิจใน Neon", [["", "— เลือกตาราง —"], ...tables.filter(x => x.table_schema === "demo_er1").map(x =>
+          [x.table_schema + "." + x.table_name, x.table_schema + " · " + x.table_name])],
+          state.labNeonTable ? state.labNeonTable.schema + "." + state.labNeonTable.table : "", value => {
+            const [schema, table] = value.split("."); if (table) loadLabNeon(schema, table);
+          }));
+      }
+      if (state.labNeonTable) {
+        const d = state.labNeonTable;
+        root.append(node("h3", "lab-subheading", d.schema + "." + d.table + " · " + money(d.row_count) + " แถว"));
+        root.append(dataTable([["column_name", "คอลัมน์"], ["data_type", "ชนิดข้อมูล"]], d.columns));
+        root.append(node("h3", "lab-subheading", "ตัวอย่างข้อมูล 5 แถวแรก"));
+        root.append(dataTable(d.columns.slice(0, 8).map(x => [x.column_name, x.column_name]), d.preview_rows));
+      } return;
+    }
+    if (state.pipelineTab === "files") {
+      root.append(notice("Data Lake เก็บ Landing / Raw / Standardized; DuckDB Warehouse เป็นไฟล์จาก GitHub Worker ไม่ใช่ตารางใน Neon"));
+      root.append(small("ผลรันปัจจุบันดูได้ในแท็บ ขั้นตอนการรัน โดยเปิดขั้นแล้วกดชื่อตารางด้านล่าง · ส่วนต่อไปเป็น Snapshot เก่า"));
+      renderEvidenceExplorer(root); return;
+    }
+    if (state.pipelineTab === "errors") {
+      const scenarios = [
+        ["N01", "สินค้าอ้างถึงกลุ่มสินค้าที่ไม่มีในข้อมูลหลัก", "Database · Neon Error Lab แยกต่างหาก"],
+        ["E01", "รายการสั่งซื้ออ้างถึง SKU ที่ไม่มีอยู่", "Source → Database"],
+        ["E02", "ไฟล์ออเดอร์ต้นทางหาย", "Source → Database"],
+        ["T01", "ข้อมูล Voucher ผิดกฎ", "Data Lake → Standardized"],
+        ["T02", "ช่วงเวลา Campaign ซ้อนกัน", "Data Lake → Standardized"],
+        ["L01", "โหลด Warehouse ไม่สำเร็จ", "Data Lake → Warehouse"]
+      ];
+      const selected = scenarios.find(x => x[0] === state.errorCase) || scenarios[0];
+      const busy = ["submitting", "queued", "in_progress"].includes(state.errorRun.status);
+      root.append(node("h2", "lab-heading", "สาธิตการรับมือเมื่อข้อมูลมีปัญหา"));
+      root.append(notice("ใช้ชุดข้อมูลจำลองใน Error Lab ซึ่งแยกจาก Run 1/2 เพื่อให้เห็นว่าระบบพบปัญหาอะไร แก้อย่างไร และผลหลังแก้เป็นอย่างไร", false));
+      root.append(chooseField("เลือกกรณี", [...scenarios.map(x => [x[0], x[1]])],
+        state.errorCase, value => {
+          if (busy) return;
+          resetErrorLab(value);
+        }));
+      root.append(node("h3", "lab-subheading", "สถานการณ์ที่จะทดลอง · " + selected[1]));
+      root.append(small("จุดที่ระบบจะตรวจ: " + selected[2]));
+      if (state.errorCase === "N01") {
+        root.append(small("ตัวอย่างข้อมูล: แถวสินค้าอ้าง Product_Group_ID = MISSING_GROUP แต่ไม่มีรหัสนี้ในตารางกลุ่มสินค้า"));
+        root.append(dataTable([["SKU_ID", "SKU_ID"], ["Product_Group_ID", "Product_Group_ID"],
+        ["SKU_Name", "SKU_Name"]], [{
+          SKU_ID: "ERROR_TEST_SKU",
+          Product_Group_ID: "MISSING_GROUP", SKU_Name: "สินค้าเดโมทดสอบ Error"
+        }]));
+        root.append(small("กฎที่ตรวจ: สินค้าต้องอ้างถึงกลุ่มสินค้าที่มีอยู่จริง · ระบบไม่ได้สร้าง Group ใหม่"));
+      } else root.append(small("ระบบจะใช้ชุดข้อมูลทดสอบแยกที่จำลองสถานการณ์นี้ แล้วตรวจจนถึงขั้นที่พบปัญหา"));
+      if (!state.errorRun.failEvidence) {
+        const button = node("button", "button button-primary",
+          busy ? "กำลังตรวจชุดข้อมูล…" : "▶ เริ่มทดสอบกรณีนี้");
+        button.type = "button"; button.disabled = busy;
+        button.addEventListener("click", () => startErrorRun("fail")); root.append(button);
+      }
+      if (busy) root.append(small(state.errorRun.phase === "fix" ?
+        "กำลังแก้ข้อมูลและรันซ้ำ…" : "กำลังตรวจชุดข้อมูลและหาจุดที่พบปัญหา…"));
+      if (state.errorRun.error) root.append(notice(state.errorRun.error, true));
+      if (state.errorRun.failEvidence) {
+        const found = state.errorRun.failEvidence;
+        const detail = found.detail || {};
+        root.append(node("h3", "lab-subheading", "1 · ระบบพบปัญหาที่ขั้น " + (found.stage || "กำลังตรวจสอบ")));
+        root.append(notice("สาเหตุ: " + (found.title || "ไม่พบชื่อกรณีทดสอบ") + " · " +
+          (detail.error_message || detail.error_code || "ไม่มีรายละเอียดเพิ่มเติม"), true));
+        if (detail.source_rows?.length) {
+          const rows = detail.source_rows;
+          root.append(small("ข้อมูลที่ทำให้เกิด Error"));
+          root.append(dataTable(Object.keys(rows[0]).map(key => [key, key]), rows));
+        }
+        if (detail.source_file) root.append(small("Source: " + detail.source_file));
+        root.append(small("ผลต่อการรัน: " + (detail.error_code || "ดูรายละเอียดจากผลทดสอบ") +
+          " · การทดสอบนี้แยกจากข้อมูล Run 1/2"));
+        root.append(node("h3", "lab-subheading", "2 · แนวทางแก้"));
+        root.append(small(found.fix || "ตรวจข้อมูลตามสาเหตุ แล้วรันการทดสอบเดิมอีกครั้ง"));
+        if (!state.errorRun.fixEvidence) {
+          const fix = node("button", "button button-primary",
+            busy ? "กำลังแก้ตามแนวทางและตรวจต่อ…" : "ให้ระบบแก้ตามแนวทาง แล้วรันต่อ");
+          fix.type = "button"; fix.disabled = busy;
+          fix.addEventListener("click", () => startErrorRun("fix")); root.append(fix);
+        }
+      }
+      if (state.errorRun.fixEvidence) {
+        const fixed = state.errorRun.fixEvidence.detail;
+        root.append(node("h3", "lab-subheading", "3 · ผลหลังแก้"));
+        root.append(small("รันต่อจากขั้นที่พบปัญหา · สถานะหลังแก้: " + fixed.retry_status));
+        if (fixed.before && fixed.after) {
+          root.append(small("ก่อนแก้"));
+          root.append(dataTable(Object.keys(fixed.before).map(key => [key, key]), [fixed.before]));
+          root.append(small(state.errorCase === "N01" ?
+            "หลังแก้ · ตรวจผ่านแล้ว และย้อนข้อมูลทดสอบออกจาก Neon เรียบร้อย" :
+            "หลังแก้ · รันซ้ำจากขั้นที่พบปัญหาแล้ว"));
+        }
+        if (fixed.result_rows?.length)
+          root.append(dataTable(Object.keys(fixed.result_rows[0]).slice(0, 8)
+            .map(key => [key, key]), fixed.result_rows));
+        if (state.errorCase === "N01") {
+          root.append(small("ข้อมูลจริงใน Neon · classroom-error-lab · demo_er1.Dim_SKU"));
+          if (state.errorRun.neonRows?.length)
+            root.append(dataTable(Object.keys(state.errorRun.neonRows[0])
+              .map(key => [key, key]), state.errorRun.neonRows));
+          else root.append(small("กำลังอ่านแถวจริงจากฐานข้อมูล Error Lab…"));
+          root.append(small("แสดงข้อมูลจากตารางจริงใน Error Lab โดยตรง ไม่ต้องเปิด Neon Console"));
+        }
+        const again = node("button", "button", "เริ่มสถานการณ์นี้อีกครั้ง");
+        again.type = "button"; again.addEventListener("click", () => resetErrorLab());
+        root.append(again);
+      }
+      if (state.errorRun.url) root.append(link("ดูรายละเอียดการรันใน GitHub", state.errorRun.url));
+      return;
+    }
+    if (state.pipelineTab === "operate") {
+      root.append(notice("Lab ใหม่เริ่มจากฐานข้อมูลว่าง ข้อมูลต้นทางอยู่ในไฟล์ Source; การกด Run 1 และเติมข้อมูลจะประมวลผลจริงบน Vercel Native Runner"));
+      renderRealRunner(root); return;
+    }
+    const phase = state.realLabPhase;
+    renderSourcePicker(root);
+    root.append(box("notebook-intro",
+      node("h2", "lab-heading", "Source → Database → Data Lake → Warehouse"),
+      node("p", "lab-description", "Run 1 นำเข้าข้อมูลตั้งต้น จากนั้นกดเติมข้อมูลใหม่ได้ทีละชุด ทุกครั้งเดินครบทั้งเส้นทาง"),
+      small("Lab ที่ใช้รัน: " + (phase === "UNKNOWN" ? "กำลังตรวจสอบ" : phase) + " · " + money(state.realLabOrders || 0) + " ออเดอร์")));
+    const batchPicker = box("notebook-runs");
+    const nextMonth = sourceMonthForBatch(state.nextSourceBatch);
+    const incrementalLabel = state.sourceExhausted ? "ข้อมูลครบถึงตุลาคม 2569" :
+      !state.currentRunId ? "เติมข้อมูลหลัง Run 1" :
+        "เติมข้อมูล · " + thaiMonth(nextMonth || "");
+    [["initial", "Run 1 · มกราคม 2569", "ข้อมูลตั้งต้นและโครงสร้างธุรกิจ"],
+    ["incremental", incrementalLabel,
+      "เพิ่ม Source เดือนถัดไปครั้งละหนึ่งเดือน"]].forEach(([id, label, detail]) => {
+        const button = node("button", "notebook-run" + (state.notebookBatch === id ? " is-active" : ""));
+        button.type = "button"; button.setAttribute("aria-pressed", String(state.notebookBatch === id));
+        button.append(node("strong", "", label), small(detail));
+        button.addEventListener("click", () => {
+          state.notebookBatch = id;
+          state.notebookSelectionTouched = true; state.notebookStage = "ingest";
+          state.savedLabReceipt = null; state.savedLabSelected = ""; renderPipeline();
+        }); batchPicker.append(button);
+      }); root.append(batchPicker);
+    const canStartBatch = state.realReady && !state.requiresReset && !state.sourceExhausted &&
+      !state.sharedRun.running && (state.notebookBatch === "initial" ? phase === "EMPTY" :
+        ["RUN1_READY", "RUN2_READY"].includes(phase) && Boolean(state.currentRunId));
+    const batchBusy = ["submitting", "queued", "in_progress"].includes(state.batchRun.status);
+    const alreadyDone = state.notebookBatch === "initial" && Boolean(state.batchSummaries.initial);
+    const batchAction = node("button", "button button-primary", batchBusy ?
+      "กำลังรัน " + (state.batchRun.batch === "initial" ? "Run 1" : "ข้อมูลใหม่") + " ทั้งรอบ…" :
+      alreadyDone ? (state.notebookBatch === "initial" ? "✓ Run 1 ผ่านแล้ว" : "✓ เดือนนี้รันผ่านแล้ว") :
+        state.notebookBatch === "initial" ? "▶ รันข้อมูลตั้งต้น" : "▶ เติมข้อมูลใหม่");
+    batchAction.type = "button"; batchAction.disabled = !canStartBatch || batchBusy;
+    batchAction.addEventListener("click", () => runWholeBatch());
+
+    const actionGroup = box("h-stack", batchAction);
+    const isMonth3Next = state.notebookBatch === "incremental" && (state.nextSourceBatch === "incremental_02" || state.currentCycleRuns?.length === 2);
+    if (isMonth3Next && canStartBatch && !batchBusy && !state.month3ErrorEvidence) {
+      const errBtn = node("button", "button button-secondary", "⚠️ สาธิตพบ Error ในเดือน 3 (Quality Test)");
+      errBtn.type = "button"; errBtn.style.color = "var(--red)";
+      errBtn.addEventListener("click", () => runWholeBatch({ is_error_demo: true }));
+      actionGroup.append(errBtn);
+    }
+    root.append(actionGroup);
+
+    if (state.month3ErrorEvidence) {
+      const recPanel = box("panel",
+        box("panel-head", box("",
+          node("h3", "panel-heading", "⚠️ ผลการสาธิต: ระบบตรวจพบข้อผิดพลาดในเดือน 3"),
+          node("p", "panel-description", "ตรวจพบ SKU ที่ไม่มีใน Dim_SKU ในขั้นตอน Transform / Quality Check"))),
+        box("panel-body",
+          notice("🔒 ระบบกักข้อมูลเดือน 3 ไว้ใน Quarantine และหยุดการประมวลผลทันที ข้อมูลเดือน 1-2 ใน Warehouse ยังคงเดิม ไม่เสียหาย", true),
+          box("h-stack", (() => {
+            const resumeBtn = node("button", "button button-primary", "🔄 ใช้ข้อมูลฉบับแก้ไข แล้วรันต่อจาก Checkpoint");
+            resumeBtn.type = "button";
+            resumeBtn.addEventListener("click", () => {
+              state.month3ErrorEvidence = null;
+              runWholeBatch({ is_error_demo: false });
+            });
+            return resumeBtn;
+          })())));
+      root.append(recPanel);
+    }
+
+    if (!canStartBatch) root.append(small(!state.realReady ?
+      "ระบบสั่งงานยังไม่พร้อม" : state.sourceExhausted ?
+        "Source ชุดนี้ใช้ครบแล้ว เคลียร์ Lab เพื่อเริ่มใหม่" :
+        "ต้องให้ข้อมูลชุดก่อนผ่านครบก่อน"));
+    root.append(node("p", "notebook-caption", "กด Run หนึ่งครั้ง ระบบจะวิ่งครบทุกขั้นบน Vercel แล้วเปิดดูผลของแต่ละขั้นเมื่อเสร็จ"));
+    if (state.batchRun.status) {
+      root.append(small("สถานะ Run: " + state.batchRun.status +
+        (state.batchRun.runId ? " · Vercel Execution #" + state.batchRun.runId : "")));
+      if (state.batchRun.url) root.append(link("ดูการทำงานและ Log จริง", state.batchRun.url));
+      if (state.realError) root.append(notice(state.realError, true));
+    }
+    if (state.sharedRun.running && !batchBusy) {
+      const activeName = state.sharedRun.type === "RUN1" ? "Run 1" : "การเติมข้อมูล";
+      const step = state.sharedRun.stage?.name ?
+        " · ขั้นปัจจุบัน: " + state.sharedRun.stage.name.replace(/^[1-5] /, "") : " · กำลังเริ่มงาน";
+      root.append(notice(activeName + " กำลังทำงานอยู่ใน Lab" + step +
+        " · ทุกคนที่เปิดลิงก์นี้จะเห็นสถานะเดียวกัน ระบบจะเปิดปุ่มรันอีกครั้งเมื่อเสร็จ"));
+    }
+    const runState = {
+      submitting: "กำลังส่งคำสั่ง", queued: "กำลังเตรียม Vercel Function",
+      in_progress: "กำลังประมวลผลบน Vercel", success: "เสร็จแล้ว", failure: "ไม่สำเร็จ"
+    };
+    const entries = state.savedLabManifest?.runs?.filter(x => x.batch === state.notebookBatch) || [];
+    NOTEBOOK_STAGES.forEach(([id, title, description], index) => {
+      const entry = entries.find(x => x.stage === id), active = state.notebookStage === id;
+      const cell = node("section", "notebook-cell" + (active ? " is-open" : ""));
+      const head = node("button", "notebook-cell-head"); head.type = "button";
+      head.setAttribute("aria-expanded", String(active));
+      const savedResult = state.batchResults[state.notebookBatch]?.[id];
+      const liveStep = state.batchRun.batch === state.notebookBatch ?
+        state.batchRun.stages.find(x => x.index === index) : null;
+      const runningNow = liveStep?.status === "in_progress";
+      head.append(node("span", "notebook-number", String(index + 1)),
+        box("notebook-cell-title", node("strong", "", title), small(description)),
+        node("span", "notebook-cell-state", savedResult || liveStep?.conclusion === "success" ?
+          "ผ่านแล้ว" : runningNow ? "กำลังรัน" : liveStep?.conclusion === "failure" ? "ผิดพลาด" : "รอรัน"));
+      head.addEventListener("click", () => {
+        state.notebookStage = id; state.savedLabReceipt = null; renderPipeline();
+      }); cell.append(head);
+      if (active) {
+        const body = box("notebook-cell-body");
+        body.append(small("Input: " + (index === 0 ? "Source CSV ชุด" + (state.notebookBatch === "initial" ? "ตั้งต้น" : "ข้อมูลใหม่") :
+          index === 1 ? "25 ตารางใน Neon" : index === 2 ? "Raw Parquet" : index === 3 ? "Standardized Parquet" : "Database และ Warehouse")));
+        body.append(small("ขั้นนี้ทำอะไร: " + description));
+        if (liveStep?.started_at) body.append(small("เริ่ม " +
+          new Date(liveStep.started_at).toLocaleTimeString("th-TH") +
+          (liveStep.completed_at ? " · เสร็จ " + new Date(liveStep.completed_at).toLocaleTimeString("th-TH") : "")));
+        if (savedResult) body.append(box("notebook-output",
+          node("strong", "", "ผลจากการรันครั้งนี้"), renderLabResult(savedResult.evidence),
+          savedResult.url ? link("ดู Log ของขั้นนี้", savedResult.url) : null));
+        if (!savedResult) body.append(small(runningNow ? "กำลังประมวลผลขั้นนี้จริง" :
+          "ผลของขั้นนี้จะแสดงเมื่อ Run จบและหลักฐานพร้อม"));
+        if (entry) {
+          const history = node("details", "notebook-history");
+          history.open = state.savedLabReceipt?.batch === state.notebookBatch && state.savedLabReceipt?.stage === id;
+          history.append(node("summary", "", "ดูตัวอย่างจาก Lab เดิม (ไม่ใช่ผลรอบนี้)"));
+          const historyBody = box("notebook-history-body");
+          if (state.savedLabLoading) historyBody.append(small("กำลังอ่านผลรอบก่อน…"));
+          else if (state.savedLabReceipt?.batch === state.notebookBatch && state.savedLabReceipt?.stage === id) {
+            const receipt = state.savedLabReceipt;
+            historyBody.append(renderLabResult(receipt.evidence),
+              link("ดู GitHub Run รอบก่อน", "https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/actions/runs/" + receipt.git_run_id));
+          } else {
+            const open = node("button", "button button-outline", "เปิดหลักฐานเดิม");
+            open.type = "button"; open.addEventListener("click", () => selectSavedLabStage(entry)); historyBody.append(open);
+          }
+          history.append(historyBody); body.append(history);
+        }
+        if (id === "ingest" && savedResult) {
+          body.append(small("ขั้นนี้ sync ข้อมูลธุรกิจ 25 ตารางเข้า Neon · กดชื่อตารางด้านบนเพื่อดูตัวอย่างจากรันนี้"));
+          const neonButton = node("button", "button button-outline", "ดูตารางและแถวจริงใน Neon");
+          neonButton.type = "button";
+          neonButton.addEventListener("click", () => {
+            const prefix = state.notebookBatch + "/ingest/";
+            const selected = state.selectedResultTable.startsWith(prefix) ?
+              state.selectedResultTable.slice(prefix.length) : "Fact_Orders";
+            state.pipelineTab = "neon"; renderPipeline();
+            loadLabNeon("demo_er1", selected);
+          });
+          body.append(neonButton);
+        }
+        if (id === "extract") body.append(small("การตรวจความครบถ้วนระหว่าง Database กับ Raw ใช้จำนวนตารางและไฟล์ manifest"));
+        if (id === "validate") body.append(small("ผลตรวจท้ายรอบเทียบ Paid Items และ Net Revenue ระหว่างฐานข้อมูลต้นทางกับ Warehouse"));
+        cell.append(body);
+      }
+      root.append(cell);
+    });
+    const savedSummary = state.batchSummaries[state.notebookBatch];
+    const liveSummary = state.batchRun.status === "success" && state.batchRun.batch === state.notebookBatch ?
+      { runId: state.batchRun.runId, url: state.batchRun.url, sourceMonth: sourceMonthForBatch(state.batchRun.sourceBatch), result: state.batchRun.result } : null;
+    const displayedSummary = liveSummary || savedSummary;
+    if (displayedSummary) {
+      const summary = displayedSummary.result;
+      if (state.notebookBatch === "incremental" && displayedSummary.sourceMonth !== sourceMonthForBatch(state.nextSourceBatch))
+        root.append(small("ผลขั้นตอนด้านล่างคือการเติม Source เดือน " + thaiMonth(displayedSummary.sourceMonth || "") + " ที่ผ่านล่าสุด · เดือนถัดไปคือ " + thaiMonth(sourceMonthForBatch(state.nextSourceBatch) || "")));
+      const download = node("a", "button button-outline", "↓ ดาวน์โหลด Warehouse ครบทุกตาราง (ZIP/CSV)");
+      download.href = "/api/lab-batch-result?download=warehouse&run_id=" + encodeURIComponent(displayedSummary.runId);
+      root.append(box("lab-result", node("h3", "lab-subheading", "สรุปผล Run นี้"),
+        small("Source เดือน " + thaiMonth(displayedSummary.sourceMonth || "")),
+        small("ผ่านครบ 5 ขั้น · ใช้เวลา " + money(summary?.elapsed_seconds, 1) + " วินาที"),
+        small("ออเดอร์ก่อนรัน " + money(summary?.orders_before) + " → หลังรัน " +
+          money(summary?.orders_after) + " · เพิ่ม " + money(summary?.orders_added)),
+        small("รายการขายใน Warehouse " + money(summary?.paid_sales_rows) + " แถว"),
+        small(summary?.no_duplicate_sales_items ? "ตรวจแล้ว: ไม่มีรายการขายซ้ำ" : "ยังไม่มีผลตรวจรายการซ้ำ"),
+        small("กดเปิดแต่ละขั้นด้านบนเพื่อดูตารางและตัวอย่างข้อมูลจริง"),
+        displayedSummary.url ? link("เปิด Log ของ Run นี้", displayedSummary.url) : null, download));
+    }
+    root.append(notice("เคลียร์ Lab = ลบข้อมูลใน Neon ทั้ง 25 ตารางให้เหลือ 0 · Source แยกไว้สำหรับเริ่มใหม่"));
+    const canClear = state.realReady && !["submitting", "queued", "in_progress"].includes(state.resetStatus);
+    const clear = node("button", "button " + (state.sourceExhausted ? "button-primary" : "button-outline"), "เริ่มรอบใหม่ · เคลียร์ข้อมูล Lab");
+    clear.type = "button"; clear.disabled = !canClear;
+    clear.addEventListener("click", requestNewCycle); root.append(clear);
+    if (state.recentRuns.length) {
+      const history = node("details", "notebook-history");
+      history.append(node("summary", "", "บันทึก Run เก่าใน GitHub · ไม่ใช่ข้อมูลใน Lab ปัจจุบัน"));
+      const list = box("notebook-history-body");
+      state.recentRuns.forEach(item => {
+        const button = node("button", "button button-outline",
+          (item.batch === "initial" ? "Run 1" : "Run 2") + " · #" + item.run_id);
+        button.type = "button"; button.disabled = state.historyBusy;
+        button.addEventListener("click", () => showHistoryRun(item.run_id)); list.append(button);
+      });
+      if (state.historyBusy) list.append(small("กำลังอ่านผล Run…"));
+      if (state.historyRun) {
+        list.append(node("h3", "lab-subheading", "ผล Run #" + state.historyRun.runId));
+        state.historyRun.result.stages.forEach(item => {
+          list.append(node("h4", "", NOTEBOOK_STAGES.find(x => x[0] === item.stage)?.[1] || item.stage),
+            renderLabResult(item.evidence));
+        });
+      }
+      history.append(list); root.append(history);
+    }
+    if (state.resetStatus) root.append(small("สถานะการเคลียร์ Lab: " + state.resetStatus));
+    if (state.resetError) root.append(notice(state.resetError, true));
+    if (state.resetUrl) root.append(link("ดู Log การเคลียร์ใน GitHub Actions", state.resetUrl));
+  }
+
+  function renderSourcePicker(root) {
+    if (state.sourceExhausted) return;
+    const batch = state.nextSourceBatch || "initial";
+    const month = sourceMonthForBatch(batch);
+    if (!month) return;
+    const panelRoot = box("source-picker-panel");
+    panelRoot.append(node("h3", "lab-subheading", "Source สำหรับรอบนี้ · " + thaiMonth(month)));
+    panelRoot.append(small("ชุดละ 1 เดือน · โครงสร้าง CSV ตาม ER เดียวกัน · ระบบเลือกเดือนถัดไปให้อัตโนมัติ"));
+    const filename = "classroom-source-" + month + ".zip";
+    const download = node("a", "button button-outline", "↓ ดาวน์โหลด Source " + thaiMonth(month));
+    download.href = "https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/releases/download/classroom-source-v1/" + filename;
+    download.target = "_blank"; download.rel = "noopener noreferrer";
+    panelRoot.append(download);
+    const controls = box("source-picker-actions");
+    const label = node("label", "button button-outline source-upload-label", "อัปโหลด Source " + thaiMonth(month) + " (.zip)");
+    const file = node("input", "source-upload-input"); file.type = "file"; file.accept = ".zip,application/zip";
+    label.append(file); controls.append(label);
+    if (state.sourceUploadId && state.sourceUploadMonth === month) {
+      controls.append(small("ไฟล์ที่เลือก: " + (state.sourceUploadName || "Source ZIP") + " · ใช้แทนชุดตัวอย่างเดือนนี้"));
+      const clear = node("button", "button button-muted", "กลับไปใช้ Source เตรียมไว้"); clear.type = "button";
+      clear.addEventListener("click", () => {
+        fetch("/api/lab-batch?id=" +
+          encodeURIComponent(state.sourceUploadId), { method: "DELETE" }).catch(() => { });
+        state.sourceUploadId = ""; state.sourceUploadMonth = ""; state.sourceUploadName = "";
+        sessionStorage.removeItem("classroom_source_upload"); state.sourceUploadError = ""; renderPipeline();
+      });
+      controls.append(clear);
+    } else controls.append(small("ถ้าไม่อัปโหลด ระบบใช้ Source ที่เตรียมไว้ให้อัตโนมัติ"));
+    file.disabled = state.sourceUploadBusy || state.sharedRun.running || !state.realReady;
+    file.addEventListener("change", async () => {
+      const selected = file.files?.[0]; if (!selected) return;
+      state.sourceUploadBusy = true; state.sourceUploadError = ""; renderPipeline();
+      try {
+        if (!selected.name.toLowerCase().endsWith(".zip")) throw Error("เลือกไฟล์ ZIP ของ Source รายเดือน");
+        const response = await fetch("/api/lab-batch", {
+          method: "POST",
+          headers: { "Content-Type": "application/zip" }, body: selected
+        });
+        const data = await response.json();
+        if (!response.ok || !data.upload_id) throw Error(data.error || "อัปโหลด Source ไม่สำเร็จ");
+        if (data.month !== month) {
+          fetch("/api/lab-batch?id=" + encodeURIComponent(data.upload_id), { method: "DELETE" }).catch(() => { });
+          throw Error("ไฟล์นี้เป็นเดือน " + thaiMonth(data.month) + " แต่รอบนี้ต้องใช้ " + thaiMonth(month));
+        }
+        state.sourceUploadId = data.upload_id; state.sourceUploadMonth = data.month; state.sourceUploadName = selected.name;
+        sessionStorage.setItem("classroom_source_upload", JSON.stringify({ id: data.upload_id, month: data.month, name: selected.name }));
+      } catch (error) { state.sourceUploadError = error.message || "อัปโหลด Source ไม่สำเร็จ"; }
+      state.sourceUploadBusy = false; renderPipeline();
+    });
+    panelRoot.append(controls);
+    panelRoot.append(small(state.sourceUploadBusy ? "กำลังตรวจและอัปโหลด ZIP…" :
+      "ตรวจเดือน รายชื่อ 21 ตาราง และหัวคอลัมน์ทันที จากนั้นตรวจแถวและความสัมพันธ์ในพื้นที่ชั่วคราวก่อนเขียนเข้า Neon"));
+    if (state.sourceUploadError) panelRoot.append(notice(state.sourceUploadError, true));
+    root.append(panelRoot);
+  }
+
+  function renderMLLegacy() {
+    const root = $("#app"); root.replaceChildren();
+    const ml = state.data.ml, chosen = ml.registry.selected_model;
+    const group = state.mlGroup || "PG01";
+    const score = ml.test_metrics.find(x => x.model === chosen) || {};
+    const features = (ml.feature_preview || []).filter(x => x.product_group_id === group).slice(0, 5);
+    const predicted = (ml.serving_predictions || []).filter(x => x.product_group_id === group);
+    const checked = (ml.test_predictions || []).filter(x => x.model === chosen && x.product_group_id === group).slice(0, 5);
+    state.rows = predicted;
+    $("#headerMode").textContent = "ML Lab · ข้อมูลจำลอง";
+    $("#snapshotStamp").textContent = state.data.generated_at_utc ?
+      new Intl.DateTimeFormat("th-TH", { timeZone: "Asia/Bangkok", year: "numeric", month: "short", day: "numeric" })
+        .format(new Date(state.data.generated_at_utc)) : "—";
+    $("#footerStatus").textContent = "โมเดลทำนายได้ · ผลประเมินยังไม่ผ่านเกณฑ์";
+    const step = (title, opened, ...children) => {
+      const details = node("details", "notebook-history"); details.open = opened;
+      details.append(node("summary", "", title), box("notebook-history-body", ...children));
+      return details;
+    };
+    root.append(notice("โจทย์ ML: ใช้ข้อมูลจาก Warehouse ทำนายยอดขายสุทธิรายสัปดาห์แยกตามกลุ่มสินค้า · ชุดนี้เป็นข้อมูลจำลองเพื่อการศึกษา"));
+    root.append(small("เลือกกลุ่มสินค้า แล้วกดเปิดแต่ละขั้นเพื่อดูข้อมูลที่ใช้ วิธีทำ และผลที่ได้"));
+    root.append(chooseField("กลุ่มสินค้าที่จะดู", groups.map(id => [id, title(id)]), group, v => { state.mlGroup = v; renderML(); }));
+    root.append(step("1 · ข้อมูลจาก Warehouse", true,
+      small("Source ประวัติจำลองผ่าน Database และ Data Lake ก่อนโหลดเข้า DuckDB Warehouse"),
+      small("ตารางที่ใช้: Mart_Product_Group_Daily_Performance · " + money(ml.backtest.weeks) +
+        " สัปดาห์ · " + money(ml.backtest.groups) + " กลุ่มสินค้า"),
+      small("ML Lab นี้ใช้ Warehouse ประวัติแยกจาก Lab ที่ทดสอบ Run 1/2"),
+      link("ดู workflow ที่สร้าง Warehouse", state.data.links.ml)));
+    root.append(step("2 · สร้าง Feature Store", false,
+      small(money(ml.feature_count) + " แถว · คีย์คือกลุ่มสินค้า สัปดาห์ที่จะทำนาย และวันที่ตัดข้อมูล"),
+      small("ยอดขายย้อนหลัง ค่า Ads ย้อนหลัง และแผน Ads ที่ทราบก่อนวันทำนาย เป็นตัวอย่างข้อมูลเข้าโมเดล"),
+      dataTable([["as_of_date", "ข้อมูลถึงวันที่"], ["forecast_week_start", "สัปดาห์ที่จะทำนาย"],
+      ["product_group_id", "กลุ่มสินค้า"], ["revenue_last_week", "ยอดขายสัปดาห์ก่อน"],
+      ["planned_ads_week", "แผน Ads"]], features,
+        { revenue_last_week: { kind: "money" }, planned_ads_week: { kind: "money" } })));
+    root.append(step("3 · เตรียมชุดฝึกและฝึกโมเดล", false,
+      small("ค่าที่ทำนาย: ยอดขายสุทธิของสัปดาห์ถัดไป แยกตามกลุ่มสินค้า"),
+      small("แบ่งข้อมูลตามเวลา · Validation: " + (ml.backtest.validation_folds || []).join(", ") +
+        " · Test: " + (ml.backtest.final_test_window || []).join(" ถึง ")),
+      small("เปรียบเทียบวิธีพื้นฐานกับโมเดลที่ใช้ยอดขายย้อนหลังและข้อมูลการตลาด"),
+      small("โมเดลที่เลือกจาก Validation: " + chosen + " · รุ่น " + ml.registry.model_version)));
+    root.append(step("4 · ตรวจความคลาดเคลื่อน", false,
+      small("WAPE คือสัดส่วนยอดที่ทำนายคลาดจากยอดจริง ยิ่งต่ำยิ่งดี"),
+      add(box("metrics"),
+        metric("WAPE รายกลุ่ม", pct(score.group_wape_pct, 2), "เกณฑ์ไม่เกิน 20%"),
+        metric("WAPE ทั้งร้าน", pct(score.shop_wape_pct, 2), "เกณฑ์ไม่เกิน 15%")),
+      notice("ผลทดสอบยังไม่ผ่านเกณฑ์ทั้งสองข้อ จึงยังไม่ใช้โมเดลนี้แนะนำแผนการตลาด", true),
+      dataTable([["model", "วิธีทำนาย"], ["group_wape_pct", "WAPE รายกลุ่ม"],
+      ["shop_wape_pct", "WAPE ทั้งร้าน"]], ml.test_metrics,
+        { group_wape_pct: { kind: "percent", digits: 2 }, shop_wape_pct: { kind: "percent", digits: 2 } })));
+    root.append(step("5 · ดูผลทำนายและเทียบยอดจริง", false,
+      small("ตัวอย่างผลทำนายที่โมเดลบันทึกไว้สำหรับ " + group),
+      dataTable([["forecast_week_start", "สัปดาห์"], ["predicted_net_revenue_week", "ยอดขายสุทธิคาดการณ์"]],
+        predicted, { predicted_net_revenue_week: { kind: "money", digits: 2 } }),
+      small("ตัวอย่างช่วง Test ที่มียอดจริงแล้ว"),
+      dataTable([["forecast_week_start", "สัปดาห์"], ["actual_net_revenue_week", "ยอดจริง"],
+      ["predicted_net_revenue_week", "ยอดที่ทำนาย"]], checked,
+        { actual_net_revenue_week: { kind: "money", digits: 2 }, predicted_net_revenue_week: { kind: "money", digits: 2 } })));
+    root.append(notice("ผลนี้แสดงการทำ ML จาก Warehouse ได้จริง แต่ยังไม่ใช่การจำลองผลของการเปลี่ยนงบ Ads หรือส่วนลด"));
+  }
+
+  async function loadLiveML() {
+    const runId = state.warehouseSnapshot?.current_run_id;
+    if (!runId || state.mlLoading) return;
+    state.mlLoading = true;
+    try {
+      const query = new URLSearchParams({ warehouse_run_id: String(runId) });
+      const response = await fetch("/api/lab-batch-result?ml=1&" + query, { cache: "no-store" });
+      const data = await response.json();
+      if (!response.ok) throw Error(data.error || "อ่านผล ML ไม่ได้");
+      state.liveML = data;
+      state.mlError = "";
+      if (["queued", "in_progress", "processing"].includes(data.status))
+        window.setTimeout(loadLiveML, 5000);
+    } catch (error) { state.mlError = error.message || "อ่านผล ML ไม่ได้"; }
+    state.mlLoading = false;
+    if (state.view === "ml") renderML();
+  }
+  async function trainLiveML() {
+    const runId = state.warehouseSnapshot?.current_run_id;
+    if (!runId || state.mlLoading) return;
+    state.mlLoading = true; state.mlError = ""; renderML();
+    try {
+      const response = await fetch("/api/lab-batch-result?ml=1", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ warehouse_run_id: String(runId) })
+      });
+      const data = await response.json();
+      if (!response.ok || !data.accepted) throw Error(data.error || "เริ่ม Train ไม่ได้");
+      state.liveML = { status: data.status || "queued" };
+      window.setTimeout(loadLiveML, 4000);
+    } catch (error) { state.mlError = error.message || "เริ่ม Train ไม่ได้"; }
+    state.mlLoading = false; renderML();
+  }
+  function renderML() {
+    const root = $("#app"); root.replaceChildren(); state.rows = [];
+    const warehouse = state.warehouseSnapshot;
+    $("#headerMode").textContent = "ML Lab · Warehouse ปัจจุบัน";
+    $("#footerStatus").textContent = warehouse?.result ?
+      "Feature และโมเดลจาก Lab รอบ " + warehouse.cycle : "ยังไม่มี Warehouse สำหรับ ML";
+    if (state.warehouseStatus === "loading" || state.warehouseStatus === "not_loaded") {
+      root.append(small("กำลังตรวจ Warehouse ปัจจุบัน…")); return;
+    }
+    if (!warehouse?.result || warehouse.phase === "EMPTY") {
+      root.append(node("h2", "lab-heading", "ยังไม่มีข้อมูลสำหรับฝึกโมเดล"));
+      root.append(small("รันข้อมูลใน Test Pipeline ก่อน เมื่อ Warehouse มีข้อมูลแล้วจึงฝึกโมเดลได้"));
+      return;
+    }
+    const runId = warehouse.current_run_id;
+    if (state.liveMLRunId !== runId) { state.liveMLRunId = runId; state.liveML = null; }
+    const weekCount = Number(warehouse.result.ml_readiness?.complete_weeks || 0);
+    const requiredWeeks = Number(warehouse.result.ml_readiness?.minimum_weeks || 16);
+    const needsReset = Boolean(warehouse.requires_reset);
+    root.append(notice("ทำนายยอดขายสุทธิรายสัปดาห์ × กลุ่มสินค้า จาก Warehouse รอบปัจจุบัน · ข้อมูลจำลองเพื่อการศึกษา"));
+    root.append(panel("ข้อมูลที่โมเดลใช้เป็น Feature", "คำนวณจาก Warehouse ไม่ได้ใส่ตัวเลขผลลัพธ์ไว้ล่วงหน้า",
+      contentArea(dataTable([["feature", "Feature"], ["use", "ข้อมูลที่นำมาใช้"]], [
+        { feature: "revenue_last_week", use: "ยอดขายสุทธิกลุ่มสินค้าในสัปดาห์ก่อน" },
+        { feature: "revenue_mean_4weeks", use: "ค่าเฉลี่ยยอดขาย 4 สัปดาห์ย้อนหลัง" },
+        { feature: "historical_ads_last_week", use: "ค่า Ads จริงในสัปดาห์ก่อน" },
+        { feature: "planned_ads_week", use: "แผน Ads ที่บันทึกก่อนสัปดาห์เป้าหมาย" },
+        { feature: "planned_discount_mean_week", use: "ส่วนลดที่วางแผนไว้สำหรับสัปดาห์เป้าหมาย" }]))));
+    if (needsReset) root.append(notice("Lab ปัจจุบันยังเป็น Source รุ่นเดิม · เคลียร์ Lab ก่อนเพื่อให้ ML ใช้ Warehouse ชุดรายเดือนใหม่", true));
+    else if (weekCount < requiredWeeks) root.append(notice(
+      "มีสัปดาห์ข้อมูลที่ครบและใช้ได้ " + weekCount + " จาก " + requiredWeeks + " สัปดาห์ · เติม Source เดือนถัดไปเพื่อให้ข้อมูลย้อนหลังต่อเนื่องก่อนฝึกโมเดล", false));
+    const train = node("button", "button button-primary", state.mlLoading ?
+      "กำลังเตรียมโมเดล…" : "▶ ฝึกโมเดลจาก Warehouse");
+    train.type = "button"; train.disabled = state.mlLoading ||
+      needsReset || weekCount < requiredWeeks ||
+      ["queued", "in_progress", "processing"].includes(state.liveML?.status);
+    train.addEventListener("click", trainLiveML); root.append(train);
+    if (state.mlError) root.append(notice(state.mlError, true));
+    if (["queued", "in_progress", "processing"].includes(state.liveML?.status)) {
+      root.append(small("กำลังสร้าง Feature, แบ่งข้อมูลตามเวลา, ฝึกโมเดล และตรวจผลจริง…"));
+      return;
+    }
+    if (state.liveML?.status === "failure") {
+      root.append(notice("การฝึกไม่ผ่าน · กดปุ่มเดิมเพื่อลองอีกครั้ง และเปิด Log ดูสาเหตุ", true));
+      if (state.liveML.url) root.append(link("ดู Log การฝึก", state.liveML.url));
+      return;
+    }
+    const result = state.liveML?.result;
+    if (!result) { root.append(small("กดฝึกโมเดลเพื่อดู Feature, คะแนนทดสอบ และคำทำนายจากข้อมูลรอบนี้")); return; }
+    const summary = result.summary;
+    root.append(box("h-stack", small("Warehouse Run #" + runId),
+      small(money(summary.dataset_rows) + " แถว Feature · " + money(summary.weeks) + " สัปดาห์ · " +
+        money(summary.groups) + " กลุ่ม")));
+    root.append(panel("1 · Feature Store", "ข้อมูลระดับสัปดาห์ × กลุ่มสินค้า · สร้างจาก Mart และแผนจำลองที่บันทึกก่อนวันทำนาย",
+      contentArea(dataTable([["as_of_date", "ข้อมูลถึง"], ["forecast_week_start", "สัปดาห์เป้าหมาย"],
+      ["product_group_id", "กลุ่ม"], ["revenue_last_week", "ยอดสัปดาห์ก่อน"],
+      ["planned_ads_week", "แผน Ads"]], result.feature_preview))));
+    root.append(panel("2 · ฝึกและเลือกโมเดล", "แบ่ง Train/Validation/Test ตามเวลา · เลือกจาก Validation ก่อนเปิด Test",
+      contentArea(small("โมเดลที่เลือก: " + summary.selected_by_validation),
+        small("ช่วง Test: " + summary.final_test_window.join(" ถึง ")),
+        dataTable([["model", "วิธี"], ["validation_group_wape_pct", "Validation WAPE"]],
+          summary.validation_model_comparison,
+          { validation_group_wape_pct: { kind: "percent", digits: 1 } }))));
+    const selectedScore = result.test_metrics.find(x => x.model === summary.selected_by_validation);
+    if (selectedScore && (!selectedScore.group_target_20pct || !selectedScore.shop_target_15pct))
+      root.append(notice("คะแนนช่วง Test ยังไม่ถึงเกณฑ์ที่ตั้งไว้ ใช้ผลทำนายเพื่อสาธิตวิธีทำ ML และตรวจสอบแนวโน้มเท่านั้น", true));
+    root.append(panel("3 · ตรวจผลทำนาย", "WAPE ยิ่งต่ำยิ่งดี · คะแนนจากช่วง Test ที่กันไว้",
+      contentArea(dataTable([["model", "โมเดล"], ["group_wape_pct", "WAPE รายกลุ่ม"],
+      ["shop_wape_pct", "WAPE ทั้งร้าน"], ["group_target_20pct", "รายกลุ่ม ≤20%"],
+      ["shop_target_15pct", "ทั้งร้าน ≤15%"]], result.test_metrics,
+        {
+          group_wape_pct: { kind: "percent", digits: 1 }, shop_wape_pct: { kind: "percent", digits: 1 },
+          group_target_20pct: { kind: "goal" }, shop_target_15pct: { kind: "goal" }
+        }),
+        small("ผลจริงถูกใช้ตรวจหลังทำนาย · " + result.monitor.monitoring_mode))));
+    root.append(panel("4 · ตัวอย่างยอดจริงเทียบคำทำนาย", "ข้อมูลช่วง Test ที่เก็บไว้ตรวจความคลาดเคลื่อน",
+      contentArea(dataTable([["forecast_week_start", "สัปดาห์"], ["product_group_id", "กลุ่ม"],
+      ["actual_net_revenue_week", "ยอดจริง"],
+      ["predicted_net_revenue_week", "คำทำนาย"]], result.test_predictions))));
+    const scenarios = result.scenarios;
+    if (scenarios?.status === "READY") {
+      const options = scenarios.grid;
+      const group = state.scenarioGroup && options.some(x => x.group_id === state.scenarioGroup) ?
+        state.scenarioGroup : options[0].group_id;
+      const ratio = state.scenarioRatio ?? 1, campaign = state.scenarioCampaign ?? 0;
+      const selected = options.find(x => x.group_id === group && x.budget_ratio === ratio &&
+        x.campaign_discount_pct === campaign);
+      const baseline = options.filter(x => x.budget_ratio === 1 && x.campaign_discount_pct === 0);
+      const shopBaseline = baseline.reduce((sum, x) => sum + x.predicted_net_revenue_week, 0);
+      const groupBaseline = baseline.find(x => x.group_id === group);
+      const shopScenario = shopBaseline - (groupBaseline?.predicted_net_revenue_week || 0) +
+        (selected?.predicted_net_revenue_week || 0);
+      state.rows = options;
+      root.append(panel("5 · ทดลองแผนการตลาด", "ใช้โมเดลที่ฝึกจาก Warehouse คำนวณทางเลือกของกลุ่มสินค้าที่เลือก",
+        contentArea(box("h-stack",
+          chooseField("กลุ่มสินค้า", [...new Set(options.map(x => x.group_id))].map(x => [x, title(x)]),
+            group, value => { state.scenarioGroup = value; renderML() }),
+          chooseField("งบ Ads เทียบกับ 7 วันล่าสุด", [[0, "0%"], [0.5, "50%"], [1, "เท่าเดิม"],
+          [1.5, "150%"], [2, "200%"]].map(([value, label]) => [String(value), label]),
+            String(ratio), value => { state.scenarioRatio = Number(value); renderML() }),
+          chooseField("แผนลดราคา", [["0", "ไม่ลด"], ["10", "ลด 10%"]], String(campaign),
+            value => { state.scenarioCampaign = Number(value); renderML() })),
+          selected ? add(box("metrics"),
+            metric("งบ Ads ที่เลือก", "฿" + money(selected.planned_ads_week),
+              "ค่าใช้จ่ายตามแผนรายสัปดาห์"),
+            metric("คาดการณ์ยอดขายกลุ่มนี้", "฿" + money(selected.predicted_net_revenue_week),
+              "ฐานเดิม ฿" + money(groupBaseline?.predicted_net_revenue_week)),
+            metric("คาดการณ์ยอดขายทั้งร้าน", "฿" + money(shopScenario),
+              "เป้ารายสัปดาห์ ฿" + money(scenarios.weekly_shop_target))) :
+            notice("ยังคำนวณทางเลือกนี้ไม่ได้", true),
+          small("จุดตัดข้อมูล " + scenarios.as_of_date + " · พยากรณ์สัปดาห์ " +
+            scenarios.forecast_week_start + " ถึง " + scenarios.forecast_week_end),
+          small(scenarios.model_uses_plan ?
+            "โมเดลใช้ตัวแปรแผน Ads และส่วนลด แต่ผลต่างเป็นความสัมพันธ์จากข้อมูลจำลอง ไม่ใช่ผลเพิ่มยอดขายที่พิสูจน์แล้ว" :
+            "โมเดลที่ Validation เลือกไม่ใช้ตัวแปรแผน ตัวเลขคาดการณ์จึงอาจไม่เปลี่ยนตามงบ"),
+          notice("โมเดลนี้ทำนายยอดขาย ยังไม่ทำนายกำไร · เกณฑ์กำไร ≥10% ต้องดูข้อมูลต้นทุนจริงในภาพรวมธุรกิจ", true))));
+    } else root.append(notice("ยังจำลองแผนไม่ได้: ข้อมูลรายวันย้อนหลังไม่ครบ 28 วัน ณ จุดตัดข้อมูลที่ใช้ได้", true));
+    root.append(notice("โมเดลเรียนรู้ความสัมพันธ์จากข้อมูลจำลอง ไม่ได้พิสูจน์ว่างบ Ads ที่เพิ่มจะทำให้ยอดขายเพิ่ม และข้อมูลย้อนหลังนี้ยังไม่ผ่านการยืนยัน point-in-time", true));
+    if (state.liveML.url) root.append(link("ดูงานฝึกและไฟล์โมเดล", state.liveML.url));
+  }
+
+  function render() {
+    if (!state.data) return;
+    if (state.view === "business") renderBusiness();
+    if (state.view === "pipeline") renderPipeline();
+    if (state.view === "ml") renderML();
+    $("#exportCurrent").textContent = state.view === "business" ?
+      "↓ ดาวน์โหลดแถวตัวอย่างจาก Warehouse (CSV)" : state.view === "ml" ?
+        "↓ ดาวน์โหลดผล Scenario (CSV)" : "↓ ดาวน์โหลดข้อมูลตัวอย่างที่แสดง (CSV)";
+    $("#exportCurrent").disabled = state.view === "pipeline" || !state.rows.length;
+  }
+  function setView(value) {
+    if (!names[value]) return;
+    state.view = value; state.replay = false;
+    if (value === "ml" && (!state.mlGroup || !groups.includes(state.mlGroup))) state.mlGroup = "PG01";
+    document.querySelectorAll("[data-view]").forEach(btn => {
+      const active = btn.dataset.view === value;
+      btn.classList.toggle("is-active", active);
+      if (active) btn.setAttribute("aria-current", "page"); else btn.removeAttribute("aria-current");
+    });
+    $("#pageTitle").textContent = names[value][0];
+    $("#pageSubtitle").textContent = names[value][1];
+    $("#crumbView").textContent = names[value][2];
+    $("#monthFilterWrap").classList.add("hidden");
+    $("#groupFilterWrap").classList.add("hidden");
+    $("#modelFilterWrap").classList.add("hidden");
+    render();
+    if (value === "business" || value === "ml") loadWarehouseDashboard();
+    if (value === "pipeline" && state.neonStatus === "not_loaded") loadNeonEvidence();
+    if (value === "pipeline" && !state.realConfigChecked) loadRealCapabilities();
+    if (value === "pipeline" && state.savedLabManifest === null) loadSavedLabEvidence();
+  }
+  function exportCsv() {
+    const rows = state.rows; if (!rows.length) return;
+    const columns = [...new Set(rows.flatMap(x => Object.keys(x)))];
+    const cell = x => {
+      const s = x === null || x === undefined ? "" : String(x);
+      return /[,\"\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    };
+    const csv = [columns.map(cell).join(","), ...rows.map(x => columns.map(k => cell(x[k])).join(","))].join("\r\n");
+    const blob = new Blob(["\ufeff", csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob), a = document.createElement("a");
+    a.href = url; a.download = state.view === "business" ? ("warehouse_" + (state.warehouseSnapshot?.current_run_id || "current") + "_" + state.warehouseTable + ".csv") : "tiktok_" + state.view + "_" + state.month + ".csv";
+    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  async function init() {
+    document.querySelectorAll("[data-view]").forEach(btn => btn.addEventListener("click", () => setView(btn.dataset.view)));
+    try {
+      const upload = JSON.parse(sessionStorage.getItem("classroom_source_upload") || "null");
+      if (upload?.id && upload?.month) { state.sourceUploadId = upload.id; state.sourceUploadMonth = upload.month; state.sourceUploadName = upload.name || ""; }
+      const errorState = JSON.parse(sessionStorage.getItem("classroom_error_run") || "null");
+      if (errorState?.case && errorState?.run) {
+        state.errorCase = errorState.case;
+        state.errorRun = { ...state.errorRun, ...errorState.run };
       }
     } catch (_error) {
-      // Explorer will clearly report that the real evidence snapshot is unavailable.
+      sessionStorage.removeItem("classroom_source_upload");
+      sessionStorage.removeItem("classroom_error_run");
     }
-    if (state.view === "pipeline") renderPipeline();
-  } catch (e) {
-    $("#app").replaceChildren(notice("ไม่สามารถโหลด Report Snapshot: " + e.message +
-      " กรุณารัน Python Exporter แล้วเปิดเว็บด้วย HTTP Server ไม่ใช่ file://", true));
-    $("#headerMode").textContent = "ไม่พบข้อมูลรายงาน";
-    $("#exportCurrent").disabled = true;
+    window.setInterval(() => {
+      if (state.view === "pipeline") loadRealCapabilities();
+    }, 10000);
+    $("#exportCurrent").addEventListener("click", exportCsv);
+    try {
+      const res = await fetch("./data/report.json", { cache: "no-cache" });
+      if (!res.ok) throw Error("HTTP " + res.status);
+      const d = await res.json();
+      if (d.schema_version !== "decision_dashboard_v1" ||
+        d.source_classification !== "SYNTHETIC_EDUCATIONAL_NOT_TIKTOK" ||
+        !Array.isArray(d.business?.months) || !Array.isArray(d.ml?.test_predictions) ||
+        !Array.isArray(d.pipeline?.stages) || !d.business.months.length || !d.ml.test_predictions.length)
+        throw Error("รูปแบบ Report ไม่ถูกต้องหรือไม่มีข้อมูลจริงจาก Pipeline");
+      state.data = d;
+      const months = d.business.months.map(x => x.month);
+      state.month = months.includes("2026-10") ? "2026-10" : months[months.length - 1];
+      $("#monthFilter").replaceChildren(...months.map(x => { const opt = node("option", "", x); opt.value = x; return opt; }));
+      $("#monthFilter").value = state.month;
+      $("#groupFilter").replaceChildren(...[["ALL", "ทุกกลุ่มสินค้า"], ...groups.map(x => [x, title(x)])].map(x => {
+        const opt = node("option", "", x[1]); opt.value = x[0]; return opt;
+      }));
+      state.model = d.ml.registry.selected_model;
+      $("#modelFilter").replaceChildren(...d.ml.test_metrics.map(x => {
+        const opt = node("option", "", x.model); opt.value = x.model; return opt;
+      }));
+      $("#modelFilter").value = state.model;
+      $("#monthFilter").addEventListener("change", e => { state.month = e.target.value; render() });
+      $("#groupFilter").addEventListener("change", e => { state.group = e.target.value; state.sku = ""; render() });
+      $("#modelFilter").addEventListener("change", e => { state.model = e.target.value; state.replay = false; render() });
+      $("#snapshotStamp").textContent = d.generated_at_utc ? new Intl.DateTimeFormat("th-TH", {
+        timeZone: "Asia/Bangkok", year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
+      }).format(new Date(d.generated_at_utc)) : "Batch Snapshot";
+      $("#headerMode").textContent = "Warehouse · ตรวจสถานะสด";
+      $("#footerStatus").textContent = "กำลังตรวจข้อมูล Warehouse";
+      $("#repoLink").href = d.links.repo;
+      setView("business");
+      try {
+        const evidenceResponse = await fetch("./data/classroom_evidence.json", { cache: "no-cache" });
+        if (evidenceResponse.ok) {
+          const evidence = await evidenceResponse.json();
+          if (evidence.classification === "SYNTHETIC_EDUCATIONAL_NOT_TIKTOK"
+            && evidence.layers?.source && evidence.layers?.warehouse) state.evidence = evidence;
+        }
+      } catch (_error) {
+        // Explorer will clearly report that the real evidence snapshot is unavailable.
+      }
+      if (state.view === "pipeline") renderPipeline();
+    } catch (e) {
+      $("#app").replaceChildren(notice("ไม่สามารถโหลด Report Snapshot: " + e.message +
+        " กรุณารัน Python Exporter แล้วเปิดเว็บด้วย HTTP Server ไม่ใช่ file://", true));
+      $("#headerMode").textContent = "ไม่พบข้อมูลรายงาน";
+      $("#exportCurrent").disabled = true;
+    }
   }
-}
-init();
-}) ();
+  init();
+})();
 

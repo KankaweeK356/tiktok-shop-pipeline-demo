@@ -1,49 +1,72 @@
 # TikTok Shop Fashion Intelligence — Classroom Demo
 
-เว็บสาธิตการใช้ **ข้อมูลร้านเสื้อผ้าจำลอง** ผ่าน Source → Database → Data Lake → Data Warehouse แล้วอ่าน KPI และทดลอง ML ข้อมูลทั้งหมดเป็นข้อมูลสังเคราะห์เพื่อการศึกษา ไม่ได้ดึงจาก TikTok Shop API
+เว็บสาธิตการนำข้อมูลร้านเสื้อผ้าจำลองผ่าน Data Pipeline ตั้งแต่ต้นทางจนถึงปลายทาง: **Source (CSV) ➔ Database (Neon) ➔ Data Lake (Parquet) ➔ Data Warehouse (DuckDB)** พร้อมการวิเคราะห์ KPI ธุรกิจและโมเดลทำนายยอดขาย ML โดยข้อมูลทั้งหมดเป็นข้อมูลสังเคราะห์เพื่อการศึกษา ไม่ได้ดึงจาก TikTok Shop API
 
-**[เปิดเว็บ Demo](https://tiktok-shop-mlops-dashboard-git-feature-classroom-dea39b-newja.vercel.app/)** · [ดูตัวสร้าง Source](pipeline/generate_classroom_source.py) · [ดูแบบ ER1/ER2](schemas/)
+**[เปิดเว็บ Demo](https://tiktok-shop-mlops-dashboard-git-feature-classroom-dea39b-newja.vercel.app/)** · [ดูตัวสร้าง Source](pipeline/generate_classroom_source.py) · [ดู Schema ER1/ER2](schemas/)
 
-## ทดลองบนเว็บ
+---
 
-| หน้า | สิ่งที่ทำ | สิ่งที่ดู |
-| --- | --- | --- |
-| **Test Pipeline** | กด Run 1 เพื่อรับข้อมูลตั้งต้น แล้วกด **เติมข้อมูลใหม่** ทีละชุด | แต่ละครั้งรัน Source → Neon Database → Parquet Data Lake → DuckDB Warehouse → Validation ครบ ดู PASS/FAIL ตารางและแถวจริงได้หลังรัน |
-| **ภาพรวมธุรกิจ** | ดู Warehouse ของ Lab รอบปัจจุบัน | ยอดสุทธิเทียบเป้ารายเดือน กำไรเทียบเกณฑ์ 10% และเจาะเดือน → กลุ่มสินค้า → วัน/SKU/แคมเปญ |
-| **ML Lab** | กดฝึกโมเดลจาก Warehouse รอบปัจจุบัน | Feature รายสัปดาห์ การแบ่ง Train/Validation/Test WAPE ยอดจริงเทียบคำทำนาย และทดลองแผน Ads/ส่วนลด |
+## 1. สถาปัตยกรรมระบบ (Architecture)
 
-### Source และรอบการรัน
+- **Source Code**: จัดเก็บและควบคุมเวอร์ชันบน **GitHub**
+- **Web & ETL Processing**: โฮสต์และ**ประมวลผลบน Vercel (Vercel Native Runner)** โดยตรง
+  - เมื่อผู้ใช้กดปุ่ม Run บนเว็บ Vercel จะเป็นผู้เริ่มและประมวลผล ETL โดยตรง ไม่พึ่งพา GitHub Actions เป็นตัวรันงาน
+  - ประมวลผลรวดเร็วและต่อเนื่องด้วยระบบ Checkpoint แบบ Idempotent
+- **Database (Neon Serverless PostgreSQL)**: แยก Branch เพื่อความปลอดภัยของข้อมูล
+  - `classroom-live-run-lab`: สำหรับ Run 1 และการเติมข้อมูลปกติรายเดือน
+  - `classroom-error-lab`: สำหรับการทดสอบ Error Test โดยไม่กระทบข้อมูลธุรกิจ
+- **Data Lake & Storage**: จัดเก็บ Raw/Standardized Parquet และ Workspace State บน Neon Object Storage (S3-compatible)
+- **Data Warehouse**: ประมวลผลและสร้าง Data Mart บน DuckDB แบบ Columnar In-Memory
 
-ตัวสร้าง Source ใช้ seed เดียวกันทุกครั้งและเตรียมข้อมูล **10 ชุดรายเดือน มกราคม–ตุลาคม 2569**. `initial` คือ Run 1 เดือนมกราคม; `incremental_01` ถึง `incremental_09` เติมเดือนก.พ.–ต.ค. ทีละเดือน. ทุก ZIP มี CSV 21 ตารางและ manifest ตาม ER1 เหมือนกัน; Master/Reference เริ่มต้นอยู่ใน Run 1 ส่วนรายการธุรกิจและเป้าหมายรายเดือนเข้าตามเดือน. ER1 มี 25 ตาราง โดย 4 ตารางสร้างจากการประมวลผลของ Pipeline ไม่ได้ส่งเป็น Source CSV. Source แยกจาก Neon และจากผล Data Lake/Warehouse.
+---
 
-ดาวน์โหลด [Source ZIP รายเดือนทั้ง 10 ชุด](https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/releases/tag/classroom-source-v1). Run 1 ใช้ Source เดือนมกราคม และการเติมแต่ละครั้งใช้ข้อมูลของเดือนถัดไป. จำนวนออเดอร์ดูได้จาก manifest และผลรันจริง.
+## 2. ขั้นตอนการประมวลผล 5 ขั้น และการจัดแบ่ง Input / Output
 
-หน้า Test Pipeline แสดง Source เดือนถัดไป พร้อม ZIP ให้ดาวน์โหลดหรืออัปโหลด ZIP ของเดือนนั้น. ถ้าไม่อัปโหลด ระบบใช้ Source ที่เตรียมไว้. ก่อน Run จะตรวจชื่อเดือน, 21 ตาราง, คอลัมน์, Primary Key และทดลองนำเข้าใน ER1 SQLite ชั่วคราวเพื่อตรวจชนิดข้อมูล/ความสัมพันธ์; มีเพียง Source ที่ผ่านการตรวจเท่านั้นที่ถึงขั้น sync เข้า Neon. ผู้ชมกด **Run 1** และ **เติมข้อมูลใหม่** โดยไม่ต้องเลือกเลขชุดเอง. เมื่อเติมถึงตุลาคมจะแจ้งว่าไม่มี Source เดือนถัดไป. จำนวนออเดอร์ก่อน–หลังและยอดขายมาจากผลรันจริง. หาก Run ไม่ผ่านให้ดูสาเหตุและขั้นที่ติด แล้วกดปุ่มเดิมเพื่อ Retry; Error Lab เป็นชุดทดสอบแยกจากข้อมูลปกติ.
+| ขั้นตอน | ข้อมูลขาเข้า (Input) | การประมวลผล (Process) | ข้อมูลขาออก (Output) & การนำไปใช้ |
+| :--- | :--- | :--- | :--- |
+| **1. Source ➔ Database** | **ไฟล์ CSV 21 ไฟล์** จากโฟลเดอร์รายเดือน | ตรวจ Schema, Foreign Key และนำเข้าสู่ Neon PostgreSQL | **25 ตาราง Database** ใน `demo_er1` (21 ตารางจาก CSV + 4 ตารางคำนวณและคลัง FIFO) |
+| **2. Database ➔ Data Lake** | 25 ตาราง Database | สกัดข้อมูลรายเดือน แบ่ง Partition ตามงวดบัญชี | **25 ไฟล์ Data Lake Parquet** (Snappy Compressed) ใน `lake/raw/{batch}/` |
+| **3. Transform & Quality Check** | 25 ไฟล์ Data Lake Raw | จัดมาตรฐานข้อมูล (Type casting, Dates, Status) และตรวจกฎคุณภาพ (Null, FK, Campaign Overlap) | **ชุดข้อมูล Data Lake Standardized** ใน `lake/standardized/{batch}/` และบันทึก Quarantine หากพบข้อผิดพลาด |
+| **4. Data Lake ➔ Warehouse** | Data Lake Standardized | โหลดข้อมูลลง Star Schema และสร้าง Materialized Aggregation Marts ใน DuckDB | **ตาราง Warehouse ใน DuckDB** (`View_Shop_Monthly_KPI`, `Mart_Product_Group_Daily_Performance`, `Fact_Sales_Order_Item`) เชื่อมโยงสู่ Dashboard |
+| **5. Validate** | ทั้ง 4 เลเยอร์ | ตรวจกระทบยอด Cross-Layer Reconciliation และตรวจสอบยอดเงินสุทธิ | **รายงานผลตรวจ 100% Reconciliation** ยืนยันยอดขายสุทธิ $Source = Warehouse$ |
 
-Run และการเคลียร์ใช้ Lab ร่วมกันสำหรับทุกคนที่เปิดลิงก์. หน้าทดสอบจะแสดงเมื่อมีงานกำลังทำและอยู่ขั้นไหน แล้วอัปเดตสถานะให้อัตโนมัติ; ไม่ต้องมีบัญชี GitHub ของผู้ชม. ปุ่ม Run เรียก GitHub Actions ของโครงการผ่านการเชื่อมต่อฝั่งเว็บ จึงต้องตั้งค่า `CLASSROOM_GITHUB_TOKEN`, `CLASSROOM_LAB_NEON_URL` และ `CLASSROOM_LAB_WRITER_URL` ใน Vercel ให้ครบ ผู้ชมไม่ต้องกรอกรหัสเหล่านี้.
+---
 
-ปุ่ม **เคลียร์ข้อมูล Lab** ลบข้อมูลธุรกิจใน Neon ของรอบปัจจุบันและเริ่มรอบใหม่ ข้อมูล Warehouse/ML รอบเก่าไม่ถูกนำมาแสดงเป็นข้อมูลปัจจุบัน ไฟล์ Source ไม่ถูกลบ Log GitHub เก่าเก็บไว้ตรวจย้อนหลัง หากเว็บยังแสดงรอบข้อมูลที่สร้างด้วยระบบสองชุดเดิม ให้เคลียร์ Lab หลังตรวจว่าไม่มีงานกำลังรัน เพื่อเริ่มชุด 10 Source รายเดือนนี้
+## 3. การแสดงผลบน Dashboard (Master-Detail Split View)
 
-> Neon เก็บ ER1 Database จริง ส่วน Data Lake เป็นไฟล์ Parquet และ Warehouse เป็น DuckDB ใน GitHub Actions Artifact จึงไม่เห็นตาราง Warehouse ใน Neon Console โดยตรง. แท็บ Neon ในหน้า Test Pipeline อ่านรายชื่อตาราง จำนวนแถว คอลัมน์ และตัวอย่างข้อมูลจริงจาก Lab ให้ดูได้ในเว็บ โดยไม่ต้องเข้า Neon Console.
+- หน้าจอแสดงผลแบบ **Two-Column Split Layout**: ฝั่งซ้ายแสดงรายการตาราง/ไฟล์ และฝั่งขวาแสดงรายละเอียดเชิงลึก (ชื่อ, ชนิดข้อมูล, จำนวนแถวจริง, คอลัมน์, ตัวอย่างข้อมูล 5 แถว และตาราง Dashboard/KPI ที่นำไปใช้) ทันทีเมื่อคลิกเลือก โดยไม่ต้องเลื่อนหน้าจอ
+- การแยกคำศัพท์มาตรฐาน:
+  - **ไฟล์ CSV (CSV File)**: ไฟล์ข้อความต้นทาง
+  - **ตาราง Database (Database Table)**: ตารางใน Neon PostgreSQL
+  - **ชุดข้อมูล/ไฟล์ Data Lake (Data Lake Parquet)**: ไฟล์ Parquet คอลัมน์
+  - **ตาราง Warehouse (Warehouse Table)**: ตาราง Fact/Dim ใน DuckDB
 
-### KPI และ ML
+---
 
-**ยอดขายเทียบเป้า** = Net Revenue เทียบ Revenue Target ของเดือนนั้น **เกณฑ์รักษากำไร** = Contribution Profit หลังต้นทุนที่เกี่ยวข้อง ÷ Gross Reference Sales ราคาเต็ม ต้องไม่น้อยกว่า **10%** Ads อยู่ระดับวัน × กลุ่มสินค้า จึงไม่กระจาย Ads ลง SKU โดยไม่มีเกณฑ์จัดสรร และไม่บวก Reported Ads GMV เป็นยอดขายร้านซ้ำ
+## 4. รอบการรันรายเดือนและการสาธิต Error
 
-ML ใช้ Mart จาก Warehouse รอบที่รันบนเว็บ พร้อมแผนการตลาดสังเคราะห์ที่บันทึกแยกจาก ER1. Feature หนึ่งแถวแทนสัปดาห์ × กลุ่มสินค้า และใช้ยอดขาย/Ads ย้อนหลังกับแผนที่ทราบก่อนสัปดาห์เป้าหมาย. หน้า ML แสดงจำนวนสัปดาห์ข้อมูลที่ครบและใช้ได้; Train จะเปิดเมื่อมีอย่างน้อย **16 สัปดาห์** เพื่อแบ่งช่วง Train/Validation/Test ตามเวลาจริง ไม่ได้นับจำนวนเดือนแบบคร่าว ๆ. ก่อนถึงเกณฑ์จะยังไม่สร้างคะแนน WAPE หรือคำทำนาย. ผลประเมินเป็นข้อมูลจำลองและอาจไม่ผ่านเกณฑ์. การปรับงบหรือส่วนลดในหน้า Scenario เป็นการลองเปลี่ยนตัวแปรของโมเดล **ไม่ใช่หลักฐานเชิงเหตุและผล** ว่าเพิ่มงบแล้วจะเพิ่มยอดขาย. โมเดลนี้ยังไม่ทำนายกำไรหรือรับรองเกณฑ์ 10%; ตรวจต้นทุนจริงในภาพรวมธุรกิจประกอบการตัดสินใจ.
+- **ข้อมูล 10 ชุดรายเดือน (มกราคม–ตุลาคม 2569)**:
+  - **Run 1 (initial)**: นำเข้าข้อมูลเดือนมกราคม 2569
+  - **Run เติมข้อมูล (incremental_01 ถึง incremental_09)**: เติมข้อมูลเดือนกุมภาพันธ์ถึงตุลาคม 2569 ทีละเดือนอย่างต่อเนื่อง
+- **การสาธิต Error ในเดือนที่ 3 (มีนาคม)**:
+  - มีปุ่มเลือกสาธิตกรณีข้อมูลผิดพลาดในเดือนที่ 3 (จำลอง SKU ไม่ตรงใน `Fact_Order_Items`)
+  - ระบบจะตรวจพบในขั้น **Transform / Quality Check** และทำการกักข้อมูล (Quarantine) ไว้
+  - **รับประกันความปลอดภัย**: ข้อมูลเดือน 3 จะไม่ถูกส่งเข้า Warehouse และข้อมูลเดือน 1-2 ยังคงปลอดภัยสมบูรณ์
+  - ผู้ใช้สามารถกดปุ่ม *"รันต่อด้วยข้อมูลฉบับแก้ไข"* เพื่อดึง Source ปกติของเดือน 3 และรันต่อจาก Checkpoint ได้ทันที
 
-## รันเองใน Google Colab
+---
 
-Colab ใช้พื้นที่ชั่วคราวของผู้เปิดเอง ไม่เชื่อม Neon Lab หรือเคลียร์ข้อมูลของผู้อื่น
+## 5. การรันใน Google Colab (สภาพแวดล้อมสำรอง)
 
-1. [Pipeline Notebook](notebooks/TikTok_Shop_Step_by_Step_Demo.ipynb) — สำรองสำหรับ Colab: กด **Runtime → Run all** เพื่อเตรียมโปรเจกต์ แล้วกดปุ่ม **เริ่มรอบใหม่และรัน Run 1 · มกราคม**; ปุ่ม **เติมข้อมูลเดือนถัดไป** เพิ่มครั้งละหนึ่งเดือนถึงตุลาคม. แต่ละครั้งรันครบ Database → Data Lake → Warehouse → Validation และแสดงสถานะและจำนวนก่อน–หลัง พร้อมตาราง/จำนวนแถวและตัวอย่างจริงแยก Database, Data Lake (Landing/Raw/Standardized) และ Warehouse. ปุ่ม Error Test แยกจาก Pipeline ปกติ.
-2. [ML Notebook](notebooks/TikTok_Shop_ML_Study.ipynb) — สร้าง Feature จาก Warehouse, แบ่ง Train/Validation/Test ตามเวลา และประเมิน WAPE. Notebook แสดงจำนวนสัปดาห์ Feature ที่ครบจริงและฝึกเมื่อพร้อมอย่างน้อย 16 สัปดาห์ (Train 6 + Validation 2 รอบ รอบละ 3 + Test 4); ไม่ถือว่า 1 เดือนเท่ากับ 1 ตัวอย่าง. ผลใน Colab เป็นของ Runtime นั้นและไม่ส่งขึ้น Dashboard หรือ Neon.
+- Colab รันใน Runtime ของผู้ใช้เองอย่างอิสระ ไม่เชื่อมต่อกับ Neon และผลลัพธ์ใน Colab จะไม่แสดงบนเว็บ Dashboard
+- [เปิด Pipeline Notebook ใน Colab](notebooks/TikTok_Shop_Step_by_Step_Demo.ipynb): กด **Runtime → Run all** แล้วใช้ปุ่มควบคุมด้านล่างเพื่อทดลองรัน Run 1 และเติมข้อมูลทีละเดือน
+- [เปิด ML Notebook ใน Colab](notebooks/TikTok_Shop_ML_Study.ipynb): ศึกษาการสร้าง Feature จาก Warehouse และการฝึกโมเดล ML (ต้องมีอย่างน้อย 16 สัปดาห์)
 
-เปิด Pipeline Notebook จาก GitHub ใน Colab แล้วเลือก **Runtime → Run all** เพื่อเตรียม Code/Source (ยังไม่รันข้อมูล) จากนั้นกดปุ่มบน Notebook ตามลำดับ. **เริ่มรอบใหม่** จะล้างผลเดิมเฉพาะ Colab และรันมกราคม; **เติมเดือนถัดไป** เพิ่มทีละเดือน; **เคลียร์ผลทดลองใน Colab** ล้างผล Pipeline และ Error Lab ใน Runtime โดยคง Source ไว้. เมื่อใช้ Runtime ใหม่ ให้กดเริ่มรอบใหม่. เวลาประมวลผลขึ้นกับ Runtime ที่ใช้.
+---
 
-## ตรวจสอบโค้ดและผลรัน
+## 6. เอกสารและข้อมูลอ้างอิง
 
-- [Source generator](pipeline/generate_classroom_source.py) · [ER1/ER2](schemas/) · [Workflow รันจริง](.github/workflows/classroom-live-batch.yml) · [Workflow ฝึก ML](.github/workflows/classroom-ml-train.yml)
-- [กฎ KPI](sql/monthly_kpi_view.sql) · [Feature และการทดสอบโมเดล](pipeline/ml_weekly.py) · [CI ตรวจ 10 ชุด](pipeline/ci_classroom_source.py) · [Workflow เผยแพร่ ZIP รายเดือน](.github/workflows/publish-classroom-source.yml)
-
-GitHub Actions เก็บหลักฐานแต่ละรอบไว้ตรวจสอบ แต่หน้าเว็บจะยึด Lab cycle และ Warehouse ที่ผ่าน Validation ล่าสุดเท่านั้น
+- [คู่มือเริ่มต้นด่วน (Quick Start)](docs/QUICK_START_TH.md)
+- [บทพูด Demo สำหรับอาจารย์](docs/DEMO_SCRIPT_FOR_TEACHER_TH.md)
+- [สถาปัตยกรรม Neon Pipeline](docs/NEON_CLASSROOM_PIPELINE_ARCHITECTURE_TH.md)
+- [คำอธิบายชุดข้อมูล Source](source/README.md)

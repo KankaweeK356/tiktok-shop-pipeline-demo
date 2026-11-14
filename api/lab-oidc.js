@@ -47,12 +47,20 @@ export default async function handler(req, res) {
       /^[1-9][0-9]{3,19}$/.test(String(payload.run_id || ""));
     if (!allow)
       return res.status(403).json({ error: "GitHub OIDC policy rejected this workflow" });
-    const connection = process.env.CLASSROOM_LAB_WRITER_URL;
+    const isErrorWorkflow = payload.workflow_ref === ERROR_PATH;
+    const connection = isErrorWorkflow ?
+      process.env.CLASSROOM_ERROR_LAB_WRITER_URL :
+      process.env.CLASSROOM_LAB_WRITER_URL;
     if (!connection || !/^postgres(?:ql)?:\/\//.test(connection))
-      return res.status(503).json({ error: "Isolated Neon lab credential not configured" });
+      return res.status(503).json({
+        error: isErrorWorkflow ?
+          "Isolated Neon ERROR lab credential (CLASSROOM_ERROR_LAB_WRITER_URL) not configured" :
+          "Isolated Neon LIVE lab credential (CLASSROOM_LAB_WRITER_URL) not configured"
+      });
     return res.status(200).json({
       database_url: connection,
-      scope: "NEON_CLASSROOM_STEP_LAB_ONLY",
+      scope: isErrorWorkflow ? "NEON_CLASSROOM_ERROR_LAB_ONLY" : "NEON_CLASSROOM_STEP_LAB_ONLY",
+      target_branch: isErrorWorkflow ? "classroom-error-lab" : "classroom-live-run-lab",
       expires_note: "GitHub OIDC identity accepted; do not log or persist connection"
     });
   } catch (error) {

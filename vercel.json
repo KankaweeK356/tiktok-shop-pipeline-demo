@@ -1,5 +1,11 @@
 {
   "version": 2,
   "buildCommand": "echo Static classroom dashboard - using committed report snapshot",
-  "outputDirectory": "dashboard"
+  "outputDirectory": "dashboard",
+  "functions": {
+    "api/**/*.js": {
+      "maxDuration": 60,
+      "memory": 1024
+    }
+  }
 }

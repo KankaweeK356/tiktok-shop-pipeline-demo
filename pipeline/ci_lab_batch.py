@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def run_stage_and_save(batch: str, stage: str) -> dict:
-    if batch not in BATCHES:
+    if batch not in BATCHES and batch != "incremental_02_error":
         raise ValueError("Invalid batch")
     if stage not in STAGES:
         raise ValueError("Invalid stage")

@@ -142,6 +142,23 @@ tr:hover td{background:#fff8f0}.metric-label,.metric-sub,.panel-description{colo
 .notebook-cell-state{font-size:12px;color:#347c50;white-space:nowrap}.notebook-cell-body{border-top:1px solid #eee1e4;padding:16px 18px 20px;display:flex;flex-direction:column;gap:12px}
 .notebook-output{padding:15px;border-radius:10px;background:#f4f8f3}.notebook-output>strong{color:#347c50}.notebook-output .table-wrap{background:#fff}
 .table-name-button{border:0;background:transparent;padding:0;color:var(--red);font:inherit;font-weight:700;cursor:pointer;text-align:left}.table-name-button:hover,.table-name-button:focus-visible{text-decoration:underline}
+
+/* Master-Detail Split Screen for Step Tables & Previews (Teacher Comment #1) */
+.stage-io-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;background:#fbf8f9;border:1px solid #ebdbe0;border-radius:10px;margin-bottom:14px;flex-wrap:wrap}
+.stage-io-item{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:#54414a}
+.stage-io-arrow{font-size:16px;color:#b96d83;font-weight:800}
+.lab-split-view{display:grid;grid-template-columns:minmax(280px,1.15fr) minmax(320px,1.35fr);gap:16px;align-items:start;margin-top:12px}
+.lab-master-pane{background:#fff;border:1px solid #ebdbe0;border-radius:10px;overflow:hidden}
+.lab-detail-pane{background:#fff;border:1px solid #ebdbe0;border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px;min-height:220px;position:sticky;top:16px}
+.lab-detail-header{display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid #f0e6e9;padding-bottom:10px}
+.lab-detail-title{font-size:14px;font-weight:800;color:#523e47;margin:0}
+.lab-detail-meta{display:flex;gap:8px;flex-wrap:wrap;font-size:11px}
+.lab-detail-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:180px;color:#9b8c94;text-align:center;gap:8px}
+.table-row-selected td{background:#fff5f7!important;font-weight:700}
+@media(max-width:880px){
+  .lab-split-view{grid-template-columns:1fr}
+  .lab-detail-pane{position:static;min-height:auto}
+}
 @media(max-width:760px){.notebook-runs{grid-template-columns:1fr}.notebook-cell-state{display:none}.notebook-intro .lab-heading{font-size:19px}}
 .topbar,.sidebar{background:#fff}.main-content{background:none}
 .brand-name,.lab-heading,.notebook-cell-title strong{font-family:Georgia,"Noto Serif Thai",serif;color:#421d20}

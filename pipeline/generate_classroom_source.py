@@ -146,6 +146,31 @@ def build(target: Path, seed: int = 8102) -> dict:
             "er1_tables": len(tables),
             "classification": "SYNTHETIC_EDUCATIONAL_NOT_TIKTOK",
         }, ensure_ascii=False, indent=2), encoding="utf-8")
+
+        # Create Error Variant for Month 3 (incremental_02) to demonstrate pipeline failure & recovery
+        if index == 2:
+            error_folder = target / "incremental_02_error"
+            error_folder.mkdir(parents=True, exist_ok=True)
+            for table in SOURCE_ORDER:
+                csv_path = folder / (table + ".csv")
+                err_path = error_folder / (table + ".csv")
+                if table == "Fact_Order_Items":
+                    err_df = pd.read_csv(csv_path, dtype=str, keep_default_na=False, encoding="utf-8-sig")
+                    if len(err_df) > 0:
+                        # Introduce an unmapped SKU in one item to simulate invalid reference
+                        err_df.loc[0, "SKU_ID"] = "SKU_ERR_UNKNOWN_DEMO"
+                    err_df.to_csv(err_path, index=False, columns=columns[table], encoding="utf-8-sig")
+                else:
+                    shutil.copyfile(csv_path, err_path)
+            (error_folder / "source_manifest.json").write_text(json.dumps({
+                "batch": "incremental_02_error", "month": month, "source_tables": SOURCE_ORDER,
+                "columns": {table: columns[table] for table in SOURCE_ORDER},
+                "er1_tables": len(tables),
+                "is_error_variant": True,
+                "scenario": "MONTH_3_UNKNOWN_SKU",
+                "description": "เดือน 3 จำลอง Error: มีรายการ Order Item อ้างอิง SKU ที่ไม่มีใน Dim_SKU",
+                "classification": "SYNTHETIC_EDUCATIONAL_NOT_TIKTOK",
+            }, ensure_ascii=False, indent=2), encoding="utf-8")
     shutil.rmtree(target / "incremental", ignore_errors=True)
     # ML planning rows stay separate from ER1, but span the exact warehouse history.
     plan_path = target / "ml_marketing_plan.csv"

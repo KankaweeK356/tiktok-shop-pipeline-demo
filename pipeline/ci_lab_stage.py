@@ -111,7 +111,7 @@ def _real_step_evidence(workspace: Path,batch: str,stage: str) -> dict:
 
 
 def run_stage(stage: str, batch: str) -> dict:
-    if stage not in STAGES or batch not in BATCHES:
+    if stage not in STAGES or (batch not in BATCHES and batch != "incremental_02_error"):
         raise ValueError("Invalid stage or batch")
     db_url = os.getenv("NEON_DEMO_DATABASE_URL")
     if not db_url:

@@ -1,4 +1,4 @@
-"""One *real* ETL stage per GitHub Actions run.
+"""One real ETL stage, shared by GitHub workers and the Vercel one-click runner.
 
 Previous workspace is restored from a GitHub Actions artifact by the workflow.
 The same SQLite, Parquet, checkpoints and DuckDB files survive between jobs.
@@ -22,7 +22,7 @@ from .schema import ROOT
 from .neon_source import _ordered_source_tables
 from .generate_classroom_source import BATCHES
 
-STATE_PATH = ROOT / "output" / "classroom_lab" / "lab_session.json"
+STATE_PATH = Path(os.environ.get("CLASSROOM_WORKSPACE", str(ROOT / "output" / "classroom_lab"))) / "lab_session.json"
 
 
 def _phase(db_url: str) -> tuple[str, int]:
@@ -94,18 +94,39 @@ def _real_step_evidence(workspace: Path,batch: str,stage: str) -> dict:
                 "tables":table_counts,"table_previews":table_previews}
     else:
         report=json.loads((workspace/"reports"/("functional_"+batch+".json")).read_text())
+        import csv
+        lineage_path = workspace / "reports" / ("lineage_" + batch + ".csv")
+        with lineage_path.open(encoding="utf-8-sig", newline="") as lineage_file:
+            lineage_preview = list(__import__("itertools").islice(csv.DictReader(lineage_file), 5))
         output={"table":"Validation","records":report.get("checks"),
                 "origin":"NEW_FUNCTIONAL_VALIDATION",
-                "preview":[{"check":"Checks","passed":report.get("passed"),"failed":report.get("failed")},
+                "lineage_preview":lineage_preview,
+                "preview":[{"check":"Checks","source":report.get("checks"),"warehouse":report.get("passed")},
+                    {"check":"Failed checks","source":0,"warehouse":report.get("failed")},
                     {"check":"Paid items","source":report.get("source_paid_item_count"),
                      "warehouse":report.get("warehouse_sales_item_count")},
                     {"check":"Net revenue","source":report.get("er1_net_revenue"),
                      "warehouse":report.get("er2_net_revenue")}]}
+    if stage == "extract":
+        input_data = {"label": "ตารางใน Neon ที่อ่านมาบันทึกเป็น Raw Parquet",
+                      "tables": output["tables"], "preview": []}
+    elif stage in ("transform", "load"):
+        source_layer = "raw" if stage == "transform" else "standardized"
+        paths = sorted((workspace / "lake" / source_layer / batch).glob("*.parquet"))
+        input_data["tables"] = [{"name": p.stem, "rows": parquet_result(p)["records"]} for p in paths]
+        input_data["label"] = "Raw Parquet" if stage == "transform" else "Standardized Parquet"
+    metrics = [{"label":"Output records","value":output.get("records",0)}]
+    if "files" in input_data:
+        metrics.append({"label": "ไฟล์ CSV ต้นทาง", "value": len(input_data["files"])})
+    if "tables" in input_data:
+        metrics.append({"label": "ตาราง/ไฟล์ก่อนประมวลผล", "value": len(input_data["tables"])})
+    if "tables" in output:
+        metrics.append({"label": "ตาราง/ไฟล์หลังประมวลผล", "value": len(output["tables"])})
     return {"classification":"SYNTHETIC_EDUCATIONAL_NOT_TIKTOK",
         "mode":"REAL_GITHUB_ACTIONS_STAGE","is_new_etl_run":True,"stage":stage,"batch":batch,
         "executed_at":pd.Timestamp.utcnow().isoformat(),
         "success":True,"input":input_data,"output":output,
-        "metrics":[{"label":"Output records","value":output.get("records",0)}],
+        "metrics":metrics,
         "checks":[{"label":"Actual orchestrator stage completed","pass":True}],
         "provenance":"NEW_WORKER_OUTPUT_NOT_HISTORICAL_REPLAY"}
 
@@ -136,8 +157,12 @@ def run_stage(stage: str, batch: str) -> dict:
             prior_batch=BATCHES[BATCHES.index(batch)-1]
             if previous.get("batch")!=prior_batch or previous.get("last_completed")!="validate":
                 raise RuntimeError("Previous Source delivery must validate before the next one")
-        run_id = begin_run(db_url, "RUN1" if batch=="initial" else "RUN2")
+        expected_cycle = os.getenv("CLASSROOM_EXPECTED_CYCLE")
+        run_id = begin_run(db_url, "RUN1" if batch=="initial" else "RUN2", batch=batch,
+                           expected_cycle=int(expected_cycle) if expected_cycle else None)
         data = {"batch":batch,"cycle":cycle,"run_id":run_id,"last_completed":None}
+        STATE_PATH.parent.mkdir(exist_ok=True, parents=True)
+        STATE_PATH.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
     else:
         if not STATE_PATH.exists():
             raise RuntimeError("Missing previous stage checkpoint; restore GitHub artifact")
@@ -147,26 +172,29 @@ def run_stage(stage: str, batch: str) -> dict:
         if data.get("last_completed")!=STAGES[index-1]:
             raise RuntimeError("Step order violated; expected "+STAGES[index-1])
     try:
+        from .neon_control import mark_stage_started
+        mark_stage_started(db_url, data["run_id"], stage)
         result=run_batch(workspace,batch,stop_after=stage)
     except Exception as error:
-        # A failed first stage has no saved session to resume. Release the
-        # Neon run lock so a corrected Source can start a fresh attempt.
-        if stage=="ingest":
-            fail_run(db_url,data["run_id"],"RUN1" if batch=="initial" else "RUN2",
-                     workspace,error,batch=batch)
+        fail_run(db_url,data["run_id"],"RUN1" if batch=="initial" else "RUN2",
+                 workspace,error,batch=batch)
         raise
     if stage!="validate" and result.get("status")!="PARTIAL":
         raise RuntimeError("Unexpected state: intermediate step must be PARTIAL")
     if stage=="validate":
         if result.get("status")!="SUCCESS" or result.get("functional_fails"):
-            raise RuntimeError("Validation did not pass; Neon state is not advanced")
-        complete_run(db_url,data["run_id"],"RUN1" if batch=="initial" else "RUN2",result,workspace)
+            error = RuntimeError("Validation did not pass; Neon state is not advanced")
+            fail_run(db_url,data["run_id"],"RUN1" if batch=="initial" else "RUN2",
+                     workspace,error,batch=batch)
+            raise error
+    from .neon_control import complete_stage
+    complete_stage(db_url, data["run_id"], stage, result.get("metrics", {}).get(stage, {}).get("result", {}))
     data["last_completed"]=stage
     STATE_PATH.parent.mkdir(exist_ok=True,parents=True)
     STATE_PATH.write_text(json.dumps(data,indent=2,ensure_ascii=False),encoding="utf-8")
     receipt = {
       "classification":"SYNTHETIC_EDUCATIONAL_NOT_TIKTOK",
-      "execution":"GITHUB_ACTIONS_REAL_PIPELINE_STAGE",
+      "execution":os.getenv("CLASSROOM_EXECUTION_ENGINE", "GITHUB_ACTIONS_REAL_PIPELINE_STAGE"),
       "stage":stage,"batch":batch,"cycle":cycle,"run_id":data["run_id"],
       "result":result,
       "checkpoint":str(workspace/"lake"/"control"/f"checkpoint_{batch}.json"),

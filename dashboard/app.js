@@ -660,28 +660,28 @@
       small(item.label), statusLabel(item.pass ? "PASS" : "FAIL"))));
     wrap.append(summary);
 
-    // Stage I/O Summary Banner (Teacher Comments #2, #3, #4, #5, #6, #7)
+    // Stage I/O Summary Banner (Teacher Comments & Plan Requirement 1)
     let ioInputText = "", ioOutputText = "", ioDesc = "";
     if (result.stage === "ingest") {
-      ioInputText = "📥 รับ 21 ไฟล์ CSV";
-      ioOutputText = "📤 โหลด 25 ตาราง Database";
-      ioDesc = "นำเข้าข้อมูลจากไฟล์ CSV สู่ Neon PostgreSQL (ER1) พร้อมสร้างตารางคลังและคำนวณอีก 4 ตาราง";
+      ioInputText = "📥 รับ ZIP รายเดือน (21 CSV + manifest JSON)";
+      ioOutputText = "📤 โหลด 25 ตารางใน Neon PostgreSQL (ER1)";
+      ioDesc = "นำเข้า 21 ตารางตาม ER1 + ระบบคำนวณธุรกรรมเพิ่ม 4 ตาราง (FIFO Allocation, Stock Movement, Inventory Snapshot, Platform Fees) รวมเป็น 25 ตาราง";
     } else if (result.stage === "extract") {
-      ioInputText = "📥 รับ 25 ตาราง Database";
-      ioOutputText = "📤 สกัด 25 ไฟล์ Data Lake Parquet";
-      ioDesc = "สกัดจาก Database เป็นไฟล์ Apache Parquet (Snappy Columnar) ใน lake/raw/{batch}/";
+      ioInputText = "📥 รับ 25 ตาราง Database ใน Neon";
+      ioOutputText = "📤 สกัด 21 Landing CSV + 25 Raw Parquet";
+      ioDesc = "สกัดเป็นไฟล์ Snapshot ใน Data Lake: lake/landing/ (CSV สำรอง 21 ไฟล์) และ lake/raw/ (Apache Parquet Snappy Columnar 25 ไฟล์)";
     } else if (result.stage === "transform") {
-      ioInputText = "📥 รับ 25 ไฟล์ Data Lake Raw";
-      ioOutputText = "📤 ส่งต่อ Data Lake Standardized";
-      ioDesc = "แยก 2 ส่วน: จัดมาตรฐานข้อมูล (Transform) และตรวจความครบถ้วน Foreign Key/Null (Quality Check)";
+      ioInputText = "📥 รับ 25 ไฟล์ Data Lake Raw (Parquet)";
+      ioOutputText = "📤 จัดรูปเป็น 11 Standardized Parquet";
+      ioDesc = "แปลงข้อมูลและจัดรูป (25 ➔ 11 ไฟล์): 10 ชุดข้อมูลเตรียมเข้า Warehouse + 1 ชุด claim_daily_external สำหรับคำนวณ พร้อมตรวจ Quality Check (FK, Null, Duplicates)";
     } else if (result.stage === "load") {
-      ioInputText = "📥 รับ Data Lake Standardized";
-      ioOutputText = "📤 โหลดเข้า ตาราง Warehouse (DuckDB)";
-      ioDesc = "สร้าง Star Schema Fact & Dimension และ Data Marts เพื่อป้อนข้อมูลให้ Dashboard & KPI";
+      ioInputText = "📥 รับ 11 Standardized Parquet";
+      ioOutputText = "📤 โหลด DuckDB (11 ตารางจริง + 1 View KPI)";
+      ioDesc = "สร้าง Star Schema Fact & Dimension 11 ตาราง และ View_Shop_Monthly_KPI เพื่อป้อนข้อมูลให้ Dashboard และ ML Lab";
     } else if (result.stage === "validate") {
-      ioInputText = "📥 ตรวจสอบทั้ง 4 เลเยอร์";
-      ioOutputText = "📤 ผลกระทบยอด (Reconciliation)";
-      ioDesc = "ตรวจเทียบ Source ➔ Database ➔ Data Lake ➔ Warehouse พร้อมยืนยัน Net Revenue 100%";
+      ioInputText = "📥 ตรวจสอบ Source/DB, Warehouse และ Mart";
+      ioOutputText = "📤 ผลตรวจกระทบยอดทุกเลเยอร์ (Reconciliation)";
+      ioDesc = "ตรวจสอบข้าม 4 เลเยอร์ ยืนยันความสอดคล้องของแถว, ค่าเงิน Net Revenue 100%, ตรวจรายการซ้ำ 0 รายการ และเกณฑ์คุ้มครองกำไร 10%";
     }
 
     if (ioInputText) {

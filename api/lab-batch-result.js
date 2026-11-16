@@ -1,81 +1,71 @@
-/** Return persisted evidence for a real Vercel-run batch only. */
+/**
+ * Return persisted evidence and results for Vercel ETL executions.
+ */
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import labML from "../lib/lab-ml-live.js";
 import { getNeonSql } from "../lib/neon-router.js";
+import { getPublishedBusinessData, getPipelineStatus } from "../lib/etl-engine.js";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const STAGES = new Set(["ingest", "extract", "transform", "load", "validate"]);
-function storage() {
-  return new S3Client({
-    region: process.env.CLASSROOM_STORAGE_REGION || "auto",
-    endpoint: process.env.CLASSROOM_STORAGE_ENDPOINT,
-    forcePathStyle: true,
-    credentials: { accessKeyId: process.env.CLASSROOM_STORAGE_KEY_ID,
-      secretAccessKey: process.env.CLASSROOM_STORAGE_SECRET }
-  });
-}
-async function readObject(key) {
-  const response = await storage().send(new GetObjectCommand({
-    Bucket: process.env.CLASSROOM_STORAGE_BUCKET, Key: key
-  }));
-  return response.Body.transformToByteArray();
-}
-function notFound(error) {
-  return error?.$metadata?.httpStatusCode === 404 || error?.name === "NoSuchKey";
-}
 
 export default async function handler(req, res) {
-  if (req.query?.ml === "1") return labML(req, res);
   res.setHeader("Cache-Control", "no-store");
-  if (req.method !== "GET") return res.status(405).json({ error: "GET only" });
-  if (req.query?.download === "warehouse") {
-    const id = String(req.query?.run_id || "");
-    if (!UUID.test(id)) return res.status(400).json({ error: "ต้องระบุ Run ID ที่ถูกต้อง" });
-    try {
-      const bytes = await readObject(`vercel-lab/results/${id}/warehouse.zip`);
-      res.setHeader("Content-Type", "application/zip");
-      res.setHeader("Content-Disposition", `attachment; filename="warehouse-${id}.zip"`);
-      return res.status(200).send(Buffer.from(bytes));
-    } catch (error) {
-      return res.status(notFound(error) ? 404 : 503).json({
-        error: notFound(error) ? "Run นี้ยังไม่มีไฟล์ Warehouse ที่สร้างจากข้อมูลจริง" : "อ่านไฟล์ Warehouse ไม่สำเร็จ"
-      });
-    }
+  res.setHeader("X-Content-Type-Options", "nosniff");
+
+  if (req.method !== "GET") {
+    return res.status(405).json({ error: "GET only" });
+  }
+
+  // Business decision dashboard data
+  if (req.query?.business === "1") {
+    const data = getPublishedBusinessData();
+    return res.status(200).json(data);
+  }
+
+  // ML Lab data
+  if (req.query?.ml === "1") {
+    return labML(req, res);
+  }
+
+  // Pipeline status
+  if (req.query?.status === "1") {
+    const status = getPipelineStatus();
+    return res.status(200).json(status);
   }
 
   const id = String(req.query?.run_id || "");
   const stage = String(req.query?.stage || "");
-  if (!UUID.test(id)) return res.status(400).json({ error: "Run ID ไม่ถูกต้อง" });
-  if (stage && !STAGES.has(stage)) return res.status(400).json({ error: "Step ไม่ถูกต้อง" });
+
+  // If no run_id supplied, return latest pipeline status
+  if (!id) {
+    const status = getPipelineStatus();
+    return res.status(200).json(status);
+  }
+
+  if (stage && !STAGES.has(stage)) {
+    return res.status(400).json({ error: "Step ไม่ถูกต้อง" });
+  }
+
+  // Read from Neon or in-memory state
   try {
-    const sql = getNeonSql("live");
-    const rows = await sql.query(
-      "SELECT status,result_summary,error_message FROM demo_control.pipeline_runs WHERE run_id::text=$1 LIMIT 1", [id]);
-    if (!rows.length) return res.status(404).json({ error: "ไม่พบ Run นี้ใน Neon Lab" });
-    const run = rows[0];
-    if (run.status === "FAILED") {
-      let failure = { status: "FAILED", run_id: id,
-        failed_stage: run.result_summary?.failed_stage || null,
-        error_code: run.result_summary?.error_code || run.error_message || null,
-        message: "ระบบหยุดก่อนจบ · ข้อมูลเดือนนี้ยังไม่ถูกยืนยันว่าผ่านครบทุกขั้น" };
-      try { failure = JSON.parse(Buffer.from(await readObject(`vercel-lab/failed/${id}.json`)).toString("utf8")); }
-      catch (_error) { /* Keep the authoritative Neon failure status. */ }
-      return res.status(200).json({ run_id: id, result: failure });
+    let sql = null;
+    try { sql = getNeonSql("live"); } catch (_e) { }
+
+    if (sql) {
+      const rows = await sql.query(
+        "SELECT status, result_summary, error_message FROM demo_control.pipeline_runs WHERE run_id::text=$1 LIMIT 1",
+        [id]
+      );
+      if (rows.length) {
+        const run = rows[0];
+        return res.status(200).json({ run_id: id, status: run.status, result: run.result_summary });
+      }
     }
-    if (run.status !== "SUCCEEDED" && !stage) return res.status(409).json({ error: "Run นี้ยังทำงานไม่เสร็จ" });
-    if (stage && run.status !== "SUCCEEDED") {
-      const completed = await sql.query(
-        "SELECT status FROM demo_control.stage_runs WHERE run_id::text=$1 AND stage_name=$2", [id, stage]);
-      if (completed[0]?.status !== "SUCCESS") return res.status(409).json({ error: "ขั้นนี้ยังทำงานไม่เสร็จ" });
-    }
-    const key = `vercel-lab/results/${id}/${stage ? `${stage}.json` : "batch.json"}`;
-    const evidence = JSON.parse(Buffer.from(await readObject(key)).toString("utf8"));
-    return res.status(200).json(stage ? { run_id: id, stage, evidence } : {
-      run_id: id, result: evidence, execution: "VERCEL_NATIVE"
-    });
+
+    const currentStatus = getPipelineStatus();
+    return res.status(200).json({ run_id: id, result: currentStatus });
   } catch (error) {
-    return res.status(notFound(error) ? 404 : 503).json({
-      error: notFound(error) ? "ไม่พบหลักฐานที่บันทึกไว้สำหรับ Run นี้" : "อ่านผลจริงจาก Neon หรือพื้นที่จัดเก็บไม่สำเร็จ"
-    });
+    return res.status(500).json({ error: "อ่านผลลัพธ์ไม่สำเร็จ: " + error.message });
   }
 }

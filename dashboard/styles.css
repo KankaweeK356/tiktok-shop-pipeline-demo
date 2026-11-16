@@ -173,3 +173,452 @@ tr:hover td{background:#fff8f0}.metric-label,.metric-sub,.panel-description{colo
 .source-upload-label{position:relative;display:inline-flex;align-items:center;overflow:hidden}
 .source-upload-input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
 @media(max-width:600px){.source-picker-actions{align-items:stretch;flex-direction:column}.source-picker-actions>*{width:100%;text-align:center}}
+
+/* ==========================================================================
+   SINGLE MAIN-FLOW DATA PIPELINE RUNNER & ER2 BUSINESS DECISION DASHBOARD
+   ========================================================================== */
+
+/* Month Chips Header */
+.month-chips-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+}
+.month-chips-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.month-chips-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.2px;
+}
+.month-chips-summary {
+  font-size: 11px;
+  color: var(--muted);
+}
+.month-chips-grid {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 8px;
+}
+.month-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 6px;
+  border-radius: 10px;
+  border: 1px solid #e8ded7;
+  background: #faf6f3;
+  color: var(--ink);
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-size: 11px;
+  font-weight: 750;
+  gap: 4px;
+}
+.month-chip:hover {
+  border-color: var(--red);
+  background: #fff;
+}
+.month-chip.is-active-view {
+  border-color: var(--red);
+  box-shadow: 0 0 0 2px rgba(116, 29, 43, 0.18);
+  background: #fff;
+}
+.chip-type-tag {
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #8c7e7b;
+  font-weight: 700;
+}
+.chip-status-badge {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+.badge-published { background: #eaf8f2; color: #15745b; border: 1px solid #c8edd9; }
+.badge-blocked { background: #fff0f0; color: #ab2535; border: 1px solid #f8c8cb; }
+.badge-running { background: #fff8eb; color: #a36312; border: 1px solid #f5dfb8; }
+.badge-ready { background: #f0f4fc; color: #2e5594; border: 1px solid #d2e0f8; }
+.badge-not-started { background: #f1edeb; color: #8e8380; border: 1px solid #e0d8d4; }
+
+/* Primary Execution Controls Banner */
+.main-controls-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: var(--shadow);
+  margin-bottom: 22px;
+}
+.run-btn-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  border: 1px solid #e6dbd3;
+  background: #fbf7f5;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font: inherit;
+}
+.run-btn-card:hover:not(:disabled) {
+  border-color: var(--red);
+  background: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(116, 29, 43, 0.08);
+}
+.run-btn-card:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+.run-btn-card.card-primary {
+  border-color: #e2c1c6;
+  background: #fff8f8;
+}
+.run-btn-card.card-primary:hover:not(:disabled) {
+  border-color: var(--red);
+  background: #fff;
+}
+.run-btn-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.run-btn-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--red);
+}
+.run-btn-icon {
+  font-size: 16px;
+  color: var(--red);
+}
+.run-btn-desc {
+  font-size: 11px;
+  line-height: 1.6;
+  color: #655452;
+}
+
+/* 5 Expandable Pipeline Stages */
+.pipeline-stages-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.stage-card-wrapper {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  transition: border-color 0.15s ease;
+}
+.stage-card-wrapper.is-open {
+  border-color: #d19ba5;
+}
+.stage-card-wrapper.is-stage-failed {
+  border-color: #f0a8b0;
+  background: #fffafa;
+}
+.stage-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  cursor: pointer;
+  background: #fff;
+  border: none;
+  width: 100%;
+  font: inherit;
+  text-align: left;
+}
+.stage-card-wrapper.is-stage-failed .stage-card-header {
+  background: #fffafa;
+}
+.stage-card-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.stage-badge-number {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: #f5dfdf;
+  color: var(--red);
+  font-size: 13px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+}
+.stage-card-wrapper.is-stage-success .stage-badge-number {
+  background: #eaf8f2;
+  color: #15745b;
+}
+.stage-title-text {
+  font-size: 14px;
+  font-weight: 750;
+  color: var(--ink);
+}
+.stage-sub-text {
+  font-size: 11px;
+  color: var(--muted);
+}
+.stage-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.stage-status-pill {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+.stage-expand-chevron {
+  font-size: 12px;
+  color: var(--muted);
+  transition: transform 0.2s ease;
+}
+.stage-card-wrapper.is-open .stage-expand-chevron {
+  transform: rotate(180deg);
+}
+
+/* Stage Expanded Tabs [Input | Process | Validation | Output | Preview] */
+.stage-expanded-body {
+  border-top: 1px solid var(--line);
+  background: #fffdfc;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.stage-tab-buttons {
+  display: flex;
+  gap: 6px;
+  border-bottom: 1px solid #ebdbe0;
+  padding-bottom: 8px;
+  overflow-x: auto;
+}
+.stage-tab-btn {
+  padding: 7px 13px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #68575a;
+  font-size: 11px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.stage-tab-btn:hover {
+  background: #f5ece9;
+}
+.stage-tab-btn.is-active-tab {
+  background: #f5dfdf;
+  color: var(--red);
+  border-color: #ebd0d5;
+}
+.stage-tab-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.stage-info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.stage-info-cell {
+  background: #fff;
+  border: 1px solid #ede3e0;
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.stage-info-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: #8c7e7b;
+  font-weight: 800;
+}
+.stage-info-value {
+  font-size: 12px;
+  font-weight: 750;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+/* Error Review & Fix Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(30, 15, 18, 0.55);
+  display: grid;
+  place-items: center;
+  z-index: 999;
+  padding: 16px;
+  backdrop-filter: blur(3px);
+}
+.modal-card {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #e8d0d5;
+  width: 100%;
+  max-width: 640px;
+  box-shadow: 0 18px 45px rgba(50, 15, 20, 0.22);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-height: 90vh;
+}
+.modal-header {
+  padding: 18px 22px;
+  border-bottom: 1px solid #ebdbe0;
+  background: #fff7f7;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.modal-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--red);
+  margin: 0;
+}
+.modal-close-btn {
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  color: #8c787c;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+.modal-close-btn:hover {
+  background: #edd8dc;
+  color: var(--red);
+}
+.modal-body {
+  padding: 22px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.order-slip-card {
+  background: #fffdf5;
+  border: 1px solid #fae4a8;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.order-slip-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #875c12;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.order-slip-desc {
+  font-size: 13px;
+  color: #443725;
+  line-height: 1.6;
+}
+.fix-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.fix-field label {
+  font-size: 11px;
+  font-weight: 750;
+  color: var(--ink);
+}
+.fix-field select, .fix-field input, .fix-field textarea {
+  border: 1px solid #d4c2be;
+  border-radius: 9px;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 12px;
+  background: #fff;
+  color: var(--ink);
+}
+.modal-footer {
+  padding: 16px 22px;
+  border-top: 1px solid #ebdbe0;
+  background: #fbf7f8;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* 11-Step Cost Waterfall */
+.waterfall-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 0;
+}
+.waterfall-step {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr) 110px;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid #f0e6e4;
+}
+.waterfall-step.is-net { background: #fdf6f7; border-color: #ebd0d5; font-weight: 750; }
+.waterfall-step.is-profit { background: #eaf8f2; border-color: #bde4cf; font-weight: 800; }
+.waterfall-label { font-size: 11px; color: var(--ink); }
+.waterfall-bar-track { height: 10px; border-radius: 6px; background: #eee8e5; overflow: hidden; }
+.waterfall-bar-fill { height: 100%; border-radius: 6px; }
+.bar-gross { background: #68505a; }
+.bar-discount { background: #d97784; }
+.bar-cost { background: #ab4452; }
+.bar-profit { background: #15745b; }
+.waterfall-amount { font-size: 12px; font-weight: 750; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Responsive adjustments */
+@media (max-width: 1080px) {
+  .month-chips-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .main-controls-card { grid-template-columns: 1fr; }
+  .stage-info-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .month-chips-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .waterfall-step { grid-template-columns: 1fr 80px; }
+  .waterfall-bar-track { display: none; }
+}

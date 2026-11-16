@@ -1,7 +1,6 @@
 /** Clear only the isolated classroom live-run Neon lab, atomically. */
 import sourceContract from "../dashboard/data/classroom_source_contract.json" with { type: "json" };
 import { getNeonSql } from "../lib/neon-router.js";
-import { resetDemoState } from "../lib/etl-engine.js";
 
 const DERIVED = ["Fact_Inventory_Snapshot", "Fact_Stock_Movement",
   "Fact_Order_Platform_Fees", "Fact_FIFO_Allocation"];
@@ -68,7 +67,6 @@ export default async function handler(req, res) {
     if (state[0]?.phase !== "EMPTY" || remaining.length)
       return res.status(503).json({ cleared: false, cycle: Number(state[0]?.cycle_number),
         error: "Neon ยังยืนยันไม่ได้ว่าทุกตารางว่าง กรุณาตรวจสอบสถานะก่อนเริ่ม Run ใหม่" });
-    resetDemoState();
     return res.status(200).json({ accepted: true, cleared: true, status: "SUCCEEDED",
       cycle: Number(state[0].cycle_number), tables_cleared: counts.length, remaining_rows: 0,
       execution_engine: "VERCEL_NATIVE" });

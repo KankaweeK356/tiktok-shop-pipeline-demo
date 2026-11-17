@@ -36,10 +36,15 @@ Source เป็นข้อมูลสังเคราะห์เพื่�
 
 - **Run 1 (initial)**: นำเข้าข้อมูลเดือนมกราคม 2569 (บันทึก Master/Dimension และ Transaction ประจำเดือน)
 - **Run เติมข้อมูล (incremental_01 ถึง incremental_09)**: เติมข้อมูลเดือนกุมภาพันธ์ถึงตุลาคม 2569 ทีละ 1 เดือนตามลำดับ โดยไม่ทับข้อมูลเดิม
-- **การสาธิต Error ในเดือนที่ 3 (incremental_02_error)**:
-  - ในเดือนที่ 3 (มีนาคม) มีชุดข้อมูลจำลองแบบพิเศษ `incremental_02_error` เพื่อสาธิตกรณีข้อมูลผิดกฎคุณภาพ (เช่น มี SKU ที่ไม่เคยลงทะเบียนใน `Dim_SKU`)
-  - ระบบจะตรวจพบในขั้นตอน **Transform / Quality Check** และทำการกักข้อมูล (Quarantine) ไว้ โดยไม่ส่งข้อมูลที่ผิดพลาดเข้าสู่ **ตาราง Warehouse**
-  - ผู้ใช้สามารถกดปุ่ม *"รันต่อด้วยข้อมูลฉบับแก้ไข"* เพื่อดึงชุดข้อมูลปกติของเดือน 3 และรันต่อจาก Checkpoint ได้อย่างราบรื่น
+- **Final Main Flow (Source version `classroom_v2_2026_11_16`)**: เดือนมีนาคมใน Source หลักมีแถวที่ `Fact_Order_Items.SKU_ID` ไม่มีใน `Dim_SKU` อยู่ **1 แถวโดยตั้งใจ** (ไม่มี Error อื่นใน Main Flow) ระบบตรวจด้วยกฎทั่วไป `REFERENCE_EXISTS` ที่สร้างจาก `Ref:` ใน `schemas/ER1_V3.dbml` ไม่ผูกกับเดือน, Batch หรือรหัส SKU ใด ๆ
+  - **Stage 1 (Source → ER1)**: อ่าน CSV เข้า Staging → ตรวจ DQ ทุกแถว → Promote เข้า ER1 ได้เมื่อผ่านเท่านั้น ถ้าไม่ผ่านจะไม่มีข้อมูลเดือนนั้นเข้า ER1 และ Run เป็น `BLOCKED_DQ`
+  - **Stage 3** ตรวจซ้ำด้วยกฎชุดเดียวกัน (Defense in Depth) ก่อนสร้างข้อมูล Standardized
+  - Issue, Rule Result, Correction (Append-only, มี Version) และ Revalidation เก็บใน Neon `demo_control.dq_*` (ต้อง Apply `sql/neon_dq_recovery_migration.sql` ก่อน) Review & Fix อ่านจากฐานข้อมูลจริง ระบบไม่เลือก SKU ให้และไม่เติมเหตุผลให้
+  - Revalidate ใช้กฎเดิมกับแถวต้นฉบับ + Correction แล้ว Resume รันเดือนนั้นใหม่ตั้งแต่ Stage 1; ไฟล์ CSV/ZIP ต้นฉบับไม่ถูกแก้ และเดือนที่ Publish แล้วไม่ถูกแตะ
+  - Source ถูกล็อกด้วย SHA-256 ของ ZIP ทั้ง 10 เดือน (`dashboard/data/source_lock_classroom_v2.json`) ตรวจก่อนเขียนข้อมูลทุกครั้ง ทั้ง Run Next Step และ Run All ค่าเริ่มต้นของระบบยังเป็น Release เดิม `classroom-source-v1` จนกว่าจะตั้ง `CLASSROOM_SOURCE_VERSION` (ดู `docs/DQ_RECOVERY_RUNBOOK_TH.md`)
+  - ห้ามใช้ Source ชุดเดิม (`H2026…`) ปนกับชุด Final (`ORD-2026…`) ใน Cycle เดียวกัน (Worker จะปฏิเสธด้วย `LAB_SOURCE_VERSION_MIXED`)
+  - ตัวแปร `incremental_02_error` เป็นของชุดเดิม (v1) เท่านั้น ไม่ใช่ส่วนของ Final Main Flow
+  - ไฟล์ใน `qa_only/` ของแพ็กเกจ Final ใช้เป็นเฉลยสำหรับ Test เท่านั้น ห้ามเป็น Runtime Input หรือคำตอบอัตโนมัติ
 
 ---
 

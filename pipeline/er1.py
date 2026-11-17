@@ -180,7 +180,6 @@ def ingest(source_dir:Path,db_path:Path,batch:str,control_dir:Path):
     init_er1(conn)
     changed_orders=set(); changed_ads=set();changed_samples=set();changed_claims=set(); counts={}
     try:
-        conn.execute('BEGIN')
         # A partial GitHub upload must fail with a clear Source missing error.
         expected=(SOURCE_ORDER if batch=='initial' else [
             'Fact_Orders','Fact_Order_Items','Fact_Internal_Fulfillment',
@@ -188,10 +187,25 @@ def ingest(source_dir:Path,db_path:Path,batch:str,control_dir:Path):
         missing=[t for t in expected if not (source_dir/f'{t}.csv').is_file()]
         if missing:
             raise PipelineError('E02_MISSING_SOURCE',', '.join(f'{t}.csv' for t in missing))
+        # ---- Stage 1 staging gate: CSV -> staging -> generic DQ -> promote -------
+        # Original CSV stays untouched; approved corrections are only an overlay on
+        # these in-memory staging rows. Nothing reaches ER1 unless every BLOCKING
+        # rule passes (explicit raise, not assert).
+        from . import dq
+        from .source_lock import read_identity
+        staged={t:load_csv(source_dir/f'{t}.csv',t) for t in SOURCE_ORDER
+                if (source_dir/f'{t}.csv').exists()}
+        identity=read_identity(Path(source_dir).parent,batch) or {}
+        report=dq.evaluate(staged,batch=batch,stage='ingest',existing=dq.sqlite_universe(conn),
+                           identity=identity,corrections=dq.load_corrections(control_dir,batch))
+        dq.write_report(Path(control_dir).parent/'governance',report)
+        if report['summary']['blocked']:
+            raise dq.DQBlocked(report)
+        conn.execute('BEGIN')
         for table in SOURCE_ORDER:
             p=source_dir/f'{table}.csv'
             if not p.exists():continue
-            records=load_csv(p,table);counts[table]=len(records)
+            records=staged[table];counts[table]=len(records)
             if table=='Fact_Orders':
                 for r in records:
                     prev=one(conn,'SELECT Current_Status,Paid_At FROM Fact_Orders WHERE Order_ID=?',(r['Order_ID'],))
@@ -222,7 +236,8 @@ def ingest(source_dir:Path,db_path:Path,batch:str,control_dir:Path):
            'changed_sample_ids':sorted(changed_samples),'changed_claim_detail_ids':sorted(changed_claims),
            'source_counts':counts}
         (control_dir/f'changes_{batch}.json').write_text(json.dumps(affected,indent=2,ensure_ascii=False),encoding='utf-8')
-        return {'input_records':sum(counts.values()),'modified_orders':len(changed_orders),'source_tables':len(counts)}
+        return {'input_records':sum(counts.values()),'modified_orders':len(changed_orders),'source_tables':len(counts),
+                'dq':dq.summary_for_receipt(report)}
     except Exception:
         conn.rollback();raise
     finally:conn.close()

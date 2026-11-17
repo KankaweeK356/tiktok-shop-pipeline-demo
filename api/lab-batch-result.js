@@ -1,6 +1,7 @@
 /** Return persisted evidence for a real Vercel-run batch only. */
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import labML from "../lib/lab-ml-live.js";
+import labDQ from "../lib/lab-dq.js";
 import { getNeonSql } from "../lib/neon-router.js";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -26,6 +27,7 @@ function notFound(error) {
 
 export default async function handler(req, res) {
   if (req.query?.ml === "1") return labML(req, res);
+  if (req.query?.dq) return labDQ(req, res);
   res.setHeader("Cache-Control", "no-store");
   if (req.method !== "GET") return res.status(405).json({ error: "GET only" });
   if (req.query?.download === "warehouse") {
@@ -53,6 +55,15 @@ export default async function handler(req, res) {
       "SELECT status,result_summary,error_message FROM demo_control.pipeline_runs WHERE run_id::text=$1 LIMIT 1", [id]);
     if (!rows.length) return res.status(404).json({ error: "ไม่พบ Run นี้ใน Neon Lab" });
     const run = rows[0];
+    if (["BLOCKED_DQ", "READY_TO_RESUME"].includes(run.status)) {
+      // Data-quality block: not a system failure. Details come from persisted dq_issue rows.
+      return res.status(200).json({ run_id: id, result: {
+        status: run.status, run_id: id, failure_class: "DATA_QUALITY", error_code: "DQ_BLOCKED",
+        failed_stage: run.result_summary?.failed_stage || null,
+        batch: run.result_summary?.batch || null,
+        issue_count: run.result_summary?.issue_count ?? null,
+        message: "ข้อมูลไม่ผ่านการตรวจคุณภาพ · หยุดก่อน Publish · ใช้ Review & Fix เพื่อตรวจและแก้ไข" } });
+    }
     if (run.status === "FAILED") {
       let failure = { status: "FAILED", run_id: id,
         failed_stage: run.result_summary?.failed_stage || null,

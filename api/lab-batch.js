@@ -3,7 +3,7 @@ import { createHmac, randomUUID } from "node:crypto";
 import { S3Client, HeadObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { handleClassroomSourceUpload } from "../lib/classroom-source-upload.js";
 import { getNeonSql } from "../lib/neon-router.js";
-import { DELIVERIES, STAGES } from "../lib/etl-engine.js";
+import { DELIVERIES, STAGES } from "../lib/deliveries.js";
 
 export const config = { api: { bodyParser: false } };
 const RUN_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -30,6 +30,10 @@ function monthFor(batch) {
 function expectedNext(phase, runs) {
   if (phase === "EMPTY") return "initial";
   const latest = runs[0];
+  if (["BLOCKED_DQ", "READY_TO_RESUME"].includes(latest?.status)) {
+    const blocked = latest.result_summary?.batch;
+    if (blocked && DELIVERIES.includes(blocked)) return blocked;
+  }
   if (latest?.status === "FAILED" && latest.run_type === "RUN2") {
     const retry = latest.result_summary?.batch;
     if (retry && DELIVERIES.includes(retry) && retry !== "initial") return retry;
@@ -117,6 +121,8 @@ export default async function handler(req, res) {
       run_type: row.run_type,
       status: row.status,
       created_at: row.started_at,
+      source_version: row.result_summary?.source_version || null,
+      source_zip_sha256: row.result_summary?.source_identity?.zip_sha256 || null,
       execution_engine: "VERCEL_NATIVE"
     };
   });
@@ -160,7 +166,7 @@ export default async function handler(req, res) {
       }
       const stages = STAGES.map((name, index) => {
         const saved = stageRows.find(row => row.stage_name === name);
-        const pendingAfterFailure = run.status === "FAILED" && failedStage &&
+        const pendingAfterFailure = ["FAILED", "BLOCKED_DQ", "READY_TO_RESUME"].includes(run.status) && failedStage &&
           STAGES.indexOf(name) > STAGES.indexOf(failedStage);
         return {
           index, name,
@@ -172,11 +178,14 @@ export default async function handler(req, res) {
           completed_at: saved?.finished_at || null
         };
       });
-      const done = ["SUCCEEDED", "FAILED"].includes(run.status);
+      const blockedDQ = ["BLOCKED_DQ", "READY_TO_RESUME"].includes(run.status);
+      const done = ["SUCCEEDED", "FAILED"].includes(run.status) || blockedDQ;
       return res.status(200).json({
         found: true, run_id: String(run.run_id), stages,
         status: done ? "completed" : "in_progress",
-        conclusion: run.status === "SUCCEEDED" ? "success" : run.status === "FAILED" ? "failure" : null,
+        conclusion: run.status === "SUCCEEDED" ? "success" : run.status === "FAILED" ? "failure" :
+          blockedDQ ? "blocked" : null,
+        run_status: run.status,
         failed_stage: failureEvidence?.failed_stage || failedStage || null,
         error_code: failureEvidence?.error_code || run.result_summary?.error_code || run.error_message || null,
         error_message: failureEvidence?.message || run.error_message || null,
@@ -194,6 +203,19 @@ export default async function handler(req, res) {
       error_code: latestRun.result_summary?.error_code || latestRun.error_message || null,
       batch: latestRun.result_summary?.batch || null
     } : null;
+    const blockedRun = runs.find(row => ["BLOCKED_DQ", "READY_TO_RESUME"].includes(row.status));
+    const dqBlocked = blockedRun ? {
+      run_id: String(blockedRun.run_id), status: blockedRun.status,
+      batch: blockedRun.result_summary?.batch || null,
+      failed_stage: blockedRun.result_summary?.failed_stage || null,
+      issue_count: blockedRun.result_summary?.issue_count ?? null
+    } : null;
+    let published = [];
+    try {  // Present only after the DQ migration; the dashboard may use this list as "published".
+      published = await sql.query(
+        "SELECT batch,run_id::text AS run_id,source_version,source_zip_sha256,correction_set_id,published_at,is_current " +
+        "FROM demo_control.published_snapshot WHERE dataset_key='classroom' AND cycle_number=$1 ORDER BY published_at", [cycle]);
+    } catch (_error) { published = []; }
     const partialDataDetected = (phase === "EMPTY" && (orderRows[0]?.n ?? 0) > 0);
     const recoveryReady = !active && !partialDataDetected;
     const recoveryReason = active ? "มี Run กำลังทำงานอยู่" :
@@ -210,6 +232,8 @@ export default async function handler(req, res) {
       active_started_at: active?.started_at || null,
       stale_recovered: staleRecovered,
       latest_failed_run: latestFailed,
+      dq_blocked: dqBlocked,
+      published_snapshots: published,
       partial_data_detected: partialDataDetected,
       recovery_ready: recoveryReady,
       recovery_reason: recoveryReason,
@@ -247,6 +271,14 @@ export default async function handler(req, res) {
        (phase !== "RUN1_READY" && phase !== "RUN2_READY" || previous !== previousRunId || !RUN_UUID.test(previous))))
     return res.status(409).json({ error: "Run ก่อนหน้าหรือสถานะ Lab ไม่ตรงกับรอบข้อมูล" });
 
+  // A batch stopped by the data-quality gate can only be re-run after human correction + a
+  // PASSED revalidation of the current correction set (status READY_TO_RESUME).
+  const dqRun = runs.find(row => ["BLOCKED_DQ", "READY_TO_RESUME"].includes(row.status) &&
+    row.result_summary?.batch === requestedBatch);
+  if (dqRun && dqRun.status === "BLOCKED_DQ")
+    return res.status(409).json({ error_code: "DQ_BLOCKED", status: "BLOCKED_DQ", run_id: String(dqRun.run_id),
+      error: "เดือนนี้ถูกหยุดด้วยข้อมูลไม่ผ่านการตรวจ ต้อง Review & Fix และ Revalidate ให้ผ่านก่อนรันต่อ" });
+
   const sourceUploadId = String(body.source_upload_id || "");
   if (sourceUploadId) {
     if (!/^[0-9a-f-]{36}$/i.test(sourceUploadId))
@@ -270,7 +302,6 @@ export default async function handler(req, res) {
     cycle,
     stage: body.stage || null,
     run_all: Boolean(body.run_all),
-    override: body.override || null,
     source_upload_id: sourceUploadId || null,
     nonce: runNonce,
     expires_at: Date.now() + 10 * 60 * 1000

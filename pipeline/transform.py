@@ -46,6 +46,13 @@ def dim_date_rows(start=date(2026,10,1),end=date(2026,11,30)):
 def transform(lake_dir:Path,control_dir:Path,batch:str,inject_error=None):
     raw=lake_dir/'raw'/batch;std=lake_dir/'standardized'/batch;std.mkdir(parents=True,exist_ok=True)
     changes=json.loads((control_dir/f'changes_{batch}.json').read_text(encoding='utf-8'))
+    # Stage 3 defense in depth: same generic rule catalog over the ER1 Raw snapshot.
+    # Stage 1 normally blocks first; this guarantees an invalid reference can never
+    # reach Standardized/ER2 even if a promotion path is bypassed.
+    from . import dq
+    dq_report=dq.evaluate_raw_snapshot(raw,batch=batch,stage='transform')
+    dq.write_report(lake_dir/'governance',dq_report)
+    if dq_report['summary']['blocked']:raise dq.DQBlocked(dq_report)
     groups=load_raw(raw,'Dim_Product_Group');skus=load_raw(raw,'Dim_SKU')
     creators=load_raw(raw,'Dim_Creator');vouchers=load_raw(raw,'Dim_Voucher')
     ad_campaigns=load_raw(raw,'Dim_Ad_Campaign');orders=load_raw(raw,'Fact_Orders')
@@ -230,4 +237,5 @@ def transform(lake_dir:Path,control_dir:Path,batch:str,inject_error=None):
         'ads':'native date/group, never joined directly to SKU sales',
         'changed_sales':len(sales),'dirty_groups_dates':len(dirty)},indent=2),encoding='utf-8')
     return {'standardized_tables':len(results)+1,'changed_sales':len(sales),
-      'changed_ads':len(adrows),'changed_samples':len(samrows),'dirty_groups_dates':len(dirty)}
+      'changed_ads':len(adrows),'changed_samples':len(samrows),'dirty_groups_dates':len(dirty),
+      'dq':dq.summary_for_receipt(dq_report)}

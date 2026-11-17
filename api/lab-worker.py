@@ -22,6 +22,14 @@ import psycopg
 ROOT = Path(__file__).resolve().parents[1]
 STAGES = ("ingest", "extract", "transform", "load", "validate")
 INVOCATION_LOCK = threading.Lock()
+
+
+class BlockedDQ(Exception):
+    """The batch was stopped by the data-quality gate (not a system failure)."""
+
+    def __init__(self, run_id: str, batch: str, issue_count: int, stage: str):
+        self.run_id, self.batch, self.issue_count, self.stage = run_id, batch, issue_count, stage
+        super().__init__("DQ_BLOCKED")
 SOURCE_RELEASE = "https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/releases/download/classroom-source-v1/classroom-source-{month}.zip"
 
 
@@ -55,58 +63,61 @@ def read_ticket(ticket: str) -> dict:
     return payload
 
 
-def source_bytes(batch: str, upload_id: str | None) -> bytes:
+def source_bytes(batch: str, upload_id: str | None):
+    """Return ``(zip_bytes, uri, origin)`` for the active, version-locked Source.
+
+    The bytes are *not trusted* here; ``stage_source`` verifies SHA-256, manifest,
+    table set and headers before anything is written.
+    """
+    from pipeline import source_lock
+
     if upload_id:
-        item = storage().get_object(
-            Bucket=os.environ["CLASSROOM_STORAGE_BUCKET"],
-            Key=f"classroom-source-uploads/{upload_id}.zip",
-        )
-        return item["Body"].read()
+        key = f"classroom-source-uploads/{upload_id}.zip"
+        item = storage().get_object(Bucket=os.environ["CLASSROOM_STORAGE_BUCKET"], Key=key)
+        return item["Body"].read(), f"s3://{os.environ['CLASSROOM_STORAGE_BUCKET']}/{key}", "CUSTOM_UPLOAD"
     month_number = 1 if batch == "initial" else int(batch[-2:]) + 1
     month = f"2026-{month_number:02d}"
-    request = urllib.request.Request(
-        SOURCE_RELEASE.format(month=month),
-        headers={"User-Agent": "classroom-vercel-runner"},
-    )
-    with urllib.request.urlopen(request, timeout=45) as response:
-        if response.status != 200:
-            raise RuntimeError("SOURCE_DOWNLOAD_FAILED")
-        return response.read()
+    version = source_lock.active_version()
+    if version == source_lock.LEGACY_VERSION:
+        url = SOURCE_RELEASE.format(month=month)
+        request = urllib.request.Request(url, headers={"User-Agent": "classroom-vercel-runner"})
+        with urllib.request.urlopen(request, timeout=45) as response:
+            if response.status != 200:
+                raise RuntimeError("SOURCE_DOWNLOAD_FAILED")
+            return response.read(), url, "GITHUB_RELEASE_V1"
+    # Version-locked Source: location is configuration, identity is the approved SHA-256.
+    name = source_lock.zip_name(month, source_lock.load_lock(version))
+    local = os.environ.get("CLASSROOM_SOURCE_LOCAL_DIR")
+    if local:
+        path = Path(local) / name
+        return path.read_bytes(), str(path), "LOCAL_DIRECTORY"
+    prefix = os.environ.get("CLASSROOM_SOURCE_V2_S3_PREFIX")
+    if prefix:
+        key = f"{prefix.strip('/')}/{name}"
+        item = storage().get_object(Bucket=os.environ["CLASSROOM_STORAGE_BUCKET"], Key=key)
+        return item["Body"].read(), f"s3://{os.environ['CLASSROOM_STORAGE_BUCKET']}/{key}", "OBJECT_STORAGE"
+    base = os.environ.get("CLASSROOM_SOURCE_V2_BASE_URL", "").rstrip("/")
+    if base.startswith("https://"):
+        url = f"{base}/{name}"
+        request = urllib.request.Request(url, headers={"User-Agent": "classroom-vercel-runner"})
+        with urllib.request.urlopen(request, timeout=45) as response:
+            if response.status != 200:
+                raise RuntimeError("SOURCE_DOWNLOAD_FAILED")
+            return response.read(), url, "VERSIONED_URL"
+    raise ValueError("SOURCE_LOCATION_NOT_CONFIGURED")
 
 
-def stage_source(data: bytes, root: Path, batch: str) -> None:
-    from pipeline.generate_classroom_source import BATCHES
+def stage_source(data: bytes, root: Path, batch: str, *, uri: str = "", origin: str = "RELEASE") -> dict:
+    """Verify (hash, manifest, tables, headers, month/batch) then unpack. No write on failure.
 
-    if batch not in BATCHES:
-        raise ValueError("SOURCE_BATCH_INVALID")
-    contract = json.loads(
-        (ROOT / "dashboard" / "data" / "classroom_source_contract.json")
-        .read_text(encoding="utf-8")
-    )
-    month_number = BATCHES.index(batch) + 1
-    expected_month = f"2026-{month_number:02d}"
-    with zipfile.ZipFile(io.BytesIO(data)) as archive:
-        names = archive.namelist()
-        expected_names = sorted(
-            [f"{table}.csv" for table in contract["source_tables"]]
-            + ["source_manifest.json"]
-        )
-        if sorted(names) != expected_names:
-            raise ValueError("SOURCE_TABLE_SET_MISMATCH")
-        manifest = json.loads(archive.read("source_manifest.json"))
-        if manifest.get("month") != expected_month or manifest.get("batch") != batch:
-            raise ValueError("SOURCE_MONTH_MISMATCH")
-        if manifest.get("source_tables") != contract["source_tables"]:
-            raise ValueError("SOURCE_ER_CONTRACT_MISMATCH")
-        for table in contract["source_tables"]:
-            content = archive.read(f"{table}.csv").decode("utf-8-sig")
-            header = next(csv_reader(content), [])
-            if header != contract["columns"].get(table):
-                raise ValueError("SOURCE_COLUMNS_MISMATCH:" + table)
-        target = root / batch
-        target.mkdir(parents=True, exist_ok=True)
-        for name in expected_names:
-            (target / name).write_bytes(archive.read(name))
+    Used by every execution mode (Run Next Step, Run All, revalidation) so they
+    can never diverge in what they accept."""
+    from pipeline import source_lock
+
+    identity = source_lock.verify_source_zip(data, batch, uri=uri, origin=origin)
+    source_lock.unpack_verified(data, root / batch)
+    source_lock.write_identity(root, identity)
+    return identity
 
 
 def csv_reader(value: str):
@@ -194,6 +205,12 @@ def run_ticket(ticket: str) -> dict:
                 raise RuntimeError("INITIAL_RUN_ALREADY_EXISTS")
             if batch != "initial" and str(state[2] or "") != previous:
                 raise RuntimeError("PREVIOUS_RUN_MISMATCH")
+            # Never mix Source datasets inside one cycle (e.g. v1 'H2026..' IDs with Final 'ORD-..').
+            from pipeline import source_lock, neon_control
+            earlier = neon_control.previous_source_version(os.environ["NEON_DEMO_DATABASE_URL"], int(cycle))
+            if earlier and earlier != source_lock.active_version():
+                raise RuntimeError("LAB_SOURCE_VERSION_MIXED: cycle uses " + earlier +
+                                   ", worker is configured for " + source_lock.active_version())
 
         target_stage = claim.get("stage")
         from pipeline.generate_classroom_source import BATCHES
@@ -204,7 +221,8 @@ def run_ticket(ticket: str) -> dict:
                 prior_batch = BATCHES[BATCHES.index(batch) - 1]
                 prior_workspace(client, bucket, previous, workspace, prior_batch)
         source_root.mkdir(exist_ok=True)
-        stage_source(source_bytes(batch, claim.get("source_upload_id")), source_root, batch)
+        data, uri, origin = source_bytes(batch, claim.get("source_upload_id"))
+        identity = stage_source(data, source_root, batch, uri=uri, origin=origin)
 
         # Import after CLASSROOM_WORKSPACE is set so the real checkpoint files
         # live in this invocation's temporary directory, not the deployed bundle.
@@ -236,7 +254,9 @@ def run_ticket(ticket: str) -> dict:
             if session_path.is_file():
                 session = json.loads(session_path.read_text(encoding="utf-8"))
                 run_id = session.get("run_id")
-                if run_id:
+                # Only a session that belongs to THIS batch can describe this failure; a refusal
+                # before begin_run still sees the previous month's session and must not touch it.
+                if run_id and session.get("batch") == batch:
                     failed_stage = stage
                     error_code = type(error).__name__
                     history = workspace / "lake" / "control" / "stage_history.jsonl"
@@ -250,6 +270,23 @@ def run_ticket(ticket: str) -> dict:
                                     break
                             except Exception:
                                 continue
+                    dq_report = getattr(error, "report", None)
+                    if dq_report is not None:
+                        # run_stage already persisted BLOCKED_DQ + issues in Neon. Keep a
+                        # durable, run-scoped copy of the evidence outside the temp workspace.
+                        put_json(client, bucket, f"vercel-lab/blocked/{run_id}/dq_report.json", dq_report)
+                        quarantine = workspace / "lake" / "governance" / "quarantine"
+                        for item in sorted(quarantine.glob(f"{batch}_*")) if quarantine.is_dir() else []:
+                            client.put_object(Bucket=bucket,
+                                              Key=f"vercel-lab/blocked/{run_id}/{item.name}",
+                                              Body=item.read_bytes(), ContentType="application/json")
+                        put_json(client, bucket, f"vercel-lab/failed/{run_id}.json", {
+                            "status": "BLOCKED_DQ", "failure_class": "DATA_QUALITY", "run_id": run_id,
+                            "batch": batch, "cycle": cycle, "failed_stage": failed_stage,
+                            "error_code": "DQ_BLOCKED", "issue_count": len(dq_report["issues"]),
+                            "message": "ข้อมูลไม่ผ่านการตรวจคุณภาพ · หยุดก่อน Publish · ตรวจสอบและแก้ไขใน Review & Fix",
+                        })
+                        raise BlockedDQ(run_id, batch, len(dq_report["issues"]), failed_stage) from error
                     try:
                         from pipeline.neon_control import fail_run
                         fail_run(os.environ["NEON_DEMO_DATABASE_URL"], run_id,
@@ -293,7 +330,8 @@ def run_ticket(ticket: str) -> dict:
             )
             complete_run(os.environ["NEON_DEMO_DATABASE_URL"], run_id,
                          "RUN1" if batch == "initial" else "RUN2",
-                         validate_receipt["result"], workspace)
+                         validate_receipt["result"], workspace,
+                         artifact_uri=f"s3://{bucket}/vercel-lab/results/{run_id}/warehouse.zip")
             return {"run_id": run_id, "batch": batch, "summary": summary}
         except Exception as error:
             try:
@@ -309,6 +347,51 @@ def run_ticket(ticket: str) -> dict:
                 "message": "ขั้น ETL ผ่านแล้ว แต่บันทึกหลักฐานผลลัพธ์ไม่สำเร็จ · ลองรันชุดเดิมอีกครั้ง",
             })
             raise
+
+
+def run_revalidation(ticket: str) -> dict:
+    """Re-run the Stage 1 generic rules on raw rows + approved corrections.
+
+    Writes only DQ control records (dq_revalidation) - never ER1/ER2 or the Source."""
+    claim = read_ticket(ticket)
+    batch, cycle, previous = claim.get("batch"), claim.get("cycle"), claim.get("previous_run_id")
+    from pipeline.generate_classroom_source import BATCHES
+    if batch not in BATCHES:
+        raise ValueError("SOURCE_BATCH_INVALID")
+    UUID(claim.get("nonce"))
+    url = os.environ["CLASSROOM_LAB_WRITER_URL"]
+    os.environ["NEON_DEMO_DATABASE_URL"] = url
+    bucket = os.environ["CLASSROOM_STORAGE_BUCKET"]
+    client = storage()
+    with tempfile.TemporaryDirectory(prefix="classroom-reval-") as temp:
+        root = Path(temp)
+        workspace, source_root = root / "workspace", root / "source"
+        workspace.mkdir()
+        source_root.mkdir()
+        with psycopg.connect(url) as db:
+            state = db.execute("SELECT cycle_number FROM demo_control.dataset_state "
+                               "WHERE dataset_key='classroom'").fetchone()
+            if not state or int(state[0]) != int(cycle):
+                raise RuntimeError("LAB_CYCLE_CHANGED")
+            blocked = db.execute(
+                "SELECT 1 FROM demo_control.pipeline_runs WHERE dataset_key='classroom' AND cycle_number=%s "
+                "AND status IN ('BLOCKED_DQ','READY_TO_RESUME') AND result_summary->>'batch'=%s LIMIT 1",
+                (int(cycle), batch)).fetchone()
+            if not blocked:
+                raise RuntimeError("LAB_NO_BLOCKED_RUN")
+        if batch != "initial":
+            prior_workspace(client, bucket, previous, workspace, BATCHES[BATCHES.index(batch) - 1])
+        data, uri, origin = source_bytes(batch, claim.get("source_upload_id"))
+        identity = stage_source(data, source_root, batch, uri=uri, origin=origin)
+        from pipeline import dq_recovery, neon_control
+        context = neon_control.load_correction_context(url, int(cycle), batch, identity["zip_sha256"])
+        report = dq_recovery.revalidate(workspace, source_root / batch, batch, identity, context)
+        outcome = neon_control.record_revalidation(
+            url, int(cycle), batch, identity["zip_sha256"], report, context["correction_set_id"],
+            str(claim.get("actor") or "")[:120] or None)
+        put_json(client, bucket, f"vercel-lab/revalidation/{outcome['reval_id']}.json", report)
+        return {"run_id": str(claim["nonce"]), "batch": batch, "stage": "revalidate",
+                "status": outcome["status"], "summary": outcome}
 
 
 class handler(BaseHTTPRequestHandler):
@@ -331,12 +414,20 @@ class handler(BaseHTTPRequestHandler):
                 return self.reply(409, {"accepted": False, "error_code": "WORKER_BUSY",
                                         "error": "มีงานกำลังประมวลผล กรุณารอแล้วตรวจสถานะ"})
             try:
-                result = run_ticket(str(request.get("ticket", "")))
+                ticket = str(request.get("ticket", ""))
+                result = (run_revalidation(ticket) if read_ticket(ticket).get("action") == "revalidate"
+                          else run_ticket(ticket))
             finally:
                 INVOCATION_LOCK.release()
-            self.reply(200, {"accepted": True, "status": "SUCCEEDED",
+            self.reply(200, {"accepted": True, "status": result.get("status", "SUCCEEDED"),
                              "run_id": result["run_id"], "batch": result["batch"],
                              "stage": result.get("stage"), "summary": result.get("summary")})
+        except BlockedDQ as blocked:
+            self.reply(409, {"accepted": False, "status": "BLOCKED_DQ", "error_code": "DQ_BLOCKED",
+                             "failure_class": "DATA_QUALITY", "run_id": blocked.run_id,
+                             "batch": blocked.batch, "failed_stage": blocked.stage,
+                             "issue_count": blocked.issue_count,
+                             "error": "Pipeline หยุดที่ DQ Gate: พบข้อมูลไม่ผ่านการตรวจคุณภาพ"})
         except Exception as error:
             # Detailed safe error code comes from the pipeline's stage receipt;
             # never include environment values or stack traces in HTTP output.

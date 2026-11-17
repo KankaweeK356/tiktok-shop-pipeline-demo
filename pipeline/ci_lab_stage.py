@@ -18,6 +18,8 @@ import psycopg
 
 from .orchestrator import STAGES, run_batch
 from .neon_control import begin_run, complete_run, fail_run
+from . import dq
+from .source_lock import read_identity
 from .schema import ROOT
 from .neon_source import _ordered_source_tables
 from .generate_classroom_source import BATCHES
@@ -134,6 +136,25 @@ def _real_step_evidence(workspace: Path,batch: str,stage: str) -> dict:
         "provenance":"NEW_WORKER_OUTPUT_NOT_HISTORICAL_REPLAY"}
 
 
+def _prepare_corrections(db_url: str, workspace: Path, cycle: int, batch: str,
+                         identity: dict | None) -> None:
+    """Resume gate + effective-correction overlay for Stage 1 (before any run is created)."""
+    from . import neon_control
+    control = workspace / "lake" / "control"
+    control.mkdir(parents=True, exist_ok=True)
+    target = dq.corrections_path(control, batch)
+    if target.exists():
+        target.unlink()
+    if not identity or not identity.get("zip_sha256"):
+        return
+    context = neon_control.load_correction_context(db_url, int(cycle), batch, identity["zip_sha256"])
+    neon_control.require_revalidated(context)
+    if context["corrections"]:
+        target.write_text(json.dumps({"correction_set_id": context["correction_set_id"],
+                                      "corrections": context["corrections"]}, ensure_ascii=False),
+                          encoding="utf-8")
+
+
 def run_stage(stage: str, batch: str) -> dict:
     if stage not in STAGES or (batch not in BATCHES and batch != "incremental_02_error"):
         raise ValueError("Invalid stage or batch")
@@ -161,8 +182,13 @@ def run_stage(stage: str, batch: str) -> dict:
             if previous.get("batch")!=prior_batch or previous.get("last_completed")!="validate":
                 raise RuntimeError("Previous Source delivery must validate before the next one")
         expected_cycle = os.getenv("CLASSROOM_EXPECTED_CYCLE")
+        identity = read_identity(Path(os.environ.get("CLASSROOM_SOURCE_ROOT", str(ROOT / "source"))), batch)
+        _prepare_corrections(db_url, workspace, cycle, batch, identity)
         run_id = begin_run(db_url, "RUN1" if batch=="initial" else "RUN2", batch=batch,
                            expected_cycle=int(expected_cycle) if expected_cycle else None)
+        if identity:
+            from .neon_control import record_source_identity
+            record_source_identity(db_url, run_id, identity)
         data = {"batch":batch,"cycle":cycle,"run_id":run_id,"last_completed":None}
         STATE_PATH.parent.mkdir(exist_ok=True, parents=True)
         STATE_PATH.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
@@ -179,8 +205,13 @@ def run_stage(stage: str, batch: str) -> dict:
         mark_stage_started(db_url, data["run_id"], stage)
         result=run_batch(workspace,batch,stop_after=stage)
     except Exception as error:
-        fail_run(db_url,data["run_id"],"RUN1" if batch=="initial" else "RUN2",
-                 workspace,error,batch=batch)
+        if isinstance(error, dq.DQBlocked):
+            from .neon_control import block_run
+            block_run(db_url,data["run_id"],"RUN1" if batch=="initial" else "RUN2",
+                      workspace,error,batch=batch,stage=stage)
+        else:
+            fail_run(db_url,data["run_id"],"RUN1" if batch=="initial" else "RUN2",
+                     workspace,error,batch=batch)
         raise
     if stage!="validate" and result.get("status")!="PARTIAL":
         raise RuntimeError("Unexpected state: intermediate step must be PARTIAL")
@@ -192,6 +223,8 @@ def run_stage(stage: str, batch: str) -> dict:
             raise error
     from .neon_control import complete_stage
     complete_stage(db_url, data["run_id"], stage, result.get("metrics", {}).get(stage, {}).get("result", {}))
+    from .neon_control import record_dq_results
+    record_dq_results(db_url, data["run_id"], workspace, batch, stage)
     data["last_completed"]=stage
     STATE_PATH.parent.mkdir(exist_ok=True,parents=True)
     STATE_PATH.write_text(json.dumps(data,indent=2,ensure_ascii=False),encoding="utf-8")
@@ -203,6 +236,8 @@ def run_stage(stage: str, batch: str) -> dict:
       "checkpoint":str(workspace/"lake"/"control"/f"checkpoint_{batch}.json"),
     }
     receipt["evidence"]=_real_step_evidence(workspace,batch,stage)
+    dq_summary=(result.get("metrics",{}).get(stage,{}).get("result",{}) or {}).get("dq")
+    if dq_summary:receipt["evidence"]["dq"]=dq_summary
     (workspace/"last_step_result.json").write_text(
         json.dumps(receipt,ensure_ascii=False,indent=2,default=str),encoding="utf-8")
     print(json.dumps({k:receipt[k] for k in ("execution","stage","batch","cycle","run_id")},

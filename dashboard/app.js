@@ -11,13 +11,9 @@
   state.sharedRun = { running: false, type: null, stage: null };
   state.viewedBatch = "initial";
   state.isRunAllActive = false;
-  state.marchBlocked = false;
-  state.marchFailureDetails = null;
-  state.showReviewFixModal = false;
-  state.selectedCorrectionSku = "";
-  state.correctionReason = "ยืนยันจากใบกำกับคำสั่งซื้อต้นฉบับ #ORD-202603-00001 เป็นเสื้อยืดคอกลม สีดำ ไซส์ L";
-  state.correctionActor = "Data Owner";
-  state.marchOverride = null;
+  state.dq = { loaded: false, blocked: false, run: null, issues: [], ruleSummary: null, revalidation: null,
+    revalidated: false, ready: false, correctionSetId: null, open: false, busy: "", error: "",
+    schemaMissing: false, candidates: {}, forms: {}, actor: "", lastRevalidation: null };
   state.stageActiveSubtab = {};
   state.stageBusy = false;
   state.errorRun = {
@@ -2022,6 +2018,7 @@
         state.notebookBatch = state.requiresReset ? "initial" : "incremental";
       state.batchResume = { batch: data.resume_batch || "", runId: data.resume_run_id || null };
       state.recentRuns = data.history || [];
+      if (data.dq_blocked || state.dq.blocked) await refreshDqState();   // survives refresh/reconnect
       await hydrateCurrentCycleRuns(data.current_cycle_runs || [], Boolean(data.current_run_id));
     } catch (_error) { state.realReady = false; }
     state.capabilitiesLoading = false;
@@ -2029,7 +2026,9 @@
     if (state.view === "pipeline") renderPipeline();
   }
 
+  const hydrateSequencer = window.PipelineState.makeSequencer();
   async function hydrateCurrentCycleRuns(runs, hasCurrentRun) {
+    const hydrationToken = hydrateSequencer.next();   // a newer refresh owns the view
     state.currentCycleRuns = runs;
     const allDeliveries = ["initial", ...Array.from({length: 9}, (_, i) => "incremental_" + String(i + 1).padStart(2, "0"))];
     if (!hasCurrentRun) {
@@ -2043,8 +2042,8 @@
     const latestByBatch = {};
     for (const run of runs) {
       if (run.status !== "SUCCEEDED") continue;
-      const canonicalBatch = run.source_batch || run.batch ||
-        (run.run_type === "RUN1" ? "initial" : (run.run_type === "RUN2" ? "incremental_01" : "initial"));
+      const canonicalBatch = window.PipelineState.runBatch(run);   // initial, incremental_01 … incremental_09
+      if (!canonicalBatch) continue;
       const prior = latestByBatch[canonicalBatch];
       if (!prior || Date.parse(run.created_at) > Date.parse(prior.created_at))
         latestByBatch[canonicalBatch] = run;
@@ -2054,11 +2053,13 @@
       try {
         const response = await fetch("/api/lab-batch-result?run_id=" + encodeURIComponent(run.run_id),
           { cache: "no-store" });
+        if (!hydrateSequencer.isCurrent(hydrationToken)) return;
         if (!response.ok) {
           state.batchResults[batch] = { _evidenceUnavailable: true, _runId: String(run.run_id) };
           continue;
         }
         const payload = await response.json();
+        if (!hydrateSequencer.isCurrent(hydrationToken)) return;
         const result = payload.result;
         if (!result || result.status !== "SUCCESS") {
           state.batchResults[batch] = { _evidenceUnavailable: true, _runId: String(run.run_id) };
@@ -2445,49 +2446,216 @@
     { batch: "incremental_09", month: "2026-10", label: "ต.ค. 2569", type: "INCREMENTAL" }
   ];
 
-  const DIM_SKU_OPTIONS = [];
-  const PG_TITLES = {
-    PG01: "เสื้อยืดคอกลม Cotton 100% (199 THB)",
-    PG02: "เสื้อยืดคอวี Cotton 100% (229 THB)",
-    PG03: "เสื้อยืดคอเต่า Cotton 100% (279 THB)",
-    PG04: "เสื้อ Crop พรีเมียม (189 THB)",
-    PG05: "เสื้อยืด Oversize พรีเมียม (259 THB)"
-  };
-  const COLOR_LABELS = {
-    BL: "สีดำ (Black)", WH: "สีขาว (White)", NA: "สีกรม (Navy)",
-    GR: "สีเทา (Grey)", RE: "สีแดง (Red)", PI: "สีชมพู (Pink)", BE: "สีเบจ (Beige)"
-  };
-  ["PG01", "PG02", "PG03", "PG04", "PG05"].forEach(pg => {
-    Object.keys(COLOR_LABELS).forEach(c => {
-      ["S", "M", "L", "XL"].forEach(sz => {
-        const skuId = `${pg}-${c}-${sz}`;
-        DIM_SKU_OPTIONS.push([skuId, `${skuId} · ${PG_TITLES[pg]} · ${COLOR_LABELS[c]} ไซส์ ${sz}`]);
-      });
-    });
-  });
-
-  async function loadFailureDetails(runId) {
+  // ---- Data-quality recovery ---------------------------------------------------------
+  // All answers live in Neon (dq_issue / dq_correction / dq_revalidation). The UI only renders
+  // what the backend returns, so a refresh or reconnect shows exactly the same open issues.
+  const dqSequencer = window.PipelineState.makeSequencer();
+  const dqKey = () => (window.crypto && window.crypto.randomUUID ? window.crypto.randomUUID() :
+    "k-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 12));
+  async function dqApi(op, { method = "GET", query = {}, body = null } = {}) {
+    const params = new URLSearchParams({ dq: op, ...query });
     try {
-      const res = await fetch("/api/lab-batch-result?run_id=" + encodeURIComponent(runId));
-      if (res.ok) {
-        const d = await res.json();
-        if (d.failure_details) {
-          state.marchFailureDetails = d.failure_details;
-          return;
-        }
+      const response = await fetch("/api/lab-batch-result?" + params.toString(), {
+        method, cache: "no-store",
+        headers: body ? { "Content-Type": "application/json" } : undefined,
+        body: body ? JSON.stringify(body) : undefined
+      });
+      let data = {};
+      try { data = await response.json(); } catch (_e) { /* non-JSON error page */ }
+      return { ok: response.ok && data.ok !== false, status: response.status, data };
+    } catch (error) {
+      return { ok: false, status: 0, data: { error: error?.message || "เชื่อมต่อไม่ได้" } };
+    }
+  }
+  function dqForm(issueId) {
+    return state.dq.forms[issueId] || (state.dq.forms[issueId] =
+      { value: "", reason: "", evidence: "", actor: state.dq.actor || "", key: null, busy: false, error: "" });
+  }
+  async function loadDqCandidates(issueId) {
+    const { ok, data } = await dqApi("candidates", { query: { issue_id: issueId } });
+    state.dq.candidates[issueId] = ok ? data : { error: data.error || "โหลดข้อมูลหลัก (Master) ไม่สำเร็จ", candidates: [] };
+    if (state.view === "pipeline") renderPipeline();
+  }
+  async function refreshDqState() {
+    const token = dqSequencer.next();
+    const { ok, data } = await dqApi("state");
+    if (!dqSequencer.isCurrent(token)) return;       // a newer request owns the view
+    state.dq.loaded = true;
+    if (!ok) {
+      state.dq.schemaMissing = data.error_code === "DQ_SCHEMA_MISSING";
+      state.dq.error = state.dq.schemaMissing ? "" : (data.error || "");
+      return;
+    }
+    state.dq.schemaMissing = false; state.dq.error = "";
+    const wasBlocked = state.dq.blocked;
+    state.dq.blocked = Boolean(data.blocked);
+    if (!data.blocked) {
+      Object.assign(state.dq, { run: null, issues: [], ruleSummary: null, revalidation: null,
+        revalidated: false, ready: false, correctionSetId: null, open: false });
+    } else {
+      Object.assign(state.dq, { run: data.run, issues: data.issues || [], ruleSummary: data.rule_summary,
+        revalidation: data.latest_revalidation, revalidated: Boolean(data.revalidated),
+        ready: Boolean(data.ready_to_resume), correctionSetId: data.correction_set_id });
+      if (!wasBlocked) state.dq.open = true;
+      (data.issues || []).filter(i => i.status !== "RESOLVED" && !state.dq.candidates[i.issue_id])
+        .forEach(i => loadDqCandidates(i.issue_id));
+    }
+    if (state.view === "pipeline") renderPipeline();
+  }
+  async function submitDqCorrection(issue) {
+    const form = dqForm(issue.issue_id);
+    form.error = "";
+    if (!form.value) form.error = "เลือกค่าที่ถูกต้องจากข้อมูลหลัก (Master)";
+    else if (!form.actor.trim()) form.error = "ระบุชื่อผู้ยืนยัน (Actor)";
+    else if (form.reason.trim().length < 10) form.error = "ระบุเหตุผลการแก้ไขอย่างน้อย 10 ตัวอักษร";
+    else if (form.evidence.trim().length < 3) form.error = "ระบุหลักฐานอ้างอิง (เช่น เลขที่เอกสาร/ลิงก์ใบสั่งซื้อต้นฉบับ)";
+    if (form.error) { renderPipeline(); return; }
+    form.busy = true; form.key = form.key || dqKey(); state.dq.actor = form.actor.trim();
+    renderPipeline();
+    const { ok, data } = await dqApi("correct", { method: "POST", body: {
+      issue_id: issue.issue_id, corrected_value: form.value, actor: form.actor.trim(),
+      reason: form.reason.trim(), evidence_ref: form.evidence.trim(),
+      expected_version: issue.current_version, idempotency_key: form.key } });
+    form.busy = false;
+    if (ok) Object.assign(form, { value: "", reason: "", evidence: "", key: null, error: "" });
+    else {
+      form.error = data.error || "บันทึกการแก้ไขไม่สำเร็จ";
+      if (data.error_code === "IDEMPOTENCY_KEY_REUSED") form.key = null;
+    }
+    await refreshDqState();
+    renderPipeline();
+  }
+  async function runDqRevalidation() {
+    if (state.dq.busy) return;
+    state.dq.busy = "revalidate"; state.dq.error = ""; state.dq.lastRevalidation = null;
+    renderPipeline();
+    try {
+      const ticket = await dqApi("revalidate", { method: "POST", body: { actor: state.dq.actor || "" } });
+      if (!ticket.ok) throw new Error(ticket.data.error || "สั่ง Revalidate ไม่สำเร็จ");
+      const response = await fetch("/api/lab-worker.py", { method: "POST",
+        headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ticket: ticket.data.ticket }) });
+      const result = await response.json();
+      if (!response.ok || !["PASS", "FAIL"].includes(result.status))
+        throw new Error(result.error || result.error_code || "Revalidate ไม่สำเร็จ");
+      state.dq.lastRevalidation = result;
+    } catch (error) {
+      state.dq.error = error?.message || "Revalidate ไม่สำเร็จ";
+    }
+    state.dq.busy = "";
+    await refreshDqState();
+    renderPipeline();
+  }
+  function dqKeyValueTable(object) {
+    return dataTable([["field", "ฟิลด์"], ["value", "ค่า"]],
+      Object.entries(object || {}).map(([field, value]) => ({ field, value: value === null ? "(ว่าง)" : String(value) })));
+  }
+  function renderDqRecovery(root) {
+    const dq = state.dq;
+    if (!dq.blocked) return;
+    const run = dq.run || {};
+    const month = sourceMonthForBatch(run.batch);
+    const rules = dq.ruleSummary || {};
+    const banner = box("alert-banner-blocked");
+    const toggle = node("button", "button button-primary", dq.open ? "ซ่อน Review & Fix" : "Review & Fix (ตรวจสอบและแก้ไข)");
+    toggle.type = "button";
+    toggle.addEventListener("click", () => { dq.open = !dq.open; renderPipeline(); });
+    banner.append(box("alert-banner-header",
+      node("strong", "alert-banner-title", "⚠ ข้อมูลไม่ผ่านการตรวจคุณภาพ — หยุดก่อน Publish · สถานะ " + (run.status || "BLOCKED_DQ")), toggle));
+    banner.append(dataTable([["dimension", "มิติการตรวจสอบ"], ["detail", "รายละเอียดจากฐานข้อมูลจริง (Neon)"]], [
+      { dimension: "ชุดข้อมูล (Batch)", detail: (month ? thaiMonth(month) + " · " : "") + (run.batch || "—") },
+      { dimension: "ขั้นตอนที่หยุด", detail: run.failed_stage || "—" },
+      { dimension: "Run ID", detail: run.run_id || "—" },
+      { dimension: "จำนวน DQ Issue", detail: String(dq.issues.length) },
+      { dimension: "กฎที่ตรวจ / ไม่ผ่าน", detail: `${rules.rules ?? "—"} กฎ / ${rules.failed ?? "—"} ไม่ผ่าน · ตรวจ ${rules.checked_rows ?? "—"} แถว · ไม่ผ่าน ${rules.failed_rows ?? "—"} แถว` },
+      { dimension: "Source ZIP SHA-256", detail: run.source?.zip_sha256 || dq.issues[0]?.source_zip_sha256 || "—" },
+      { dimension: "Source Version", detail: run.source?.source_version || "—" },
+      { dimension: "การ Publish", detail: "ยังไม่ Publish เดือนนี้ · เดือนที่ Publish แล้วไม่ถูกแก้ไข" }
+    ]));
+    if (dq.error) banner.append(notice(dq.error, true));
+    root.append(banner);
+    if (!dq.open) return;
+
+    const drawer = box("review-fix-drawer");
+    drawer.append(node("h3", "lab-heading", "Review & Fix — ตรวจหลักฐานแล้วเลือกค่าที่ถูกต้องจากข้อมูลหลัก"));
+    drawer.append(small("ระบบไม่เลือกค่าให้และไม่เติมเหตุผลให้ ต้องมีหลักฐานต้นฉบับ ถ้ายังไม่มีหลักฐานให้คงสถานะ BLOCKED ไว้"));
+    const MAX_SHOWN = 20;
+    dq.issues.slice(0, MAX_SHOWN).forEach(issue => {
+      const form = dqForm(issue.issue_id);
+      const card = box("evidence-card");
+      card.append(node("strong", "", `Issue ${issue.table_name}.${issue.column_name} · แถวที่ ${issue.source_row_no} · สถานะ ${issue.status}`));
+      card.append(dataTable([["field", "หลักฐานจากข้อมูลที่นำเข้าจริง"], ["value", "ค่า"]], [
+        { field: "กฎ (Rule)", value: issue.rule_id },
+        { field: "ไฟล์ต้นทาง", value: issue.source_file },
+        { field: "รหัสแถว (Primary Key)", value: JSON.stringify(issue.pk_json) },
+        { field: "ฟิลด์", value: issue.column_name },
+        { field: "ค่าเดิมที่ไม่ถูกต้อง", value: issue.invalid_value },
+        { field: "SHA-256 ไฟล์ต้นทาง", value: issue.source_file_sha256 },
+        { field: "SHA-256 Source ZIP", value: issue.source_zip_sha256 }
+      ]));
+      card.append(node("strong", "", "ข้อมูลทั้งแถวตามต้นฉบับ"), dqKeyValueTable(issue.row_snapshot));
+      Object.entries(issue.context || {}).forEach(([table, row]) =>
+        card.append(node("strong", "", "ข้อมูลที่เกี่ยวข้อง: " + table), dqKeyValueTable(row)));
+      if (issue.latest_correction) {
+        card.append(node("strong", "", `ประวัติการแก้ไข (ล่าสุด v${issue.latest_correction.version})`),
+          dataTable([["version", "เวอร์ชัน"], ["corrected_value", "ค่าที่แก้"], ["actor", "ผู้ยืนยัน"], ["reason", "เหตุผล"], ["evidence_ref", "หลักฐาน"], ["created_at", "เวลา"]],
+            [issue.latest_correction]));
       }
-    } catch (_e) {}
-    state.marchFailureDetails = {
-      batch: "incremental_02",
-      month: "2026-03",
-      source_file: "Fact_Order_Items.csv",
-      row_id: "ORD-202603-00001-I1",
-      order_id: "ORD-202603-00001",
-      field: "SKU_ID",
-      invalid_value: "SKU_ERR_UNKNOWN_DEMO",
-      validation_rule: "Referential Integrity: Fact_Order_Items.SKU_ID must exist in Dim_SKU",
-      impact: "หยุดการประมวลผลขั้นถัดไป ข้อมูลกักไว้ใน lake/governance/quarantine/ โดยที่เดือน ม.ค. และ ก.พ. ใน Warehouse ยังคงปลอดภัยและถูกต้อง 100%"
-    };
+      if (issue.status !== "RESOLVED") {
+        const cand = dq.candidates[issue.issue_id];
+        if (!cand) card.append(small("กำลังโหลดข้อมูลหลัก (Master) จาก Neon…"));
+        else if (cand.error) card.append(notice(cand.error, true));
+        else {
+          const groups = new Set(cand.hint?.product_group_ids || []);
+          if (cand.hint) card.append(small(`${cand.hint.note} · ราคาขาย ${cand.hint.base_unit_price} ตรงกับกลุ่ม: ${[...groups].join(", ") || "—"} (★ = ตรงตัวช่วย)`));
+          const idKey = cand.master_column;
+          const options = [["", `— เลือกค่าจาก ${cand.master_table} (${cand.count} รายการ) —`], ...cand.candidates
+            .map(r => [String(r[idKey]), (groups.has(r.Product_Group_ID) ? "★ " : "") + String(r[idKey]) + " · " +
+              Object.entries(r).filter(([k, v]) => k !== idKey && v !== null && v !== "").slice(0, 4).map(([, v]) => v).join(" · ")])];
+          card.append(chooseField("ค่าที่ถูกต้อง (จาก Master เท่านั้น)", options, form.value, v => { form.value = v; form.key = null; }));
+        }
+        const field = (label, kind, key, placeholder) => {
+          const wrap = node("label", "field"), input = node(kind === "textarea" ? "textarea" : "input");
+          if (kind !== "textarea") input.type = "text";
+          input.value = form[key]; input.placeholder = placeholder;
+          input.addEventListener("input", e => { form[key] = e.target.value; form.key = null; });
+          add(wrap, node("span", "", label), input); return wrap;
+        };
+        card.append(field("ผู้ยืนยันความถูกต้อง (Actor)", "text", "actor", "ชื่อผู้รับผิดชอบข้อมูล"),
+          field("เหตุผลการแก้ไข (ต้องเขียนเอง)", "textarea", "reason", "อธิบายว่าทำไมค่านี้ถูกต้อง"),
+          field("หลักฐานอ้างอิง", "text", "evidence", "เลขที่เอกสาร หรือลิงก์หลักฐานต้นฉบับ"));
+        if (form.error) card.append(notice(form.error, true));
+        const save = node("button", "button button-primary", form.busy ? "กำลังบันทึก…" : "บันทึกการแก้ไข (Append Correction)");
+        save.type = "button"; save.disabled = form.busy;
+        save.addEventListener("click", () => submitDqCorrection(issue));
+        card.append(save);
+      }
+      drawer.append(card);
+    });
+    if (dq.issues.length > MAX_SHOWN) drawer.append(small(`แสดง ${MAX_SHOWN} จาก ${dq.issues.length} Issue แรก`));
+
+    const open = dq.issues.filter(i => i.status === "OPEN").length;
+    const last = dq.revalidation;
+    drawer.append(box("evidence-card",
+      node("strong", "", "Revalidate & Resume"),
+      dataTable([["field", "รายการ"], ["value", "สถานะ"]], [
+        { field: "Issue ที่ยังไม่ได้แก้", value: String(open) },
+        { field: "Correction Set", value: dq.correctionSetId || "—" },
+        { field: "Revalidation ล่าสุด", value: last ? `${last.status} · กฎที่ไม่ผ่าน ${last.failed_rules} · แถวที่ไม่ผ่าน ${last.failed_rows} · ${last.executed_at}` : "ยังไม่เคย Revalidate" },
+        { field: "พร้อม Resume", value: dq.ready ? "ใช่ (READY_TO_RESUME)" : "ยังไม่พร้อม" }
+      ])));
+    const actions = box("h-stack");
+    const reval = node("button", "button button-primary", dq.busy === "revalidate" ? "กำลัง Revalidate…" : "Revalidate (ตรวจซ้ำด้วยกฎเดิม)");
+    reval.type = "button"; reval.disabled = Boolean(dq.busy) || open > 0 || dq.issues.length === 0;
+    reval.addEventListener("click", runDqRevalidation);
+    const resume = node("button", "button button-primary", "Resume (รันเดือนนี้ต่อตั้งแต่ Stage 1)");
+    resume.type = "button"; resume.disabled = !dq.ready || state.stageBusy || Boolean(dq.busy);
+    resume.addEventListener("click", () => { dq.open = false; runNextStep(); });
+    const close = node("button", "button button-outline", "ปิด");
+    close.type = "button";
+    close.addEventListener("click", () => { dq.open = false; renderPipeline(); });
+    actions.append(reval, resume, close);
+    drawer.append(actions);
+    root.append(drawer);
   }
 
   async function runNextStep(options = {}) {
@@ -2506,7 +2674,6 @@
     if (options.stage) targetStage = options.stage;
 
     const previous = currentBatch === "initial" ? "0" : String(state.currentRunId || "");
-    const override = options.override || state.marchOverride || null;
     const uploadId = state.sourceUploadMonth === sourceMonthForBatch(currentBatch) ? state.sourceUploadId : "";
 
     try {
@@ -2517,8 +2684,7 @@
           batch: currentBatch,
           stage: targetStage,
           previous_run_id: previous,
-          source_upload_id: uploadId,
-          override
+          source_upload_id: uploadId
         })
       });
       const data = await response.json();
@@ -2537,11 +2703,10 @@
           body: JSON.stringify({ ticket: data.ticket })
         });
         const workerData = await workerRes.json();
-        if (!workerRes.ok || workerData.status === "FAILED") {
+        if (!workerRes.ok || workerData.status === "FAILED" || workerData.status === "BLOCKED_DQ") {
           state.stageBusy = false;
-          if (currentBatch === "incremental_02" && (workerData.error_code === "QUALITY_CHECK_FAILED" || targetStage === "transform")) {
-            state.marchBlocked = true;
-            await loadFailureDetails(data.run_id);
+          if (workerData.status === "BLOCKED_DQ" || workerData.error_code === "DQ_BLOCKED") {
+            await refreshDqState();            // the issue is persisted in Neon; render that, not a flag
           } else {
             state.realError = workerData.error || workerData.error_code || "การประมวลผลหยุดลง";
           }
@@ -2602,14 +2767,15 @@
 
           if (d.status === "completed") {
             state.stageBusy = false;
-            if (d.conclusion === "failure") {
+            if (d.conclusion === "blocked") {
               state.isRunAllActive = false;
-              if (batch === "incremental_02" && (d.failed_stage === "transform" || d.error_code === "QUALITY_CHECK_FAILED")) {
-                state.marchBlocked = true;
-                await loadFailureDetails(runId);
-              } else {
-                state.realError = d.error_message || d.error_code || "การประมวลผลหยุดลง";
-              }
+              await refreshDqState();
+              await loadRealCapabilities();
+              renderPipeline();
+              return;
+            } else if (d.conclusion === "failure") {
+              state.isRunAllActive = false;
+              state.realError = d.error_message || d.error_code || "การประมวลผลหยุดลง";
               await loadRealCapabilities();
               renderPipeline();
               return;
@@ -2654,8 +2820,7 @@
           batch: currentBatch,
           run_all: true,
           previous_run_id: previous,
-          source_upload_id: uploadId,
-          override: state.marchOverride || null
+          source_upload_id: uploadId
         })
       });
       const data = await response.json();
@@ -3331,9 +3496,10 @@
     // 3. Compact Monthly Progress (10 Chips in 1 Row)
     const monthChips = box("month-chips-grid");
     MONTH_BATCHES.forEach(item => {
-      const isDone = (state.currentCycleRuns || []).some(r => r.source_batch === item.batch && r.status === "SUCCEEDED");
-      const isFailed = (state.currentCycleRuns || []).some(r => r.source_batch === item.batch && r.status === "FAILED");
-      const isBlocked = (item.batch === "incremental_02" && state.marchBlocked);
+      const chipState = window.PipelineState.chipStatus(item.batch, state.currentCycleRuns || []);
+      const isDone = chipState === "PUBLISHED";
+      const isFailed = chipState === "FAILED";
+      const isBlocked = state.dq.blocked && state.dq.run?.batch === item.batch;
       const isRunning = (state.batchRun.batch === item.batch && ["submitting", "queued", "in_progress"].includes(state.batchRun.status)) ||
         (state.stageBusy && (state.nextSourceBatch || "initial") === item.batch);
 
@@ -3414,112 +3580,8 @@
     }
     root.append(controlsCard);
 
-    // 3. March Data Quality Block Banner & Review & Fix Drawer
-    if (state.marchBlocked) {
-      const errorBanner = box("alert-banner-blocked");
-      const bannerHead = box("alert-banner-header",
-        node("strong", "alert-banner-title", "⚠ พบข้อมูลไม่ผ่านการตรวจสอบ — หยุดการประมวลผลเพื่อแก้ไข"),
-        node("button", "button button-primary", "Review & Fix (ตรวจสอบและแก้ไข)")
-      );
-      bannerHead.querySelector("button").addEventListener("click", () => {
-        state.showReviewFixModal = !state.showReviewFixModal;
-        renderPipeline();
-      });
-      errorBanner.append(bannerHead);
-
-      const f = state.marchFailureDetails || {};
-      const errorDetailsTable = dataTable([
-        ["dimension", "มิติการตรวจสอบ"],
-        ["detail", "รายละเอียดหลักฐานจริง"]
-      ], [
-        { dimension: "1. ชุดข้อมูล (Batch)", detail: "มีนาคม 2569 (incremental_02)" },
-        { dimension: "2. ไฟล์ต้นทาง (Source File)", detail: f.source_file || "Fact_Order_Items.csv" },
-        { dimension: "3. รายการที่พบ (Row ID)", detail: (f.row_id || "ORD-202603-00001-I1") + " (Order: " + (f.order_id || "ORD-202603-00001") + ")" },
-        { dimension: "4. ฟิลด์ที่มีปัญหา (Field)", detail: f.field || "SKU_ID" },
-        { dimension: "5. ค่าที่ผิดพลาด (Invalid Value)", detail: f.invalid_value || "SKU_ERR_UNKNOWN_DEMO" },
-        { dimension: "6. กฎการตรวจสอบ (Validation Rule)", detail: f.validation_rule || "Referential Integrity: Fact_Order_Items.SKU_ID must exist in Dim_SKU" },
-        { dimension: "7. ผลกระทบและการกักกัน (Impact)", detail: f.impact || "หยุดการประมวลผลขั้นถัดไป ข้อมูลกักไว้ใน lake/governance/quarantine/ โดยที่เดือน ม.ค. และ ก.พ. ใน Warehouse ยังคงปลอดภัยและถูกต้อง 100%" }
-      ]);
-      errorBanner.append(errorDetailsTable);
-      root.append(errorBanner);
-    }
-
-    if (state.showReviewFixModal) {
-      const drawer = box("review-fix-drawer");
-      drawer.append(node("h3", "lab-heading", "ตรวจสอบและแก้ไขรหัสสินค้า (Review & Fix SKU Correction)"));
-      drawer.append(small("ในระบบจริง การแก้ไขรหัสสินค้าต้องใช้หลักฐานคำสั่งซื้อต้นฉบับ ห้ามเดารหัสจากราคาหรืออนุมานเอง"));
-
-      // Evidence Card: Packing slip
-      const slipCard = box("evidence-card",
-        node("strong", "", "หลักฐานคำสั่งซื้อต้นฉบับ (Original Marketplace Order Slip / Warehouse Packing Manifest)"),
-        dataTable([["field", "ฟิลด์ข้อมูล"], ["value", "ค่าตามเอกสาร"]], [
-          { field: "Order ID", value: "ORD-202603-00001" },
-          { field: "Order Item ID", value: "ORD-202603-00001-I1" },
-          { field: "รายการสินค้า", value: "เสื้อยืดคอกลม Cotton 100% พรีเมียม" },
-          { field: "สี / ไซส์", value: "สีดำ (Black) / ไซส์ L" },
-          { field: "ราคาต่อหน่วย", value: "199.00 บาท (PG01)" },
-          { field: "เอกสารอ้างอิง", value: "TikTok Shop Seller Center Order Slip #ORD-202603-00001" },
-          { field: "เวลาแพ็คสินค้า", value: "2026-03-01 10:14:00" }
-        ])
-      );
-      drawer.append(slipCard);
-
-      // Form
-      const skuSelectGroup = box("form-field-group",
-        node("label", "", "เลือกรหัสสินค้าที่ถูกต้องจาก Dim_SKU Master:"),
-        chooseField("เลือกรหัสสินค้า", [["", "— เลือกรหัสสินค้าจาก Master (ห้ามเดา) —"], ...DIM_SKU_OPTIONS],
-          state.selectedCorrectionSku || "", val => { state.selectedCorrectionSku = val; })
-      );
-      const reasonGroup = box("form-field-group",
-        node("label", "", "เหตุผลการแก้ไข (Audit Reason):"),
-        node("input", "", "")
-      );
-      const reasonInput = reasonGroup.querySelector("input");
-      reasonInput.type = "text";
-      reasonInput.value = state.correctionReason || "ยืนยันจากใบกำกับคำสั่งซื้อต้นฉบับ #ORD-202603-00001 เป็นเสื้อยืดคอกลม สีดำ ไซส์ L";
-      reasonInput.addEventListener("input", e => { state.correctionReason = e.target.value; });
-
-      const actorGroup = box("form-field-group",
-        node("label", "", "ผู้ยืนยันความถูกต้อง (Approver / Actor):"),
-        node("input", "", "")
-      );
-      const actorInput = actorGroup.querySelector("input");
-      actorInput.type = "text";
-      actorInput.value = state.correctionActor || "Data Owner";
-      actorInput.addEventListener("input", e => { state.correctionActor = e.target.value; });
-
-      const actionRow = box("h-stack");
-      const resumeBtn = node("button", "button button-primary", "Revalidate & Resume (ยืนยันการแก้ไขและรันต่อ)");
-      resumeBtn.type = "button";
-      resumeBtn.addEventListener("click", async () => {
-        if (!state.selectedCorrectionSku) {
-          alert("กรุณาเลือกรหัสสินค้าที่ถูกต้องจาก Dim_SKU ตามหลักฐานใบปะหน้าคำสั่งซื้อ");
-          return;
-        }
-        state.marchOverride = {
-          sku_id: state.selectedCorrectionSku,
-          reason: state.correctionReason || "ยืนยันจากใบกำกับคำสั่งซื้อต้นฉบับ #ORD-202603-00001",
-          actor: state.correctionActor || "Data Owner"
-        };
-        state.marchBlocked = false;
-        state.showReviewFixModal = false;
-        await runNextStep({ override: state.marchOverride, stage: "transform" });
-        if (state.isRunAllActive) {
-          runAllLoop();
-        }
-      });
-
-      const cancelBtn = node("button", "button button-outline", "ปิด");
-      cancelBtn.type = "button";
-      cancelBtn.addEventListener("click", () => {
-        state.showReviewFixModal = false;
-        renderPipeline();
-      });
-
-      actionRow.append(resumeBtn, cancelBtn);
-      drawer.append(skuSelectGroup, reasonGroup, actorGroup, actionRow);
-      root.append(drawer);
-    }
+    // Data-quality block + Review & Fix, rendered from persisted Neon issues
+    renderDqRecovery(root);
     // 4. Five Numbered Expandable Stages
     const currentViewBatch = state.viewedBatch || state.notebookBatch || "initial";
     const batchRun = (state.currentCycleRuns || []).find(x => (x.source_batch === currentViewBatch || x.batch === currentViewBatch) && x.status === "SUCCEEDED");
@@ -3564,7 +3626,7 @@
       const liveStep = state.batchRun.batch === currentViewBatch ?
         state.batchRun.stages.find(x => x.index === index) : null;
       const runningNow = liveStep?.status === "in_progress" || (state.stageBusy && (state.nextSourceBatch || "initial") === currentViewBatch && state.notebookStage === id);
-      const isFailed = (currentViewBatch === "incremental_02" && id === "transform" && state.marchBlocked);
+      const isFailed = state.dq.blocked && state.dq.run?.batch === currentViewBatch && state.dq.run?.failed_stage === id;
 
       head.append(node("span", "notebook-number", String(index + 1)),
         box("notebook-cell-title", node("strong", "", title), small(description)),
@@ -3595,11 +3657,24 @@
 
         const evidence = savedResult?.evidence;
 
-        if (activeSubtab === "preview") {
-          const isInitial = currentViewBatch === "initial";
-          const hasSaved = Boolean(savedResult);
-          if (isEvidenceUnavailable) {
-            const runId = state.batchResults[currentViewBatch]?._runId || batchRun?.run_id || state.batchRunIds[currentViewBatch] || "N/A";
+        if (!evidence && activeSubtab !== "preview") {
+          // No backend receipt for this stage: show nothing instead of a typical-looking placeholder.
+          body.append(box("empty-state-card",
+            node("div", "empty-state-icon", "📄"),
+            node("strong", "", "ยังไม่มีหลักฐานจริงของขั้นตอนนี้"),
+            small("แท็บนี้แสดงเฉพาะผลที่ Backend บันทึกไว้ (ขั้นตอนยังไม่รัน ถูกบล็อกด้วย DQ Gate หรือไม่มีไฟล์หลักฐาน)")));
+        } else if (activeSubtab === "preview") {
+          // What is shown comes from backend-confirmed runs and receipts only (never a placeholder).
+          const view = window.PipelineState.stageView({ batch: currentViewBatch, stage: id,
+            results: state.batchResults, runs: state.currentCycleRuns, dq: state.dq });
+          if (view.kind === "BLOCKED") {
+            body.append(box("empty-state-card",
+              node("div", "empty-state-icon", "⛔"),
+              node("strong", "", `รอบข้อมูล: ${thaiMonth(sourceMonthForBatch(currentViewBatch))} — หยุดที่ DQ Gate`),
+              small(`ขั้นตอนที่ ${index + 1}: ${title} — ข้อมูลไม่ผ่านการตรวจคุณภาพ ยังไม่ Publish (Run ${view.runId}) · ใช้ Review & Fix ด้านบน`),
+              box("h-stack", node("span", "badge-waiting", "BLOCKED_DQ"))));
+          } else if (isEvidenceUnavailable || view.kind === "EVIDENCE_UNAVAILABLE") {
+            const runId = view.runId || state.batchResults[currentViewBatch]?._runId || batchRun?.run_id || state.batchRunIds[currentViewBatch] || "N/A";
             const unavailableBox = box("empty-state-card",
               node("div", "empty-state-icon", "📁"),
               node("strong", "", `รอบข้อมูล: ${thaiMonth(sourceMonthForBatch(currentViewBatch))} (ประมวลผลสำเร็จแล้ว)`),
@@ -3611,7 +3686,7 @@
               )
             );
             body.append(unavailableBox);
-          } else if (!isInitial && !hasSaved && !isBatchSucceeded) {
+          } else if (view.kind === "WAITING" || view.kind === "RUNNING") {
             const emptyBox = box("empty-state-card",
               node("div", "empty-state-icon", "⏳"),
               node("strong", "", `รอบข้อมูล: ${thaiMonth(sourceMonthForBatch(currentViewBatch))} (ยังไม่ได้เริ่มรัน)`),
@@ -3623,17 +3698,23 @@
             );
             body.append(emptyBox);
           } else {
-            const ordersCount = savedResult?.evidence?.output?.records || state.neonRunStatus?.counts?.orders || 274;
-            const itemsCount = state.neonRunStatus?.counts?.order_items || 320;
+            const tableRows = name => (evidence?.output?.tables || []).find(t => t.name === name)?.rows;
+            const ordersCount = tableRows("Fact_Orders") ?? evidence?.output?.records ?? null;
+            const itemsCount = tableRows("Fact_Order_Items") ?? null;
+            const fmtCount = value => value === null || value === undefined ? "—" : money(value);
+            const dqSummary = evidence?.dq;
             if (id === "ingest") {
               const summaryGrid = box("two-col");
               summaryGrid.style.marginBottom = "14px";
               summaryGrid.append(
-                box("lab-stat", small("คำสั่งซื้อใน Fact_Orders (Orders Count)"), node("strong", "", money(ordersCount) + " ออเดอร์")),
-                box("lab-stat", small("รายการย่อยสินค้า (Fact_Order_Items)"), node("strong", "", money(itemsCount) + " รายการ")),
+                box("lab-stat", small("คำสั่งซื้อสะสมใน ER1 (Fact_Orders)"), node("strong", "", fmtCount(ordersCount) + " ออเดอร์")),
+                box("lab-stat", small("รายการสินค้าสะสมใน ER1 (Fact_Order_Items)"), node("strong", "", fmtCount(itemsCount) + " รายการ")),
                 box("lab-stat", small("ตาราง ER1 ใน Neon PostgreSQL"), node("strong", "", "25 ตาราง")),
-                box("lab-stat", small("สถานะการประมวลผล (Execution Status)"), node("span", "badge-pass", "✓ SUCCEEDED")),
-                box("lab-stat", small("สถานะคุณภาพข้อมูล (Data Quality Status)"), node("span", "badge-pass", "✓ PASS (6/6 กฎ)"))
+                box("lab-stat", small("สถานะการประมวลผล (Execution Status)"), node("span", "badge-pass", "✓ ขั้นตอนนี้ผ่าน (มีหลักฐาน)")),
+                box("lab-stat", small("สถานะคุณภาพข้อมูล (DQ Gate)"), dqSummary ?
+                  node("span", dqSummary.blocked ? "badge-waiting" : "badge-pass",
+                    `${dqSummary.blocked ? "BLOCKED" : "✓ PASS"} · ${dqSummary.passed}/${dqSummary.rules} กฎ · ตรวจ ${money(dqSummary.checked_rows)} แถว · ไม่ผ่าน ${money(dqSummary.failed_rows)}`) :
+                  node("span", "badge-neutral", "ไม่มีผลตรวจ DQ ในหลักฐานนี้"))
               );
               body.append(summaryGrid);
             }
@@ -3642,18 +3723,6 @@
                 node("strong", "", "ผลจากการประมวลผลรอบนี้"),
                 renderLabResult(savedResult.evidence),
                 savedResult.url ? link("ดู Log ของขั้นนี้", savedResult.url) : null
-              ));
-            } else {
-              body.append(box("notebook-output",
-                node("strong", "", "ผลจากการประมวลผลจริงล่าสุด (Neon Live Stage Audit)"),
-                dataTable([["field", "รายการ"], ["val", "ค่าจากการประมวลผล"]], [
-                  { field: "Run ID ล่าสุด", val: state.neonRunStatus?.state?.last_run_id || "bb9c847e-aa96-4b5e-80ad-361afb00d94b" },
-                  { field: "รอบข้อมูล (Cycle Number)", val: "Cycle " + (state.neonRunStatus?.state?.cycle_number || 31) + " (RUN1_READY)" },
-                  { field: "สถานะ Pipeline Stage", val: "SUCCEEDED (Verified Ingestion)" },
-                  { field: "จำนวนคำสั่งซื้อ (Fact_Orders)", val: money(ordersCount) + " แถว" },
-                  { field: "จำนวนรายการสินค้า (Fact_Order_Items)", val: money(itemsCount) + " แถว" },
-                  { field: "ตาราง ER1 ที่ซิงค์สำเร็จ", val: "25 ตาราง (21 Source + 4 Derived)" }
-                ])
               ));
             }
           }
@@ -3922,16 +3991,26 @@
           metaCard.append(
             node("h4", "lab-subheading", "หลักฐานการประมวลผลจริง (Stage Execution Evidence)"),
             dataTable([["field", "รายการ"], ["val", "ค่าจริงจากระบบ"]], [
-              { field: "Run ID", val: savedResult?.run_id || state.currentRunId || "bb9c847e-aa96-4b5e-80ad-361afb00d94b" },
-              { field: "รอบการทดลอง (Cycle)", val: "Cycle " + (state.realLabCycle || 31) },
+              { field: "Run ID", val: savedResult?.runId || savedResult?.run_id || state.batchRunIds[currentViewBatch] || "—" },
+              { field: "รอบการทดลอง (Cycle)", val: state.realLabCycle ? "Cycle " + state.realLabCycle : "—" },
               { field: "เครื่องมือประมวลผล (Engine)", val: "Python Native Worker (VERCEL_NATIVE)" },
               { field: "สถานะการประมวลผลระดับ Stage", val: "SUCCEEDED (บันทึกใน demo_control.stage_runs)" },
-              { field: "เวลาที่ประมวลผล (Executed At)", val: evidence?.executed_at ? new Date(evidence.executed_at).toLocaleString("th-TH") : new Date().toLocaleString("th-TH") }
+              { field: "เวลาที่ประมวลผล (Executed At)", val: evidence?.executed_at ? new Date(evidence.executed_at).toLocaleString("th-TH") : "—" }
             ])
           );
           body.append(metaCard);
         } else if (activeSubtab === "validation") {
           body.append(node("strong", "", "การตรวจสอบคุณภาพข้อมูล (Validation & Data Quality Rules)"));
+          if (evidence?.dq) {
+            const d = evidence.dq;
+            body.append(box("evidence-card", node("strong", "", "ผลตรวจจริงของ DQ Gate ในขั้นตอนนี้ (จากข้อมูลที่นำเข้า)"),
+              dataTable([["field", "รายการ"], ["value", "ผลจริง"]], [
+                { field: "ชุดกฎ", value: d.rule_catalog_version + " · " + d.evaluation_kind },
+                { field: "กฎทั้งหมด / ผ่าน / ไม่ผ่าน / ไม่มีข้อมูลให้ตรวจ", value: `${d.rules} / ${d.passed} / ${d.failed} / ${d.not_checked}` },
+                { field: "แถวที่ตรวจ / แถวที่ไม่ผ่าน", value: `${money(d.checked_rows)} / ${money(d.failed_rows)}` },
+                { field: "Correction ที่นำมาใช้", value: `${d.corrections_applied} (Set ${d.correction_set_id || "—"})` }
+              ])), small("รายการกฎด้านล่างเป็นคำอธิบายมาตรฐานของระบบ ผลจริงของรอบนี้อยู่ในตารางด้านบนและตาราง demo_control.dq_rule_result"));
+          }
           if (id === "validate") {
             const splitView = renderMasterDetailSplitView({
               items: STAGE_5_RECONCILIATION_CHECKS.map(c => ({
@@ -4280,8 +4359,10 @@
     if (state.sourceExhausted) {
       return "ประมวลผลข้อมูลครบทั้ง 10 เดือนแล้ว (มกราคม – ตุลาคม 2569) · พร้อมวิเคราะห์ใน Business Overview และ ML Lab";
     }
-    if (state.marchBlocked) {
-      return "ตรวจพบปัญหา: มีนาคม 2569 · ขั้นตอน 3/5 · Transform & Data Quality (หยุดกักกันข้อมูลเพื่อแก้ไข)";
+    if (state.dq.blocked) {
+      const blockedMonth = sourceMonthForBatch(state.dq.run?.batch);
+      return "ตรวจพบข้อมูลไม่ผ่านการตรวจคุณภาพ: " + (blockedMonth ? thaiMonth(blockedMonth) : (state.dq.run?.batch || "")) +
+        " · หยุดที่ขั้นตอน " + (state.dq.run?.failed_stage || "ingest") + " (ยังไม่ Publish) · ใช้ Review & Fix เพื่อแก้ไขและ Resume";
     }
     if (state.stageBusy) {
       return `กำลังประมวลผล: ${monthName} · ขั้นตอน ${nextStageIndex}/5 · ${stageTitles[nextStageId] || 'กำลังดำเนินการ'}…`;

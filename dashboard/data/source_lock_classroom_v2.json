@@ -1,0 +1,52 @@
+{
+  "source_version": "classroom_v2_2026_11_16",
+  "package_id": "TikTok_Shop_Mock_Data_FINAL_1_Error",
+  "fixture_version": "v2_source_repackaged_final_one_error",
+  "classification": "SYNTHETIC_EDUCATIONAL_NOT_TIKTOK",
+  "package_outer_zip_sha256": "5600aa8bc0e7c4f2ddab312e0fa2f378299d5508a131c26b8ca07f5f4a57aab4",
+  "zip_filename_template": "classroom-source-{month}.zip",
+  "csv_per_zip": 21,
+  "notes": "Approved immutable identity of the Final monthly Source ZIPs. Hashes copied from PACKAGE_MANIFEST.json. qa_only/ files are never part of this lock or of the runtime.",
+  "months": {
+    "2026-01": {
+      "batch": "initial",
+      "zip_sha256": "b3a5de6e4dc4bf84f4de0671d9e115b493cc4ce7571049ff3a446335b5002b8f"
+    },
+    "2026-02": {
+      "batch": "incremental_01",
+      "zip_sha256": "6ec2339e91393f23d7ba1fe3712d742f50c23b0217262fa45b6a65c6063ce2a9"
+    },
+    "2026-03": {
+      "batch": "incremental_02",
+      "zip_sha256": "6e7265c51b6e50599fc154eb8a031a11a0b844c2c18bf03cce8028814a85ba28"
+    },
+    "2026-04": {
+      "batch": "incremental_03",
+      "zip_sha256": "c4b6ad904b3f003fa6a61f7224a2d24e83ca7fe449ee98f05bec6d3d76de0aa6"
+    },
+    "2026-05": {
+      "batch": "incremental_04",
+      "zip_sha256": "16396c880f0042a414da6e7804983f6839eae67e0bd9b5def5dd33805e98e495"
+    },
+    "2026-06": {
+      "batch": "incremental_05",
+      "zip_sha256": "481f6e3a1aa2f543846877a3a86a4e794039eb0b15c89e3e3bef7367d886d34f"
+    },
+    "2026-07": {
+      "batch": "incremental_06",
+      "zip_sha256": "b5fd2aafe98ebe631d683dde0aadedba5a27a0481850f9bde5989a22f2e7095e"
+    },
+    "2026-08": {
+      "batch": "incremental_07",
+      "zip_sha256": "ed2d332cb228bf4c6749a39fae098613261b1786e061a7f8f9e51fb8e7ad3507"
+    },
+    "2026-09": {
+      "batch": "incremental_08",
+      "zip_sha256": "955c5defd70b689408d5ca339c532402875101bec676d11e349c66bb5da2748b"
+    },
+    "2026-10": {
+      "batch": "incremental_09",
+      "zip_sha256": "e71f4f4b0a17d93a9e7b2ed823d2b90ef3d0512b31300a281baad3a945f01149"
+    }
+  }
+}

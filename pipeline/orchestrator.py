@@ -89,6 +89,13 @@ def run_batch(workspace:Path,batch='initial',source_root:Path|None=None,inject_e
             (reports/f'error_{batch}.json').write_text(json.dumps({'batch':batch,'stage':stage,
               'status':'FAILED','error_code':code,'error':str(e),'recovery':'Retry same batch after fixing '+stage,
               'completed_before_failure':state['completed']},indent=2,ensure_ascii=False),encoding='utf-8')
+            if hasattr(e,'report'):
+                # Data-quality block: keep the full, durable evidence (row snapshots, hashes).
+                (governance/f'{batch}_{stage}_{code}_issues.json').write_text(json.dumps({
+                    'batch':batch,'stage':stage,'error_code':code,'failure_class':'DATA_QUALITY',
+                    'report':e.report,
+                    'original_source':'preserved unchanged; corrections are a versioned overlay'},
+                    indent=2,ensure_ascii=False,default=str),encoding='utf-8')
             raise
         if stage==stop_after:
             break

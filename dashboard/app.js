@@ -182,8 +182,11 @@
   }
 
   function getPublishedMonths() {
+    if (state.requiresReset || state.warehouseSnapshot?.phase === "EMPTY") {
+      return [];
+    }
     // If warehouse snapshot has verified business months
-    const snapMonths = state.warehouseSnapshot?.result?.business?.months || state.data?.business?.months;
+    const snapMonths = state.warehouseSnapshot?.result?.business?.months;
     if (Array.isArray(snapMonths) && snapMonths.length > 0) {
       return snapMonths.map(m => m.month || m).filter(Boolean);
     }
@@ -231,7 +234,7 @@
   }
 
   function getPublishedMonthData(monthStr) {
-    const snapMonths = state.warehouseSnapshot?.result?.business?.months || state.data?.business?.months;
+    const snapMonths = state.warehouseSnapshot?.result?.business?.months;
     if (Array.isArray(snapMonths)) {
       const found = snapMonths.find(m => (m.month || m) === monthStr);
       if (found) return found;

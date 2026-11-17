@@ -49,5 +49,8 @@ if (-not $token) {
     exit 1
 }
 
+$gitExe = "C:\Users\kankawee.k\AppData\Local\GitHubDesktop\app-3.6.11\resources\app\git\cmd\git.exe"
+& $gitExe add dashboard/app.js dashboard/styles.css
+& $gitExe commit -m "feat: implement dynamic progressive data reveal for business dashboard and ML readiness gating"
 $pushUrl = "https://x-access-token:$token@github.com/KankaweeK356/tiktok-shop-pipeline-demo.git"
-& "C:\Users\kankawee.k\AppData\Local\GitHubDesktop\app-3.6.11\resources\app\git\cmd\git.exe" push $pushUrl feature/classroom-demo-evidence-foundation
+& $gitExe push $pushUrl feature/classroom-demo-evidence-foundation

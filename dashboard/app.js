@@ -2,9 +2,9 @@
 (function () {
   "use strict";
   const $ = s => document.querySelector(s);
-  const state = { data: null, evidence: null, evidenceLayer: "source", evidenceTable: "", neonStatus: "not_loaded", neonTables: [], neonTable: "", neonData: null, neonError: "", neonRunStatus: null, neonArtifactType: "ALL", labStage: 0, labTable: "Fact_Orders", labResults: {}, labBusy: false, labError: "", labLog: [], realReady: false, realConfigChecked: false, realLabPhase: "UNKNOWN", realLabCycle: null, realLabOrders: null, realBatch: "initial", realStageIndex: 0, realPreviousRunId: "", realRunId: null, realStatus: "", realUrl: "", realError: "", realStartedAt: "", realAdminKey: "", realEvidence: null, autoBatch: "", batchResults: { initial: {}, incremental: {} }, batchSummaries: { initial: null, incremental: null }, currentCycleRuns: [], resetStatus: "", resetSince: "", resetUrl: "", resetError: "", savedLabManifest: null, savedLabReceipt: null, savedLabSelected: "", savedLabLoading: false, pipelineTab: "flow", notebookBatch: "initial", notebookStage: "ingest", warehouseStatus: "not_loaded", warehouseSnapshot: null, warehouseError: "", warehouseTable: "Fact_Sales_Order_Item", labNeon: null, labNeonTable: null, labNeonBusy: false, labNeonError: "", errorCase: "N01", errorReplayed: false, errorLabOpen: false, view: "business", month: "", group: "ALL", sku: "", skuSort: "lowest_margin", model: "", week: "", replay: false, rows: [], sourceUploadId: "", sourceUploadMonth: "", sourceUploadName: "", sourceUploadBusy: false, sourceUploadError: "" };
+  const state = { data: null, evidence: null, evidenceLayer: "source", evidenceTable: "", neonStatus: "not_loaded", neonTables: [], neonTable: "", neonData: null, neonError: "", neonRunStatus: null, neonArtifactType: "ALL", labStage: 0, labTable: "Fact_Orders", labResults: {}, labBusy: false, labError: "", labLog: [], realReady: false, realConfigChecked: false, realLabPhase: "UNKNOWN", realLabCycle: null, realLabOrders: null, realBatch: "initial", realStageIndex: 0, realPreviousRunId: "", realRunId: null, realStatus: "", realUrl: "", realError: "", realStartedAt: "", realAdminKey: "", realEvidence: null, autoBatch: "", batchResults: Object.fromEntries(["initial", ...Array.from({length: 9}, (_, i) => "incremental_" + String(i + 1).padStart(2, "0"))].map(b => [b, {}])), batchSummaries: Object.fromEntries(["initial", ...Array.from({length: 9}, (_, i) => "incremental_" + String(i + 1).padStart(2, "0"))].map(b => [b, null])), currentCycleRuns: [], resetStatus: "", resetSince: "", resetUrl: "", resetError: "", savedLabManifest: null, savedLabReceipt: null, savedLabSelected: "", savedLabLoading: false, pipelineTab: "flow", notebookBatch: "initial", notebookStage: "ingest", warehouseStatus: "not_loaded", warehouseSnapshot: null, warehouseError: "", warehouseTable: "Fact_Sales_Order_Item", labNeon: null, labNeonTable: null, labNeonBusy: false, labNeonError: "", errorCase: "N01", errorReplayed: false, errorLabOpen: false, view: "business", month: "", group: "ALL", sku: "", skuSort: "lowest_margin", model: "", week: "", replay: false, rows: [], sourceUploadId: "", sourceUploadMonth: "", sourceUploadName: "", sourceUploadBusy: false, sourceUploadError: "" };
   state.batchRun = { batch: "", status: "", since: "", runId: null, url: "", stages: [] };
-  state.batchRunIds = { initial: null, incremental: null };
+  state.batchRunIds = Object.fromEntries(["initial", ...Array.from({length: 9}, (_, i) => "incremental_" + String(i + 1).padStart(2, "0"))].map(b => [b, null]));
   state.batchResume = { batch: "", runId: null };
   state.selectedResultTable = "";
   state.recentRuns = []; state.historyRun = null; state.historyBusy = false;
@@ -1001,32 +1001,45 @@
     discSlider.value = String(state.scenarioDiscount || 4.0);
     discSliderWrap.append(discHeader, discSlider);
 
+    const liftSliderWrap = node("div", "scenario-slider-group");
+    const liftHeader = node("div", "scenario-slider-header");
+    const defaultLift = 4.1;
+    const currentLift = state.scenarioLift !== undefined ? state.scenarioLift : defaultLift;
+    liftHeader.append(node("span", "", "สมมติฐานยอดขายที่เพิ่มขึ้น (Assumed Demand Lift)"), node("span", "text-bold", (currentLift >= 0 ? "+" : "") + currentLift.toFixed(1) + "%"));
+    const liftSlider = node("input", "scenario-slider-input");
+    liftSlider.type = "range"; liftSlider.min = "-10.0"; liftSlider.max = "25.0"; liftSlider.step = "0.5";
+    liftSlider.value = String(currentLift);
+    liftSliderWrap.append(liftHeader, liftSlider);
+
     const simBox = node("div", "scenario-result-box");
     function updateSimulation() {
       const sAds = Number(adsSlider.value);
       const sDisc = Number(discSlider.value);
+      const sLift = Number(liftSlider.value);
       state.scenarioAds = sAds;
       state.scenarioDiscount = sDisc;
+      state.scenarioLift = sLift;
 
       adsHeader.lastChild.textContent = "฿" + money(sAds) + " (" + (sAds >= baseAds ? "+" : "") + Math.round(((sAds - baseAds) / baseAds) * 100) + "%)";
       discHeader.lastChild.textContent = sDisc.toFixed(1) + "% (ฐาน: " + baseDisc + "%)";
+      liftHeader.lastChild.textContent = (sLift >= 0 ? "+" : "") + sLift.toFixed(1) + "%";
 
-      // Elasticity simulation assumption
-      const deltaVol = ((sAds - baseAds) / baseAds) * 0.25;
-      const simNet = Math.round(net * (1 + deltaVol) * (1 - (sDisc - baseDisc) / 100));
+      // Transparent simulation formula based on user-controlled demand lift
+      const simNet = Math.round(net * (1 + sLift / 100) * (1 - (sDisc - baseDisc) / 100));
       const simProfit = Math.round(profit + (simNet - net) * 0.40 - (sAds - baseAds));
-      const simGross = Math.round(grossRef * (1 + deltaVol));
+      const simGross = Math.round(grossRef * (1 + sLift / 100));
       const simRate = Math.round((simProfit / simGross) * 10000) / 100;
 
       simBox.replaceChildren(
-        box("v-stack", small("ยอดขายสุทธิ"), node("strong", "", "฿" + money(simNet)), small("+" + (Math.round(((simNet - net) / net) * 1000) / 10) + "%")),
-        box("v-stack", small("กำไรหลังต้นทุน"), node("strong", "", "฿" + money(simProfit)), small("+" + (Math.round(((simProfit - profit) / profit) * 1000) / 10) + "%")),
+        box("v-stack", small("ยอดขายสุทธิ"), node("strong", "", "฿" + money(simNet)), small((simNet >= net ? "+" : "") + (Math.round(((simNet - net) / net) * 1000) / 10) + "%")),
+        box("v-stack", small("กำไรหลังต้นทุน"), node("strong", "", "฿" + money(simProfit)), small((simProfit >= profit ? "+" : "") + (Math.round(((simProfit - profit) / profit) * 1000) / 10) + "%")),
         box("v-stack", small("คุ้มครองกำไร"), node("strong", "", simRate + "%"), node("span", simRate >= 10 ? "badge-pass" : "badge-fail", simRate >= 10 ? "✓ ผ่าน" : "✕ ไม่ผ่าน"))
       );
     }
 
     adsSlider.addEventListener("input", updateSimulation);
     discSlider.addEventListener("input", updateSimulation);
+    liftSlider.addEventListener("input", updateSimulation);
     updateSimulation();
 
     const simDisclaimer = node("p", "text-muted",
@@ -1036,10 +1049,10 @@
     simDisclaimer.style.marginTop = "6px";
     simDisclaimer.style.lineHeight = "1.3";
 
-    scPanel.append(adsSliderWrap, discSliderWrap, simBox, simDisclaimer);
+    scPanel.append(adsSliderWrap, discSliderWrap, liftSliderWrap, simBox, simDisclaimer);
     sec567Row.append(scPanel);
 
-    // Section 7: Decision Recommendation
+    // Section 7: Decision Recommendation (Rule-Based Decision Support Engine)
     const decPanel = node("div", "decision-panel");
     decPanel.append(
       box("alert-banner-header",
@@ -1065,17 +1078,101 @@
     decPanel.append(statusChecksBox);
 
     const recList = node("div", "recommendation-list");
-    const recs = [
-      "กลุ่ม คอเต่า และ Crop มีอัตราการสร้างกำไรสูงสุด (14.71% และ 14.64%) ควรคงสัดส่วนเป็น Hero Products",
-      "กลุ่ม Oversize มีอัตรากำไรต่ำสุด (13.32%) ควรควบคุมค่า Ads และส่วนลดไม่ให้กระทบ Margin",
-      "อัตราส่วนลดรวมปัจจุบันอยู่ที่ 5.37% (แคมเปญ ฿3,480 + คูปอง ฿1,520) ควรควบคุมไม่ให้เกิน 6.0% เพื่อรักษา Headroom",
-      publishedWeeks < 16 ?
-        "⏳ ข้อเสนอแนะเชิงลึกด้านการพยากรณ์ความต้องการ (ML Demand Guidance) อยู่ระหว่างรอข้อมูลสะสมครบ 16 สัปดาห์" :
-        "โมเดลแนะนำเตรียมสต็อกสินค้ากลุ่ม คอกลม และ Crop เพิ่มขึ้นตามแนวโน้มยอดขายสัปดาห์ถัดไป"
-    ];
-    recs.forEach(text => {
+    const recs = [];
+
+    // [R01-REV-GAP / R01-REV-ACHIEVE]
+    if (isRevenuePass) {
+      recs.push({
+        id: "R01-REV-ACHIEVE",
+        icon: "🎯",
+        tag: "[R01-REV-ACHIEVE]",
+        text: `ยอดขายสุทธิ ฿${money(net)} บรรลุเป้าหมาย (${achievePct}% ของเป้า ฿${money(target)}) ส่วนต่างเกินเป้า +฿${money(net - target)}`
+      });
+    } else {
+      recs.push({
+        id: "R01-REV-GAP",
+        icon: "⚠️",
+        tag: "[R01-REV-GAP]",
+        text: `ยอดขายสุทธิ ฿${money(net)} ต่ำกว่าเป้าหมาย (${achievePct}% ของเป้า ฿${money(target)}) ขาดอีก ฿${money(target - net)}`
+      });
+    }
+
+    // [R02-PROT-HEADROOM / R02-PROT-SHORTFALL]
+    if (isProtectPass) {
+      recs.push({
+        id: "R02-PROT-HEADROOM",
+        icon: "🛡️",
+        tag: "[R02-PROT-HEADROOM]",
+        text: `อัตราคุ้มครองกำไร ${protectRatePct}% ผ่านเกณฑ์ขั้นต่ำ (≥10%) มี Profit Headroom ส่วนเกิน ฿${money(headroom)}`
+      });
+    } else {
+      recs.push({
+        id: "R02-PROT-SHORTFALL",
+        icon: "🚨",
+        tag: "[R02-PROT-SHORTFALL]",
+        text: `อัตราคุ้มครองกำไร ${protectRatePct}% ต่ำกว่าเกณฑ์ขั้นต่ำ 10% ขาดทุนหรือตกเกณฑ์ไป ฿${money(Math.abs(headroom))}`
+      });
+    }
+
+    // [R03-HERO-PORTFOLIO] & [R04-MARGIN-WATCH]
+    if (groups.length > 0) {
+      const sortedGroups = groups.slice().sort((a, b) => (b.margin_pct ?? 0) - (a.margin_pct ?? 0));
+      const heroGroup = sortedGroups[0];
+      const watchGroup = sortedGroups[sortedGroups.length - 1];
+      recs.push({
+        id: "R03-HERO-PORTFOLIO",
+        icon: "⭐",
+        tag: "[R03-HERO-PORTFOLIO]",
+        text: `กลุ่ม ${heroGroup.group_name} มีอัตรากำไรสูงสุด (${heroGroup.margin_pct ?? 14.71}%) ควรคงสัดส่วนเป็น Hero Products และจัดสรรงบ Ads หลัก`
+      });
+      recs.push({
+        id: "R04-MARGIN-WATCH",
+        icon: "🔍",
+        tag: "[R04-MARGIN-WATCH]",
+        text: `กลุ่ม ${watchGroup.group_name} มีอัตรากำไรต่ำสุด (${watchGroup.margin_pct ?? 13.32}%) ควรควบคุมค่า Ads และส่วนลดไม่ให้กระทบ Margin รวม`
+      });
+    }
+
+    // [R05-DISC-CEILING]
+    const discPct = grossRef > 0 ? ((baseDiscNet / grossRef) * 100).toFixed(2) : "5.37";
+    recs.push({
+      id: "R05-DISC-CEILING",
+      icon: "🏷️",
+      tag: "[R05-DISC-CEILING]",
+      text: `อัตราส่วนลดรวมปัจจุบัน ${discPct}% ควบคุมส่วนลดรวม (Campaign + Voucher) ไม่เกิน 6.0% เพื่อรักษา Headroom คุ้มครองกำไร`
+    });
+
+    // [R06-ML-INSUFFICIENT / R06-ML-READY]
+    if (publishedWeeks < 16) {
+      recs.push({
+        id: "R06-ML-INSUFFICIENT",
+        icon: "⏳",
+        tag: "[R06-ML-INSUFFICIENT]",
+        text: `ระบบ ML Demand Forecasting ต้องการประวัติข้อมูลสะสมอย่างน้อย 16 สัปดาห์ (ปัจจุบัน ${publishedWeeks}/16 สัปดาห์) การตัดสินใจช่วงนี้ให้ใช้นโยบาย Rule-based แนะนำข้างต้น`
+      });
+    } else {
+      recs.push({
+        id: "R06-ML-READY",
+        icon: "🤖",
+        tag: "[R06-ML-READY]",
+        text: `โมเดล ML มีประวัติข้อมูลครบถ้วน พร้อมวิเคราะห์และแนะนำการสต็อกสินค้าตามแนวโน้ม 4 สัปดาห์ถัดไป`
+      });
+    }
+
+    recs.forEach(r => {
       const it = node("div", "recommendation-item");
-      it.append(node("span", "recommendation-dot", text.startsWith("⏳") ? "⏳" : "💡"), node("span", "", text));
+      const tagBadge = node("span", "badge-neutral", r.tag);
+      tagBadge.style.fontSize = "10px";
+      tagBadge.style.marginRight = "6px";
+      tagBadge.style.fontWeight = "600";
+      tagBadge.style.letterSpacing = "0.3px";
+      it.append(
+        node("span", "recommendation-dot", r.icon),
+        box("v-stack",
+          tagBadge,
+          node("span", "", r.text)
+        )
+      );
       recList.append(it);
     });
     decPanel.append(recList);
@@ -1922,10 +2019,11 @@
 
   async function hydrateCurrentCycleRuns(runs, hasCurrentRun) {
     state.currentCycleRuns = runs;
+    const allDeliveries = ["initial", ...Array.from({length: 9}, (_, i) => "incremental_" + String(i + 1).padStart(2, "0"))];
     if (!hasCurrentRun) {
-      state.batchResults = { initial: {}, incremental: {} };
-      state.batchSummaries = { initial: null, incremental: null };
-      state.batchRunIds = { initial: null, incremental: null };
+      state.batchResults = Object.fromEntries(allDeliveries.map(b => [b, {}]));
+      state.batchSummaries = Object.fromEntries(allDeliveries.map(b => [b, null]));
+      state.batchRunIds = Object.fromEntries(allDeliveries.map(b => [b, null]));
       if (!["submitting", "queued", "in_progress"].includes(state.batchRun.status))
         state.batchRun = { batch: "", status: "", runId: null, stages: [] };
       return;
@@ -1933,18 +2031,27 @@
     const latestByBatch = {};
     for (const run of runs) {
       if (run.status !== "SUCCEEDED") continue;
-      const prior = latestByBatch[run.batch];
+      const canonicalBatch = run.source_batch || run.batch ||
+        (run.run_type === "RUN1" ? "initial" : (run.run_type === "RUN2" ? "incremental_01" : "initial"));
+      const prior = latestByBatch[canonicalBatch];
       if (!prior || Date.parse(run.created_at) > Date.parse(prior.created_at))
-        latestByBatch[run.batch] = run;
+        latestByBatch[canonicalBatch] = run;
     }
-    for (const batch of ["initial", "incremental"]) {
+    for (const batch of allDeliveries) {
       const run = latestByBatch[batch]; if (!run) continue;
       try {
         const response = await fetch("/api/lab-batch-result?run_id=" + encodeURIComponent(run.run_id),
           { cache: "no-store" });
-        if (!response.ok) continue;
+        if (!response.ok) {
+          state.batchResults[batch] = { _evidenceUnavailable: true, _runId: String(run.run_id) };
+          continue;
+        }
         const payload = await response.json();
-        const result = payload.result; if (!result || result.status !== "SUCCESS") continue;
+        const result = payload.result;
+        if (!result || result.status !== "SUCCESS") {
+          state.batchResults[batch] = { _evidenceUnavailable: true, _runId: String(run.run_id) };
+          continue;
+        }
         state.batchRunIds[batch] = String(run.run_id);
         state.batchSummaries[batch] = {
           runId: String(run.run_id), url: run.url,
@@ -3049,9 +3156,9 @@
       state.realLabPhase = "EMPTY"; state.realLabOrders = 0; state.currentRunId = null;
       state.batchRun = { batch: "", status: "", since: "", runId: null, url: "", stages: [] };
       state.batchResume = { batch: "", runId: null };
-      state.batchRunIds = { initial: null, incremental: null };
-      state.batchSummaries = { initial: null, incremental: null };
-      state.batchResults = { initial: {}, incremental: {} };
+      state.batchRunIds = Object.fromEntries(["initial", ...Array.from({length: 9}, (_, i) => "incremental_" + String(i + 1).padStart(2, "0"))].map(b => [b, null]));
+      state.batchSummaries = Object.fromEntries(["initial", ...Array.from({length: 9}, (_, i) => "incremental_" + String(i + 1).padStart(2, "0"))].map(b => [b, null]));
+      state.batchResults = Object.fromEntries(["initial", ...Array.from({length: 9}, (_, i) => "incremental_" + String(i + 1).padStart(2, "0"))].map(b => [b, {}]));
       state.currentCycleRuns = [];
       state.warehouseSnapshot = null; state.warehouseStatus = "not_loaded";
       state.notebookBatch = "initial"; state.notebookStage = "ingest";
@@ -3077,9 +3184,9 @@
         state.realPreviousRunId = ""; state.realRunId = null; state.realStatus = "";
         state.realEvidence = null; state.notebookBatch = "initial";
         state.notebookSelectionTouched = false; state.notebookStage = "ingest";
-        state.batchResults = { initial: {}, incremental: {} };
-        state.batchSummaries = { initial: null, incremental: null };
-        state.batchRunIds = { initial: null, incremental: null };
+        state.batchResults = Object.fromEntries(["initial", ...Array.from({length: 9}, (_, i) => "incremental_" + String(i + 1).padStart(2, "0"))].map(b => [b, {}]));
+        state.batchSummaries = Object.fromEntries(["initial", ...Array.from({length: 9}, (_, i) => "incremental_" + String(i + 1).padStart(2, "0"))].map(b => [b, null]));
+        state.batchRunIds = Object.fromEntries(["initial", ...Array.from({length: 9}, (_, i) => "incremental_" + String(i + 1).padStart(2, "0"))].map(b => [b, null]));
         state.batchRun = { batch: "", status: "", since: "", runId: null, url: "", stages: [] };
         if (state.sourceUploadId) fetch("/api/lab-batch?id=" +
           encodeURIComponent(state.sourceUploadId), { method: "DELETE" }).catch(() => { });
@@ -3403,7 +3510,38 @@
     }
     // 4. Five Numbered Expandable Stages
     const currentViewBatch = state.viewedBatch || state.notebookBatch || "initial";
+    const batchRun = (state.currentCycleRuns || []).find(x => (x.source_batch === currentViewBatch || x.batch === currentViewBatch) && x.status === "SUCCEEDED");
+    const isBatchSucceeded = Boolean(batchRun) || Boolean(state.batchSummaries[currentViewBatch]);
+    const isEvidenceUnavailable = Boolean(state.batchResults[currentViewBatch]?._evidenceUnavailable);
+    const activeExecutionBatch = state.nextSourceBatch || "initial";
     const entries = state.savedLabManifest?.runs?.filter(x => x.batch === currentViewBatch) || [];
+
+    // Header indicating Viewed Batch vs Active Execution Batch (Decoupled State)
+    const viewHeaderBox = box("h-stack");
+    viewHeaderBox.style.justifyContent = "space-between";
+    viewHeaderBox.style.alignItems = "center";
+    viewHeaderBox.style.padding = "10px 16px";
+    viewHeaderBox.style.background = "var(--color-surface, #FFFFFF)";
+    viewHeaderBox.style.borderRadius = "8px";
+    viewHeaderBox.style.border = "1px solid var(--color-border, #E2D9D2)";
+    viewHeaderBox.style.marginBottom = "14px";
+
+    const viewTitle = box("h-stack",
+      node("span", "text-bold", `👀 แสดงผลลัพธ์รอบข้อมูล: ${thaiMonth(sourceMonthForBatch(currentViewBatch))}`),
+      node("span", isBatchSucceeded ? "badge-pass" : "badge-neutral", isBatchSucceeded ? "✓ รันสำเร็จแล้ว" : "⏳ รอบที่เลือกยังไม่รัน")
+    );
+    viewTitle.style.gap = "8px";
+    viewTitle.style.alignItems = "center";
+
+    const execPointer = box("h-stack",
+      small(`สถานะคิวรันจริง (Execution Pointer): ${thaiMonth(sourceMonthForBatch(activeExecutionBatch))}`),
+      node("span", "badge-neutral", activeExecutionBatch === "initial" ? "Initial" : activeExecutionBatch)
+    );
+    execPointer.style.gap = "8px";
+    execPointer.style.alignItems = "center";
+
+    viewHeaderBox.append(viewTitle, execPointer);
+    root.append(viewHeaderBox);
 
     NOTEBOOK_STAGES.forEach(([id, title, description], index) => {
       const entry = entries.find(x => x.stage === id), active = state.notebookStage === id;
@@ -3420,7 +3558,7 @@
         box("notebook-cell-title", node("strong", "", title), small(description)),
         node("span", "notebook-cell-state",
           isFailed ? "ผิดพลาด / บล็อก" :
-          (savedResult || liveStep?.conclusion === "success" ? "ผ่านแล้ว" :
+          (savedResult || isBatchSucceeded || liveStep?.conclusion === "success" ? "ผ่านแล้ว" :
            runningNow ? "กำลังรัน" : "รอรัน")
         ));
       head.addEventListener("click", () => {
@@ -3448,7 +3586,20 @@
         if (activeSubtab === "preview") {
           const isInitial = currentViewBatch === "initial";
           const hasSaved = Boolean(savedResult);
-          if (!isInitial && !hasSaved) {
+          if (isEvidenceUnavailable) {
+            const runId = state.batchResults[currentViewBatch]?._runId || batchRun?.run_id || state.batchRunIds[currentViewBatch] || "N/A";
+            const unavailableBox = box("empty-state-card",
+              node("div", "empty-state-icon", "📁"),
+              node("strong", "", `รอบข้อมูล: ${thaiMonth(sourceMonthForBatch(currentViewBatch))} (ประมวลผลสำเร็จแล้ว)`),
+              small(`ขั้นตอนที่ ${index + 1}: ${title} — สถานะหลักฐาน: EVIDENCE_UNAVAILABLE (ไม่พบไฟล์บันทึกผลลัพธ์ใน Storage สำหรับ Run ID: ${runId})`),
+              box("h-stack",
+                node("span", "badge-pass", "สถานะการรัน: สำเร็จ (SUCCEEDED)"),
+                node("span", "badge-waiting", "EVIDENCE_UNAVAILABLE"),
+                node("span", "badge-neutral", `ชุดข้อมูล: classroom-source-${sourceMonthForBatch(currentViewBatch)}.zip`)
+              )
+            );
+            body.append(unavailableBox);
+          } else if (!isInitial && !hasSaved && !isBatchSucceeded) {
             const emptyBox = box("empty-state-card",
               node("div", "empty-state-icon", "⏳"),
               node("strong", "", `รอบข้อมูล: ${thaiMonth(sourceMonthForBatch(currentViewBatch))} (ยังไม่ได้เริ่มรัน)`),

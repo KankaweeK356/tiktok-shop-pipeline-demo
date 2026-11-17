@@ -110,9 +110,14 @@ export default async function handler(req, res) {
     const batch = row.result_summary?.batch ||
       (row.run_type === "RUN1" ? "initial" : "incremental_01");
     return {
-      run_id: String(row.run_id), batch: batch === "initial" ? "initial" : "incremental",
-      source_batch: batch, source_month: monthFor(batch), status: row.status,
-      created_at: row.started_at, execution_engine: "VERCEL_NATIVE"
+      run_id: String(row.run_id),
+      batch: batch,
+      source_batch: batch,
+      source_month: monthFor(batch),
+      run_type: row.run_type,
+      status: row.status,
+      created_at: row.started_at,
+      execution_engine: "VERCEL_NATIVE"
     };
   });
 
@@ -120,13 +125,19 @@ export default async function handler(req, res) {
     const batchQuery = String(req.query?.batch || "");
     if (batchQuery) {
       const since = Date.parse(String(req.query?.since || ""));
-      if (!Number.isFinite(since) || !["initial", "incremental"].includes(batchQuery))
+      if (!Number.isFinite(since) || (!["initial", "incremental"].includes(batchQuery) && !DELIVERIES.includes(batchQuery)))
         return res.status(400).json({ error: "ข้อมูลติดตาม Run ไม่ถูกต้อง" });
-      const type = batchQuery === "initial" ? "RUN1" : "RUN2";
+      const type = (batchQuery === "initial" || batchQuery === "RUN1") ? "RUN1" : "RUN2";
       const requestedId = String(req.query?.run_id || "");
       if (requestedId && !RUN_UUID.test(requestedId)) return res.status(400).json({ error: "Run ID ไม่ถูกต้อง" });
-      const run = runs.find(row => row.run_type === type && (requestedId ?
-        String(row.run_id) === requestedId : Date.parse(row.started_at) >= since - 15000));
+      const run = runs.find(row => {
+        const rowBatch = row.result_summary?.batch || (row.run_type === "RUN1" ? "initial" : "incremental_01");
+        const matchesBatch = (batchQuery === "initial" && row.run_type === "RUN1") ||
+          (batchQuery === "incremental" && row.run_type === "RUN2") ||
+          (rowBatch === batchQuery) ||
+          (row.run_type === type);
+        return matchesBatch && (requestedId ? String(row.run_id) === requestedId : Date.parse(row.started_at) >= since - 15000);
+      });
       if (!run) return res.status(200).json({ found: false, status: "queued", stages: [] });
       let stageRows = [];
       try {

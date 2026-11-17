@@ -85,8 +85,14 @@ export default async function handler(req, res) {
     if (!evidence) {
       return res.status(404).json({ error: "ไม่พบหลักฐานที่บันทึกไว้สำหรับ Run นี้" });
     }
-    return res.status(200).json(stage ? { run_id: id, stage, evidence } : {
-      run_id: id, result: evidence, execution: "VERCEL_NATIVE"
+    const batch = run.result_summary?.batch || evidence?.batch || (run.run_type === "RUN1" ? "initial" : "incremental_01");
+    const monthFor = (b) => {
+      const deliveries = ["initial", ...Array.from({ length: 9 }, (_, i) => "incremental_" + String(i + 1).padStart(2, "0"))];
+      const idx = deliveries.indexOf(b);
+      return idx < 0 ? "" : `2026-${String(idx + 1).padStart(2, "0")}`;
+    };
+    return res.status(200).json(stage ? { run_id: id, stage, evidence, source_batch: batch } : {
+      run_id: id, result: evidence, source_batch: batch, source_month: monthFor(batch), run_type: run.run_type, execution: "VERCEL_NATIVE"
     });
   } catch (error) {
     return res.status(notFound(error) ? 404 : 503).json({

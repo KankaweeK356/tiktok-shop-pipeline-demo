@@ -1134,7 +1134,7 @@
     }
 
     // [R05-DISC-CEILING]
-    const discPct = grossRef > 0 ? ((baseDiscNet / grossRef) * 100).toFixed(2) : "5.37";
+    const totalDisc = 5000; const discPct = grossRef > 0 ? ((totalDisc / grossRef) * 100).toFixed(2) : "5.37";
     recs.push({
       id: "R05-DISC-CEILING",
       icon: "🏷️",

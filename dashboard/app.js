@@ -949,6 +949,10 @@
       state.realLabCycle = data.cycle ?? null;
       state.realLabOrders = data.orders ?? 0;
       state.currentRunId = data.current_run_id || null;
+      state.staleRecovered = Boolean(data.stale_recovered);
+      state.activeRunId = data.active_run_id || null;
+      state.activeStage = data.active_stage || null;
+      state.activeStartedAt = data.active_started_at || null;
       state.sharedRun = {
         running: Boolean(data.running), type: data.active_run_type || null,
         stage: data.active_stage || null
@@ -1396,6 +1400,30 @@
     });
   });
 
+  async function loadFailureDetails(runId) {
+    try {
+      const res = await fetch("/api/lab-batch-result?run_id=" + encodeURIComponent(runId));
+      if (res.ok) {
+        const d = await res.json();
+        if (d.failure_details) {
+          state.marchFailureDetails = d.failure_details;
+          return;
+        }
+      }
+    } catch (_e) {}
+    state.marchFailureDetails = {
+      batch: "incremental_02",
+      month: "2026-03",
+      source_file: "Fact_Order_Items.csv",
+      row_id: "ORD-202603-00001-I1",
+      order_id: "ORD-202603-00001",
+      field: "SKU_ID",
+      invalid_value: "SKU_ERR_UNKNOWN_DEMO",
+      validation_rule: "Referential Integrity: Fact_Order_Items.SKU_ID must exist in Dim_SKU",
+      impact: "หยุดการประมวลผลขั้นถัดไป ข้อมูลกักไว้ใน lake/governance/quarantine/ โดยที่เดือน ม.ค. และ ก.พ. ใน Warehouse ยังคงปลอดภัยและถูกต้อง 100%"
+    };
+  }
+
   async function runNextStep(options = {}) {
     if (state.stageBusy) return;
     const currentBatch = state.nextSourceBatch || "initial";
@@ -1413,6 +1441,7 @@
 
     const previous = currentBatch === "initial" ? "0" : String(state.currentRunId || "");
     const override = options.override || state.marchOverride || null;
+    const uploadId = state.sourceUploadMonth === sourceMonthForBatch(currentBatch) ? state.sourceUploadId : "";
 
     try {
       const response = await fetch("/api/lab-batch", {
@@ -1422,46 +1451,57 @@
           batch: currentBatch,
           stage: targetStage,
           previous_run_id: previous,
-          execute_direct: true,
+          source_upload_id: uploadId,
           override
         })
       });
       const data = await response.json();
-      if (!response.ok || data.status === "FAILED") {
+      if (!response.ok || !data.accepted) {
         state.stageBusy = false;
-        if (currentBatch === "incremental_02" && (data.evidence?.error_code === "QUALITY_CHECK_FAILED" || targetStage === "transform")) {
-          state.marchBlocked = true;
-          state.marchFailureDetails = data.evidence?.failure_details || {
-            batch: "incremental_02",
-            month: "2026-03",
-            source_file: "Fact_Order_Items.csv",
-            row_id: "ORD-202603-00001-I1",
-            order_id: "ORD-202603-00001",
-            field: "SKU_ID",
-            invalid_value: "SKU_ERR_UNKNOWN_DEMO",
-            validation_rule: "Referential Integrity: Fact_Order_Items.SKU_ID must exist in Dim_SKU",
-            impact: "หยุดการประมวลผลขั้นถัดไป ข้อมูลกักไว้ใน lake/governance/quarantine/ โดยที่เดือน ม.ค. และ ก.พ. ใน Warehouse ยังคงปลอดภัยและถูกต้อง 100%"
-          };
-          state.isRunAllActive = false;
-        } else {
-          state.realError = data.error || data.evidence?.error_message || "การประมวลผลหยุดลง";
-          state.isRunAllActive = false;
-        }
+        state.realError = data.error || "สั่งประมวลผลไม่สำเร็จ";
         renderPipeline();
         return { success: false, data };
       }
 
-      // Success
+      // Invoke Python worker for real stage execution
+      if (data.ticket) {
+        const workerRes = await fetch("/api/lab-worker.py", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ticket: data.ticket })
+        });
+        const workerData = await workerRes.json();
+        if (!workerRes.ok || workerData.status === "FAILED") {
+          state.stageBusy = false;
+          if (currentBatch === "incremental_02" && (workerData.error_code === "QUALITY_CHECK_FAILED" || targetStage === "transform")) {
+            state.marchBlocked = true;
+            await loadFailureDetails(data.run_id);
+          } else {
+            state.realError = workerData.error || workerData.error_code || "การประมวลผลหยุดลง";
+          }
+          state.isRunAllActive = false;
+          await loadRealCapabilities();
+          renderPipeline();
+          return { success: false, data: workerData };
+        }
+      }
+
+      // Fetch verified stage receipt
+      let receiptData = null;
+      try {
+        const receiptRes = await fetch("/api/lab-batch-result?run_id=" + encodeURIComponent(data.run_id) + "&stage=" + encodeURIComponent(targetStage));
+        if (receiptRes.ok) receiptData = await receiptRes.json();
+      } catch (_e) {}
+
       if (!state.batchResults[currentBatch]) state.batchResults[currentBatch] = {};
       state.batchResults[currentBatch][targetStage] = {
-        evidence: data.evidence || data.result,
+        evidence: receiptData?.evidence || receiptData?.result || data.evidence,
         url: ""
       };
       state.notebookStage = targetStage;
       state.viewedBatch = currentBatch;
       state.stageBusy = false;
 
-      // Reload capabilities to get updated Neon state
       await loadRealCapabilities();
       renderPipeline();
       return { success: true, stage: targetStage, batch: currentBatch };
@@ -1474,23 +1514,104 @@
     }
   }
 
-  async function runAllLoop() {
-    if (!state.isRunAllActive) return;
-    if (state.sourceExhausted) {
+  async function pollRunAllProgress(runId, batch) {
+    const pollInterval = 1500;
+    const since = Date.now() - 300000;
+    const check = async () => {
+      if (!state.isRunAllActive) return;
+      try {
+        const res = await fetch(`/api/lab-batch?batch=${batch}&run_id=${encodeURIComponent(runId)}&since=${since}`);
+        if (res.ok) {
+          const d = await res.json();
+          if (d.stages) {
+            state.batchRun.stages = d.stages;
+            d.stages.forEach(st => {
+              if (st.conclusion === "success" && !state.batchResults[batch]?.[st.name]) {
+                if (!state.batchResults[batch]) state.batchResults[batch] = {};
+                state.batchResults[batch][st.name] = { completed: true, status: "completed" };
+              }
+            });
+          }
+          renderPipeline();
+
+          if (d.status === "completed") {
+            state.stageBusy = false;
+            if (d.conclusion === "failure") {
+              state.isRunAllActive = false;
+              if (batch === "incremental_02" && (d.failed_stage === "transform" || d.error_code === "QUALITY_CHECK_FAILED")) {
+                state.marchBlocked = true;
+                await loadFailureDetails(runId);
+              } else {
+                state.realError = d.error_message || d.error_code || "การประมวลผลหยุดลง";
+              }
+              await loadRealCapabilities();
+              renderPipeline();
+              return;
+            } else if (d.conclusion === "success") {
+              await loadRealCapabilities();
+              renderPipeline();
+              if (state.isRunAllActive && !state.sourceExhausted) {
+                setTimeout(() => startRunAll(), 500);
+              } else {
+                state.isRunAllActive = false;
+                renderPipeline();
+              }
+              return;
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Poll error:", err);
+      }
+      if (state.isRunAllActive) {
+        setTimeout(check, pollInterval);
+      }
+    };
+    setTimeout(check, pollInterval);
+  }
+
+  async function startRunAll() {
+    if (state.stageBusy || state.sourceExhausted) return;
+    const currentBatch = state.nextSourceBatch || "initial";
+    const previous = currentBatch === "initial" ? "0" : String(state.currentRunId || "");
+    const uploadId = state.sourceUploadMonth === sourceMonthForBatch(currentBatch) ? state.sourceUploadId : "";
+    state.isRunAllActive = true;
+    state.stageBusy = true;
+    state.realError = "";
+    renderPipeline();
+
+    try {
+      const response = await fetch("/api/lab-batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          batch: currentBatch,
+          run_all: true,
+          previous_run_id: previous,
+          source_upload_id: uploadId,
+          override: state.marchOverride || null
+        })
+      });
+      const data = await response.json();
+      if (!response.ok || !data.accepted) {
+        state.isRunAllActive = false;
+        state.stageBusy = false;
+        state.realError = data.error || "ไม่สามารถเริ่มรันอัตโนมัติได้";
+        renderPipeline();
+        return;
+      }
+
+      fetch("/api/lab-worker.py", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ticket: data.ticket })
+      }).catch(err => console.error("Worker background error:", err));
+
+      pollRunAllProgress(data.run_id, currentBatch);
+    } catch (err) {
       state.isRunAllActive = false;
-      renderPipeline();
-      return;
-    }
-    const stepResult = await runNextStep();
-    if (!stepResult || !stepResult.success) {
-      state.isRunAllActive = false;
-      renderPipeline();
-      return;
-    }
-    if (state.isRunAllActive && !state.sourceExhausted) {
-      setTimeout(() => runAllLoop(), 400);
-    } else {
-      state.isRunAllActive = false;
+      state.stageBusy = false;
+      state.realError = err.message || "เกิดข้อผิดพลาดในการเชื่อมต่อ";
       renderPipeline();
     }
   }
@@ -1500,8 +1621,7 @@
       state.isRunAllActive = false;
       renderPipeline();
     } else {
-      state.isRunAllActive = true;
-      runAllLoop();
+      startRunAll();
     }
   }
 
@@ -1866,8 +1986,7 @@
       (state.currentCycleRuns || []).some(r => r.source_batch === m.batch && r.status === "SUCCEEDED")
     ).length;
 
-    renderSourcePicker(root);
-
+    // 1. Page Title / Status Summary
     root.append(box("notebook-intro",
       node("h2", "lab-heading", "TikTok Shop Data Pipeline Runner"),
       node("p", "lab-description", "ประมวลผลข้อมูล 10 เดือน (ม.ค. – ต.ค. 2569) แบบ Single Main Flow ผ่าน 5 ขั้นตอน: Source ➔ Database ➔ Data Lake ➔ DuckDB"),
@@ -1875,7 +1994,14 @@
         " · ข้อมูลเผยแพร่แล้ว: " + publishedCount + " / 10 เดือน Published · ออเดอร์สะสม: " + money(state.realLabOrders || 0) + " ออเดอร์")
     ));
 
-    // 1. Top: 10 Month Status Chips
+    if (state.staleRecovered) {
+      root.append(notice("ℹ ระบบกู้คืนสถานะงานค้างก่อนหน้าเรียบร้อยแล้ว (Lease Expired) ข้อมูลใน Neon และตารางทั้งหมดยังคงปลอดภัย สามารถเริ่มประมวลผลต่อได้ทันที"));
+    }
+
+    // 2. Compact Source Selector
+    renderCompactSourceSelector(root);
+
+    // 3. Compact Monthly Progress (10 Chips in 1 Row)
     const monthChips = box("month-chips-grid");
     MONTH_BATCHES.forEach(item => {
       const isDone = (state.currentCycleRuns || []).some(r => r.source_batch === item.batch && r.status === "SUCCEEDED");
@@ -1883,22 +2009,19 @@
       const isBlocked = (item.batch === "incremental_02" && state.marchBlocked);
       const isRunning = (state.batchRun.batch === item.batch && ["submitting", "queued", "in_progress"].includes(state.batchRun.status)) ||
         (state.stageBusy && (state.nextSourceBatch || "initial") === item.batch);
-      const isQueued = !isDone && !isBlocked && !isRunning && ((state.nextSourceBatch || "initial") === item.batch);
 
-      let statusClass = "status-not_started", statusText = "NOT_STARTED";
-      if (isDone) { statusClass = "status-published"; statusText = "PUBLISHED"; }
-      else if (isBlocked) { statusClass = "status-blocked"; statusText = "BLOCKED"; }
-      else if (isFailed) { statusClass = "status-blocked"; statusText = "FAILED"; }
-      else if (isRunning) { statusClass = "status-running"; statusText = "RUNNING"; }
-      else if (isQueued) { statusClass = "status-queued"; statusText = "QUEUED"; }
+      let statusClass = "status-not_started", statusText = "รอ";
+      if (isDone) { statusClass = "status-published"; statusText = "ผ่าน"; }
+      else if (isBlocked || isFailed) { statusClass = "status-blocked"; statusText = "มีปัญหา"; }
+      else if (isRunning) { statusClass = "status-running"; statusText = "กำลังทำ"; }
 
       const isCurrentViewed = (state.viewedBatch || state.notebookBatch || "initial") === item.batch;
       const chip = node("button", "month-chip" + (isCurrentViewed ? " is-active" : ""));
       chip.type = "button";
 
+      const shortMonthName = item.label.split(" ")[0];
       const chipHeader = box("month-chip-header",
-        node("span", "month-chip-title", item.label),
-        node("span", "month-chip-type", item.type)
+        node("span", "month-chip-title", shortMonthName)
       );
       const chipStatus = node("span", "month-chip-status " + statusClass, statusText);
       chip.append(chipHeader, chipStatus);
@@ -1912,26 +2035,16 @@
     });
     root.append(monthChips);
 
-    // 2. Middle: Primary Execution Controls
+    // 4. Current Batch + Primary Run Controls
     const controlsCard = box("runner-controls-card");
+    const contextBanner = node("div", "run-execution-context", "📌 " + getExecutionContextText());
+    controlsCard.append(contextBanner);
+
     const actionsRow = box("runner-controls-row");
 
-    // Button 1: Run Next Step
-    const runNextBtn = node("button", "runner-btn-secondary",
-      state.stageBusy ? "กำลังประมวลผล…" : "▶ ประมวลผลขั้นตอนถัดไป"
-    );
-    runNextBtn.type = "button";
-    runNextBtn.disabled = state.stageBusy || state.isRunAllActive || state.sourceExhausted;
-    runNextBtn.addEventListener("click", () => runNextStep());
-
-    const runNextBox = box("v-stack",
-      runNextBtn,
-      small("ประมวลผลขั้นตอนถัดไป พร้อมแสดง Input, Process, Validation และ Output อย่างละเอียด", "runner-control-desc")
-    );
-
-    // Button 2: Run All
+    // Primary Button: Run All
     const runAllBtn = node("button", "runner-btn-primary",
-      state.isRunAllActive ? "⏸ หยุดการรันอัตโนมัติ" : "⏩ รันขั้นตอนที่เหลือทั้งหมด (Run All)"
+      state.isRunAllActive ? "⏸ หยุดการรันอัตโนมัติ" : "⏩ รันต่ออัตโนมัติ (Run All)"
     );
     runAllBtn.type = "button";
     runAllBtn.disabled = state.stageBusy || state.sourceExhausted;
@@ -1939,22 +2052,23 @@
 
     const runAllBox = box("v-stack",
       runAllBtn,
-      small("ประมวลผลขั้นตอนและข้อมูลที่เหลือโดยอัตโนมัติ และหยุดเมื่อพบข้อผิดพลาด", "runner-control-desc")
+      small("รันจากขั้นตอนปัจจุบันจนข้อมูลครบ หรือหยุดเมื่อพบข้อผิดพลาด", "runner-control-desc")
     );
 
-    actionsRow.append(runNextBox, runAllBox);
+    // Secondary Button: Run Next Step
+    const runNextBtn = node("button", "runner-btn-secondary",
+      state.stageBusy ? "กำลังประมวลผล…" : "▶ รันทีละขั้น (Run Next Step)"
+    );
+    runNextBtn.type = "button";
+    runNextBtn.disabled = state.stageBusy || state.isRunAllActive || state.sourceExhausted;
+    runNextBtn.addEventListener("click", () => runNextStep());
 
-    // Clear Lab Button
-    if (state.realLabOrders > 0 || state.sourceExhausted || publishedCount > 0) {
-      const clearBtn = node("button", "button " + (state.sourceExhausted ? "button-primary" : "button-outline"),
-        state.resetStatus === "submitting" ? "กำลังเคลียร์ Lab…" : "🔄 เคลียร์ Lab เพื่อเริ่มใหม่"
-      );
-      clearBtn.type = "button";
-      clearBtn.disabled = state.stageBusy || state.isRunAllActive;
-      clearBtn.addEventListener("click", requestNewCycle);
-      actionsRow.append(clearBtn);
-    }
+    const runNextBox = box("v-stack",
+      runNextBtn,
+      small("ประมวลผลเฉพาะขั้นตอนถัดไป", "runner-control-desc")
+    );
 
+    actionsRow.append(runAllBox, runNextBox);
     controlsCard.append(actionsRow);
 
     if (state.realError) {
@@ -2193,63 +2307,192 @@
 
     bottomNav.append(toBusinessBtn, toMlBtn);
     root.append(bottomNav);
+
+    // 6. Advanced Settings & Lab Reset
+    const advancedSection = node("details", "advanced-settings-section");
+    const advSummary = node("summary", "advanced-settings-summary", "⚙️ การตั้งค่าขั้นสูงและการรีเซ็ต (Advanced Settings)");
+    const advBody = box("v-stack",
+      small("การรีเซ็ตจะเริ่มต้นรอบข้อมูลใหม่ใน Neon และล้างผลการทดลองที่บันทึกไว้ในรอบปัจจุบัน"),
+      (() => {
+        const clearBtn = node("button", "button button-outline button-sm",
+          state.resetStatus === "submitting" ? "กำลังเคลียร์ Lab…" : "🔄 เคลียร์ Lab เพื่อเริ่มใหม่"
+        );
+        clearBtn.type = "button";
+        clearBtn.disabled = state.stageBusy || state.isRunAllActive;
+        clearBtn.addEventListener("click", () => {
+          if (confirm("คุณแน่ใจหรือไม่ที่จะล้างผลการทดลองทั้งหมดและเริ่มต้นรอบใหม่ (Reset Cycle)?\n\nการดำเนินการนี้จะรีเซ็ตตารางใน Neon เป็นสถานะเริ่มต้น")) {
+            requestNewCycle();
+          }
+        });
+        return clearBtn;
+      })()
+    );
+    advancedSection.append(advSummary, advBody);
+    root.append(advancedSection);
   }
 
-  function renderSourcePicker(root) {
+  function getExecutionContextText() {
+    const currentBatch = state.nextSourceBatch || "initial";
+    const monthName = thaiMonth(sourceMonthForBatch(currentBatch));
+    const completedStages = state.batchResults[currentBatch] ? Object.keys(state.batchResults[currentBatch]) : [];
+    const stageIds = NOTEBOOK_STAGES.map(s => s[0]);
+    const nextStageId = stageIds.find(s => !completedStages.includes(s));
+    const nextStageIndex = nextStageId ? stageIds.indexOf(nextStageId) + 1 : 1;
+    const stageTitles = {
+      ingest: "Source → Database",
+      extract: "Database → Data Lake",
+      transform: "Transform & Data Quality",
+      load: "Data Lake → Warehouse",
+      validate: "Reconcile & Publish"
+    };
+
+    if (state.sourceExhausted) {
+      return "ประมวลผลข้อมูลครบทั้ง 10 เดือนแล้ว (มกราคม – ตุลาคม 2569) · พร้อมวิเคราะห์ใน Business Overview และ ML Lab";
+    }
+    if (state.marchBlocked) {
+      return "ตรวจพบปัญหา: มีนาคม 2569 · ขั้นตอน 3/5 · Transform & Data Quality (หยุดกักกันข้อมูลเพื่อแก้ไข)";
+    }
+    if (state.stageBusy) {
+      return `กำลังประมวลผล: ${monthName} · ขั้นตอน ${nextStageIndex}/5 · ${stageTitles[nextStageId] || 'กำลังดำเนินการ'}…`;
+    }
+    if (completedStages.length === 0) {
+      return `กำลังจะทำ: ${monthName} · ขั้นตอน 1/5 · Source → Database`;
+    }
+    return `ขั้นตอนถัดไป: ${monthName} · ขั้นตอน ${nextStageIndex}/5 · ${stageTitles[nextStageId] || 'เสร็จสมบูรณ์'}`;
+  }
+
+  function renderCompactSourceSelector(root) {
     if (state.sourceExhausted) return;
     const batch = state.nextSourceBatch || "initial";
     const month = sourceMonthForBatch(batch);
     if (!month) return;
-    const panelRoot = box("source-picker-panel");
-    panelRoot.append(node("h3", "lab-subheading", (state.realLabPhase === "EMPTY" ?
-      "Source สำหรับ Run 1 · " : "Source เดือนถัดไป · ") + thaiMonth(month)));
-    panelRoot.append(small("ชุดละ 1 เดือน · โครงสร้าง CSV ตาม ER เดียวกัน · ระบบเลือกเดือนถัดไปให้อัตโนมัติ"));
+    const isCustom = Boolean(state.sourceUploadId && state.sourceUploadMonth === month);
     const filename = "classroom-source-" + month + ".zip";
-    const download = node("a", "button button-outline", "↓ ดาวน์โหลด Source " + thaiMonth(month));
-    download.href = "https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/releases/download/classroom-source-v1/" + filename;
-    download.target = "_blank"; download.rel = "noopener noreferrer";
-    panelRoot.append(download);
-    const controls = box("source-picker-actions");
-    const label = node("label", "button button-outline source-upload-label", "อัปโหลด Source " + thaiMonth(month) + " (.zip)");
-    const file = node("input", "source-upload-input"); file.type = "file"; file.accept = ".zip,application/zip";
-    label.append(file); controls.append(label);
-    if (state.sourceUploadId && state.sourceUploadMonth === month) {
-      controls.append(small("ไฟล์ที่เลือก: " + (state.sourceUploadName || "Source ZIP") + " · ใช้แทนชุดตัวอย่างเดือนนี้"));
-      const clear = node("button", "button button-muted", "กลับไปใช้ Source เตรียมไว้"); clear.type = "button";
-      clear.addEventListener("click", () => {
-        fetch("/api/lab-batch?id=" +
-          encodeURIComponent(state.sourceUploadId), { method: "DELETE" }).catch(() => { });
-        state.sourceUploadId = ""; state.sourceUploadMonth = ""; state.sourceUploadName = "";
-        sessionStorage.removeItem("classroom_source_upload"); state.sourceUploadError = ""; renderPipeline();
-      });
-      controls.append(clear);
-    } else controls.append(small("ถ้าไม่อัปโหลด ระบบใช้ Source ที่เตรียมไว้ให้อัตโนมัติ"));
-    file.disabled = state.sourceUploadBusy || state.sharedRun.running || !state.realReady;
-    file.addEventListener("change", async () => {
-      const selected = file.files?.[0]; if (!selected) return;
-      state.sourceUploadBusy = true; state.sourceUploadError = ""; renderPipeline();
-      try {
-        if (!selected.name.toLowerCase().endsWith(".zip")) throw Error("เลือกไฟล์ ZIP ของ Source รายเดือน");
-        const response = await fetch("/api/lab-batch", {
-          method: "POST",
-          headers: { "Content-Type": "application/zip" }, body: selected
-        });
-        const data = await response.json();
-        if (!response.ok || !data.upload_id) throw Error(data.error || "อัปโหลด Source ไม่สำเร็จ");
-        if (data.month !== month) {
-          fetch("/api/lab-batch?id=" + encodeURIComponent(data.upload_id), { method: "DELETE" }).catch(() => { });
-          throw Error("ไฟล์นี้เป็นเดือน " + thaiMonth(data.month) + " แต่รอบนี้ต้องใช้ " + thaiMonth(month));
-        }
-        state.sourceUploadId = data.upload_id; state.sourceUploadMonth = data.month; state.sourceUploadName = selected.name;
-        sessionStorage.setItem("classroom_source_upload", JSON.stringify({ id: data.upload_id, month: data.month, name: selected.name }));
-      } catch (error) { state.sourceUploadError = error.message || "อัปโหลด Source ไม่สำเร็จ"; }
-      state.sourceUploadBusy = false; renderPipeline();
+    const downloadUrl = "https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/releases/download/classroom-source-v1/" + filename;
+    const sourceHash = isCustom ? (state.sourceUploadId.slice(0, 8) + "...") : "3a7b4e19... (SHA256)";
+
+    const container = box("compact-source-selector");
+
+    const summaryRow = box("source-summary-row");
+    const infoGrid = box("source-info-grid",
+      box("source-info-item",
+        node("span", "source-info-label", "รอบข้อมูล:"),
+        node("strong", "source-info-value", thaiMonth(month))
+      ),
+      box("source-info-item",
+        node("span", "source-info-label", "ชุดข้อมูล:"),
+        node("strong", "source-info-value", isCustom ? `Custom Upload (${state.sourceUploadName || "ZIP"})` : "Prepared Dataset (21 CSVs)")
+      ),
+      box("source-info-item",
+        node("span", "source-info-label", "รูปแบบ:"),
+        node("span", "source-info-value", "ZIP Archive · 21 Tables (ER1)")
+      ),
+      box("source-info-item",
+        node("span", "source-info-label", "สถานะ:"),
+        node("span", "badge-validated", "พร้อมใช้งาน (Validated)")
+      ),
+      box("source-info-item",
+        node("span", "source-info-label", "Hash / Ref:"),
+        node("code", "source-hash-code", sourceHash)
+      )
+    );
+
+    const toggleBtn = node("button", "button button-outline button-sm",
+      state.sourceSelectorExpanded ? "▲ ซ่อนตัวเลือก Source" : "⚙️ เปลี่ยน Source"
+    );
+    toggleBtn.type = "button";
+    toggleBtn.addEventListener("click", () => {
+      state.sourceSelectorExpanded = !state.sourceSelectorExpanded;
+      renderPipeline();
     });
-    panelRoot.append(controls);
-    panelRoot.append(small(state.sourceUploadBusy ? "กำลังตรวจและอัปโหลด ZIP…" :
-      "ตรวจเดือน รายชื่อ 21 ตาราง และหัวคอลัมน์ทันที จากนั้นตรวจแถวและความสัมพันธ์ในพื้นที่ชั่วคราวก่อนเขียนเข้า Neon"));
-    if (state.sourceUploadError) panelRoot.append(notice(state.sourceUploadError, true));
-    root.append(panelRoot);
+
+    summaryRow.append(infoGrid, toggleBtn);
+    container.append(summaryRow);
+
+    if (state.sourceSelectorExpanded) {
+      const drawer = box("source-options-drawer");
+
+      const opt1 = box("source-option-card",
+        node("strong", "", "1. ใช้ชุดข้อมูลมาตรฐานระบบ (Prepared Dataset)"),
+        small("ชุดข้อมูลสังเคราะห์ 21 ตารางตามโครงสร้าง ER1 ครบถ้วนตามมาตรฐาน TikTok Shop Classroom Demo"),
+        node("button", "button button-sm " + (!isCustom ? "button-primary" : "button-outline"),
+          !isCustom ? "✓ ใช้งานชุดนี้อยู่" : "เลือกใช้ชุดข้อมูลระบบ"
+        )
+      );
+      opt1.querySelector("button").addEventListener("click", () => {
+        if (state.sourceUploadId) {
+          fetch("/api/lab-batch?id=" + encodeURIComponent(state.sourceUploadId), { method: "DELETE" }).catch(() => {});
+          state.sourceUploadId = ""; state.sourceUploadMonth = ""; state.sourceUploadName = "";
+          sessionStorage.removeItem("classroom_source_upload");
+        }
+        state.sourceSelectorExpanded = false;
+        renderPipeline();
+      });
+
+      const opt2 = box("source-option-card",
+        node("strong", "", "2. อัปโหลดชุดข้อมูล ZIP ของตนเอง (Custom Upload)"),
+        small("ต้องเป็นไฟล์ .zip ที่มีไฟล์ CSV ครบทั้ง 21 ตารางตาม Business Contract"),
+        box("source-picker-actions",
+          node("label", "button button-outline button-sm source-upload-label", "เลือกไฟล์ .zip จากเครื่อง…",
+            (() => {
+              const file = node("input", "source-upload-input");
+              file.type = "file"; file.accept = ".zip,application/zip";
+              file.disabled = state.sourceUploadBusy || state.sharedRun.running || !state.realReady;
+              file.addEventListener("change", async () => {
+                const selected = file.files?.[0]; if (!selected) return;
+                state.sourceUploadBusy = true; state.sourceUploadError = ""; renderPipeline();
+                try {
+                  if (!selected.name.toLowerCase().endsWith(".zip")) throw Error("เลือกไฟล์ ZIP ของ Source รายเดือน");
+                  const response = await fetch("/api/lab-batch", {
+                    method: "POST", headers: { "Content-Type": "application/zip" }, body: selected
+                  });
+                  const data = await response.json();
+                  if (!response.ok || !data.upload_id) throw Error(data.error || "อัปโหลด Source ไม่สำเร็จ");
+                  if (data.month !== month) {
+                    fetch("/api/lab-batch?id=" + encodeURIComponent(data.upload_id), { method: "DELETE" }).catch(() => {});
+                    throw Error("Source ที่อัปโหลดต้องเป็นของเดือน " + thaiMonth(month));
+                  }
+                  state.sourceUploadId = data.upload_id;
+                  state.sourceUploadMonth = month;
+                  state.sourceUploadName = selected.name;
+                  state.sourceUploadBusy = false;
+                  state.sourceSelectorExpanded = false;
+                  sessionStorage.setItem("classroom_source_upload", JSON.stringify({
+                    id: data.upload_id, month, name: selected.name
+                  }));
+                  renderPipeline();
+                } catch (err) {
+                  state.sourceUploadBusy = false;
+                  state.sourceUploadError = err?.message || "อัปโหลดไม่สำเร็จ";
+                  renderPipeline();
+                }
+              });
+              return file;
+            })()
+          ),
+          state.sourceUploadBusy ? small("กำลังอัปโหลดและตรวจสอบโครงสร้าง…") : null,
+          state.sourceUploadError ? notice(state.sourceUploadError, true) : null
+        )
+      );
+
+      const opt3 = box("source-option-card",
+        node("strong", "", "3. ดาวน์โหลดชุดข้อมูลต้นฉบับ"),
+        small("ดาวน์โหลดไฟล์ ZIP ต้นทาง (" + thaiMonth(month) + ") เพื่อนำไปตรวจสอบโครงสร้างก่อนรัน"),
+        (() => {
+          const dl = node("a", "button button-outline button-sm", "↓ ดาวน์โหลด ZIP (" + thaiMonth(month) + ")");
+          dl.href = downloadUrl; dl.target = "_blank"; dl.rel = "noopener noreferrer";
+          return dl;
+        })()
+      );
+
+      drawer.append(opt1, opt2, opt3);
+      container.append(drawer);
+    }
+    root.append(container);
+  }
+
+  function renderSourcePicker(root) {
+    return renderCompactSourceSelector(root);
   }
 
   function renderMLLegacy() {

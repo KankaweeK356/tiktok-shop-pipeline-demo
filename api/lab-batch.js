@@ -90,7 +90,21 @@ export default async function handler(req, res) {
   const phase = lab.phase || "EMPTY";
   const cycle = Number(lab.cycle_number);
   const previousRunId = lab.last_run_id ? String(lab.last_run_id) : "0";
-  const active = runs.find(row => ["RUNNING", "QUEUED"].includes(row.status));
+  const STALE_LEASE_MS = 5 * 60 * 1000; // 5 minutes lease window
+  let active = runs.find(row => ["RUNNING", "QUEUED"].includes(row.status));
+  let staleRecovered = false;
+  if (active && (Date.now() - Date.parse(active.started_at)) > STALE_LEASE_MS) {
+    try {
+      await sql.query(
+        "UPDATE demo_control.pipeline_runs SET status='FAILED', finished_at=now(), error_message='LEASE_EXPIRED: การประมวลผลหมดเวลาควบคุม (เกิน 5 นาที)', result_summary = COALESCE(result_summary, '{}'::jsonb) || '{\"error_code\":\"LEASE_EXPIRED\",\"recovered\":true}'::jsonb WHERE run_id=$1 AND status IN ('RUNNING','QUEUED')",
+        [active.run_id]
+      );
+      active = null;
+      staleRecovered = true;
+    } catch (_recoveryErr) {
+      console.error("Failed to recover stale run", _recoveryErr);
+    }
+  }
   const next = expectedNext(phase, runs);
   const currentRuns = runs.slice().reverse().map(row => {
     const batch = row.result_summary?.batch ||
@@ -167,6 +181,8 @@ export default async function handler(req, res) {
       active_run_type: active?.run_type || null,
       active_run_id: active ? String(active.run_id) : null,
       active_stage: active?.result_summary?.active_stage || null,
+      active_started_at: active?.started_at || null,
+      stale_recovered: staleRecovered,
       previous_run_id: previousRunId, next_source_batch: next,
       source_remaining: next ? DELIVERIES.length - DELIVERIES.indexOf(next) : 0,
       source_exhausted: !next, history: currentRuns.slice().reverse(),
@@ -177,7 +193,19 @@ export default async function handler(req, res) {
   let body;
   try { body = await readJsonBody(req); }
   catch (_error) { return res.status(400).json({ error: "ข้อมูลคำขอ Run ไม่ถูกต้อง" }); }
-  if (active) return res.status(409).json({ error: "มี Run กำลังทำงานอยู่ กรุณารอให้จบก่อน" });
+
+  if (body.action === "recover_stale") {
+    if (active) {
+      await sql.query(
+        "UPDATE demo_control.pipeline_runs SET status='FAILED', finished_at=now(), error_message='MANUAL_RECOVERY: ผู้ใช้สั่งฟื้นฟูสถานะงานค้าง', result_summary = COALESCE(result_summary, '{}'::jsonb) || '{\"error_code\":\"MANUAL_RECOVERY\",\"recovered\":true}'::jsonb WHERE run_id=$1",
+        [active.run_id]
+      );
+      return res.status(200).json({ success: true, message: "ฟื้นฟูสถานะงานค้างสำเร็จ ระบบพร้อมทำงานต่อ" });
+    }
+    return res.status(200).json({ success: true, message: "ไม่มีงานค้างในระบบ" });
+  }
+
+  if (active && (!body.stage || body.stage === "ingest")) return res.status(409).json({ error: "มี Run กำลังทำงานอยู่ กรุณารอให้จบก่อน" });
   const requested = String(body.batch || "");
   const requestedBatch = requested === "initial" ? "initial" :
     requested === "incremental" ? next : requested;
@@ -205,7 +233,24 @@ export default async function handler(req, res) {
     }
   }
 
-  if (body.stage || body.execute_direct || body.override) {
+  const runNonce = (active?.run_id && body.stage && body.stage !== "ingest") ? String(active.run_id) : randomUUID();
+  const claim = {
+    batch: requestedBatch,
+    previous_run_id: previous,
+    cycle,
+    stage: body.stage || null,
+    run_all: Boolean(body.run_all),
+    override: body.override || null,
+    source_upload_id: sourceUploadId || null,
+    nonce: runNonce,
+    expires_at: Date.now() + 10 * 60 * 1000
+  };
+  const encoded = Buffer.from(JSON.stringify(claim)).toString("base64url");
+  const signature = createHmac("sha256", process.env.CLASSROOM_LAB_ADMIN_KEY)
+    .update(encoded).digest("hex");
+  const ticket = encoded + "." + signature;
+
+  if (body.execute_direct && !process.env.VERCEL) {
     try {
       const execResult = await executeVercelBatch(requestedBatch, previous, {
         stage: body.stage || null,
@@ -214,6 +259,7 @@ export default async function handler(req, res) {
       return res.status(execResult.status === "FAILED" ? 422 : 200).json({
         accepted: true,
         execution: "VERCEL_NATIVE",
+        ticket,
         run_id: execResult.run_id,
         batch: requestedBatch,
         source_batch: requestedBatch,
@@ -228,17 +274,15 @@ export default async function handler(req, res) {
     }
   }
 
-  const claim = {
-    batch: requestedBatch, previous_run_id: previous, cycle,
-    source_upload_id: sourceUploadId || null, nonce: randomUUID(),
-    expires_at: Date.now() + 10 * 60 * 1000
-  };
-  const encoded = Buffer.from(JSON.stringify(claim)).toString("base64url");
-  const signature = createHmac("sha256", process.env.CLASSROOM_LAB_ADMIN_KEY)
-    .update(encoded).digest("hex");
   return res.status(202).json({
-    accepted: true, execution: "VERCEL_NATIVE", ticket: encoded + "." + signature,
-    run_id: claim.nonce, source_batch: requestedBatch, source_month: monthFor(requestedBatch),
-    status: "queued", workflow_url: executionUrl(req)
+    accepted: true,
+    execution: "VERCEL_NATIVE",
+    ticket,
+    run_id: claim.nonce,
+    source_batch: requestedBatch,
+    source_month: monthFor(requestedBatch),
+    stage: body.stage || null,
+    status: "queued",
+    workflow_url: executionUrl(req)
   });
 }

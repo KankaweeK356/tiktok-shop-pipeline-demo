@@ -127,6 +127,16 @@ def prior_workspace(client, bucket: str, run_id: str, workspace: Path, prior_bat
         raise RuntimeError("PREVIOUS_BATCH_NOT_COMPLETE")
 
 
+def restore_run_workspace(client, bucket: str, run_id: str, workspace: Path):
+    item = client.get_object(
+        Bucket=bucket, Key=f"vercel-lab/workspace/{run_id}.zip"
+    )
+    unpack_checked(item["Body"].read(), workspace)
+    session_path = workspace / "lab_session.json"
+    if not session_path.is_file():
+        raise RuntimeError("RUN_WORKSPACE_MISSING")
+
+
 def put_json(client, bucket: str, key: str, value: dict):
     client.put_object(
         Bucket=bucket, Key=key,
@@ -185,10 +195,14 @@ def run_ticket(ticket: str) -> dict:
             if batch != "initial" and str(state[2] or "") != previous:
                 raise RuntimeError("PREVIOUS_RUN_MISMATCH")
 
+        target_stage = claim.get("stage")
         from pipeline.generate_classroom_source import BATCHES
-        if batch != "initial":
-            prior_batch = BATCHES[BATCHES.index(batch) - 1]
-            prior_workspace(client, bucket, previous, workspace, prior_batch)
+        if target_stage and target_stage != "ingest":
+            restore_run_workspace(client, bucket, claim["nonce"], workspace)
+        else:
+            if batch != "initial":
+                prior_batch = BATCHES[BATCHES.index(batch) - 1]
+                prior_workspace(client, bucket, previous, workspace, prior_batch)
         source_root.mkdir(exist_ok=True)
         stage_source(source_bytes(batch, claim.get("source_upload_id")), source_root, batch)
 
@@ -202,10 +216,19 @@ def run_ticket(ticket: str) -> dict:
         from pipeline.ci_lab_batch import run_stage_and_save, finalize
         from pipeline.ci_lab_export import main as export_warehouse
         try:
-            for stage in STAGES:
+            stages_to_run = [target_stage] if target_stage else STAGES
+            for stage in stages_to_run:
                 receipt = run_stage_and_save(batch, stage)
                 put_json(client, bucket,
                          f"vercel-lab/results/{receipt['run_id']}/{stage}.json", receipt)
+                client.put_object(
+                    Bucket=bucket, Key=f"vercel-lab/workspace/{receipt['run_id']}.zip",
+                    Body=zip_workspace(workspace), ContentType="application/zip",
+                )
+            if target_stage and target_stage != "validate":
+                summary = {"batch": batch, "status": "PARTIAL", "run_id": receipt["run_id"],
+                           "last_completed_stage": target_stage, "stage": target_stage}
+                return {"run_id": receipt["run_id"], "batch": batch, "stage": target_stage, "summary": summary}
             summary = finalize(batch)
             export_warehouse()
         except Exception as error:
@@ -312,7 +335,8 @@ class handler(BaseHTTPRequestHandler):
             finally:
                 INVOCATION_LOCK.release()
             self.reply(200, {"accepted": True, "status": "SUCCEEDED",
-                             "run_id": result["run_id"], "batch": result["batch"]})
+                             "run_id": result["run_id"], "batch": result["batch"],
+                             "stage": result.get("stage"), "summary": result.get("summary")})
         except Exception as error:
             # Detailed safe error code comes from the pipeline's stage receipt;
             # never include environment values or stack traces in HTTP output.

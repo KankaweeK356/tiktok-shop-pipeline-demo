@@ -4599,6 +4599,9 @@
       $("#exportCurrent").disabled = true;
     }
   }
+  window.__appState = state;
+  window.__appRender = render;
+  window.__appRenderBusiness = renderBusiness;
   init();
 })();
 

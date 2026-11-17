@@ -950,6 +950,10 @@
       state.realLabOrders = data.orders ?? 0;
       state.currentRunId = data.current_run_id || null;
       state.staleRecovered = Boolean(data.stale_recovered);
+      state.latestFailedRun = data.latest_failed_run || null;
+      state.partialDataDetected = Boolean(data.partial_data_detected);
+      state.recoveryReady = data.recovery_ready !== false;
+      state.recoveryReason = data.recovery_reason || null;
       state.activeRunId = data.active_run_id || null;
       state.activeStage = data.active_stage || null;
       state.activeStartedAt = data.active_started_at || null;
@@ -2047,7 +2051,7 @@
       state.isRunAllActive ? "⏸ หยุดการรันอัตโนมัติ" : "⏩ รันต่ออัตโนมัติ (Run All)"
     );
     runAllBtn.type = "button";
-    runAllBtn.disabled = state.stageBusy || state.sourceExhausted;
+    runAllBtn.disabled = state.stageBusy || state.sourceExhausted || !state.recoveryReady;
     runAllBtn.addEventListener("click", () => toggleRunAll());
 
     const runAllBox = box("v-stack",
@@ -2060,7 +2064,7 @@
       state.stageBusy ? "กำลังประมวลผล…" : "▶ รันทีละขั้น (Run Next Step)"
     );
     runNextBtn.type = "button";
-    runNextBtn.disabled = state.stageBusy || state.isRunAllActive || state.sourceExhausted;
+    runNextBtn.disabled = state.stageBusy || state.isRunAllActive || state.sourceExhausted || !state.recoveryReady;
     runNextBtn.addEventListener("click", () => runNextStep());
 
     const runNextBox = box("v-stack",
@@ -2071,8 +2075,16 @@
     actionsRow.append(runAllBox, runNextBox);
     controlsCard.append(actionsRow);
 
+    if (!state.recoveryReady && state.recoveryReason) {
+      controlsCard.append(notice("🔒 ปิดการรันชั่วคราว (Safe Retry Guard): " + state.recoveryReason, true));
+    }
+
     if (state.realError) {
       controlsCard.append(notice(state.realError, true));
+    } else if (state.latestFailedRun) {
+      controlsCard.append(notice("⚠ ผลประมวลผลล่าสุดใน Neon ล้มเหลว: Run ID " + state.latestFailedRun.run_id +
+        " · ขั้นตอน " + (state.latestFailedRun.failed_stage || "ingest") +
+        " · ข้อผิดพลาด: " + (state.latestFailedRun.error_message || state.latestFailedRun.error_code || "Unknown Error"), true));
     }
     if (state.stageBusy) {
       controlsCard.append(small("กำลังประมวลผล Vercel Serverless Function และบันทึก Checkpoint ลง Neon…"));

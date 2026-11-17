@@ -3,7 +3,7 @@ import { createHmac, randomUUID } from "node:crypto";
 import { S3Client, HeadObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { handleClassroomSourceUpload } from "../lib/classroom-source-upload.js";
 import { getNeonSql } from "../lib/neon-router.js";
-import { DELIVERIES, STAGES, executeVercelBatch } from "../lib/etl-engine.js";
+import { DELIVERIES, STAGES } from "../lib/etl-engine.js";
 
 export const config = { api: { bodyParser: false } };
 const RUN_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -173,6 +173,21 @@ export default async function handler(req, res) {
         url: executionUrl(req), execution_engine: "VERCEL_NATIVE"
       });
     }
+    const latestRun = runs[0];
+    const latestFailed = latestRun?.status === "FAILED" ? {
+      run_id: String(latestRun.run_id),
+      run_type: latestRun.run_type,
+      started_at: latestRun.started_at,
+      error_message: latestRun.error_message,
+      failed_stage: latestRun.result_summary?.failed_stage || null,
+      error_code: latestRun.result_summary?.error_code || latestRun.error_message || null,
+      batch: latestRun.result_summary?.batch || null
+    } : null;
+    const partialDataDetected = (phase === "EMPTY" && (orderRows[0]?.n ?? 0) > 0);
+    const recoveryReady = !active && !partialDataDetected;
+    const recoveryReason = active ? "มี Run กำลังทำงานอยู่" :
+      partialDataDetected ? `ตรวจพบข้อมูลค้างในฐานข้อมูล (${orderRows[0]?.n} รายการใน Fact_Orders) ต้องเคลียร์ข้อมูลก่อนเริ่ม Initial Load` : null;
+
     return res.status(200).json({
       ready: true, phase, cycle, orders: orderRows[0]?.n ?? 0,
       current_run_id: previousRunId === "0" ? null : previousRunId,
@@ -183,6 +198,10 @@ export default async function handler(req, res) {
       active_stage: active?.result_summary?.active_stage || null,
       active_started_at: active?.started_at || null,
       stale_recovered: staleRecovered,
+      latest_failed_run: latestFailed,
+      partial_data_detected: partialDataDetected,
+      recovery_ready: recoveryReady,
+      recovery_reason: recoveryReason,
       previous_run_id: previousRunId, next_source_batch: next,
       source_remaining: next ? DELIVERIES.length - DELIVERIES.indexOf(next) : 0,
       source_exhausted: !next, history: currentRuns.slice().reverse(),
@@ -250,28 +269,10 @@ export default async function handler(req, res) {
     .update(encoded).digest("hex");
   const ticket = encoded + "." + signature;
 
-  if (body.execute_direct && !process.env.VERCEL) {
-    try {
-      const execResult = await executeVercelBatch(requestedBatch, previous, {
-        stage: body.stage || null,
-        override: body.override || null
-      });
-      return res.status(execResult.status === "FAILED" ? 422 : 200).json({
-        accepted: true,
-        execution: "VERCEL_NATIVE",
-        ticket,
-        run_id: execResult.run_id,
-        batch: requestedBatch,
-        source_batch: requestedBatch,
-        source_month: monthFor(requestedBatch),
-        status: execResult.status,
-        stage: body.stage || null,
-        evidence: execResult.evidence || null,
-        result: execResult.summary || execResult.evidence || null
-      });
-    } catch (execError) {
-      return res.status(500).json({ error: execError?.message || "Execution error" });
-    }
+  if (body.execute_direct) {
+    return res.status(400).json({
+      error: "Direct in-memory execution is disabled. All pipeline runs must execute via Python pipeline."
+    });
   }
 
   return res.status(202).json({

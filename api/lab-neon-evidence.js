@@ -26,7 +26,7 @@ export default async function handler(req, res) {
       return res.status(404).json({error:"Table not found"});
     const quoted = '"' + schema + '"."' + table + '"';
     const [sample, count, columns] = await Promise.all([
-      sql.query("SELECT * FROM " + quoted + " LIMIT 5"),
+      sql.query("SELECT * FROM " + quoted + " LIMIT 10"),
       sql.query("SELECT COUNT(*)::int AS n FROM " + quoted),
       sql.query("SELECT column_name, data_type FROM information_schema.columns WHERE table_schema=$1 AND table_name=$2 ORDER BY ordinal_position",[schema,table])
     ]);

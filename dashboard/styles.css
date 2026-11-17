@@ -228,3 +228,21 @@ tr:hover td{background:#fff8f0}.metric-label,.metric-sub,.panel-description{colo
 .form-field-group{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
 .form-field-group label{font-size:12px;font-weight:700;color:#421d20}
 .form-field-group select,.form-field-group input{padding:9px 12px;border:1px solid #ebdbe0;border-radius:8px;font:inherit;font-size:13px}
+
+.timeline-step-list{display:flex;flex-direction:column;gap:12px;margin:14px 0}
+.timeline-step-item{display:flex;gap:14px;padding:12px 14px;background:#fdfcfc;border:1px solid #f0e6e8;border-radius:10px;align-items:flex-start}
+.timeline-step-icon{width:26px;height:26px;border-radius:50%;background:#e8f5e9;color:#2e7d32;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0}
+.timeline-step-body{display:flex;flex-direction:column;gap:3px;flex:1}
+.timeline-step-title{font-size:13px;font-weight:700;color:#332629}
+.timeline-step-desc{font-size:12px;color:#6d5b5e}
+.timeline-step-evidence{font-size:11px;color:#8a7477;font-family:monospace;background:#f5eff1;padding:2px 6px;border-radius:4px;display:inline-block;margin-top:3px}
+
+.badge-pass{background:#e8f5e9;color:#2e7d32;font-size:11px;font-weight:700;padding:2px 7px;border-radius:4px;display:inline-block}
+.badge-fail{background:#ffebee;color:#c62828;font-size:11px;font-weight:700;padding:2px 7px;border-radius:4px;display:inline-block}
+.badge-deferred{background:#fff8e1;color:#f57f17;font-size:11px;font-weight:700;padding:2px 7px;border-radius:4px;display:inline-block}
+.badge-live-neon{background:#e3f2fd;color:#1565c0;font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;display:inline-flex;align-items:center;gap:4px}
+
+.live-neon-pane{background:#fff;border:1px solid #bbdefb;border-radius:10px;padding:16px;margin-top:14px;box-shadow:0 2px 8px rgba(21,101,192,.08)}
+.csv-samples-card{background:#fff;border:1px solid #f0e2e6;border-radius:10px;padding:16px;margin-top:14px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.table-row-clickable{cursor:pointer;transition:background .15s}
+.table-row-clickable:hover{background:#faf3f5}

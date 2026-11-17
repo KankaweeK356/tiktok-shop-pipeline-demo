@@ -56,16 +56,19 @@ def _real_step_evidence(workspace: Path,batch: str,stage: str) -> dict:
             cursor=db.execute('SELECT * FROM "Fact_Orders" LIMIT 5')
             cols=[x[0] for x in cursor.description]
             table_previews={}
-            for table in _ordered_source_tables():
-                sample=db.execute('SELECT * FROM "'+table.name+'" LIMIT 5')
+            er1_table_names=[r[0] for r in db.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name"
+            ).fetchall()]
+            for name in er1_table_names:
+                sample=db.execute('SELECT * FROM "'+name+'" LIMIT 5')
                 names=[column[0] for column in sample.description]
-                table_previews[table.name]=[dict(zip(names,row)) for row in sample.fetchall()]
+                table_previews[name]=[dict(zip(names,row)) for row in sample.fetchall()]
             output={"table":"Fact_Orders","records":count,"origin":"NEW_NEON_INGEST",
                     "preview":[dict(zip(cols,row)) for row in cursor.fetchall()],
                     "table_previews":table_previews,
-                    "tables":[{"name":t.name,"rows":db.execute(
-                        'SELECT COUNT(*) FROM "'+t.name+'"').fetchone()[0]}
-                        for t in _ordered_source_tables()]}
+                    "tables":[{"name":name,"rows":db.execute(
+                        'SELECT COUNT(*) FROM "'+name+'"').fetchone()[0]}
+                        for name in er1_table_names]}
     elif stage=="extract":
         paths=sorted((workspace/"lake"/"raw"/batch).glob("*.parquet"))
         output={**parquet_result(workspace/"lake"/"raw"/batch/"Fact_Orders.parquet"),

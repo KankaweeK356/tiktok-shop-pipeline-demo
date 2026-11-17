@@ -1,0 +1,1060 @@
+{
+  "Bridge_Campaign_Product_Group.csv": {
+    "file_name": "Bridge_Campaign_Product_Group.csv",
+    "table_name": "Bridge_Campaign_Product_Group",
+    "row_count": 77,
+    "column_count": 7,
+    "headers": [
+      "Enrollment_ID",
+      "Campaign_ID",
+      "Product_Group_ID",
+      "Campaign_Selling_Price",
+      "Effective_From",
+      "Effective_To",
+      "Status"
+    ],
+    "sample_rows": [
+      {
+        "Enrollment_ID": "EN-CAM01-PG01",
+        "Campaign_ID": "CAM01",
+        "Product_Group_ID": "PG01",
+        "Campaign_Selling_Price": "175.0",
+        "Effective_From": "2026-10-05",
+        "Effective_To": "2026-10-10",
+        "Status": "Active"
+      },
+      {
+        "Enrollment_ID": "EN-CAM01-PG02",
+        "Campaign_ID": "CAM01",
+        "Product_Group_ID": "PG02",
+        "Campaign_Selling_Price": "199.0",
+        "Effective_From": "2026-10-05",
+        "Effective_To": "2026-10-10",
+        "Status": "Active"
+      },
+      {
+        "Enrollment_ID": "EN-CAM02-PG03",
+        "Campaign_ID": "CAM02",
+        "Product_Group_ID": "PG03",
+        "Campaign_Selling_Price": "245.0",
+        "Effective_From": "2026-10-20",
+        "Effective_To": "2026-10-25",
+        "Status": "Active"
+      },
+      {
+        "Enrollment_ID": "EN-CAM02-PG04",
+        "Campaign_ID": "CAM02",
+        "Product_Group_ID": "PG04",
+        "Campaign_Selling_Price": "165.0",
+        "Effective_From": "2026-10-20",
+        "Effective_To": "2026-10-25",
+        "Status": "Active"
+      },
+      {
+        "Enrollment_ID": "EN-CAM03-PG01",
+        "Campaign_ID": "CAM03",
+        "Product_Group_ID": "PG01",
+        "Campaign_Selling_Price": "185.0",
+        "Effective_From": "2026-10-28",
+        "Effective_To": "2026-11-05",
+        "Status": "Active"
+      }
+    ]
+  },
+  "Bridge_Voucher_Product_Group.csv": {
+    "file_name": "Bridge_Voucher_Product_Group.csv",
+    "table_name": "Bridge_Voucher_Product_Group",
+    "row_count": 8,
+    "column_count": 2,
+    "headers": [
+      "Voucher_ID",
+      "Product_Group_ID"
+    ],
+    "sample_rows": [
+      {
+        "Voucher_ID": "V10",
+        "Product_Group_ID": "PG01"
+      },
+      {
+        "Voucher_ID": "V10",
+        "Product_Group_ID": "PG02"
+      },
+      {
+        "Voucher_ID": "V10",
+        "Product_Group_ID": "PG03"
+      },
+      {
+        "Voucher_ID": "V10",
+        "Product_Group_ID": "PG04"
+      },
+      {
+        "Voucher_ID": "V10",
+        "Product_Group_ID": "PG05"
+      }
+    ]
+  },
+  "Dim_Ad_Campaign.csv": {
+    "file_name": "Dim_Ad_Campaign.csv",
+    "table_name": "Dim_Ad_Campaign",
+    "row_count": 3,
+    "column_count": 5,
+    "headers": [
+      "Ad_Campaign_ID",
+      "Ad_Campaign_Name",
+      "Ad_Type",
+      "Start_Date",
+      "End_Date"
+    ],
+    "sample_rows": [
+      {
+        "Ad_Campaign_ID": "AD1",
+        "Ad_Campaign_Name": "Advertising 1",
+        "Ad_Type": "Shop Ads",
+        "Start_Date": "2026-01-01",
+        "End_Date": "2026-11-30"
+      },
+      {
+        "Ad_Campaign_ID": "AD2",
+        "Ad_Campaign_Name": "Advertising 2",
+        "Ad_Type": "Shop Ads",
+        "Start_Date": "2026-01-01",
+        "End_Date": "2026-11-30"
+      },
+      {
+        "Ad_Campaign_ID": "AD3",
+        "Ad_Campaign_Name": "Advertising 3",
+        "Ad_Type": "Shop Ads",
+        "Start_Date": "2026-01-01",
+        "End_Date": "2026-11-30"
+      }
+    ]
+  },
+  "Dim_Campaign.csv": {
+    "file_name": "Dim_Campaign.csv",
+    "table_name": "Dim_Campaign",
+    "row_count": 21,
+    "column_count": 5,
+    "headers": [
+      "Campaign_ID",
+      "Campaign_Name",
+      "Campaign_Type",
+      "Start_Date",
+      "End_Date"
+    ],
+    "sample_rows": [
+      {
+        "Campaign_ID": "CAM01",
+        "Campaign_Name": "October Sale",
+        "Campaign_Type": "Flash Sale",
+        "Start_Date": "2026-10-05",
+        "End_Date": "2026-10-10"
+      },
+      {
+        "Campaign_ID": "CAM02",
+        "Campaign_Name": "Mid-October",
+        "Campaign_Type": "Promotion",
+        "Start_Date": "2026-10-20",
+        "End_Date": "2026-10-25"
+      },
+      {
+        "Campaign_ID": "CAM03",
+        "Campaign_Name": "November Bridge",
+        "Campaign_Type": "Promotion",
+        "Start_Date": "2026-10-28",
+        "End_Date": "2026-11-05"
+      },
+      {
+        "Campaign_ID": "HIST-202601-A",
+        "Campaign_Name": "Synthetic 2026-01 Wave A",
+        "Campaign_Type": "Promotion",
+        "Start_Date": "2026-01-05",
+        "End_Date": "2026-01-09"
+      },
+      {
+        "Campaign_ID": "HIST-202601-B",
+        "Campaign_Name": "Synthetic 2026-01 Wave B",
+        "Campaign_Type": "Flash Sale",
+        "Start_Date": "2026-01-18",
+        "End_Date": "2026-01-22"
+      }
+    ]
+  },
+  "Dim_Creator.csv": {
+    "file_name": "Dim_Creator.csv",
+    "table_name": "Dim_Creator",
+    "row_count": 8,
+    "column_count": 4,
+    "headers": [
+      "Creator_ID",
+      "Creator_Name",
+      "Creator_Type",
+      "Status"
+    ],
+    "sample_rows": [
+      {
+        "Creator_ID": "CR01",
+        "Creator_Name": "Synthetic Creator 01",
+        "Creator_Type": "Affiliate",
+        "Status": "Active"
+      },
+      {
+        "Creator_ID": "CR02",
+        "Creator_Name": "Synthetic Creator 02",
+        "Creator_Type": "Affiliate",
+        "Status": "Active"
+      },
+      {
+        "Creator_ID": "CR03",
+        "Creator_Name": "Synthetic Creator 03",
+        "Creator_Type": "Affiliate",
+        "Status": "Active"
+      },
+      {
+        "Creator_ID": "CR04",
+        "Creator_Name": "Synthetic Creator 04",
+        "Creator_Type": "Affiliate",
+        "Status": "Active"
+      },
+      {
+        "Creator_ID": "CR05",
+        "Creator_Name": "Synthetic Creator 05",
+        "Creator_Type": "Affiliate",
+        "Status": "Active"
+      }
+    ]
+  },
+  "Dim_Product_Group.csv": {
+    "file_name": "Dim_Product_Group.csv",
+    "table_name": "Dim_Product_Group",
+    "row_count": 5,
+    "column_count": 5,
+    "headers": [
+      "Product_Group_ID",
+      "Product_Group_Name",
+      "Base_Selling_Price",
+      "Cost_Standard_Product",
+      "Status"
+    ],
+    "sample_rows": [
+      {
+        "Product_Group_ID": "PG01",
+        "Product_Group_Name": "คอกลม",
+        "Base_Selling_Price": "199",
+        "Cost_Standard_Product": "79.6",
+        "Status": "Active"
+      },
+      {
+        "Product_Group_ID": "PG02",
+        "Product_Group_Name": "คอวี",
+        "Base_Selling_Price": "229",
+        "Cost_Standard_Product": "91.6",
+        "Status": "Active"
+      },
+      {
+        "Product_Group_ID": "PG03",
+        "Product_Group_Name": "คอเต่า",
+        "Base_Selling_Price": "279",
+        "Cost_Standard_Product": "111.6",
+        "Status": "Active"
+      },
+      {
+        "Product_Group_ID": "PG04",
+        "Product_Group_Name": "Crop",
+        "Base_Selling_Price": "189",
+        "Cost_Standard_Product": "75.6",
+        "Status": "Active"
+      },
+      {
+        "Product_Group_ID": "PG05",
+        "Product_Group_Name": "Oversize",
+        "Base_Selling_Price": "259",
+        "Cost_Standard_Product": "103.6",
+        "Status": "Active"
+      }
+    ]
+  },
+  "Dim_SKU.csv": {
+    "file_name": "Dim_SKU.csv",
+    "table_name": "Dim_SKU",
+    "row_count": 140,
+    "column_count": 6,
+    "headers": [
+      "SKU_ID",
+      "Product_Group_ID",
+      "SKU_Name",
+      "Color",
+      "Size",
+      "Status"
+    ],
+    "sample_rows": [
+      {
+        "SKU_ID": "PG01-BL-S",
+        "Product_Group_ID": "PG01",
+        "SKU_Name": "คอกลม Black S",
+        "Color": "Black",
+        "Size": "S",
+        "Status": "Active"
+      },
+      {
+        "SKU_ID": "PG01-BL-M",
+        "Product_Group_ID": "PG01",
+        "SKU_Name": "คอกลม Black M",
+        "Color": "Black",
+        "Size": "M",
+        "Status": "Active"
+      },
+      {
+        "SKU_ID": "PG01-BL-L",
+        "Product_Group_ID": "PG01",
+        "SKU_Name": "คอกลม Black L",
+        "Color": "Black",
+        "Size": "L",
+        "Status": "Active"
+      },
+      {
+        "SKU_ID": "PG01-BL-XL",
+        "Product_Group_ID": "PG01",
+        "SKU_Name": "คอกลม Black XL",
+        "Color": "Black",
+        "Size": "XL",
+        "Status": "Active"
+      },
+      {
+        "SKU_ID": "PG01-WH-S",
+        "Product_Group_ID": "PG01",
+        "SKU_Name": "คอกลม White S",
+        "Color": "White",
+        "Size": "S",
+        "Status": "Active"
+      }
+    ]
+  },
+  "Dim_Voucher.csv": {
+    "file_name": "Dim_Voucher.csv",
+    "table_name": "Dim_Voucher",
+    "row_count": 3,
+    "column_count": 8,
+    "headers": [
+      "Voucher_ID",
+      "Voucher_Name",
+      "Discount_Rate",
+      "Minimum_Spend_Amount",
+      "Maximum_Discount_Amount",
+      "Is_Active",
+      "Effective_From",
+      "Effective_To"
+    ],
+    "sample_rows": [
+      {
+        "Voucher_ID": "V10",
+        "Voucher_Name": "Seller 10 percent",
+        "Discount_Rate": "0.1",
+        "Minimum_Spend_Amount": "250",
+        "Maximum_Discount_Amount": "60",
+        "Is_Active": "True",
+        "Effective_From": "2026-10-01",
+        "Effective_To": "2026-11-30"
+      },
+      {
+        "Voucher_ID": "V15",
+        "Voucher_Name": "Selected 15 percent",
+        "Discount_Rate": "0.15",
+        "Minimum_Spend_Amount": "200",
+        "Maximum_Discount_Amount": "45",
+        "Is_Active": "True",
+        "Effective_From": "2026-10-01",
+        "Effective_To": "2026-11-30"
+      },
+      {
+        "Voucher_ID": "V05",
+        "Voucher_Name": "Low cap 5 percent",
+        "Discount_Rate": "0.05",
+        "Minimum_Spend_Amount": "0",
+        "Maximum_Discount_Amount": "20",
+        "Is_Active": "True",
+        "Effective_From": "2026-10-01",
+        "Effective_To": "2026-11-30"
+      }
+    ]
+  },
+  "Fact_Claim_Details.csv": {
+    "file_name": "Fact_Claim_Details.csv",
+    "table_name": "Fact_Claim_Details",
+    "row_count": 0,
+    "column_count": 12,
+    "headers": [
+      "Claim_Detail_ID",
+      "Claim_ID",
+      "Order_Item_ID",
+      "Claim_Qty",
+      "Replacement_Qty",
+      "Return_Qty",
+      "Disposal_Qty",
+      "Backend_Packing_Cost",
+      "Backend_Shipping_Cost",
+      "Replacement_Product_Cost",
+      "Disposal_Loss_Cost",
+      "Backend_Action_Date"
+    ],
+    "sample_rows": []
+  },
+  "Fact_Claim_Header.csv": {
+    "file_name": "Fact_Claim_Header.csv",
+    "table_name": "Fact_Claim_Header",
+    "row_count": 0,
+    "column_count": 4,
+    "headers": [
+      "Claim_ID",
+      "Claim_Date",
+      "Claim_Reason",
+      "Claim_Status"
+    ],
+    "sample_rows": []
+  },
+  "Fact_Free_Samples.csv": {
+    "file_name": "Fact_Free_Samples.csv",
+    "table_name": "Fact_Free_Samples",
+    "row_count": 0,
+    "column_count": 8,
+    "headers": [
+      "Sample_ID",
+      "SKU_ID",
+      "Creator_ID",
+      "Sample_Quantity",
+      "Request_Date",
+      "Dispatched_Date",
+      "Sample_Shipping_Cost",
+      "Sample_COGS"
+    ],
+    "sample_rows": []
+  },
+  "Fact_Goods_Receipt.csv": {
+    "file_name": "Fact_Goods_Receipt.csv",
+    "table_name": "Fact_Goods_Receipt",
+    "row_count": 2,
+    "column_count": 5,
+    "headers": [
+      "Goods_Receipt_ID",
+      "Receipt_Date",
+      "Supplier_ID",
+      "Reference_PO_ID",
+      "Source_System"
+    ],
+    "sample_rows": [
+      {
+        "Goods_Receipt_ID": "GR01",
+        "Receipt_Date": "2026-09-29 10:00:00",
+        "Supplier_ID": "SUP-MOCK",
+        "Reference_PO_ID": "PO-0001",
+        "Source_System": "MOCK"
+      },
+      {
+        "Goods_Receipt_ID": "GR-ML-HIST",
+        "Receipt_Date": "2025-12-28 10:00:00",
+        "Supplier_ID": "SUP-MOCK",
+        "Reference_PO_ID": "PO-ML-HIST-001",
+        "Source_System": "MOCK"
+      }
+    ]
+  },
+  "Fact_Goods_Receipt_Items.csv": {
+    "file_name": "Fact_Goods_Receipt_Items.csv",
+    "table_name": "Fact_Goods_Receipt_Items",
+    "row_count": 280,
+    "column_count": 8,
+    "headers": [
+      "Goods_Receipt_Item_ID",
+      "Goods_Receipt_ID",
+      "SKU_ID",
+      "Received_Qty",
+      "Unit_Cost",
+      "Total_Cost",
+      "Remaining_Qty",
+      "Lot_No"
+    ],
+    "sample_rows": [
+      {
+        "Goods_Receipt_Item_ID": "G-PG01-BL-S",
+        "Goods_Receipt_ID": "GR01",
+        "SKU_ID": "PG01-BL-S",
+        "Received_Qty": "1000",
+        "Unit_Cost": "79.6",
+        "Total_Cost": "79600.0",
+        "Remaining_Qty": "1000",
+        "Lot_No": "LOT-01"
+      },
+      {
+        "Goods_Receipt_Item_ID": "G-PG01-BL-M",
+        "Goods_Receipt_ID": "GR01",
+        "SKU_ID": "PG01-BL-M",
+        "Received_Qty": "1000",
+        "Unit_Cost": "79.6",
+        "Total_Cost": "79600.0",
+        "Remaining_Qty": "1000",
+        "Lot_No": "LOT-01"
+      },
+      {
+        "Goods_Receipt_Item_ID": "G-PG01-BL-L",
+        "Goods_Receipt_ID": "GR01",
+        "SKU_ID": "PG01-BL-L",
+        "Received_Qty": "1000",
+        "Unit_Cost": "79.6",
+        "Total_Cost": "79600.0",
+        "Remaining_Qty": "1000",
+        "Lot_No": "LOT-01"
+      },
+      {
+        "Goods_Receipt_Item_ID": "G-PG01-BL-XL",
+        "Goods_Receipt_ID": "GR01",
+        "SKU_ID": "PG01-BL-XL",
+        "Received_Qty": "1000",
+        "Unit_Cost": "79.6",
+        "Total_Cost": "79600.0",
+        "Remaining_Qty": "1000",
+        "Lot_No": "LOT-01"
+      },
+      {
+        "Goods_Receipt_Item_ID": "G-PG01-WH-S",
+        "Goods_Receipt_ID": "GR01",
+        "SKU_ID": "PG01-WH-S",
+        "Received_Qty": "1000",
+        "Unit_Cost": "79.6",
+        "Total_Cost": "79600.0",
+        "Remaining_Qty": "1000",
+        "Lot_No": "LOT-01"
+      }
+    ]
+  },
+  "Fact_Internal_Fulfillment.csv": {
+    "file_name": "Fact_Internal_Fulfillment.csv",
+    "table_name": "Fact_Internal_Fulfillment",
+    "row_count": 274,
+    "column_count": 6,
+    "headers": [
+      "Fulfillment_ID",
+      "Order_ID",
+      "Secondary_Packaging_Cost",
+      "Packing_Labor_Cost",
+      "Actual_Shipping_Cost",
+      "Fulfillment_Timestamp"
+    ],
+    "sample_rows": [
+      {
+        "Fulfillment_ID": "FUL-H20260101-PG01-001",
+        "Order_ID": "H20260101-PG01-001",
+        "Secondary_Packaging_Cost": "2",
+        "Packing_Labor_Cost": "6",
+        "Actual_Shipping_Cost": "6",
+        "Fulfillment_Timestamp": "2026-01-01 20:06:00"
+      },
+      {
+        "Fulfillment_ID": "FUL-H20260101-PG02-001",
+        "Order_ID": "H20260101-PG02-001",
+        "Secondary_Packaging_Cost": "4",
+        "Packing_Labor_Cost": "6",
+        "Actual_Shipping_Cost": "4",
+        "Fulfillment_Timestamp": "2026-01-01 13:22:00"
+      },
+      {
+        "Fulfillment_ID": "FUL-H20260101-PG02-002",
+        "Order_ID": "H20260101-PG02-002",
+        "Secondary_Packaging_Cost": "3",
+        "Packing_Labor_Cost": "5",
+        "Actual_Shipping_Cost": "6",
+        "Fulfillment_Timestamp": "2026-01-01 13:15:00"
+      },
+      {
+        "Fulfillment_ID": "FUL-H20260101-PG03-001",
+        "Order_ID": "H20260101-PG03-001",
+        "Secondary_Packaging_Cost": "2",
+        "Packing_Labor_Cost": "4",
+        "Actual_Shipping_Cost": "0",
+        "Fulfillment_Timestamp": "2026-01-01 20:29:00"
+      },
+      {
+        "Fulfillment_ID": "FUL-H20260101-PG05-001",
+        "Order_ID": "H20260101-PG05-001",
+        "Secondary_Packaging_Cost": "4",
+        "Packing_Labor_Cost": "5",
+        "Actual_Shipping_Cost": "0",
+        "Fulfillment_Timestamp": "2026-01-01 16:58:00"
+      }
+    ]
+  },
+  "Fact_Marketing_Costs.csv": {
+    "file_name": "Fact_Marketing_Costs.csv",
+    "table_name": "Fact_Marketing_Costs",
+    "row_count": 155,
+    "column_count": 11,
+    "headers": [
+      "Ad_Record_ID",
+      "Record_Date",
+      "Ad_Campaign_ID",
+      "Product_Group_ID",
+      "Ad_Spend_Amount",
+      "Impressions",
+      "Clicks",
+      "Conversions",
+      "Reported_Ads_GMV",
+      "Reported_Ads_Orders",
+      "Reported_Revenue_Basis"
+    ],
+    "sample_rows": [
+      {
+        "Ad_Record_ID": "AD-HIST-20260101-PG01",
+        "Record_Date": "2026-01-01",
+        "Ad_Campaign_ID": "AD2",
+        "Product_Group_ID": "PG01",
+        "Ad_Spend_Amount": "0.0",
+        "Impressions": "213",
+        "Clicks": "2",
+        "Conversions": "1",
+        "Reported_Ads_GMV": "",
+        "Reported_Ads_Orders": "",
+        "Reported_Revenue_Basis": ""
+      },
+      {
+        "Ad_Record_ID": "AD-HIST-20260101-PG02",
+        "Record_Date": "2026-01-01",
+        "Ad_Campaign_ID": "AD3",
+        "Product_Group_ID": "PG02",
+        "Ad_Spend_Amount": "7.56",
+        "Impressions": "546",
+        "Clicks": "9",
+        "Conversions": "4",
+        "Reported_Ads_GMV": "",
+        "Reported_Ads_Orders": "",
+        "Reported_Revenue_Basis": ""
+      },
+      {
+        "Ad_Record_ID": "AD-HIST-20260101-PG03",
+        "Record_Date": "2026-01-01",
+        "Ad_Campaign_ID": "AD1",
+        "Product_Group_ID": "PG03",
+        "Ad_Spend_Amount": "50.0",
+        "Impressions": "1864",
+        "Clicks": "52",
+        "Conversions": "6",
+        "Reported_Ads_GMV": "",
+        "Reported_Ads_Orders": "",
+        "Reported_Revenue_Basis": ""
+      },
+      {
+        "Ad_Record_ID": "AD-HIST-20260101-PG04",
+        "Record_Date": "2026-01-01",
+        "Ad_Campaign_ID": "AD2",
+        "Product_Group_ID": "PG04",
+        "Ad_Spend_Amount": "42.62",
+        "Impressions": "1570",
+        "Clicks": "42",
+        "Conversions": "4",
+        "Reported_Ads_GMV": "",
+        "Reported_Ads_Orders": "",
+        "Reported_Revenue_Basis": ""
+      },
+      {
+        "Ad_Record_ID": "AD-HIST-20260101-PG05",
+        "Record_Date": "2026-01-01",
+        "Ad_Campaign_ID": "AD3",
+        "Product_Group_ID": "PG05",
+        "Ad_Spend_Amount": "8.1",
+        "Impressions": "356",
+        "Clicks": "8",
+        "Conversions": "0",
+        "Reported_Ads_GMV": "",
+        "Reported_Ads_Orders": "",
+        "Reported_Revenue_Basis": ""
+      }
+    ]
+  },
+  "Fact_Order_Items.csv": {
+    "file_name": "Fact_Order_Items.csv",
+    "table_name": "Fact_Order_Items",
+    "row_count": 320,
+    "column_count": 15,
+    "headers": [
+      "Order_Item_ID",
+      "Source_Order_Item_ID",
+      "Order_ID",
+      "SKU_ID",
+      "Quantity",
+      "Creator_ID",
+      "Campaign_ID",
+      "Base_Unit_Price_At_Sale",
+      "Unit_Selling_Price",
+      "Campaign_Discount_Amount",
+      "Voucher_Allocated_Amount",
+      "Total_Selling_Amount",
+      "Total_COGS",
+      "Fee_Affiliate_Payout",
+      "Created_At"
+    ],
+    "sample_rows": [
+      {
+        "Order_Item_ID": "H20260101-PG01-001-I1",
+        "Source_Order_Item_ID": "H20260101-PG01-001-I1",
+        "Order_ID": "H20260101-PG01-001",
+        "SKU_ID": "PG01-WH-XL",
+        "Quantity": "2",
+        "Creator_ID": "",
+        "Campaign_ID": "",
+        "Base_Unit_Price_At_Sale": "",
+        "Unit_Selling_Price": "",
+        "Campaign_Discount_Amount": "",
+        "Voucher_Allocated_Amount": "0",
+        "Total_Selling_Amount": "",
+        "Total_COGS": "",
+        "Fee_Affiliate_Payout": "",
+        "Created_At": "2026-01-01 18:37:00"
+      },
+      {
+        "Order_Item_ID": "H20260101-PG02-001-I1",
+        "Source_Order_Item_ID": "H20260101-PG02-001-I1",
+        "Order_ID": "H20260101-PG02-001",
+        "SKU_ID": "PG02-GR-XL",
+        "Quantity": "1",
+        "Creator_ID": "",
+        "Campaign_ID": "",
+        "Base_Unit_Price_At_Sale": "",
+        "Unit_Selling_Price": "",
+        "Campaign_Discount_Amount": "",
+        "Voucher_Allocated_Amount": "0",
+        "Total_Selling_Amount": "",
+        "Total_COGS": "",
+        "Fee_Affiliate_Payout": "",
+        "Created_At": "2026-01-01 11:31:00"
+      },
+      {
+        "Order_Item_ID": "H20260101-PG02-002-I1",
+        "Source_Order_Item_ID": "H20260101-PG02-002-I1",
+        "Order_ID": "H20260101-PG02-002",
+        "SKU_ID": "PG02-GR-L",
+        "Quantity": "1",
+        "Creator_ID": "",
+        "Campaign_ID": "",
+        "Base_Unit_Price_At_Sale": "",
+        "Unit_Selling_Price": "",
+        "Campaign_Discount_Amount": "",
+        "Voucher_Allocated_Amount": "0",
+        "Total_Selling_Amount": "",
+        "Total_COGS": "",
+        "Fee_Affiliate_Payout": "",
+        "Created_At": "2026-01-01 11:19:00"
+      },
+      {
+        "Order_Item_ID": "H20260101-PG03-001-I1",
+        "Source_Order_Item_ID": "H20260101-PG03-001-I1",
+        "Order_ID": "H20260101-PG03-001",
+        "SKU_ID": "PG03-GR-XL",
+        "Quantity": "2",
+        "Creator_ID": "CR04",
+        "Campaign_ID": "",
+        "Base_Unit_Price_At_Sale": "",
+        "Unit_Selling_Price": "",
+        "Campaign_Discount_Amount": "",
+        "Voucher_Allocated_Amount": "0",
+        "Total_Selling_Amount": "",
+        "Total_COGS": "",
+        "Fee_Affiliate_Payout": "",
+        "Created_At": "2026-01-01 19:09:00"
+      },
+      {
+        "Order_Item_ID": "H20260101-PG05-001-I1",
+        "Source_Order_Item_ID": "H20260101-PG05-001-I1",
+        "Order_ID": "H20260101-PG05-001",
+        "SKU_ID": "PG05-BR-XL",
+        "Quantity": "1",
+        "Creator_ID": "",
+        "Campaign_ID": "",
+        "Base_Unit_Price_At_Sale": "",
+        "Unit_Selling_Price": "",
+        "Campaign_Discount_Amount": "",
+        "Voucher_Allocated_Amount": "0",
+        "Total_Selling_Amount": "",
+        "Total_COGS": "",
+        "Fee_Affiliate_Payout": "",
+        "Created_At": "2026-01-01 15:39:00"
+      }
+    ]
+  },
+  "Fact_Orders.csv": {
+    "file_name": "Fact_Orders.csv",
+    "table_name": "Fact_Orders",
+    "row_count": 274,
+    "column_count": 12,
+    "headers": [
+      "Order_ID",
+      "Order_Created_At",
+      "Current_Status",
+      "Voucher_ID",
+      "GMV_Total",
+      "Voucher_Seller_Cost",
+      "Shipping_Fee_Collected",
+      "Shipping_Mode",
+      "Paid_At",
+      "Shipped_At",
+      "Delivered_At",
+      "Cancelled_At"
+    ],
+    "sample_rows": [
+      {
+        "Order_ID": "H20260101-PG01-001",
+        "Order_Created_At": "2026-01-01 18:37:00",
+        "Current_Status": "Paid",
+        "Voucher_ID": "",
+        "GMV_Total": "",
+        "Voucher_Seller_Cost": "",
+        "Shipping_Fee_Collected": "0",
+        "Shipping_Mode": "TikTok_Platform",
+        "Paid_At": "2026-01-01 19:06:00",
+        "Shipped_At": "",
+        "Delivered_At": "",
+        "Cancelled_At": ""
+      },
+      {
+        "Order_ID": "H20260101-PG02-001",
+        "Order_Created_At": "2026-01-01 11:31:00",
+        "Current_Status": "Shipped",
+        "Voucher_ID": "",
+        "GMV_Total": "",
+        "Voucher_Seller_Cost": "",
+        "Shipping_Fee_Collected": "0",
+        "Shipping_Mode": "TikTok_Platform",
+        "Paid_At": "2026-01-01 12:22:00",
+        "Shipped_At": "2026-01-01 15:22:00",
+        "Delivered_At": "",
+        "Cancelled_At": ""
+      },
+      {
+        "Order_ID": "H20260101-PG02-002",
+        "Order_Created_At": "2026-01-01 11:19:00",
+        "Current_Status": "Shipped",
+        "Voucher_ID": "",
+        "GMV_Total": "",
+        "Voucher_Seller_Cost": "",
+        "Shipping_Fee_Collected": "0",
+        "Shipping_Mode": "TikTok_Platform",
+        "Paid_At": "2026-01-01 12:15:00",
+        "Shipped_At": "2026-01-01 15:15:00",
+        "Delivered_At": "",
+        "Cancelled_At": ""
+      },
+      {
+        "Order_ID": "H20260101-PG03-001",
+        "Order_Created_At": "2026-01-01 19:09:00",
+        "Current_Status": "Shipped",
+        "Voucher_ID": "",
+        "GMV_Total": "",
+        "Voucher_Seller_Cost": "",
+        "Shipping_Fee_Collected": "0",
+        "Shipping_Mode": "TikTok_Platform",
+        "Paid_At": "2026-01-01 19:29:00",
+        "Shipped_At": "2026-01-01 22:29:00",
+        "Delivered_At": "",
+        "Cancelled_At": ""
+      },
+      {
+        "Order_ID": "H20260101-PG05-001",
+        "Order_Created_At": "2026-01-01 15:39:00",
+        "Current_Status": "Shipped",
+        "Voucher_ID": "",
+        "GMV_Total": "",
+        "Voucher_Seller_Cost": "",
+        "Shipping_Fee_Collected": "0",
+        "Shipping_Mode": "TikTok_Platform",
+        "Paid_At": "2026-01-01 15:58:00",
+        "Shipped_At": "2026-01-01 18:58:00",
+        "Delivered_At": "",
+        "Cancelled_At": ""
+      }
+    ]
+  },
+  "Ref_Affiliate_Commission_Rule.csv": {
+    "file_name": "Ref_Affiliate_Commission_Rule.csv",
+    "table_name": "Ref_Affiliate_Commission_Rule",
+    "row_count": 5,
+    "column_count": 6,
+    "headers": [
+      "Affiliate_Rule_ID",
+      "Product_Group_ID",
+      "Affiliate_Commission_Rate",
+      "Effective_From",
+      "Effective_To",
+      "Is_Active"
+    ],
+    "sample_rows": [
+      {
+        "Affiliate_Rule_ID": "AFF-PG01",
+        "Product_Group_ID": "PG01",
+        "Affiliate_Commission_Rate": "0.06",
+        "Effective_From": "2026-01-01",
+        "Effective_To": "",
+        "Is_Active": "True"
+      },
+      {
+        "Affiliate_Rule_ID": "AFF-PG02",
+        "Product_Group_ID": "PG02",
+        "Affiliate_Commission_Rate": "0.08",
+        "Effective_From": "2026-01-01",
+        "Effective_To": "",
+        "Is_Active": "True"
+      },
+      {
+        "Affiliate_Rule_ID": "AFF-PG03",
+        "Product_Group_ID": "PG03",
+        "Affiliate_Commission_Rate": "0.1",
+        "Effective_From": "2026-01-01",
+        "Effective_To": "",
+        "Is_Active": "True"
+      },
+      {
+        "Affiliate_Rule_ID": "AFF-PG04",
+        "Product_Group_ID": "PG04",
+        "Affiliate_Commission_Rate": "0.12",
+        "Effective_From": "2026-01-01",
+        "Effective_To": "",
+        "Is_Active": "True"
+      },
+      {
+        "Affiliate_Rule_ID": "AFF-PG05",
+        "Product_Group_ID": "PG05",
+        "Affiliate_Commission_Rate": "0.09",
+        "Effective_From": "2026-01-01",
+        "Effective_To": "",
+        "Is_Active": "True"
+      }
+    ]
+  },
+  "Ref_Business_Target.csv": {
+    "file_name": "Ref_Business_Target.csv",
+    "table_name": "Ref_Business_Target",
+    "row_count": 1,
+    "column_count": 3,
+    "headers": [
+      "Target_Year_Month",
+      "Revenue_Target",
+      "Minimum_Profit_Protection_Rate"
+    ],
+    "sample_rows": [
+      {
+        "Target_Year_Month": "2026-01",
+        "Revenue_Target": "50000",
+        "Minimum_Profit_Protection_Rate": "0.1"
+      }
+    ]
+  },
+  "Ref_Cost_Policy.csv": {
+    "file_name": "Ref_Cost_Policy.csv",
+    "table_name": "Ref_Cost_Policy",
+    "row_count": 1,
+    "column_count": 8,
+    "headers": [
+      "Cost_Policy_ID",
+      "Fixed_Fulfillment_Cost_Per_Order",
+      "Claim_Risk_Allowance_Rate",
+      "Planning_Base_Cost_Rate",
+      "Planning_Adjustable_Gap_Rate",
+      "Effective_From",
+      "Effective_To",
+      "Is_Active"
+    ],
+    "sample_rows": [
+      {
+        "Cost_Policy_ID": "PLAN-2026",
+        "Fixed_Fulfillment_Cost_Per_Order": "12",
+        "Claim_Risk_Allowance_Rate": "0.02",
+        "Planning_Base_Cost_Rate": "0.6",
+        "Planning_Adjustable_Gap_Rate": "0.3",
+        "Effective_From": "2026-01-01",
+        "Effective_To": "",
+        "Is_Active": "True"
+      }
+    ]
+  },
+  "Ref_Platform_Fee_Estimate_Rule.csv": {
+    "file_name": "Ref_Platform_Fee_Estimate_Rule.csv",
+    "table_name": "Ref_Platform_Fee_Estimate_Rule",
+    "row_count": 5,
+    "column_count": 11,
+    "headers": [
+      "Platform_Fee_Rule_ID",
+      "Product_Group_ID",
+      "Total_Platform_Fee_Rate",
+      "Fee_Calculation_Mode",
+      "Platform_Commission_Rate",
+      "Transaction_Fee_Rate",
+      "Commerce_Growth_Fee_Rate",
+      "Infrastructure_Fee_Per_Order",
+      "Effective_From",
+      "Effective_To",
+      "Is_Mock_Assumption"
+    ],
+    "sample_rows": [
+      {
+        "Platform_Fee_Rule_ID": "FEE-PG01",
+        "Product_Group_ID": "PG01",
+        "Total_Platform_Fee_Rate": "0.1",
+        "Fee_Calculation_Mode": "FIXED_TOTAL_RATE",
+        "Platform_Commission_Rate": "",
+        "Transaction_Fee_Rate": "",
+        "Commerce_Growth_Fee_Rate": "",
+        "Infrastructure_Fee_Per_Order": "",
+        "Effective_From": "2026-01-01",
+        "Effective_To": "",
+        "Is_Mock_Assumption": "True"
+      },
+      {
+        "Platform_Fee_Rule_ID": "FEE-PG02",
+        "Product_Group_ID": "PG02",
+        "Total_Platform_Fee_Rate": "0.1",
+        "Fee_Calculation_Mode": "FIXED_TOTAL_RATE",
+        "Platform_Commission_Rate": "",
+        "Transaction_Fee_Rate": "",
+        "Commerce_Growth_Fee_Rate": "",
+        "Infrastructure_Fee_Per_Order": "",
+        "Effective_From": "2026-01-01",
+        "Effective_To": "",
+        "Is_Mock_Assumption": "True"
+      },
+      {
+        "Platform_Fee_Rule_ID": "FEE-PG03",
+        "Product_Group_ID": "PG03",
+        "Total_Platform_Fee_Rate": "0.1",
+        "Fee_Calculation_Mode": "FIXED_TOTAL_RATE",
+        "Platform_Commission_Rate": "",
+        "Transaction_Fee_Rate": "",
+        "Commerce_Growth_Fee_Rate": "",
+        "Infrastructure_Fee_Per_Order": "",
+        "Effective_From": "2026-01-01",
+        "Effective_To": "",
+        "Is_Mock_Assumption": "True"
+      },
+      {
+        "Platform_Fee_Rule_ID": "FEE-PG04",
+        "Product_Group_ID": "PG04",
+        "Total_Platform_Fee_Rate": "0.1",
+        "Fee_Calculation_Mode": "FIXED_TOTAL_RATE",
+        "Platform_Commission_Rate": "",
+        "Transaction_Fee_Rate": "",
+        "Commerce_Growth_Fee_Rate": "",
+        "Infrastructure_Fee_Per_Order": "",
+        "Effective_From": "2026-01-01",
+        "Effective_To": "",
+        "Is_Mock_Assumption": "True"
+      },
+      {
+        "Platform_Fee_Rule_ID": "FEE-PG05",
+        "Product_Group_ID": "PG05",
+        "Total_Platform_Fee_Rate": "0.1",
+        "Fee_Calculation_Mode": "FIXED_TOTAL_RATE",
+        "Platform_Commission_Rate": "",
+        "Transaction_Fee_Rate": "",
+        "Commerce_Growth_Fee_Rate": "",
+        "Infrastructure_Fee_Per_Order": "",
+        "Effective_From": "2026-01-01",
+        "Effective_To": "",
+        "Is_Mock_Assumption": "True"
+      }
+    ]
+  }
+}

@@ -65,11 +65,26 @@ export default async function handler(req, res) {
     if (run.status !== "SUCCEEDED" && !stage) return res.status(409).json({ error: "Run นี้ยังทำงานไม่เสร็จ" });
     if (stage && run.status !== "SUCCEEDED") {
       const completed = await sql.query(
-        "SELECT status FROM demo_control.stage_runs WHERE run_id::text=$1 AND stage_name=$2", [id, stage]);
+        "SELECT status, metrics FROM demo_control.stage_runs WHERE run_id::text=$1 AND stage_name=$2", [id, stage]);
       if (completed[0]?.status !== "SUCCESS") return res.status(409).json({ error: "ขั้นนี้ยังทำงานไม่เสร็จ" });
+      if (completed[0]?.metrics) return res.status(200).json({ run_id: id, stage, evidence: completed[0].metrics });
     }
-    const key = `vercel-lab/results/${id}/${stage ? `${stage}.json` : "batch.json"}`;
-    const evidence = JSON.parse(Buffer.from(await readObject(key)).toString("utf8"));
+    let evidence = null;
+    try {
+      const key = `vercel-lab/results/${id}/${stage ? `${stage}.json` : "batch.json"}`;
+      evidence = JSON.parse(Buffer.from(await readObject(key)).toString("utf8"));
+    } catch (_s3Err) {
+      if (stage) {
+        const stageRow = await sql.query(
+          "SELECT metrics FROM demo_control.stage_runs WHERE run_id::text=$1 AND stage_name=$2", [id, stage]);
+        if (stageRow[0]?.metrics) evidence = stageRow[0].metrics;
+      } else if (run.result_summary) {
+        evidence = run.result_summary;
+      }
+    }
+    if (!evidence) {
+      return res.status(404).json({ error: "ไม่พบหลักฐานที่บันทึกไว้สำหรับ Run นี้" });
+    }
     return res.status(200).json(stage ? { run_id: id, stage, evidence } : {
       run_id: id, result: evidence, execution: "VERCEL_NATIVE"
     });

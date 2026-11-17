@@ -3,7 +3,7 @@ import { createHmac, randomUUID } from "node:crypto";
 import { S3Client, HeadObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { handleClassroomSourceUpload } from "../lib/classroom-source-upload.js";
 import { getNeonSql } from "../lib/neon-router.js";
-import { DELIVERIES, STAGES } from "../lib/etl-engine.js";
+import { DELIVERIES, STAGES, executeVercelBatch } from "../lib/etl-engine.js";
 
 export const config = { api: { bodyParser: false } };
 const RUN_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -202,6 +202,29 @@ export default async function handler(req, res) {
         return res.status(409).json({ error: "ไฟล์ Source ต้องเป็นเดือน " + monthFor(requestedBatch) });
     } catch (_error) {
       return res.status(404).json({ error: "ไม่พบไฟล์ Source ที่อัปโหลด หรือไฟล์หมดอายุแล้ว" });
+    }
+  }
+
+  if (body.stage || body.execute_direct || body.override) {
+    try {
+      const execResult = await executeVercelBatch(requestedBatch, previous, {
+        stage: body.stage || null,
+        override: body.override || null
+      });
+      return res.status(execResult.status === "FAILED" ? 422 : 200).json({
+        accepted: true,
+        execution: "VERCEL_NATIVE",
+        run_id: execResult.run_id,
+        batch: requestedBatch,
+        source_batch: requestedBatch,
+        source_month: monthFor(requestedBatch),
+        status: execResult.status,
+        stage: body.stage || null,
+        evidence: execResult.evidence || null,
+        result: execResult.summary || execResult.evidence || null
+      });
+    } catch (execError) {
+      return res.status(500).json({ error: execError?.message || "Execution error" });
     }
   }
 

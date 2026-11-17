@@ -9,6 +9,17 @@
   state.selectedResultTable = "";
   state.recentRuns = []; state.historyRun = null; state.historyBusy = false;
   state.sharedRun = { running: false, type: null, stage: null };
+  state.viewedBatch = "initial";
+  state.isRunAllActive = false;
+  state.marchBlocked = false;
+  state.marchFailureDetails = null;
+  state.showReviewFixModal = false;
+  state.selectedCorrectionSku = "";
+  state.correctionReason = "ยืนยันจากใบกำกับคำสั่งซื้อต้นฉบับ #ORD-202603-00001 เป็นเสื้อยืดคอกลม สีดำ ไซส์ L";
+  state.correctionActor = "Data Owner";
+  state.marchOverride = null;
+  state.stageActiveSubtab = {};
+  state.stageBusy = false;
   state.errorRun = {
     status: "", since: "", url: "", runId: null, phase: "", previous: "0",
     failEvidence: null, fixEvidence: null, error: "", neonRows: null
@@ -1351,6 +1362,149 @@
     state.rows = completed?.output?.preview || [];
   }
 
+  const MONTH_BATCHES = [
+    { batch: "initial", month: "2026-01", label: "ม.ค. 2569", type: "INITIAL" },
+    { batch: "incremental_01", month: "2026-02", label: "ก.พ. 2569", type: "INCREMENTAL" },
+    { batch: "incremental_02", month: "2026-03", label: "มี.ค. 2569", type: "INCREMENTAL" },
+    { batch: "incremental_03", month: "2026-04", label: "เม.ย. 2569", type: "INCREMENTAL" },
+    { batch: "incremental_04", month: "2026-05", label: "พ.ค. 2569", type: "INCREMENTAL" },
+    { batch: "incremental_05", month: "2026-06", label: "มิ.ย. 2569", type: "INCREMENTAL" },
+    { batch: "incremental_06", month: "2026-07", label: "ก.ค. 2569", type: "INCREMENTAL" },
+    { batch: "incremental_07", month: "2026-08", label: "ส.ค. 2569", type: "INCREMENTAL" },
+    { batch: "incremental_08", month: "2026-09", label: "ก.ย. 2569", type: "INCREMENTAL" },
+    { batch: "incremental_09", month: "2026-10", label: "ต.ค. 2569", type: "INCREMENTAL" }
+  ];
+
+  const DIM_SKU_OPTIONS = [];
+  const PG_TITLES = {
+    PG01: "เสื้อยืดคอกลม Cotton 100% (199 THB)",
+    PG02: "เสื้อยืดคอวี Cotton 100% (229 THB)",
+    PG03: "เสื้อยืดคอเต่า Cotton 100% (279 THB)",
+    PG04: "เสื้อ Crop พรีเมียม (189 THB)",
+    PG05: "เสื้อยืด Oversize พรีเมียม (259 THB)"
+  };
+  const COLOR_LABELS = {
+    BL: "สีดำ (Black)", WH: "สีขาว (White)", NA: "สีกรม (Navy)",
+    GR: "สีเทา (Grey)", RE: "สีแดง (Red)", PI: "สีชมพู (Pink)", BE: "สีเบจ (Beige)"
+  };
+  ["PG01", "PG02", "PG03", "PG04", "PG05"].forEach(pg => {
+    Object.keys(COLOR_LABELS).forEach(c => {
+      ["S", "M", "L", "XL"].forEach(sz => {
+        const skuId = `${pg}-${c}-${sz}`;
+        DIM_SKU_OPTIONS.push([skuId, `${skuId} · ${PG_TITLES[pg]} · ${COLOR_LABELS[c]} ไซส์ ${sz}`]);
+      });
+    });
+  });
+
+  async function runNextStep(options = {}) {
+    if (state.stageBusy) return;
+    const currentBatch = state.nextSourceBatch || "initial";
+    if (state.sourceExhausted) return;
+
+    state.stageBusy = true;
+    state.realError = "";
+    renderPipeline();
+
+    // Determine target stage
+    const completedStages = state.batchResults[currentBatch] ? Object.keys(state.batchResults[currentBatch]) : [];
+    const stageIds = NOTEBOOK_STAGES.map(s => s[0]);
+    let targetStage = stageIds.find(s => !completedStages.includes(s)) || "ingest";
+    if (options.stage) targetStage = options.stage;
+
+    const previous = currentBatch === "initial" ? "0" : String(state.currentRunId || "");
+    const override = options.override || state.marchOverride || null;
+
+    try {
+      const response = await fetch("/api/lab-batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          batch: currentBatch,
+          stage: targetStage,
+          previous_run_id: previous,
+          execute_direct: true,
+          override
+        })
+      });
+      const data = await response.json();
+      if (!response.ok || data.status === "FAILED") {
+        state.stageBusy = false;
+        if (currentBatch === "incremental_02" && (data.evidence?.error_code === "QUALITY_CHECK_FAILED" || targetStage === "transform")) {
+          state.marchBlocked = true;
+          state.marchFailureDetails = data.evidence?.failure_details || {
+            batch: "incremental_02",
+            month: "2026-03",
+            source_file: "Fact_Order_Items.csv",
+            row_id: "ORD-202603-00001-I1",
+            order_id: "ORD-202603-00001",
+            field: "SKU_ID",
+            invalid_value: "SKU_ERR_UNKNOWN_DEMO",
+            validation_rule: "Referential Integrity: Fact_Order_Items.SKU_ID must exist in Dim_SKU",
+            impact: "หยุดการประมวลผลขั้นถัดไป ข้อมูลกักไว้ใน lake/governance/quarantine/ โดยที่เดือน ม.ค. และ ก.พ. ใน Warehouse ยังคงปลอดภัยและถูกต้อง 100%"
+          };
+          state.isRunAllActive = false;
+        } else {
+          state.realError = data.error || data.evidence?.error_message || "การประมวลผลหยุดลง";
+          state.isRunAllActive = false;
+        }
+        renderPipeline();
+        return { success: false, data };
+      }
+
+      // Success
+      if (!state.batchResults[currentBatch]) state.batchResults[currentBatch] = {};
+      state.batchResults[currentBatch][targetStage] = {
+        evidence: data.evidence || data.result,
+        url: ""
+      };
+      state.notebookStage = targetStage;
+      state.viewedBatch = currentBatch;
+      state.stageBusy = false;
+
+      // Reload capabilities to get updated Neon state
+      await loadRealCapabilities();
+      renderPipeline();
+      return { success: true, stage: targetStage, batch: currentBatch };
+    } catch (err) {
+      state.stageBusy = false;
+      state.isRunAllActive = false;
+      state.realError = err?.message || "เกิดข้อผิดพลาดในการเชื่อมต่อ";
+      renderPipeline();
+      return { success: false, error: err };
+    }
+  }
+
+  async function runAllLoop() {
+    if (!state.isRunAllActive) return;
+    if (state.sourceExhausted) {
+      state.isRunAllActive = false;
+      renderPipeline();
+      return;
+    }
+    const stepResult = await runNextStep();
+    if (!stepResult || !stepResult.success) {
+      state.isRunAllActive = false;
+      renderPipeline();
+      return;
+    }
+    if (state.isRunAllActive && !state.sourceExhausted) {
+      setTimeout(() => runAllLoop(), 400);
+    } else {
+      state.isRunAllActive = false;
+      renderPipeline();
+    }
+  }
+
+  function toggleRunAll() {
+    if (state.isRunAllActive) {
+      state.isRunAllActive = false;
+      renderPipeline();
+    } else {
+      state.isRunAllActive = true;
+      runAllLoop();
+    }
+  }
+
   const NOTEBOOK_STAGES = [
     ["ingest", "Source → Database", "นำข้อมูลจำลองเข้าฐานข้อมูลต้นทาง และ sync 25 ตารางไป Neon"],
     ["extract", "Database → Data Lake", "บันทึก Landing และ Raw Parquet จากข้อมูลในฐานข้อมูล"],
@@ -1669,8 +1823,7 @@
   function renderPipeline() {
     const root = $("#app"); root.replaceChildren();
     const tabs = box("notebook-tabs");
-    [["flow", "ขั้นตอนการรัน"], ["neon", "Neon · ฐานข้อมูลต้นทาง"], ["files", "Snapshot เก่า · Data Lake / Warehouse"],
-    ["errors", "ทดสอบข้อผิดพลาด"]].forEach(([id, label]) => {
+    [["flow", "Data Pipeline Runner"], ["neon", "Neon · ฐานข้อมูลต้นทาง"], ["files", "Data Lake & Warehouse"]].forEach(([id, label]) => {
       const button = node("button", "notebook-tab" + (state.pipelineTab === id ? " is-active" : ""), label);
       button.type = "button"; button.setAttribute("aria-pressed", String(state.pipelineTab === id));
       button.addEventListener("click", () => {
@@ -1704,296 +1857,342 @@
       } return;
     }
     if (state.pipelineTab === "files") {
-      root.append(notice("Data Lake เก็บ Landing / Raw / Standardized; DuckDB Warehouse เป็นไฟล์จาก GitHub Worker ไม่ใช่ตารางใน Neon"));
-      root.append(small("ผลรันปัจจุบันดูได้ในแท็บ ขั้นตอนการรัน โดยเปิดขั้นแล้วกดชื่อตารางด้านล่าง · ส่วนต่อไปเป็น Snapshot เก่า"));
+      root.append(notice("Data Lake เก็บ Landing / Raw / Standardized; DuckDB Warehouse เป็นไฟล์จาก Vercel Native Runner ไม่ใช่ตารางใน Neon"));
+      root.append(small("ผลรันปัจจุบันดูได้ในแท็บ Data Pipeline Runner โดยเปิดแต่ละขั้นตอน"));
       renderEvidenceExplorer(root); return;
     }
-    if (state.pipelineTab === "errors") {
-      const scenarios = [
-        ["N01", "สินค้าอ้างถึงกลุ่มสินค้าที่ไม่มีในข้อมูลหลัก", "Database · Neon Error Lab แยกต่างหาก"],
-        ["E01", "รายการสั่งซื้ออ้างถึง SKU ที่ไม่มีอยู่", "Source → Database"],
-        ["E02", "ไฟล์ออเดอร์ต้นทางหาย", "Source → Database"],
-        ["T01", "ข้อมูล Voucher ผิดกฎ", "Data Lake → Standardized"],
-        ["T02", "ช่วงเวลา Campaign ซ้อนกัน", "Data Lake → Standardized"],
-        ["L01", "โหลด Warehouse ไม่สำเร็จ", "Data Lake → Warehouse"]
-      ];
-      const selected = scenarios.find(x => x[0] === state.errorCase) || scenarios[0];
-      const busy = ["submitting", "queued", "in_progress"].includes(state.errorRun.status);
-      root.append(node("h2", "lab-heading", "สาธิตการรับมือเมื่อข้อมูลมีปัญหา"));
-      root.append(notice("ใช้ชุดข้อมูลจำลองใน Error Lab ซึ่งแยกจาก Run 1/2 เพื่อให้เห็นว่าระบบพบปัญหาอะไร แก้อย่างไร และผลหลังแก้เป็นอย่างไร", false));
-      root.append(chooseField("เลือกกรณี", [...scenarios.map(x => [x[0], x[1]])],
-        state.errorCase, value => {
-          if (busy) return;
-          resetErrorLab(value);
-        }));
-      root.append(node("h3", "lab-subheading", "สถานการณ์ที่จะทดลอง · " + selected[1]));
-      root.append(small("จุดที่ระบบจะตรวจ: " + selected[2]));
-      if (state.errorCase === "N01") {
-        root.append(small("ตัวอย่างข้อมูล: แถวสินค้าอ้าง Product_Group_ID = MISSING_GROUP แต่ไม่มีรหัสนี้ในตารางกลุ่มสินค้า"));
-        root.append(dataTable([["SKU_ID", "SKU_ID"], ["Product_Group_ID", "Product_Group_ID"],
-        ["SKU_Name", "SKU_Name"]], [{
-          SKU_ID: "ERROR_TEST_SKU",
-          Product_Group_ID: "MISSING_GROUP", SKU_Name: "สินค้าเดโมทดสอบ Error"
-        }]));
-        root.append(small("กฎที่ตรวจ: สินค้าต้องอ้างถึงกลุ่มสินค้าที่มีอยู่จริง · ระบบไม่ได้สร้าง Group ใหม่"));
-      } else root.append(small("ระบบจะใช้ชุดข้อมูลทดสอบแยกที่จำลองสถานการณ์นี้ แล้วตรวจจนถึงขั้นที่พบปัญหา"));
-      if (!state.errorRun.failEvidence) {
-        const button = node("button", "button button-primary",
-          busy ? "กำลังตรวจชุดข้อมูล…" : "▶ เริ่มทดสอบกรณีนี้");
-        button.type = "button"; button.disabled = busy;
-        button.addEventListener("click", () => startErrorRun("fail")); root.append(button);
-      }
-      if (busy) root.append(small(state.errorRun.phase === "fix" ?
-        "กำลังแก้ข้อมูลและรันซ้ำ…" : "กำลังตรวจชุดข้อมูลและหาจุดที่พบปัญหา…"));
-      if (state.errorRun.error) root.append(notice(state.errorRun.error, true));
-      if (state.errorRun.failEvidence) {
-        const found = state.errorRun.failEvidence;
-        const detail = found.detail || {};
-        root.append(node("h3", "lab-subheading", "1 · ระบบพบปัญหาที่ขั้น " + (found.stage || "กำลังตรวจสอบ")));
-        root.append(notice("สาเหตุ: " + (found.title || "ไม่พบชื่อกรณีทดสอบ") + " · " +
-          (detail.error_message || detail.error_code || "ไม่มีรายละเอียดเพิ่มเติม"), true));
-        if (detail.source_rows?.length) {
-          const rows = detail.source_rows;
-          root.append(small("ข้อมูลที่ทำให้เกิด Error"));
-          root.append(dataTable(Object.keys(rows[0]).map(key => [key, key]), rows));
-        }
-        if (detail.source_file) root.append(small("Source: " + detail.source_file));
-        root.append(small("ผลต่อการรัน: " + (detail.error_code || "ดูรายละเอียดจากผลทดสอบ") +
-          " · การทดสอบนี้แยกจากข้อมูล Run 1/2"));
-        root.append(node("h3", "lab-subheading", "2 · แนวทางแก้"));
-        root.append(small(found.fix || "ตรวจข้อมูลตามสาเหตุ แล้วรันการทดสอบเดิมอีกครั้ง"));
-        if (!state.errorRun.fixEvidence) {
-          const fix = node("button", "button button-primary",
-            busy ? "กำลังแก้ตามแนวทางและตรวจต่อ…" : "ให้ระบบแก้ตามแนวทาง แล้วรันต่อ");
-          fix.type = "button"; fix.disabled = busy;
-          fix.addEventListener("click", () => startErrorRun("fix")); root.append(fix);
-        }
-      }
-      if (state.errorRun.fixEvidence) {
-        const fixed = state.errorRun.fixEvidence.detail;
-        root.append(node("h3", "lab-subheading", "3 · ผลหลังแก้"));
-        root.append(small("รันต่อจากขั้นที่พบปัญหา · สถานะหลังแก้: " + fixed.retry_status));
-        if (fixed.before && fixed.after) {
-          root.append(small("ก่อนแก้"));
-          root.append(dataTable(Object.keys(fixed.before).map(key => [key, key]), [fixed.before]));
-          root.append(small(state.errorCase === "N01" ?
-            "หลังแก้ · ตรวจผ่านแล้ว และย้อนข้อมูลทดสอบออกจาก Neon เรียบร้อย" :
-            "หลังแก้ · รันซ้ำจากขั้นที่พบปัญหาแล้ว"));
-        }
-        if (fixed.result_rows?.length)
-          root.append(dataTable(Object.keys(fixed.result_rows[0]).slice(0, 8)
-            .map(key => [key, key]), fixed.result_rows));
-        if (state.errorCase === "N01") {
-          root.append(small("ข้อมูลจริงใน Neon · classroom-error-lab · demo_er1.Dim_SKU"));
-          if (state.errorRun.neonRows?.length)
-            root.append(dataTable(Object.keys(state.errorRun.neonRows[0])
-              .map(key => [key, key]), state.errorRun.neonRows));
-          else root.append(small("กำลังอ่านแถวจริงจากฐานข้อมูล Error Lab…"));
-          root.append(small("แสดงข้อมูลจากตารางจริงใน Error Lab โดยตรง ไม่ต้องเปิด Neon Console"));
-        }
-        const again = node("button", "button", "เริ่มสถานการณ์นี้อีกครั้ง");
-        again.type = "button"; again.addEventListener("click", () => resetErrorLab());
-        root.append(again);
-      }
-      if (state.errorRun.url) root.append(link("ดูรายละเอียดการรันใน GitHub", state.errorRun.url));
-      return;
-    }
-    if (state.pipelineTab === "operate") {
-      root.append(notice("Lab ใหม่เริ่มจากฐานข้อมูลว่าง ข้อมูลต้นทางอยู่ในไฟล์ Source; การกด Run 1 และเติมข้อมูลจะประมวลผลจริงบน Vercel Native Runner"));
-      renderRealRunner(root); return;
-    }
-    const phase = state.realLabPhase;
+    const phase = state.realLabPhase || "EMPTY";
+    const publishedCount = MONTH_BATCHES.filter(m =>
+      (state.currentCycleRuns || []).some(r => r.source_batch === m.batch && r.status === "SUCCEEDED")
+    ).length;
+
     renderSourcePicker(root);
+
     root.append(box("notebook-intro",
-      node("h2", "lab-heading", "Source → Database → Data Lake → Warehouse"),
-      node("p", "lab-description", "Run 1 นำเข้าข้อมูลตั้งต้น จากนั้นกดเติมข้อมูลใหม่ได้ทีละชุด ทุกครั้งเดินครบทั้งเส้นทาง"),
-      small("Lab ที่ใช้รัน: " + (phase === "UNKNOWN" ? "กำลังตรวจสอบ" : phase) + " · " + money(state.realLabOrders || 0) + " ออเดอร์")));
-    const batchPicker = box("notebook-runs");
-    const nextMonth = sourceMonthForBatch(state.nextSourceBatch);
-    const incrementalLabel = state.sourceExhausted ? "ข้อมูลครบถึงตุลาคม 2569" :
-      !state.currentRunId ? "เติมข้อมูลหลัง Run 1" :
-        "เติมข้อมูล · " + thaiMonth(nextMonth || "");
-    [["initial", "Run 1 · มกราคม 2569", "ข้อมูลตั้งต้นและโครงสร้างธุรกิจ"],
-    ["incremental", incrementalLabel,
-      "เพิ่ม Source เดือนถัดไปครั้งละหนึ่งเดือน"]].forEach(([id, label, detail]) => {
-        const button = node("button", "notebook-run" + (state.notebookBatch === id ? " is-active" : ""));
-        button.type = "button"; button.setAttribute("aria-pressed", String(state.notebookBatch === id));
-        button.append(node("strong", "", label), small(detail));
-        button.addEventListener("click", () => {
-          state.notebookBatch = id;
-          state.notebookSelectionTouched = true; state.notebookStage = "ingest";
-          state.savedLabReceipt = null; state.savedLabSelected = ""; renderPipeline();
-        }); batchPicker.append(button);
-      }); root.append(batchPicker);
-    const canStartBatch = state.realReady && !state.requiresReset && !state.sourceExhausted &&
-      !state.sharedRun.running && (state.notebookBatch === "initial" ? phase === "EMPTY" :
-        ["RUN1_READY", "RUN2_READY"].includes(phase) && Boolean(state.currentRunId));
-    const batchBusy = state.batchRun.batch === state.notebookBatch &&
-      ["submitting", "queued", "in_progress"].includes(state.batchRun.status);
-    const alreadyDone = state.notebookBatch === "initial" ?
-      Boolean(state.batchSummaries.initial) :
-      Boolean(state.batchSummaries.incremental && state.batchSummaries.incremental.sourceMonth === nextMonth);
-    const batchAction = node("button", "button button-primary", batchBusy ?
-      "กำลังรัน " + (state.batchRun.batch === "initial" ? "Run 1" : "ข้อมูลใหม่") + " ทั้งรอบ…" :
-      alreadyDone ? (state.notebookBatch === "initial" ? "✓ Run 1 ผ่านแล้ว" : "✓ เดือนนี้รันผ่านแล้ว") :
-        state.notebookBatch === "initial" ? "▶ รันข้อมูลตั้งต้น" : "▶ เติมข้อมูลใหม่");
-    batchAction.type = "button"; batchAction.disabled = !canStartBatch || batchBusy;
-    batchAction.addEventListener("click", () => runWholeBatch());
+      node("h2", "lab-heading", "TikTok Shop Data Pipeline Runner"),
+      node("p", "lab-description", "ประมวลผลข้อมูล 10 เดือน (ม.ค. – ต.ค. 2569) แบบ Single Main Flow ผ่าน 5 ขั้นตอน: Source ➔ Database ➔ Data Lake ➔ DuckDB"),
+      small("สถานะระบบ: " + (phase === "UNKNOWN" ? "กำลังตรวจสอบ" : phase) +
+        " · ข้อมูลเผยแพร่แล้ว: " + publishedCount + " / 10 เดือน Published · ออเดอร์สะสม: " + money(state.realLabOrders || 0) + " ออเดอร์")
+    ));
 
-    const actionGroup = box("h-stack", batchAction);
-    const canClear = state.realReady && !["submitting", "queued", "in_progress"].includes(state.resetStatus);
-    if (alreadyDone || state.sourceExhausted || (state.realLabOrders && state.realLabOrders > 0)) {
+    // 1. Top: 10 Month Status Chips
+    const monthChips = box("month-chips-grid");
+    MONTH_BATCHES.forEach(item => {
+      const isDone = (state.currentCycleRuns || []).some(r => r.source_batch === item.batch && r.status === "SUCCEEDED");
+      const isFailed = (state.currentCycleRuns || []).some(r => r.source_batch === item.batch && r.status === "FAILED");
+      const isBlocked = (item.batch === "incremental_02" && state.marchBlocked);
+      const isRunning = (state.batchRun.batch === item.batch && ["submitting", "queued", "in_progress"].includes(state.batchRun.status)) ||
+        (state.stageBusy && (state.nextSourceBatch || "initial") === item.batch);
+      const isQueued = !isDone && !isBlocked && !isRunning && ((state.nextSourceBatch || "initial") === item.batch);
+
+      let statusClass = "status-not_started", statusText = "NOT_STARTED";
+      if (isDone) { statusClass = "status-published"; statusText = "PUBLISHED"; }
+      else if (isBlocked) { statusClass = "status-blocked"; statusText = "BLOCKED"; }
+      else if (isFailed) { statusClass = "status-blocked"; statusText = "FAILED"; }
+      else if (isRunning) { statusClass = "status-running"; statusText = "RUNNING"; }
+      else if (isQueued) { statusClass = "status-queued"; statusText = "QUEUED"; }
+
+      const isCurrentViewed = (state.viewedBatch || state.notebookBatch || "initial") === item.batch;
+      const chip = node("button", "month-chip" + (isCurrentViewed ? " is-active" : ""));
+      chip.type = "button";
+
+      const chipHeader = box("month-chip-header",
+        node("span", "month-chip-title", item.label),
+        node("span", "month-chip-type", item.type)
+      );
+      const chipStatus = node("span", "month-chip-status " + statusClass, statusText);
+      chip.append(chipHeader, chipStatus);
+
+      chip.addEventListener("click", () => {
+        state.viewedBatch = item.batch;
+        state.notebookBatch = item.batch;
+        renderPipeline();
+      });
+      monthChips.append(chip);
+    });
+    root.append(monthChips);
+
+    // 2. Middle: Primary Execution Controls
+    const controlsCard = box("runner-controls-card");
+    const actionsRow = box("runner-controls-row");
+
+    // Button 1: Run Next Step
+    const runNextBtn = node("button", "runner-btn-secondary",
+      state.stageBusy ? "กำลังประมวลผล…" : "▶ ประมวลผลขั้นตอนถัดไป"
+    );
+    runNextBtn.type = "button";
+    runNextBtn.disabled = state.stageBusy || state.isRunAllActive || state.sourceExhausted;
+    runNextBtn.addEventListener("click", () => runNextStep());
+
+    const runNextBox = box("v-stack",
+      runNextBtn,
+      small("ประมวลผลขั้นตอนถัดไป พร้อมแสดง Input, Process, Validation และ Output อย่างละเอียด", "runner-control-desc")
+    );
+
+    // Button 2: Run All
+    const runAllBtn = node("button", "runner-btn-primary",
+      state.isRunAllActive ? "⏸ หยุดการรันอัตโนมัติ" : "⏩ รันขั้นตอนที่เหลือทั้งหมด (Run All)"
+    );
+    runAllBtn.type = "button";
+    runAllBtn.disabled = state.stageBusy || state.sourceExhausted;
+    runAllBtn.addEventListener("click", () => toggleRunAll());
+
+    const runAllBox = box("v-stack",
+      runAllBtn,
+      small("ประมวลผลขั้นตอนและข้อมูลที่เหลือโดยอัตโนมัติ และหยุดเมื่อพบข้อผิดพลาด", "runner-control-desc")
+    );
+
+    actionsRow.append(runNextBox, runAllBox);
+
+    // Clear Lab Button
+    if (state.realLabOrders > 0 || state.sourceExhausted || publishedCount > 0) {
       const clearBtn = node("button", "button " + (state.sourceExhausted ? "button-primary" : "button-outline"),
-        state.resetStatus === "submitting" || state.resetStatus === "queued" ? "กำลังเคลียร์ Lab…" : "🔄 เคลียร์ Lab เพื่อเริ่มใหม่");
+        state.resetStatus === "submitting" ? "กำลังเคลียร์ Lab…" : "🔄 เคลียร์ Lab เพื่อเริ่มใหม่"
+      );
       clearBtn.type = "button";
-      clearBtn.disabled = !canClear;
+      clearBtn.disabled = state.stageBusy || state.isRunAllActive;
       clearBtn.addEventListener("click", requestNewCycle);
-      actionGroup.append(clearBtn);
+      actionsRow.append(clearBtn);
     }
 
-    root.append(actionGroup);
+    controlsCard.append(actionsRow);
 
-    if (!canStartBatch) {
-      if (alreadyDone) {
-        root.append(small("✓ " + (state.notebookBatch === "initial" ? "Run 1 ข้อมูลตั้งต้น" : "ข้อมูลใหม่") +
-          " ประมวลผลเรียบร้อยแล้ว · สลับไปที่ 'เติมข้อมูล' ด้านบน หรือกด 'เคลียร์ Lab' เพื่อเริ่มรอบใหม่"));
-      } else {
-        root.append(small(!state.realReady ?
-          "ระบบสั่งงานยังไม่พร้อม" : state.sourceExhausted ?
-            "Source ชุดนี้ใช้ครบแล้ว เคลียร์ Lab เพื่อเริ่มใหม่" :
-            "ต้องให้ข้อมูลชุดก่อนผ่านครบก่อน"));
-      }
+    if (state.realError) {
+      controlsCard.append(notice(state.realError, true));
     }
-    root.append(node("p", "notebook-caption", "กด Run หนึ่งครั้ง ระบบจะวิ่งครบทุกขั้นบน Vercel แล้วเปิดดูผลของแต่ละขั้นเมื่อเสร็จ"));
-    if (state.batchRun.status && state.batchRun.batch === state.notebookBatch) {
-      root.append(small("สถานะ Run: " + state.batchRun.status +
-        (state.batchRun.runId ? " · Vercel Execution #" + state.batchRun.runId : "")));
-      if (state.batchRun.url) root.append(link("ดูการทำงานและ Log จริง", state.batchRun.url));
-      if (state.realError) root.append(notice(state.realError, true));
+    if (state.stageBusy) {
+      controlsCard.append(small("กำลังประมวลผล Vercel Serverless Function และบันทึก Checkpoint ลง Neon…"));
     }
-    if (state.sharedRun.running && !batchBusy) {
-      const activeName = state.sharedRun.type === "RUN1" ? "Run 1" : "การเติมข้อมูล";
-      const step = state.sharedRun.stage?.name ?
-        " · ขั้นปัจจุบัน: " + state.sharedRun.stage.name.replace(/^[1-5] /, "") : " · กำลังเริ่มงาน";
-      root.append(notice(activeName + " กำลังทำงานอยู่ใน Lab" + step +
-        " · ทุกคนที่เปิดลิงก์นี้จะเห็นสถานะเดียวกัน ระบบจะเปิดปุ่มรันอีกครั้งเมื่อเสร็จ"));
+    root.append(controlsCard);
+
+    // 3. March Data Quality Block Banner & Review & Fix Drawer
+    if (state.marchBlocked) {
+      const errorBanner = box("alert-banner-blocked");
+      const bannerHead = box("alert-banner-header",
+        node("strong", "alert-banner-title", "⚠ พบข้อมูลไม่ผ่านการตรวจสอบ — หยุดการประมวลผลเพื่อแก้ไข"),
+        node("button", "button button-primary", "Review & Fix (ตรวจสอบและแก้ไข)")
+      );
+      bannerHead.querySelector("button").addEventListener("click", () => {
+        state.showReviewFixModal = !state.showReviewFixModal;
+        renderPipeline();
+      });
+      errorBanner.append(bannerHead);
+
+      const f = state.marchFailureDetails || {};
+      const errorDetailsTable = dataTable([
+        ["dimension", "มิติการตรวจสอบ"],
+        ["detail", "รายละเอียดหลักฐานจริง"]
+      ], [
+        { dimension: "1. ชุดข้อมูล (Batch)", detail: "มีนาคม 2569 (incremental_02)" },
+        { dimension: "2. ไฟล์ต้นทาง (Source File)", detail: f.source_file || "Fact_Order_Items.csv" },
+        { dimension: "3. รายการที่พบ (Row ID)", detail: (f.row_id || "ORD-202603-00001-I1") + " (Order: " + (f.order_id || "ORD-202603-00001") + ")" },
+        { dimension: "4. ฟิลด์ที่มีปัญหา (Field)", detail: f.field || "SKU_ID" },
+        { dimension: "5. ค่าที่ผิดพลาด (Invalid Value)", detail: f.invalid_value || "SKU_ERR_UNKNOWN_DEMO" },
+        { dimension: "6. กฎการตรวจสอบ (Validation Rule)", detail: f.validation_rule || "Referential Integrity: Fact_Order_Items.SKU_ID must exist in Dim_SKU" },
+        { dimension: "7. ผลกระทบและการกักกัน (Impact)", detail: f.impact || "หยุดการประมวลผลขั้นถัดไป ข้อมูลกักไว้ใน lake/governance/quarantine/ โดยที่เดือน ม.ค. และ ก.พ. ใน Warehouse ยังคงปลอดภัยและถูกต้อง 100%" }
+      ]);
+      errorBanner.append(errorDetailsTable);
+      root.append(errorBanner);
     }
-    const runState = {
-      submitting: "กำลังส่งคำสั่ง", queued: "กำลังเตรียม Vercel Function",
-      in_progress: "กำลังประมวลผลบน Vercel", success: "เสร็จแล้ว", failure: "ไม่สำเร็จ"
-    };
-    const entries = state.savedLabManifest?.runs?.filter(x => x.batch === state.notebookBatch) || [];
+
+    if (state.showReviewFixModal) {
+      const drawer = box("review-fix-drawer");
+      drawer.append(node("h3", "lab-heading", "ตรวจสอบและแก้ไขรหัสสินค้า (Review & Fix SKU Correction)"));
+      drawer.append(small("ในระบบจริง การแก้ไขรหัสสินค้าต้องใช้หลักฐานคำสั่งซื้อต้นฉบับ ห้ามเดารหัสจากราคาหรืออนุมานเอง"));
+
+      // Evidence Card: Packing slip
+      const slipCard = box("evidence-card",
+        node("strong", "", "หลักฐานคำสั่งซื้อต้นฉบับ (Original Marketplace Order Slip / Warehouse Packing Manifest)"),
+        dataTable([["field", "ฟิลด์ข้อมูล"], ["value", "ค่าตามเอกสาร"]], [
+          { field: "Order ID", value: "ORD-202603-00001" },
+          { field: "Order Item ID", value: "ORD-202603-00001-I1" },
+          { field: "รายการสินค้า", value: "เสื้อยืดคอกลม Cotton 100% พรีเมียม" },
+          { field: "สี / ไซส์", value: "สีดำ (Black) / ไซส์ L" },
+          { field: "ราคาต่อหน่วย", value: "199.00 บาท (PG01)" },
+          { field: "เอกสารอ้างอิง", value: "TikTok Shop Seller Center Order Slip #ORD-202603-00001" },
+          { field: "เวลาแพ็คสินค้า", value: "2026-03-01 10:14:00" }
+        ])
+      );
+      drawer.append(slipCard);
+
+      // Form
+      const skuSelectGroup = box("form-field-group",
+        node("label", "", "เลือกรหัสสินค้าที่ถูกต้องจาก Dim_SKU Master:"),
+        chooseField("เลือกรหัสสินค้า", [["", "— เลือกรหัสสินค้าจาก Master (ห้ามเดา) —"], ...DIM_SKU_OPTIONS],
+          state.selectedCorrectionSku || "", val => { state.selectedCorrectionSku = val; })
+      );
+      const reasonGroup = box("form-field-group",
+        node("label", "", "เหตุผลการแก้ไข (Audit Reason):"),
+        node("input", "", "")
+      );
+      const reasonInput = reasonGroup.querySelector("input");
+      reasonInput.type = "text";
+      reasonInput.value = state.correctionReason || "ยืนยันจากใบกำกับคำสั่งซื้อต้นฉบับ #ORD-202603-00001 เป็นเสื้อยืดคอกลม สีดำ ไซส์ L";
+      reasonInput.addEventListener("input", e => { state.correctionReason = e.target.value; });
+
+      const actorGroup = box("form-field-group",
+        node("label", "", "ผู้ยืนยันความถูกต้อง (Approver / Actor):"),
+        node("input", "", "")
+      );
+      const actorInput = actorGroup.querySelector("input");
+      actorInput.type = "text";
+      actorInput.value = state.correctionActor || "Data Owner";
+      actorInput.addEventListener("input", e => { state.correctionActor = e.target.value; });
+
+      const actionRow = box("h-stack");
+      const resumeBtn = node("button", "button button-primary", "Revalidate & Resume (ยืนยันการแก้ไขและรันต่อ)");
+      resumeBtn.type = "button";
+      resumeBtn.addEventListener("click", async () => {
+        if (!state.selectedCorrectionSku) {
+          alert("กรุณาเลือกรหัสสินค้าที่ถูกต้องจาก Dim_SKU ตามหลักฐานใบปะหน้าคำสั่งซื้อ");
+          return;
+        }
+        state.marchOverride = {
+          sku_id: state.selectedCorrectionSku,
+          reason: state.correctionReason || "ยืนยันจากใบกำกับคำสั่งซื้อต้นฉบับ #ORD-202603-00001",
+          actor: state.correctionActor || "Data Owner"
+        };
+        state.marchBlocked = false;
+        state.showReviewFixModal = false;
+        await runNextStep({ override: state.marchOverride, stage: "transform" });
+        if (state.isRunAllActive) {
+          runAllLoop();
+        }
+      });
+
+      const cancelBtn = node("button", "button button-outline", "ปิด");
+      cancelBtn.type = "button";
+      cancelBtn.addEventListener("click", () => {
+        state.showReviewFixModal = false;
+        renderPipeline();
+      });
+
+      actionRow.append(resumeBtn, cancelBtn);
+      drawer.append(skuSelectGroup, reasonGroup, actorGroup, actionRow);
+      root.append(drawer);
+    }
+    // 4. Five Numbered Expandable Stages
+    const currentViewBatch = state.viewedBatch || state.notebookBatch || "initial";
+    const entries = state.savedLabManifest?.runs?.filter(x => x.batch === currentViewBatch) || [];
+
     NOTEBOOK_STAGES.forEach(([id, title, description], index) => {
       const entry = entries.find(x => x.stage === id), active = state.notebookStage === id;
       const cell = node("section", "notebook-cell" + (active ? " is-open" : ""));
       const head = node("button", "notebook-cell-head"); head.type = "button";
       head.setAttribute("aria-expanded", String(active));
-      const savedResult = state.batchResults[state.notebookBatch]?.[id];
-      const liveStep = state.batchRun.batch === state.notebookBatch ?
+      const savedResult = state.batchResults[currentViewBatch]?.[id];
+      const liveStep = state.batchRun.batch === currentViewBatch ?
         state.batchRun.stages.find(x => x.index === index) : null;
-      const runningNow = liveStep?.status === "in_progress";
+      const runningNow = liveStep?.status === "in_progress" || (state.stageBusy && (state.nextSourceBatch || "initial") === currentViewBatch && state.notebookStage === id);
+      const isFailed = (currentViewBatch === "incremental_02" && id === "transform" && state.marchBlocked);
+
       head.append(node("span", "notebook-number", String(index + 1)),
         box("notebook-cell-title", node("strong", "", title), small(description)),
-        node("span", "notebook-cell-state", savedResult || liveStep?.conclusion === "success" ?
-          "ผ่านแล้ว" : runningNow ? "กำลังรัน" : liveStep?.conclusion === "failure" ? "ผิดพลาด" : "รอรัน"));
+        node("span", "notebook-cell-state",
+          isFailed ? "ผิดพลาด / บล็อก" :
+          (savedResult || liveStep?.conclusion === "success" ? "ผ่านแล้ว" :
+           runningNow ? "กำลังรัน" : "รอรัน")
+        ));
       head.addEventListener("click", () => {
         state.notebookStage = id; state.savedLabReceipt = null; renderPipeline();
       }); cell.append(head);
       if (active) {
         const body = box("notebook-cell-body");
-        body.append(small("Input: " + (index === 0 ? "Source CSV ชุด" + (state.notebookBatch === "initial" ? "ตั้งต้น" : "ข้อมูลใหม่") :
-          index === 1 ? "25 ตารางใน Neon" : index === 2 ? "Raw Parquet" : index === 3 ? "Standardized Parquet" : "Database และ Warehouse")));
-        body.append(small("ขั้นนี้ทำอะไร: " + description));
-        if (liveStep?.started_at) body.append(small("เริ่ม " +
-          new Date(liveStep.started_at).toLocaleTimeString("th-TH") +
-          (liveStep.completed_at ? " · เสร็จ " + new Date(liveStep.completed_at).toLocaleTimeString("th-TH") : "")));
-        if (savedResult) body.append(box("notebook-output",
-          node("strong", "", "ผลจากการรันครั้งนี้"), renderLabResult(savedResult.evidence),
-          savedResult.url ? link("ดู Log ของขั้นนี้", savedResult.url) : null));
-        if (!savedResult) body.append(small(runningNow ? "กำลังประมวลผลขั้นนี้จริง" :
-          "ผลของขั้นนี้จะแสดงเมื่อ Run จบและหลักฐานพร้อม"));
-        if (entry) {
-          const history = node("details", "notebook-history");
-          history.open = state.savedLabReceipt?.batch === state.notebookBatch && state.savedLabReceipt?.stage === id;
-          history.append(node("summary", "", "ดูตัวอย่างจาก Lab เดิม (ไม่ใช่ผลรอบนี้)"));
-          const historyBody = box("notebook-history-body");
-          if (state.savedLabLoading) historyBody.append(small("กำลังอ่านผลรอบก่อน…"));
-          else if (state.savedLabReceipt?.batch === state.notebookBatch && state.savedLabReceipt?.stage === id) {
-            const receipt = state.savedLabReceipt;
-            historyBody.append(renderLabResult(receipt.evidence),
-              link("ดู GitHub Run รอบก่อน", "https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/actions/runs/" + receipt.git_run_id));
-          } else {
-            const open = node("button", "button button-outline", "เปิดหลักฐานเดิม");
-            open.type = "button"; open.addEventListener("click", () => selectSavedLabStage(entry)); historyBody.append(open);
-          }
-          history.append(historyBody); body.append(history);
-        }
-        if (id === "ingest" && savedResult) {
-          body.append(small("ขั้นนี้ sync ข้อมูลธุรกิจ 25 ตารางเข้า Neon · กดชื่อตารางด้านบนเพื่อดูตัวอย่างจากรันนี้"));
-          const neonButton = node("button", "button button-outline", "ดูตารางและแถวจริงใน Neon");
-          neonButton.type = "button";
-          neonButton.addEventListener("click", () => {
-            const prefix = state.notebookBatch + "/ingest/";
-            const selected = state.selectedResultTable.startsWith(prefix) ?
-              state.selectedResultTable.slice(prefix.length) : "Fact_Orders";
-            state.pipelineTab = "neon"; renderPipeline();
-            loadLabNeon("demo_er1", selected);
+
+        // Subtabs: Preview | Input | Process | Validation | Output
+        const activeSubtab = state.stageActiveSubtab[id] || "preview";
+        const subtabsBar = box("stage-subtabs");
+        [["preview", "Preview"], ["input", "Input"], ["process", "Process"], ["validation", "Validation"], ["output", "Output"]].forEach(([subId, subLabel]) => {
+          const subBtn = node("button", "stage-subtab" + (activeSubtab === subId ? " is-active" : ""), subLabel);
+          subBtn.type = "button";
+          subBtn.addEventListener("click", () => {
+            state.stageActiveSubtab[id] = subId;
+            renderPipeline();
           });
-          body.append(neonButton);
+          subtabsBar.append(subBtn);
+        });
+        body.append(subtabsBar);
+
+        const evidence = savedResult?.evidence;
+
+        if (activeSubtab === "preview") {
+          if (savedResult) {
+            body.append(box("notebook-output",
+              node("strong", "", "ผลจากการประมวลผลรอบนี้"),
+              renderLabResult(savedResult.evidence),
+              savedResult.url ? link("ดู Log ของขั้นนี้", savedResult.url) : null
+            ));
+          } else {
+            body.append(small(runningNow ? "กำลังประมวลผลขั้นนี้จริงบน Vercel…" : "ผลของขั้นนี้จะแสดงเมื่อกดรันและหลักฐานพร้อม"));
+          }
+        } else if (activeSubtab === "input") {
+          body.append(node("strong", "", "ข้อมูลนำเข้า (Input)"));
+          body.append(small("แหล่งข้อมูล: " + (index === 0 ? "ไฟล์ CSV 21 ชุดต้นทาง" :
+            index === 1 ? "25 ตารางใน Neon PostgreSQL (demo_er1)" :
+            index === 2 ? "ไฟล์ Raw Parquet ใน lake/raw/" :
+            index === 3 ? "ไฟล์ Standardized Parquet ใน lake/standardized/" :
+            "ฐานข้อมูล Database และ Data Warehouse DuckDB")));
+          if (evidence?.input) {
+            body.append(small("รายละเอียด: " + (evidence.input.label || "พร้อมใช้งาน")));
+            if (evidence.input.preview?.length) {
+              body.append(dataTable(Object.keys(evidence.input.preview[0]).map(k => [k, k]), evidence.input.preview));
+            }
+          }
+        } else if (activeSubtab === "process") {
+          body.append(node("strong", "", "การประมวลผล (Process)"));
+          body.append(small("รายละเอียดงาน: " + description));
+          body.append(small("เครื่องมือประมวลผล: " + (evidence?.mode || "VERCEL_NATIVE_EXECUTION")));
+          if (evidence?.executed_at) {
+            body.append(small("เวลาที่ประมวลผล: " + new Date(evidence.executed_at).toLocaleString("th-TH")));
+          }
+        } else if (activeSubtab === "validation") {
+          body.append(node("strong", "", "การตรวจสอบคุณภาพข้อมูล (Validation & Integrity Rules)"));
+          if (evidence?.checks?.length) {
+            const checksBox = box("lab-checks");
+            evidence.checks.forEach(c => checksBox.append(box("lab-check",
+              node("span", "lab-check-icon " + (c.pass ? "lab-ok" : "lab-fail"), c.pass ? "✓" : "!"),
+              small(c.label), statusLabel(c.pass ? "PASS" : "FAIL")
+            )));
+            body.append(checksBox);
+          } else {
+            body.append(small("ยังไม่มีผลการตรวจสอบสำหรับขั้นตอนนี้"));
+          }
+        } else if (activeSubtab === "output") {
+          body.append(node("strong", "", "ข้อมูลส่งออก (Output)"));
+          if (evidence?.output) {
+            body.append(small("แหล่งจัดเก็บ: " + (evidence.output.target_location || evidence.output.origin || "เสร็จสมบูรณ์")));
+            body.append(small("จำนวนรายการ: " + (evidence.output.records ? money(evidence.output.records) : "—") + " แถว"));
+            if (evidence.output.tables?.length) {
+              body.append(dataTable([["name", "ชื่อตาราง/ไฟล์"], ["rows", "จำนวนแถว"]], evidence.output.tables));
+            }
+          }
         }
-        if (id === "extract") body.append(small("การตรวจความครบถ้วนระหว่าง Database กับ Raw ใช้จำนวนตารางและไฟล์ manifest"));
-        if (id === "validate") body.append(small("ผลตรวจท้ายรอบเทียบ Paid Items และ Net Revenue ระหว่างฐานข้อมูลต้นทางกับ Warehouse"));
+
         cell.append(body);
       }
       root.append(cell);
     });
-    const savedSummary = state.batchSummaries[state.notebookBatch];
-    const liveSummary = state.batchRun.status === "success" && state.batchRun.batch === state.notebookBatch ?
-      { runId: state.batchRun.runId, url: state.batchRun.url, sourceMonth: sourceMonthForBatch(state.batchRun.sourceBatch), result: state.batchRun.result } : null;
-    const displayedSummary = liveSummary || savedSummary;
-    if (displayedSummary) {
-      const summary = displayedSummary.result;
-      if (state.notebookBatch === "incremental" && displayedSummary.sourceMonth !== sourceMonthForBatch(state.nextSourceBatch))
-        root.append(small("ผลขั้นตอนด้านล่างคือการเติม Source เดือน " + thaiMonth(displayedSummary.sourceMonth || "") + " ที่ผ่านล่าสุด · เดือนถัดไปคือ " + thaiMonth(sourceMonthForBatch(state.nextSourceBatch) || "")));
-      const download = node("a", "button button-outline", "↓ ดาวน์โหลด Warehouse ครบทุกตาราง (ZIP/CSV)");
-      download.href = "/api/lab-batch-result?download=warehouse&run_id=" + encodeURIComponent(displayedSummary.runId);
-      root.append(box("lab-result", node("h3", "lab-subheading", "สรุปผล Run นี้"),
-        small("Source เดือน " + thaiMonth(displayedSummary.sourceMonth || "")),
-        small("ผ่านครบ 5 ขั้น · ใช้เวลา " + money(summary?.elapsed_seconds, 1) + " วินาที"),
-        small("ออเดอร์ก่อนรัน " + money(summary?.orders_before) + " → หลังรัน " +
-          money(summary?.orders_after) + " · เพิ่ม " + money(summary?.orders_added)),
-        small("รายการขายใน Warehouse " + money(summary?.paid_sales_rows) + " แถว"),
-        small(summary?.no_duplicate_sales_items ? "ตรวจแล้ว: ไม่มีรายการขายซ้ำ" : "ยังไม่มีผลตรวจรายการซ้ำ"),
-        small("กดเปิดแต่ละขั้นด้านบนเพื่อดูตารางและตัวอย่างข้อมูลจริง"),
-        displayedSummary.url ? link("เปิด Log ของ Run นี้", displayedSummary.url) : null, download));
-    }
-    root.append(notice("เคลียร์ Lab = ลบข้อมูลใน Neon ทั้ง 25 ตารางให้เหลือ 0 · Source แยกไว้สำหรับเริ่มใหม่"));
-    const clear = node("button", "button " + (state.sourceExhausted ? "button-primary" : "button-outline"), "เริ่มรอบใหม่ · เคลียร์ข้อมูล Lab");
-    clear.type = "button"; clear.disabled = !canClear;
-    clear.addEventListener("click", requestNewCycle); root.append(clear);
-    if (state.recentRuns.length) {
-      const history = node("details", "notebook-history");
-      history.append(node("summary", "", "บันทึก Run เก่าใน GitHub · ไม่ใช่ข้อมูลใน Lab ปัจจุบัน"));
-      const list = box("notebook-history-body");
-      state.recentRuns.forEach(item => {
-        const button = node("button", "button button-outline",
-          (item.batch === "initial" ? "Run 1" : "Run 2") + " · #" + item.run_id);
-        button.type = "button"; button.disabled = state.historyBusy;
-        button.addEventListener("click", () => showHistoryRun(item.run_id)); list.append(button);
-      });
-      if (state.historyBusy) list.append(small("กำลังอ่านผล Run…"));
-      if (state.historyRun) {
-        list.append(node("h3", "lab-subheading", "ผล Run #" + state.historyRun.runId));
-        state.historyRun.result.stages.forEach(item => {
-          list.append(node("h4", "", NOTEBOOK_STAGES.find(x => x[0] === item.stage)?.[1] || item.stage),
-            renderLabResult(item.evidence));
-        });
-      }
-      history.append(list); root.append(history);
-    }
-    if (state.resetStatus) root.append(small("สถานะการเคลียร์ Lab: " + state.resetStatus));
-    if (state.resetError) root.append(notice(state.resetError, true));
-    if (state.resetUrl) root.append(link("ดู Log การเคลียร์ใน GitHub Actions", state.resetUrl));
+
+    // 5. Results & Links at Bottom
+    const bottomNav = box("h-stack");
+    const toBusinessBtn = node("button", "button button-primary", "ดูภาพรวมธุรกิจ (Business Dashboard) →");
+    toBusinessBtn.type = "button";
+    toBusinessBtn.addEventListener("click", () => {
+      state.view = "business";
+      updateNav("business");
+      renderBusiness();
+    });
+
+    const toMlBtn = node("button", "button button-outline", "ดู ML Lab →");
+    toMlBtn.type = "button";
+    toMlBtn.addEventListener("click", () => {
+      state.view = "ml";
+      updateNav("ml");
+      renderML();
+    });
+
+    bottomNav.append(toBusinessBtn, toMlBtn);
+    root.append(bottomNav);
   }
 
   function renderSourcePicker(root) {

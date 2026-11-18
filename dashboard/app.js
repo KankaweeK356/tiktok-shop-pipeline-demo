@@ -2299,6 +2299,25 @@
     ]}
   ];
 
+  async function loadNeonLabTable(table = "Fact_Orders") {
+    state.selectedOutputTable = table;
+    state.labNeonBusy = true;
+    state.labNeonError = "";
+    renderPipeline();
+    try {
+      const res = await fetch("/api/lab-neon-evidence?table=" + encodeURIComponent(table), { cache: "no-store" });
+      const data = await res.json();
+      if (!res.ok || !data.connected) throw new Error(data.error || "Query Neon ไม่สำเร็จ");
+      state.labNeon = data;
+    } catch (err) {
+      state.labNeonError = err.message || "ไม่สามารถติดต่อ Neon ได้";
+      state.labNeon = null;
+    } finally {
+      state.labNeonBusy = false;
+      renderPipeline();
+    }
+  }
+
   const NOTEBOOK_STAGES = [
     ["ingest", "Source → Database", "นำข้อมูลจำลองเข้าฐานข้อมูลต้นทาง และ sync 25 ตารางไป Neon"],
     ["extract", "Database → Data Lake", "บันทึก Landing และ Raw Parquet จากข้อมูลในฐานข้อมูล"],

@@ -56,3 +56,13 @@ def test_v4_business_actual_uses_shared_helpers_and_no_hardcoded_month_or_amount
 def test_pipeline_panels_do_not_claim_fixed_results():
     for fake in ("Parity Matched", "88,136", "Certificate SHA-256 generated", "WAPE 8.7%", "6/6 DQ Rules PASS", "1,582", "88806540c4f828fd"):
         assert fake not in APP, fake
+
+
+def test_every_app_function_that_is_called_is_defined():
+    """Guards against deleting a helper that sits between two constants (the Output tab once broke that way)."""
+    import re
+    called = set(re.findall(r"(?<![.\w])((?:load|render|fc|dq|submit|run|generate|seal|start|refresh|hydrate)[A-Za-z0-9_]*)\(", APP))
+    defined = set(re.findall(r"function\s+([A-Za-z0-9_]+)\s*\(", APP)) | set(re.findall(r"(?:const|let|var)\s+([A-Za-z0-9_]+)\s*=", APP))
+    defined |= set(re.findall(r"\b([A-Za-z0-9_]+)\s*:\s*(?:async\s*)?\(", APP))                       # callback properties such as renderDetail: (item) => {}
+    missing = sorted(n for n in called if n not in defined)
+    assert not missing, missing

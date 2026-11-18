@@ -628,15 +628,17 @@ def test_18_champion_challenger_monitoring_is_automatic_pre_actual_and_isolated(
     objects = {key: data for (_b, key), data in env["s3"].objects.items()}
     status = env["ctx"]["monitoring_status"]
     assert status["2026-07"]["status"] == "EVALUATED" and status["2026-08"]["status"] == "EVALUATED" and status["2026-10"]["status"] == "EVALUATED"
-    assert status["2026-09"]["status"] == "FAILED" and "injected" in status["2026-09"]["error"]          # failure is reported, publish was SUCCESS (asserted in test 16)
+    assert status["2026-09"]["status"] == "FAILED" and status["2026-09"]["error"] == "RuntimeError"        # failure reported by code only (no raw message); publish was SUCCESS (test 16)
+    assert status["2026-10"]["repaired_earlier_months"]["evaluated"] == ["2026-09"]                       # the next publish healed September from the original evidence
     cycle = q("SELECT cycle_number FROM demo_control.dataset_state")[0][0]
     base = f"vercel-lab/ml/monitoring/lab-cycle-{cycle}"
     evals = {k.rsplit("/", 1)[1][:-5]: json.loads(v) for k, v in objects.items() if k.startswith(f"{base}/evaluations/")}
-    assert sorted(evals) == ["2026-06", "2026-07", "2026-08", "2026-10"]                                  # September was not recorded: not guessed afterwards
-    summaries = sorted(k for k in objects if k.startswith(f"{base}/summary/"))
-    assert summaries[-1].endswith("through=2026-10.json")
-    summary = json.loads(objects[summaries[-1]])
-    assert summary["counted_months"] == 4 and summary["evidence_level"] == "PRELIMINARY"
+    assert sorted(evals) == ["2026-06", "2026-07", "2026-08", "2026-09", "2026-10"]                       # September was recovered, not guessed: see its publish time below
+    sept_run = q("SELECT finished_at FROM demo_control.pipeline_runs WHERE result_summary->>'batch'='incremental_08' AND status='SUCCEEDED'")[0][0]
+    assert datetime.fromisoformat(evals["2026-09"]["actual_published_at"]) == sept_run and evals["2026-09"]["shadow_created_at"] < evals["2026-09"]["actual_published_at"]
+    assert json.loads(objects[f"{base}/summary/through=2026-10.json"])["counted_months"] == 4          # written when October published (September was still missing): history kept
+    summary = json.loads(objects[f"{base}/summary/through=2026-10.rev1.json"])                           # newest revision after the repair
+    assert summary["counted_months"] == 5 and summary["evidence_level"] == "PRELIMINARY"
     assert summary["recommendation"]["status"] == "PRELIMINARY_NOT_ASSESSED" and summary["recommendation"]["auto_switch_champion"] is False
     # June: the shadow counted is the one bound to the SEALED forecast, not the second (unsealed) draft generated in test 13
     sealed_id = env["ctx"]["june_draft"]["forecast_run_id"]
@@ -720,37 +722,41 @@ def test_19_concurrent_monitoring_writers_are_serialised_by_the_stream_lock(env,
     assert race("race-open", False) != ["ALREADY_RECORDED"] * 3 + ["EVALUATED"]                         # without the lock the race is real (why the lock exists)
 
 
-def test_20_a_failed_monitoring_month_is_recovered_from_the_original_evidence(env):
-    """September's monitoring was killed in test 16. Recovery evaluates it from the sealed Official + the shadow recorded BEFORE the actual was published."""
+def test_20_explicit_recovery_when_the_last_month_lost_its_monitoring_files(env):
+    """No later publish exists to heal the last month, so recovery is requested explicitly (signed ticket). It rebuilds only what is missing, from original evidence."""
     cycle = q("SELECT cycle_number FROM demo_control.dataset_state")[0][0]
     base = f"vercel-lab/ml/monitoring/lab-cycle-{cycle}"
-    snap = lambda: {key: data for (_b, key), data in env["s3"].objects.items()}
-    before_objects = snap()
-    assert f"{base}/evaluations/2026-09.json" not in before_objects
+    store = env["s3"].objects
+    snap = lambda: {key: data for (_b, key), data in store.items()}
+    original = snap()
     forecasts_before = (q("SELECT forecast_run_id::text,status,is_official,sealed_at FROM demo_ml.forecast_run ORDER BY 1"),
                         q("SELECT forecast_run_id::text,product_group_id,predicted_net_revenue FROM demo_ml.forecast_result ORDER BY 1,2"))
+    # nothing missing: no work and no write
     status, ticket = fc("POST", "monitoring_repair", body={})
-    assert status == 202 and ticket["ticket"]
-    out = env["worker"].run_monitoring_repair(ticket["ticket"])["summary"]["repair"]
-    assert out["evaluated"] == ["2026-09"] and out["latest_summary_through"] == "2026-10"
+    out0 = env["worker"].run_monitoring_repair(ticket["ticket"])["summary"]["repair"]
+    assert out0["evaluated"] == [] and out0["summary_repaired"] == [] and snap() == original
+    # case A: October's evaluation and every October summary are lost (monitoring crashed for the last month)
+    lost = [k for k in original if k == f"{base}/evaluations/2026-10.json" or k.startswith(f"{base}/summary/through=2026-10")]
+    assert len(lost) == 3
+    for key in lost:
+        del store[(BUCKET, key)]
+    out1 = env["worker"].run_monitoring_repair(fc("POST", "monitoring_repair", body={})[1]["ticket"])["summary"]["repair"]
+    assert out1["evaluated"] == ["2026-10"] and out1["latest_summary_through"] == "2026-10"
     after = snap()
-    new_keys = sorted(set(after) - set(before_objects))
-    assert new_keys == [f"{base}/evaluations/2026-09.json", f"{base}/summary/through=2026-10.rev1.json"]   # only the missing evaluation and a new summary revision
-    assert all(after[k] == v for k, v in before_objects.items())                                         # nothing existing was rewritten
-    row = json.loads(after[f"{base}/evaluations/2026-09.json"])
-    sept_run = q("SELECT finished_at FROM demo_control.pipeline_runs WHERE result_summary->>'batch'='incremental_08' AND status='SUCCEEDED'")[0][0]
-    assert row["status"] == "EVALUATED" and row["data_origin"] == "LOCAL_REAL_SOURCE_TEST"
-    assert datetime.fromisoformat(row["actual_published_at"]) == sept_run                                  # original publish time, not the time of the retry
-    assert row["shadow_created_at"] < row["actual_published_at"]
-    oracle = oracle_groups()["2026-09"]
-    assert row["actual"]["shop"] == pytest.approx(sum(oracle.values()), abs=0.1)
-    old_summary = json.loads(after[f"{base}/summary/through=2026-10.json"])
-    new_summary = json.loads(after[f"{base}/summary/through=2026-10.rev1.json"])
-    assert old_summary["counted_months"] == 4 and new_summary["counted_months"] == 5                       # history kept, newest revision is complete
-    assert [m["month"] for m in new_summary["monthly"]] == ["2026-06", "2026-07", "2026-08", "2026-09", "2026-10"]
-    status2, ticket2 = fc("POST", "monitoring_repair", body={})                                           # a second recovery changes nothing and counts nothing twice
-    out2 = env["worker"].run_monitoring_repair(ticket2["ticket"])["summary"]["repair"]
-    assert out2["evaluated"] == [] and out2["summary_repaired"] == [] and snap() == after
+    assert after[f"{base}/evaluations/2026-10.json"] == original[f"{base}/evaluations/2026-10.json"]                # same evidence, same bytes (original publish time used)
+    assert after[f"{base}/summary/through=2026-10.json"] == original[f"{base}/summary/through=2026-10.rev1.json"]    # the complete summary, rebuilt
+    assert {k: v for k, v in after.items() if k not in lost and not k.endswith("through=2026-10.json")} == {k: v for k, v in original.items() if k not in lost}
+    # case B: only the summaries are lost -> rebuilt from the stored evaluations, evaluation untouched
+    for key in [k for k in after if k.startswith(f"{base}/summary/through=2026-10")]:
+        del store[(BUCKET, key)]
+    out2 = env["worker"].run_monitoring_repair(fc("POST", "monitoring_repair", body={})[1]["ticket"])["summary"]["repair"]
+    assert out2["summary_repaired"] == ["2026-10"] and out2["evaluated"] == []
+    assert snap()[f"{base}/evaluations/2026-10.json"] == original[f"{base}/evaluations/2026-10.json"]
+    again = env["worker"].run_monitoring_repair(fc("POST", "monitoring_repair", body={})[1]["ticket"])["summary"]["repair"]    # a repeat counts nothing twice and writes nothing
+    final = snap()
+    assert again["evaluated"] == [] and again["summary_repaired"] == []
+    assert json.loads(final[f"{base}/summary/through=2026-10.json"])["counted_months"] == 5
+    assert not any(k.startswith("vercel-lab/ml/runs/") and k not in original for k in final)                    # recovery wrote no shadow / training run
     assert forecasts_before == (q("SELECT forecast_run_id::text,status,is_official,sealed_at FROM demo_ml.forecast_run ORDER BY 1"),
                                 q("SELECT forecast_run_id::text,product_group_id,predicted_net_revenue FROM demo_ml.forecast_result ORDER BY 1,2"))
     assert q("SELECT DISTINCT method_type FROM demo_ml.forecast_run") == [("BASELINE",)]

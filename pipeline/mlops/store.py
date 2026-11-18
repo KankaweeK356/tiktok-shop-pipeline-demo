@@ -38,11 +38,17 @@ class S3Store:
         self.client, self.bucket = client, bucket
 
     def exists(self, key):
+        head = getattr(self.client, "head_object", None)          # clients without HEAD (test doubles) fall back to a GET
         try:
-            self.client.head_object(Bucket=self.bucket, Key=key)
+            if head is not None:
+                head(Bucket=self.bucket, Key=key)
+            else:
+                self.client.get_object(Bucket=self.bucket, Key=key)
             return True
-        except Exception as error:                      # botocore ClientError 404
-            if "404" in str(error) or "Not Found" in str(error) or "NoSuchKey" in str(error):
+        except KeyError:
+            return False
+        except Exception as error:                                  # botocore ClientError: 404 / NoSuchKey
+            if any(token in str(error) for token in ("404", "Not Found", "NoSuchKey")):
                 return False
             raise
 

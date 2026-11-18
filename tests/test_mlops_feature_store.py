@@ -148,3 +148,19 @@ def test_running_an_experiment_does_not_change_the_official_forecast_function():
     before = mf.generate_forecast(core, "2026-07")
     tr.run_experiment(rows, "2026-07", kind="EXPERIMENT_ONLY", source=SRC)
     assert mf.generate_forecast(core, "2026-07") == before
+
+
+def test_s3_store_works_with_a_minimal_client_and_never_overwrites():
+    import io
+    from pipeline.mlops.store import S3Store, put_new
+
+    class Minimal:                                               # only put_object/get_object, like the worker's test double
+        def __init__(self): self.o = {}
+        def put_object(self, Bucket, Key, Body, ContentType=None): self.o[(Bucket, Key)] = bytes(Body)
+        def get_object(self, Bucket, Key): return {"Body": io.BytesIO(self.o[(Bucket, Key)])}
+
+    store = S3Store(Minimal(), "b")
+    assert store.exists("k") is False and put_new(store, "k", b"1") == "CREATED"
+    assert put_new(store, "k", b"1") == "EXISTS_IDENTICAL"
+    with pytest.raises(StoreError):
+        put_new(store, "k", b"2")

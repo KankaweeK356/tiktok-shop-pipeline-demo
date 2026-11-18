@@ -85,7 +85,6 @@
   },
   "rows": 25,
   "source": {
-    "actual_warehouse_file_sha256": "16255c72951a3f93b389cc0c8bfe73ee4735c275242ce7b44e304b97bec09849",
     "published_through": "2026-05",
     "rows_read": 25,
     "source_run_id": "local-real-published-through-2026-05",

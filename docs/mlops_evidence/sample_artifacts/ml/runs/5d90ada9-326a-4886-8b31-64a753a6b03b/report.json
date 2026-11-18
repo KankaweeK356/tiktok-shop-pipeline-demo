@@ -75,7 +75,7 @@
   "report_version": "mlops-report-1",
   "separation_note": "Validation = ผลย้อนหลังก่อนเดือนเป้าหมาย / Forecast vs Actual = เทียบยอดคาดการณ์กับยอดจริงหลังเดือนเป้าหมาย Publish แล้ว สองส่วนนี้ไม่นำมารวมหรือแทนกัน",
   "target_month": "2026-06",
-  "training_run_id": "691affc3-6fc1-4b84-bd52-ed5c36e583c5",
+  "training_run_id": "5d90ada9-326a-4886-8b31-64a753a6b03b",
   "validation": {
     "models": [
       {

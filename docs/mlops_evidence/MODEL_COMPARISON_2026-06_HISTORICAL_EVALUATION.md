@@ -1,6 +1,6 @@
 # Model Comparison Report — เป้าหมาย 2026-06 (HISTORICAL_EVALUATION)
 
-- Training Run: `691affc3-6fc1-4b84-bd52-ed5c36e583c5`
+- Training Run: `5d90ada9-326a-4886-8b31-64a753a6b03b`
 - สถานะ Validation: **EXPERIMENTAL_INSUFFICIENT_VALIDATION**
 - ข้อมูลที่ใช้: 2026-01 → 2026-05 (5 เดือน), Feature `mlops-features-1`
 - Walk-forward origins ที่ใช้เทียบเท่ากันทุกโมเดล: **2** (2026-03, 2026-04) · เกณฑ์ขั้นต่ำ 3

@@ -350,6 +350,10 @@
       "PG05": 20000.89
     },
     "actual_shop": 104725.06,
+    "actual_source": {
+      "actual_warehouse_file": "er2_published_through_2026-06.duckdb",
+      "actual_warehouse_file_sha256": "16255c72951a3f93b389cc0c8bfe73ee4735c275242ce7b44e304b97bec09849"
+    },
     "label": "POST_HOC_EVALUATION (the target month was already published; used only for evaluation, never as a feature)",
     "models": {
       "baseline_naive_previous_month": {
@@ -408,7 +412,7 @@
     "ridge_base",
     "ridge_marketing"
   ],
-  "training_run_id": "691affc3-6fc1-4b84-bd52-ed5c36e583c5",
+  "training_run_id": "5d90ada9-326a-4886-8b31-64a753a6b03b",
   "walk_forward": {
     "identical_origins_for_all_models": true,
     "min_origins_required": 3,

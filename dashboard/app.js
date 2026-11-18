@@ -1781,6 +1781,17 @@
       Object.entries(issue.context || {}).forEach(([table, row]) =>
         more.append(node("strong", "", "ข้อมูลที่เกี่ยวข้อง: " + table), dqKeyValueTable(row)));
       card.append(more);
+      const orderId = issue.row_snapshot && issue.row_snapshot.Order_ID;
+      if (orderId) {                                              // a teaching document exists only for some orders; shown only if the file is published
+        const docUrl = "./teaching/source_order_" + encodeURIComponent(orderId) + ".html";
+        state.dq.docs = state.dq.docs || {};
+        if (state.dq.docs[orderId] === undefined) { state.dq.docs[orderId] = false;
+          fetch(docUrl, { method: "HEAD", cache: "no-store" }).then(r => { if (r.ok && (r.headers.get("content-type") || "").includes("html")) { state.dq.docs[orderId] = true; if (state.view === "pipeline") renderPipeline(); } }).catch(() => {}); }
+        if (state.dq.docs[orderId]) {
+          const doc = node("a", "", "เปิดเอกสารต้นฉบับจำลอง (สื่อสอน) เพื่อตรวจสีและไซส์ ↗"); doc.href = docUrl; doc.target = "_blank"; doc.rel = "noopener";
+          card.append(box("dq-doc-link", doc, small("เอกสารจำลองสำหรับการสาธิต ไม่ใช่ข้อมูลที่ระบบใช้ตัดสิน")));
+        }
+      }
       if (issue.latest_correction) {
         card.append(node("strong", "", `ประวัติการแก้ไข (ล่าสุด v${issue.latest_correction.version})`),
           dataTable([["version", "เวอร์ชัน"], ["corrected_value", "ค่าที่แก้"], ["actor", "ผู้ยืนยัน"], ["reason", "เหตุผล"], ["evidence_ref", "หลักฐาน"], ["created_at", "เวลา"]],

@@ -1,0 +1,150 @@
+{
+  "feature_version": "mlops-features-1",
+  "features": [
+    {
+      "description": "Net revenue of the group in the origin month",
+      "formula": "SUM(Net_Revenue) of the origin month",
+      "known_at": "end of the origin month (published before the label month starts)",
+      "name": "lag1_group_net",
+      "source": "Mart_Product_Group_Daily_Performance.Net_Revenue",
+      "type": "number",
+      "used_in": [
+        "ridge_base",
+        "ridge_marketing"
+      ]
+    },
+    {
+      "description": "Mean group net revenue of the last 3 months up to the origin month",
+      "formula": "mean(net[origin-2 .. origin])",
+      "known_at": "end of the origin month (published before the label month starts)",
+      "name": "trailing3_group_net_mean",
+      "source": "Mart_Product_Group_Daily_Performance.Net_Revenue",
+      "type": "number",
+      "used_in": [
+        "ridge_base",
+        "ridge_marketing"
+      ]
+    },
+    {
+      "description": "Calendar days of the month being predicted (a calendar fact, not data)",
+      "formula": "days(label_month)",
+      "known_at": "always known",
+      "name": "days_in_label_month",
+      "source": "calendar",
+      "type": "number",
+      "used_in": [
+        "ridge_base",
+        "ridge_marketing"
+      ]
+    },
+    {
+      "description": "One-hot indicator of product group PG01",
+      "formula": "1 if group == PG01 else 0",
+      "known_at": "always known",
+      "name": "group_PG01",
+      "source": "Dim_Product_Group",
+      "type": "indicator",
+      "used_in": [
+        "ridge_base",
+        "ridge_marketing"
+      ]
+    },
+    {
+      "description": "One-hot indicator of product group PG02",
+      "formula": "1 if group == PG02 else 0",
+      "known_at": "always known",
+      "name": "group_PG02",
+      "source": "Dim_Product_Group",
+      "type": "indicator",
+      "used_in": [
+        "ridge_base",
+        "ridge_marketing"
+      ]
+    },
+    {
+      "description": "One-hot indicator of product group PG03",
+      "formula": "1 if group == PG03 else 0",
+      "known_at": "always known",
+      "name": "group_PG03",
+      "source": "Dim_Product_Group",
+      "type": "indicator",
+      "used_in": [
+        "ridge_base",
+        "ridge_marketing"
+      ]
+    },
+    {
+      "description": "One-hot indicator of product group PG04",
+      "formula": "1 if group == PG04 else 0",
+      "known_at": "always known",
+      "name": "group_PG04",
+      "source": "Dim_Product_Group",
+      "type": "indicator",
+      "used_in": [
+        "ridge_base",
+        "ridge_marketing"
+      ]
+    },
+    {
+      "description": "One-hot indicator of product group PG05",
+      "formula": "1 if group == PG05 else 0",
+      "known_at": "always known",
+      "name": "group_PG05",
+      "source": "Dim_Product_Group",
+      "type": "indicator",
+      "used_in": [
+        "ridge_base",
+        "ridge_marketing"
+      ]
+    },
+    {
+      "description": "Net revenue growth over the last two months up to the origin month (null when the base is 0)",
+      "formula": "(net[origin] - net[origin-2]) / net[origin-2] * 100",
+      "known_at": "end of the origin month (published before the label month starts)",
+      "name": "net_trend_2m_pct",
+      "source": "Mart_Product_Group_Daily_Performance.Net_Revenue",
+      "type": "number",
+      "used_in": []
+    },
+    {
+      "description": "Ads cost of the origin month divided by Gross Reference Sales of the same month",
+      "formula": "SUM(Ads_Cost) / SUM(Gross_Reference_Sales)",
+      "known_at": "end of the origin month (published before the label month starts)",
+      "name": "ads_to_gross_lag1",
+      "source": "Mart_Product_Group_Daily_Performance.Ads_Cost / Gross_Reference_Sales",
+      "type": "ratio",
+      "used_in": [
+        "ridge_marketing"
+      ]
+    },
+    {
+      "description": "Campaign price reduction of the origin month divided by Gross Reference Sales of the same month",
+      "formula": "SUM(Campaign_Price_Reduction) / SUM(Gross_Reference_Sales)",
+      "known_at": "end of the origin month (published before the label month starts)",
+      "name": "campaign_discount_to_gross_lag1",
+      "source": "Mart_Product_Group_Daily_Performance.Campaign_Price_Reduction / Gross_Reference_Sales",
+      "type": "ratio",
+      "used_in": [
+        "ridge_marketing"
+      ]
+    },
+    {
+      "description": "DEFINED FOR FUTURE EXPERIMENTS (not used in any model yet)",
+      "formula": "SUM(Voucher_Discount) / SUM(Gross_Reference_Sales)",
+      "known_at": "end of the origin month (published before the label month starts)",
+      "name": "voucher_to_gross_lag1",
+      "source": "Mart_Product_Group_Daily_Performance.Voucher_Discount",
+      "type": "ratio",
+      "used_in": []
+    },
+    {
+      "description": "DEFINED FOR FUTURE EXPERIMENTS (not used in any model yet)",
+      "formula": "SUM(Affiliate_Cost) / SUM(Gross_Reference_Sales)",
+      "known_at": "end of the origin month (published before the label month starts)",
+      "name": "affiliate_to_gross_lag1",
+      "source": "Mart_Product_Group_Daily_Performance.Affiliate_Cost",
+      "type": "ratio",
+      "used_in": []
+    }
+  ]
+}

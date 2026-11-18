@@ -1,0 +1,51 @@
+{
+  "alpha": 1.0,
+  "intercept_penalised": false,
+  "min_origins": 3,
+  "min_train_months": 2,
+  "models": {
+    "baseline_naive_previous_month": {
+      "features": [],
+      "kind": "baseline"
+    },
+    "baseline_trailing_3_month_mean": {
+      "features": [],
+      "kind": "baseline"
+    },
+    "ridge_base": {
+      "dummies": [
+        "group_PG01",
+        "group_PG02",
+        "group_PG03",
+        "group_PG04",
+        "group_PG05"
+      ],
+      "kind": "ridge",
+      "numeric": [
+        "lag1_group_net",
+        "trailing3_group_net_mean",
+        "days_in_label_month"
+      ],
+      "official_candidate": true
+    },
+    "ridge_marketing": {
+      "dummies": [
+        "group_PG01",
+        "group_PG02",
+        "group_PG03",
+        "group_PG04",
+        "group_PG05"
+      ],
+      "kind": "ridge",
+      "numeric": [
+        "lag1_group_net",
+        "trailing3_group_net_mean",
+        "days_in_label_month",
+        "ads_to_gross_lag1",
+        "campaign_discount_to_gross_lag1"
+      ],
+      "official_candidate": false
+    }
+  },
+  "standardise": "numeric columns only"
+}

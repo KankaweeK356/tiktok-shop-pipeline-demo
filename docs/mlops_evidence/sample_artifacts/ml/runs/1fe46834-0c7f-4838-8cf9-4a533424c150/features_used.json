@@ -1,0 +1,38 @@
+{
+  "baseline_naive_previous_month": {
+    "features": []
+  },
+  "baseline_trailing_3_month_mean": {
+    "features": []
+  },
+  "ridge_base": {
+    "dummies": [
+      "group_PG01",
+      "group_PG02",
+      "group_PG03",
+      "group_PG04",
+      "group_PG05"
+    ],
+    "numeric": [
+      "lag1_group_net",
+      "trailing3_group_net_mean",
+      "days_in_label_month"
+    ]
+  },
+  "ridge_marketing": {
+    "dummies": [
+      "group_PG01",
+      "group_PG02",
+      "group_PG03",
+      "group_PG04",
+      "group_PG05"
+    ],
+    "numeric": [
+      "lag1_group_net",
+      "trailing3_group_net_mean",
+      "days_in_label_month",
+      "ads_to_gross_lag1",
+      "campaign_discount_to_gross_lag1"
+    ]
+  }
+}

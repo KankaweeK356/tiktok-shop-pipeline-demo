@@ -1,0 +1,96 @@
+{
+  "cutoff_month": "2026-06",
+  "feature_stats": {
+    "ads_to_gross_lag1": {
+      "max": 0.31860944049571716,
+      "mean": 0.22836904069154973,
+      "min": 0.14626466307046834,
+      "missing_share": 0.0,
+      "n": 25,
+      "std": 0.06109115705263134
+    },
+    "affiliate_to_gross_lag1": {
+      "max": 0.08731365450663696,
+      "mean": 0.060470467723482975,
+      "min": 0.038915410385259634,
+      "missing_share": 0.0,
+      "n": 25,
+      "std": 0.013863083585473984
+    },
+    "campaign_discount_to_gross_lag1": {
+      "max": 0.08352941176470588,
+      "mean": 0.0653342612262236,
+      "min": 0.04594059405940594,
+      "missing_share": 0.0,
+      "n": 25,
+      "std": 0.011591205455757278
+    },
+    "days_in_label_month": {
+      "max": 31.0,
+      "mean": 30.0,
+      "min": 28.0,
+      "missing_share": 0.0,
+      "n": 25,
+      "std": 1.0954451150103321
+    },
+    "lag1_group_net": {
+      "max": 24427.48,
+      "mean": 17361.2256,
+      "min": 9715.37,
+      "missing_share": 0.0,
+      "n": 25,
+      "std": 4237.636863403073
+    },
+    "net_trend_2m_pct": {
+      "max": 55.318325498668585,
+      "mean": 9.879348842180447,
+      "min": -30.031742963444007,
+      "missing_share": 0.4,
+      "n": 15,
+      "std": 24.781521382795116
+    },
+    "trailing3_group_net_mean": {
+      "max": 22296.75333333333,
+      "mean": 17305.668133333333,
+      "min": 10347.03,
+      "missing_share": 0.0,
+      "n": 25,
+      "std": 3846.1340730032134
+    },
+    "voucher_to_gross_lag1": {
+      "max": 0.028727578098757138,
+      "mean": 0.01872529716193734,
+      "min": 0.007384964035865603,
+      "missing_share": 0.0,
+      "n": 25,
+      "std": 0.004835152954347891
+    }
+  },
+  "feature_version": "mlops-features-1",
+  "inference_rows": 5,
+  "input_sha256": "2b5d9bce6c42df72ea18eb5a0411c19818458291ecb9fcdd0aa55e9067754692",
+  "labelled_rows": 25,
+  "months": [
+    "2026-01",
+    "2026-02",
+    "2026-03",
+    "2026-04",
+    "2026-05",
+    "2026-06"
+  ],
+  "origins": 6,
+  "point_in_time": {
+    "max_known_at": "2026-06-30",
+    "no_future_rows": true,
+    "rule": "features of row (origin, group) use months <= origin only; label = next month; inference row = cutoff month"
+  },
+  "rows": 30,
+  "source": {
+    "published_through": "2026-06",
+    "rows_read": 30,
+    "source_run_id": "local-real-published-through-2026-06",
+    "warehouse_file": "er2_published_through_2026-06.duckdb",
+    "warehouse_file_sha256": "16255c72951a3f93b389cc0c8bfe73ee4735c275242ce7b44e304b97bec09849"
+  },
+  "target_month": "2026-07"
+}

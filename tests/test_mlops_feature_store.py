@@ -283,7 +283,8 @@ def test_monitoring_block_is_inside_the_existing_panel_and_read_only():
         assert label in block
     assert "MON_ORIGIN" in block and "SYNTHETIC_FIXTURE" in block and "LOCAL_REAL_SOURCE_TEST" in block                 # simulated / test evidence is labelled in the UI
     assert "ridge_marketing" not in block and "Ridge + Marketing" not in block                      # the experimental challenger is not a column here
-    assert '"seal"' not in block and "POST" not in block and "mlops_run" not in block
+    assert '"seal"' not in block and "mlops_run" not in block and "seal_plan" not in block and "generate" not in block
+    assert 'fcApi("monitoring_repair"' in block and block.count('method: "POST"') == 2                      # the only writes: the repair ticket + its worker call (idempotent, evidence-only)
     import re
     assert not re.search(r"\b\d{1,3},\d{3}(\.\d+)?\b", block)                                      # no hard-coded results
     assert 'data-view="monitoring"' not in (_ROOT / "dashboard" / "index.html").read_text(encoding="utf-8")   # no new main tab

@@ -33,7 +33,7 @@ test("mutating operations validate input before touching the database", async ()
   const run = (method, query, body, headers = {}) => new Promise(resolve => {
     let status = 200, json = null;
     const res = { setHeader() {}, status(c) { status = c; return this; }, json(v) { json = v; resolve({ status, json }); return this; } };
-    labForecast({ method, query, body, headers: { host: "app.test", ...headers } }, res, { sql });
+    labForecast({ method, query, body, headers: { host: "app.test", origin: "https://app.test", ...headers } }, res, { sql });
   });
   assert.equal((await run("POST", { fc: "generate" }, { month: "2026-06" })).status, 400);       // actor required
   assert.equal((await run("POST", { fc: "seal" }, { forecast_run_id: "nope", actor: "a" })).status, 400);
@@ -133,7 +133,7 @@ test("MLOps: a storage outage returns a plain error and never breaks the forecas
 
 test("MLOps: tickets can only be non-official kinds, after the gate, with a published cutoff, and require an actor", async () => {
   const sql = fakeSql([0, 1, 2, 3, 4]);
-  const post = body => callWith(sql, {}, "POST", { fc: "mlops_run" }, body);
+  const post = body => callWith(sql, { mlopsStorage: { getJson: async () => null, list: async () => [] } }, "POST", { fc: "mlops_run" }, body);
   assert.equal((await post({ month: "2026-06", kind: "OFFICIAL_LINKED", actor: "a" })).status, 400);
   assert.equal((await post({ month: "2026-06", kind: "EXPERIMENT_ONLY" })).status, 400);
   assert.equal((await post({ month: "2026-05", kind: "HISTORICAL_EVALUATION", actor: "a" })).status, 409);
@@ -185,4 +185,99 @@ test("Monitoring: storage outage is a plain 503 and the forecast status keeps wo
   assert.equal(bad.status, 503); assert.equal(bad.json.error_code, "MLOPS_STORAGE_UNAVAILABLE");
   const st = await callWith(fakeSql([0, 1, 2, 3, 4]), {}, "GET", { fc: "status" });
   assert.equal(st.json.months.find(m => m.month === "2026-05").published, true); assert.equal(st.json.months.find(m => m.month === "2026-06").published, false);
+});
+
+
+// ---- Public API protection (no login): browser provenance, server-side gates, idempotency, caps, no leaked secrets -----------------
+import { strictOrigin, MAX_DRAFTS_PER_MONTH, MAX_SIM_BASKETS } from "../../lib/lab-forecast.js";
+const noStore = { getJson: async () => null, list: async () => [] };
+const callRaw = (sql, deps, method, query, body, headers) => new Promise(resolve => {
+  let status = 200, json = null;
+  const res = { setHeader() {}, status(c) { status = c; return this; }, json(v) { json = v; resolve({ status, json }); return this; } };
+  process.env.CLASSROOM_LAB_ADMIN_KEY = process.env.CLASSROOM_LAB_ADMIN_KEY || "test-key";
+  labForecast({ method, query, body, headers }, res, { sql, ...deps });
+});
+const POSTS = [["generate", { month: "2026-06", actor: "a" }], ["seal", { forecast_run_id: "x", actor: "a" }], ["simulate", { month: "2026-06", baskets: [], controls: {}, assumptions: {} }],
+  ["seal_plan", { month: "2026-06", actor: "a" }], ["mlops_run", { month: "2026-06", kind: "EXPERIMENT_ONLY", actor: "a" }], ["monitoring_repair", {}]];
+
+test("Security layer 1: every POST needs browser provenance; header-less (curl) and cross-site calls are refused before any database access", async () => {
+  let touched = 0; const sql = { query: async () => { touched += 1; return []; } };
+  for (const [op, body] of POSTS) {
+    for (const headers of [{ host: "app.test" }, { host: "app.test", origin: "https://evil.test" }, { host: "app.test", "sec-fetch-site": "cross-site" }, { host: "app.test", origin: "not a url" }]) {
+      const r = await callRaw(sql, { mlopsStorage: noStore }, "POST", { fc: op }, body, headers);
+      assert.equal(r.status, 403, `${op} ${JSON.stringify(headers)}`); assert.equal(r.json.error_code, "ORIGIN_REQUIRED");
+    }
+  }
+  assert.equal(touched, 0);
+  assert.equal(strictOrigin({ headers: { host: "app.test", origin: "https://app.test" } }), true);
+  assert.equal(strictOrigin({ headers: { host: "app.test", "sec-fetch-site": "same-origin" } }), true);
+  assert.equal(strictOrigin({ headers: { host: "app.test" } }), false);
+});
+
+test("Security layer 1b: provenance is not authorization: a forged same-origin call still hits the server-side gates (state, cutoff, sealed month)", async () => {
+  const ok = { host: "app.test", origin: "https://app.test" };
+  const r = await callRaw(fakeSql([0, 1, 2]), { mlopsStorage: noStore }, "POST", { fc: "generate" }, { month: "2026-06", actor: "forged" }, ok);
+  assert.equal(r.status, 409); assert.equal(r.json.error_code, "CUTOFF_NOT_PUBLISHED");                       // history/cutoff checked on the server, not trusted from the client
+  const seal = await callRaw(fakeSql([0, 1, 2, 3, 4]), {}, "POST", { fc: "seal" }, { forecast_run_id: "not-a-uuid", actor: "x" }, ok);
+  assert.equal(seal.status, 400);
+});
+
+test("Security layer 2a: drafts per month are capped and the simulation size is bounded", async () => {
+  const ok = { host: "app.test", origin: "https://app.test" };
+  const sqlWith = n => ({ query: async text => {
+    if (text.includes("demo_control.dataset_state")) return [{ phase: "RUN2_READY", cycle_number: 7, last_run_id: "11111111-1111-4111-8111-111111111111" }];
+    if (text.includes("demo_control.pipeline_runs")) return [0, 1, 2, 3, 4].map(i => ({ run_id: "22222222-2222-4222-8222-22222222222" + i, status: "SUCCEEDED", batch: DELIVERIES[i] }));
+    if (text.includes("FROM demo_ml.forecast_run")) return Array.from({ length: n }, (_, i) => ({ forecast_run_id: "33333333-3333-4333-8333-33333333333" + i, is_official: false, status: "DRAFT" }));
+    return []; } });
+  assert.equal((await callRaw(sqlWith(MAX_DRAFTS_PER_MONTH - 1), {}, "POST", { fc: "generate" }, { month: "2026-06", actor: "a" }, ok)).status, 202);
+  const capped = await callRaw(sqlWith(MAX_DRAFTS_PER_MONTH), {}, "POST", { fc: "generate" }, { month: "2026-06", actor: "a" }, ok);
+  assert.equal(capped.status, 429); assert.equal(capped.json.error_code, "DRAFT_LIMIT");
+  const big = await callRaw(sqlWith(0), {}, "POST", { fc: "simulate" }, { month: "2026-06", baskets: Array.from({ length: MAX_SIM_BASKETS + 1 }, () => ({ orders: 1, lines: [] })), controls: {}, assumptions: {} }, ok);
+  assert.equal(big.status, 413);
+  const fat = await callRaw(sqlWith(0), {}, "POST", { fc: "simulate" }, { month: "2026-06", baskets: [{ orders: 1, lines: Array.from({ length: 51 }, () => ({})) }], controls: {}, assumptions: {} }, ok);
+  assert.equal(fat.status, 413);
+});
+
+test("Security layer 2b: an ML evidence request is idempotent and fails closed when repeats cannot be ruled out", async () => {
+  const ok = { host: "app.test", origin: "https://app.test" }, sql = fakeSql([0, 1, 2, 3, 4]), seen = [];
+  const store = { list: async () => [], getJson: async key => { seen.push(key); return /requests\/HISTORICAL_EVALUATION\/2026-06\//.test(key) ? { training_run_id: "run-1" } : null; } };
+  const repeat = await callRaw(sql, { mlopsStorage: store }, "POST", { fc: "mlops_run" }, { month: "2026-06", kind: "HISTORICAL_EVALUATION", actor: "a" }, ok);
+  assert.equal(repeat.status, 200); assert.equal(repeat.json.already_recorded, true); assert.equal(repeat.json.ticket, undefined);     // no ticket, no worker run, no new files
+  const fresh = await callRaw(sql, { mlopsStorage: store }, "POST", { fc: "mlops_run" }, { month: "2026-06", kind: "EXPERIMENT_ONLY", actor: "a" }, ok);
+  assert.equal(fresh.status, 202); assert.ok(fresh.json.ticket);
+  const down = await callRaw(sql, { mlopsStorage: { list: async () => [], getJson: async () => { throw new Error("down"); } } }, "POST", { fc: "mlops_run" }, { month: "2026-06", kind: "EXPERIMENT_ONLY", actor: "a" }, ok);
+  assert.equal(down.status, 503);
+  assert.ok(seen.some(k => k.includes("-none.json")));
+});
+
+test("Recovery API: no ticket and no worker run unless an evaluation or summary is really missing", async () => {
+  const ok = { host: "app.test", origin: "https://app.test" };
+  const sql = { query: async text => {
+    if (text.includes("demo_control.dataset_state")) return [{ phase: "RUN2_READY", cycle_number: 7, last_run_id: "11111111-1111-4111-8111-111111111111" }];
+    if (text.includes("demo_control.pipeline_runs")) return DELIVERIES.slice(0, 7).map((b, i) => ({ run_id: "22222222-2222-4222-8222-22222222222" + i, status: "SUCCEEDED", batch: b }));
+    if (text.includes("FROM demo_ml.forecast_run")) return [{ forecast_run_id: "44444444-4444-4444-8444-444444444444", is_official: true, status: "SEALED" }];
+    if (text.includes("demo_ml.forecast_result")) return [];
+    return []; } };
+  const full = { list: async () => [], getJson: async () => ({ ok: true }) };
+  const none = await callRaw(sql, { mlopsStorage: full }, "POST", { fc: "monitoring_repair" }, {}, ok);
+  assert.equal(none.status, 200); assert.equal(none.json.nothing_to_repair, true); assert.equal(none.json.ticket, undefined);
+  const halfStore = { list: async () => [], getJson: async key => key.includes("/evaluations/") ? { month: "x" } : null };       // evaluation exists, summary missing
+  const gap = await callRaw(sql, { mlopsStorage: halfStore }, "POST", { fc: "monitoring_repair" }, {}, ok);
+  assert.equal(gap.status, 202); assert.ok(gap.json.ticket); assert.ok(gap.json.gaps.every(g => g.missing === "summary"));
+  const claim = JSON.parse(Buffer.from(gap.json.ticket.split(".")[0], "base64url").toString());
+  assert.equal(claim.action, "monitoring_repair"); assert.equal(claim.kind, undefined);
+  const read = await callRaw(sql, { mlopsStorage: halfStore }, "GET", { fc: "monitoring" }, undefined, ok);
+  assert.equal(read.status, 200); assert.ok(read.json.gaps.length > 0);                                                     // the page can offer the repair
+});
+
+test("No secret or storage detail leaks through API error bodies", async () => {
+  const ok = { host: "app.test", origin: "https://app.test" };
+  const leaky = { query: async () => { throw new Error("connect ECONNREFUSED postgres://user:SECRETPW@db.example/neon sslmode=require"); } };
+  for (const [op, body] of POSTS.slice(0, 5)) {
+    const r = await callRaw(leaky, { mlopsStorage: noStore }, "POST", { fc: op }, body, ok);
+    assert.ok(!JSON.stringify(r.json).includes("SECRETPW") && !JSON.stringify(r.json).includes("postgres://"), op);
+  }
+  const leakyStore = { list: async () => { throw new Error("S3 https://secret-bucket.example.com AccessKeyId=AKIA123"); }, getJson: async () => { throw new Error("AKIA123 secret-bucket"); } };
+  const r = await callRaw(fakeSql([0, 1, 2, 3, 4]), { mlopsStorage: leakyStore }, "GET", { fc: "mlops", month: "2026-06" }, undefined, ok);
+  assert.ok(!JSON.stringify(r.json).includes("AKIA") && !JSON.stringify(r.json).includes("secret-bucket"));
 });

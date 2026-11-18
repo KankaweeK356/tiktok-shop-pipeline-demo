@@ -4338,7 +4338,7 @@
   const MON_STATUS = { INSUFFICIENT_EVIDENCE: "ข้อมูลยังไม่พอ", PRELIMINARY_NOT_ASSESSED: "Preliminary · ยังไม่ประเมินเกณฑ์เปลี่ยน Champion", RECOMMEND_REVIEW: "แนะนำให้พิจารณาทบทวนการเปลี่ยน Champion", NOT_RECOMMENDED: "ยังไม่ผ่านเกณฑ์เปลี่ยน Champion" };
   const MON_REASON = { NO_SHADOW: "ไม่มี Shadow ที่บันทึกไว้ก่อน Publish", SHADOW_NOT_BOUND_TO_SEALED_FORECAST: "Shadow ไม่ผูกกับ Forecast ที่ Seal", ML_OR_BASELINE_MISSING: "มีคำทำนายไม่ครบทั้งสองวิธี",
     SHADOW_NOT_RECORDED_BEFORE_ACTUAL: "Shadow ไม่ได้บันทึกก่อน Publish Actual", ACTUAL_INCOMPLETE: "Actual ไม่ครบ 5 กลุ่ม", SHADOW_TARGET_MISMATCH: "เดือนเป้าหมายไม่ตรง", CUTOFF_MISMATCH: "Data Cutoff ไม่ตรง",
-    OFFICIAL_NOT_BASELINE: "Official ของเดือนนั้นไม่ใช่ Baseline", OFFICIAL_BASELINE_MISMATCH: "Baseline ใน Shadow ไม่ตรงกับ Official ที่ Seal" };
+    OFFICIAL_NOT_BASELINE: "Official ของเดือนนั้นไม่ใช่ Baseline", DATA_ORIGIN_MISMATCH: "หลักฐานมาจากแหล่งข้อมูลคนละประเภท (ไม่รวมกัน)", OFFICIAL_BASELINE_MISMATCH: "Baseline ใน Shadow ไม่ตรงกับ Official ที่ Seal" };
   const MON_ORIGIN = { SYNTHETIC_FIXTURE: "ข้อมูลสังเคราะห์สำหรับทดสอบกฎเท่านั้น ไม่ใช่ผลจริง ห้ามใช้เป็นหลักฐาน", LOCAL_REAL_SOURCE_TEST: "ผลจากการทดสอบกับข้อมูล Source จริงบนฐานข้อมูลชั่วคราว ไม่ใช่ผลจาก Production" };
   async function loadMonitoring(force = false) {
     const ml = state.fc.ml; if (!ml || (ml.mon && !force)) return;
@@ -4346,6 +4346,21 @@
     const r = await fcApi("monitoring");
     ml.mon = { loading: false, data: r.ok ? r.data : null, error: r.ok ? "" : (r.data.error || "โหลดผล Monitoring ไม่สำเร็จ") };
     if (state.view === "forecast") renderForecast();
+  }
+  async function repairMonitoring() {
+    const ml = state.fc.ml; if (!ml || ml.repairing) return;
+    if (!state.fc.actor.trim()) { ml.error = "ระบุชื่อผู้ดำเนินการ"; renderForecast(); return; }
+    ml.repairing = true; ml.error = ""; renderForecast();
+    try {
+      const t = await fcApi("monitoring_repair", { method: "POST", body: {} });
+      if (!t.ok) throw new Error(t.data.error || "ขอซ่อมไม่สำเร็จ");
+      if (t.data.ticket) {
+        const w = await fetch("/api/lab-worker.py", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ticket: t.data.ticket }) });
+        const out = await w.json();
+        if (!w.ok || out.status !== "RECORDED") throw new Error(out.error || out.error_code || "Worker ซ่อมไม่สำเร็จ");
+      }
+    } catch (error) { ml.error = error.message; }
+    ml.repairing = false; ml.mon = null; await loadMonitoring(true);
   }
   function svgEl(name, attrs = {}, text) { const e = document.createElementNS("http://www.w3.org/2000/svg", name); Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v)); if (text !== undefined) e.textContent = text; return e; }
   function monChart(title, labels, series, unit, digits) {
@@ -4371,6 +4386,11 @@
     const meter = box("mon-meter"); for (let i = 1; i <= 6; i += 1) meter.append(node("span", "mon-meter-cell" + (i <= n ? " on" : "") + (i === 3 || i === 6 ? " mark" : ""), ""));
     wrap.append(box("mon-status", node("span", "status " + L[1], L[0]), node("strong", "", "เดือนที่มีผลจริงสำหรับเปรียบเทียบ: " + n), meter,
       small("น้อยกว่า 3 เดือน = Insufficient Evidence · 3–5 = Preliminary · ตั้งแต่ 6 = Adequate")));
+    const gaps = mon.data.gaps || [];
+    if (gaps.length) {
+      const fix = node("button", "button button-outline", state.fc.ml.repairing ? "กำลังซ่อม…" : "ประเมินซ้ำ/ซ่อมเดือนที่ขาด"); fix.type = "button"; fix.disabled = Boolean(state.fc.ml.repairing); fix.addEventListener("click", repairMonitoring);
+      wrap.append(notice("ผล Monitoring ของบางเดือนยังบันทึกไม่ครบ (" + gaps.map(g => thaiMonth(g.month) + (g.missing === "summary" ? " ขาดสรุป" : " ขาดการประเมิน")).join(", ") + ") ซ่อมได้จากหลักฐานเดิม ไม่สร้าง Shadow ย้อนหลังและไม่เขียนทับ", true), fix);
+    }
     const rows = s ? s.rows : [], seen = new Set([...(s ? s.rows : []), ...(s ? s.excluded : [])].map(r => r.month));
     const notes = [];
     (s ? s.excluded : []).forEach(r => notes.push(thaiMonth(r.month) + " · ไม่นับ: " + (MON_REASON[r.exclusion_reason] || r.exclusion_reason)));

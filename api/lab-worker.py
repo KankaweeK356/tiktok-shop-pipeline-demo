@@ -51,6 +51,17 @@ def unpack_checked(data: bytes, root: Path) -> None:
         archive.extractall(root)
 
 
+MAX_DRAFTS_PER_MONTH = 5
+
+
+def safe_error(error: Exception) -> str:
+    """Only a stable error code (or the exception class) is ever returned to a caller / written to a result: never the message text,
+    which can contain hostnames, bucket names or connection details."""
+    import re
+    code = str(error).split(":", 1)[0].strip()
+    return code if re.fullmatch(r"[A-Z][A-Z0-9_]{3,79}", code) else type(error).__name__
+
+
 def read_ticket(ticket: str) -> dict:
     encoded, supplied = ticket.split(".", 1)
     secret = os.environ["CLASSROOM_LAB_ADMIN_KEY"].encode()
@@ -165,35 +176,97 @@ def zip_workspace(root: Path) -> bytes:
     return buffer.getvalue()
 
 
+def _monitoring_context(cycle: int):
+    """Published months with their run ids + the sealed official forecasts (with their sealed per-group values) of one cycle (read-only)."""
+    from pipeline import neon_control
+    with psycopg.connect(os.environ["NEON_DEMO_DATABASE_URL"]) as db:
+        runs = db.execute("SELECT run_id::text, result_summary->>'batch', finished_at FROM demo_control.pipeline_runs WHERE dataset_key='classroom' "
+                          "AND cycle_number=%s AND status='SUCCEEDED' AND finished_at IS NOT NULL ORDER BY finished_at", (cycle,)).fetchall()
+        sealed = db.execute("SELECT to_char(target_month,'YYYY-MM'), forecast_run_id::text, method_type, model_name FROM demo_ml.forecast_run "
+                            "WHERE dataset_key='classroom' AND cycle_number=%s AND is_official AND status='SEALED'", (cycle,)).fetchall()
+        forecasts = {}
+        for month, fid, method, model in sealed:
+            res = db.execute("SELECT product_group_id,predicted_net_revenue::float FROM demo_ml.forecast_result WHERE forecast_run_id=%s::uuid", (fid,)).fetchall()
+            forecasts[month] = {"forecast_run_id": fid, "method_type": method, "model_name": model, "results": {g: v for g, v in res}}
+    published = {}
+    for run_id, batch, finished in runs:
+        try:
+            month = neon_control.month_for_batch(batch)
+        except Exception:
+            continue
+        if month >= "2026-06":
+            published[month] = {"month": month, "run_id": run_id, "finished_at": finished.isoformat()}      # the latest successful run of a month wins
+    return list(published.values()), forecasts
+
+
+def _monitoring_stream(cycle: int) -> str:
+    return os.environ.get("CLASSROOM_MONITORING_STREAM") or f"lab-cycle-{cycle}"
+
+
+def _repair_months(client, bucket: str, cycle: int, skip_months=()) -> dict:
+    """Evaluate months whose evaluation/summary is missing, from the sealed Official + the shadow recorded before the actual. Idempotent."""
+    from pipeline.mlops import monitoring
+    from pipeline.mlops.store import S3Store
+    from pipeline import monthly_forecast
+    published, forecasts = _monitoring_context(cycle)
+
+    def load(run_id):
+        with tempfile.TemporaryDirectory(prefix="classroom-monitor-") as temp:
+            ws = Path(temp) / "month"
+            ws.mkdir()
+            restore_run_workspace(client, bucket, run_id, ws)
+            return monthly_forecast.read_published_group_months(ws / "er2.duckdb")
+    return monitoring.repair_stream(S3Store(client, bucket), stream=_monitoring_stream(cycle), cycle=cycle, published=published, forecasts=forecasts, load_actual_rows=load,
+                                    data_origin=os.environ.get("CLASSROOM_EVIDENCE_ORIGIN", "LAB_RUNTIME"), skip_months=skip_months)
+
+
 def record_monitoring(client, bucket: str, cycle: int, batch: str, run_id: str, workspace: Path) -> dict:
     """Champion-Challenger monitoring hook, called AFTER the month is published. Evaluates the shadow forecast recorded before this actual.
-    It only reads (warehouse, sealed forecast) and writes new object-storage files; any failure here is reported and never affects the publish."""
+    It only reads (warehouse, sealed forecast) and writes new object-storage files; any failure here is reported and never affects the publish.
+    Earlier months that a temporary failure left unevaluated are repaired on the way (idempotent)."""
     try:
         from pipeline import monthly_forecast, neon_control
         from pipeline.mlops import monitoring
         from pipeline.mlops.store import S3Store
+        from pipeline.mlops.locks import stream_lock
         month = neon_control.month_for_batch(batch)
         if month < "2026-06":
             return {"status": "NOT_APPLICABLE"}
-        with psycopg.connect(os.environ["NEON_DEMO_DATABASE_URL"]) as db:
-            row = db.execute("SELECT forecast_run_id::text,method_type,model_name FROM demo_ml.forecast_run WHERE dataset_key='classroom' "
-                             "AND cycle_number=%s AND target_month=%s AND is_official AND status='SEALED'", (cycle, month + "-01")).fetchone()
-            finished = db.execute("SELECT finished_at FROM demo_control.pipeline_runs WHERE run_id=%s::uuid", (run_id,)).fetchone()
-            sealed = db.execute("SELECT product_group_id,predicted_net_revenue::float FROM demo_ml.forecast_result WHERE forecast_run_id=%s::uuid", (row[0],)).fetchall() if row else []
-        if not row:
+        published, forecasts = _monitoring_context(cycle)
+        mine = next((p for p in published if p["run_id"] == run_id), None)
+        if month not in forecasts:
             return {"status": "NO_SEALED_FORECAST"}
-        if not finished or finished[0] is None:
-            return {"status": "SKIPPED", "error": "published time unavailable"}
+        if mine is None:
+            return {"status": "SKIPPED", "error": "PUBLISHED_TIME_UNAVAILABLE"}
         rows = monthly_forecast.read_published_group_months(workspace / "er2.duckdb")
-        forecast = {"forecast_run_id": row[0], "method_type": row[1], "model_name": row[2], "results": {g: v for g, v in sealed}}
-        stream = os.environ.get("CLASSROOM_MONITORING_STREAM") or f"lab-cycle-{cycle}"       # one stream per dataset cycle unless an explicit long-term stream is configured
-        from pipeline.mlops.locks import stream_lock
+        stream, origin = _monitoring_stream(cycle), os.environ.get("CLASSROOM_EVIDENCE_ORIGIN", "LAB_RUNTIME")
         with stream_lock(os.environ["NEON_DEMO_DATABASE_URL"], stream):                      # concurrent workers cannot race on the same month
-            return monitoring.record_month(S3Store(client, bucket), stream=stream, cycle=cycle, month=month, forecast=forecast, actual_rows=rows,
-                                           actual_published_at=finished[0].isoformat(), actual_run_id=run_id,
-                                           data_origin=os.environ.get("CLASSROOM_EVIDENCE_ORIGIN", "LAB_RUNTIME"))
+            result = monitoring.record_month(S3Store(client, bucket), stream=stream, cycle=cycle, month=month, forecast=forecasts[month], actual_rows=rows,
+                                             actual_published_at=mine["finished_at"], actual_run_id=run_id, data_origin=origin)
+            try:
+                result["repaired_earlier_months"] = _repair_months(client, bucket, cycle, skip_months=(month,))
+            except Exception as error:
+                result["repair_error"] = safe_error(error)
+        return result
     except Exception as error:                                           # the month is already published and unaffected
-        return {"status": "FAILED", "error": f"{type(error).__name__}: {error}"[:300]}
+        return {"status": "FAILED", "error": safe_error(error)}
+
+
+def run_monitoring_repair(ticket: str) -> dict:
+    """Explicit recovery (signed ticket). Writes only missing evaluation/summary files; never creates shadows or touches forecasts."""
+    claim = read_ticket(ticket)
+    cycle = int(claim.get("cycle"))
+    UUID(claim.get("nonce"))
+    url = os.environ["CLASSROOM_LAB_WRITER_URL"]
+    os.environ["NEON_DEMO_DATABASE_URL"] = url
+    from pipeline.mlops.locks import stream_lock
+    with psycopg.connect(url) as db:
+        state = db.execute("SELECT cycle_number FROM demo_control.dataset_state WHERE dataset_key='classroom'").fetchone()
+        if not state or int(state[0]) != cycle:
+            raise RuntimeError("LAB_CYCLE_CHANGED")
+    with stream_lock(url, _monitoring_stream(cycle)):
+        outcome = _repair_months(storage(), os.environ["CLASSROOM_STORAGE_BUCKET"], cycle)
+    return {"run_id": str(claim["nonce"]), "batch": None, "stage": "monitoring_repair", "status": "RECORDED", "summary": {"repair": outcome}}
 
 
 def run_ticket(ticket: str) -> dict:
@@ -450,6 +523,10 @@ def run_forecast(ticket: str) -> dict:
             raise RuntimeError("LAB_CYCLE_CHANGED")
         if state[1] != previous:
             raise RuntimeError("PREVIOUS_RUN_MISMATCH")
+        drafts = db.execute("SELECT COUNT(*) FROM demo_ml.forecast_run WHERE dataset_key='classroom' AND cycle_number=%s AND target_month=%s AND status='DRAFT'",
+                            (int(cycle), target + "-01")).fetchone()[0]
+        if drafts >= MAX_DRAFTS_PER_MONTH:                      # a replayed ticket / repeated requests cannot create unlimited drafts
+            raise RuntimeError(f"LAB_DRAFT_LIMIT: at most {MAX_DRAFTS_PER_MONTH} drafts per target month")
         published = db.execute("SELECT result_summary->>'batch' FROM demo_control.pipeline_runs WHERE run_id=%s::uuid",
                                (previous,)).fetchone()
         with db.cursor() as cur:
@@ -476,7 +553,7 @@ def run_forecast(ticket: str) -> dict:
             mlops_wh_sha = mlops_features.file_sha256(workspace / "er2.duckdb")
             mlops_error = None
         except Exception as error:
-            mlops_rows, mlops_wh_sha, mlops_error = None, None, f"{type(error).__name__}: {error}"[:300]
+            mlops_rows, mlops_wh_sha, mlops_error = None, None, safe_error(error)
     result = monthly_forecast.generate_forecast(rows, target, allow_ml=False)       # policy: ML is never selected as Official automatically
     if result["method_type"] != "BASELINE":
         raise RuntimeError("LAB_POLICY_ML_NOT_OFFICIAL: the official forecast must be a baseline")
@@ -493,7 +570,7 @@ def run_forecast(ticket: str) -> dict:
                         "rows_read": len(mlops_rows)})
             mlops_summary = {"status": "RECORDED", **mlops_training.persist(S3Store(client, bucket), bundle)}
         except Exception as error:                                  # the official forecast above is already saved and unaffected
-            mlops_summary = {"status": "FAILED", "error": f"{type(error).__name__}: {error}"[:300]}
+            mlops_summary = {"status": "FAILED", "error": safe_error(error)}
     put_json(client, bucket, f"vercel-lab/forecast/{forecast_id}/manifest.json", {
         "forecast_run_id": forecast_id, "source_warehouse_run_id": previous, **result["model_manifest"],
         "validation": result["validation"], "months_used": result["months_used"]})
@@ -517,6 +594,21 @@ def run_mlops(ticket: str) -> dict:
     from pipeline.mlops import features as mlops_features, training as mlops_training
     from pipeline.mlops.store import S3Store
     cutoff = monthly_forecast.month_add(target, -1)
+    request_key = f"vercel-lab/ml/requests/{kind}/{target}/{claim['cutoff_run_id']}-{claim.get('actual_run_id') or 'none'}.json"
+    from pipeline.mlops.locks import stream_lock
+    with stream_lock(url, "mlops-run:" + request_key):                           # one run per (kind, month, cutoff run, actual run): repeats return the first
+        existing = S3Store(client, bucket)
+        if existing.exists(request_key):
+            return {"run_id": str(claim["nonce"]), "batch": neon_control.batch_for_month(target), "stage": "mlops", "status": "RECORDED",
+                    "summary": {"mlops": {"status": "ALREADY_RECORDED", **json.loads(existing.get(request_key))}, "kind": kind, "target_month": target,
+                                "official_selection_changed": False}}
+        return _run_mlops_locked(client, bucket, url, claim, kind, target, cycle, cutoff, request_key)
+
+
+def _run_mlops_locked(client, bucket, url, claim, kind, target, cycle, cutoff, request_key):
+    from pipeline import monthly_forecast, neon_control
+    from pipeline.mlops import features as mlops_features, training as mlops_training
+    from pipeline.mlops.store import S3Store, dumps, put_new
     with psycopg.connect(url) as db:
         state = db.execute("SELECT cycle_number FROM demo_control.dataset_state WHERE dataset_key='classroom'").fetchone()
         if not state or int(state[0]) != int(cycle):
@@ -545,6 +637,7 @@ def run_mlops(ticket: str) -> dict:
         source={"source_run_id": str(claim["cutoff_run_id"]), "warehouse_file_sha256": sha, "published_through": max(r["month"] for r in rows), "rows_read": len(rows)},
         actual_source={"actual_run_id": str(claim["actual_run_id"])} if actual else None)
     stored = mlops_training.persist(S3Store(client, bucket), bundle)
+    put_new(S3Store(client, bucket), request_key, dumps({"training_run_id": stored["training_run_id"], "run_path": stored["run_path"], "evaluation_status": stored["evaluation_status"]}))
     return {"run_id": str(claim["nonce"]), "batch": neon_control.batch_for_month(target), "stage": "mlops", "status": "RECORDED",
             "summary": {"mlops": {"status": "RECORDED", **stored}, "kind": kind, "target_month": target,
                         "drift": bundle["drift"]["overall_status"], "official_selection_changed": False}}
@@ -574,7 +667,8 @@ class handler(BaseHTTPRequestHandler):
                 action = read_ticket(ticket).get("action")
                 result = (run_revalidation(ticket) if action == "revalidate" else
                           run_forecast(ticket) if action == "forecast" else
-                          run_mlops(ticket) if action == "mlops" else run_ticket(ticket))
+                          run_mlops(ticket) if action == "mlops" else
+                          run_monitoring_repair(ticket) if action == "monitoring_repair" else run_ticket(ticket))
             finally:
                 INVOCATION_LOCK.release()
             self.reply(200, {"accepted": True, "status": result.get("status", "SUCCEEDED"),

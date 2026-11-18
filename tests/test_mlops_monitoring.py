@@ -212,11 +212,11 @@ def test_record_month_is_automatic_write_once_and_ignores_historical_runs(tmp_pa
     assert store.exists("vercel-lab/ml/monitoring/lab-cycle-3/evaluations/2026-06.json") and store.exists("vercel-lab/ml/monitoring/lab-cycle-3/summary/through=2026-06.json")
     assert json.loads(store.get("vercel-lab/ml/monitoring/lab-cycle-3/summary/through=2026-06.json"))["data_origin"] == "SYNTHETIC_FIXTURE"
     again = mon.record_month(store, stream="lab-cycle-3", cycle=3, month="2026-06", forecast=forecast, actual_rows=actual_rows_for("2026-06", 1.0),
-                             actual_published_at=(created + timedelta(minutes=9)).isoformat(), actual_run_id="run-june")
+                             actual_published_at=(created + timedelta(minutes=9)).isoformat(), actual_run_id="run-june", data_origin="SYNTHETIC_FIXTURE")
     assert again["status"] == "ALREADY_RECORDED"                                                     # never rewritten
     assert json.loads(store.get("vercel-lab/ml/monitoring/lab-cycle-3/evaluations/2026-06.json"))["actual"]["shop"] == 100000.0
     late = mon.record_month(store, stream="lab-cycle-3", cycle=3, month="2026-07", forecast={**forecast, "forecast_run_id": "fc-none"}, actual_rows=actual_rows_for("2026-07"),
-                            actual_published_at=T0.isoformat(), actual_run_id="run-july")
+                            actual_published_at=T0.isoformat(), actual_run_id="run-july", data_origin="SYNTHETIC_FIXTURE")
     assert late["status"] == "EXCLUDED" and late["exclusion_reason"] == "NO_SHADOW"
     summary = json.loads(store.get("vercel-lab/ml/monitoring/lab-cycle-3/summary/through=2026-07.json"))
     assert summary["counted_months"] == 1 and [e["month"] for e in summary["excluded"]] == ["2026-07"]
@@ -311,3 +311,147 @@ def test_official_logic_records_what_the_original_logic_would_have_done_without_
     b = tr.run_experiment(shaped, "2026-10", kind="OFFICIAL_LINKED", source=SRC, official_forecast_id="fc-x")
     logic = b["evaluation"]["official_logic_result"]
     assert logic["method_type"] == "BASELINE" and logic["ml_would_be_selected_without_policy"] is True
+
+
+# ------------------------------------------------------------------ recovery (evaluation saved but summary missing / temporary failure + retry)
+class FlakyStore(LocalDirStore):
+    """Fails the next write whose key contains `fail_on` (simulates a crash/timeout between two object writes)."""
+    fail_on = None
+
+    def put(self, key, data):
+        if self.fail_on and self.fail_on in key:
+            self.fail_on = None
+            raise OSError("injected storage failure")
+        super().put(key, data)
+
+
+def june_setup(tmp_path, store_cls=FlakyStore):
+    rows = make_rows(5)
+    b = tr.run_experiment(rows, "2026-06", kind="OFFICIAL_LINKED", source=SRC, official_forecast_id="fc-real")
+    store = store_cls(tmp_path)
+    tr.persist(store, b)
+    published = (datetime.fromisoformat(b["shadow"]["created_at"]) + timedelta(minutes=5)).isoformat()
+    return b, store, published
+
+
+def test_evaluation_saved_but_summary_failed_is_repaired_from_the_stored_evidence_only(tmp_path):
+    b, store, published = june_setup(tmp_path)
+    forecast = official_from(b, "fc-real")
+    kw = dict(stream="s", cycle=1, month="2026-06", forecast=forecast, actual_published_at=published, actual_run_id="run-june", data_origin="LOCAL_REAL_SOURCE_TEST")
+    store.fail_on = "/summary/"
+    with pytest.raises(OSError):
+        mon.record_month(store, actual_rows=actual_rows_for("2026-06"), **kw)
+    ev_path = "vercel-lab/ml/monitoring/s/evaluations/2026-06.json"
+    assert store.exists(ev_path) and not store.exists("vercel-lab/ml/monitoring/s/summary/through=2026-06.json")
+    evidence = store.get(ev_path)
+    repaired = mon.record_month(store, actual_rows=[], **kw)                                  # retry does not need (or trust) a new actual
+    assert repaired["status"] == "SUMMARY_REPAIRED" and repaired["counted_months"] == 1
+    assert store.get(ev_path) == evidence                                                    # the evaluation was not rewritten
+    assert mon.record_month(store, actual_rows=actual_rows_for("2026-06", 1.0), **kw)["status"] == "ALREADY_RECORDED"
+    assert json.loads(store.get("vercel-lab/ml/monitoring/s/summary/through=2026-06.json"))["counted_months"] == 1
+
+
+def test_temporary_failure_before_any_write_is_retried_with_the_original_publish_time(tmp_path):
+    b, store, published = june_setup(tmp_path)
+    forecast = official_from(b, "fc-real")
+    loads = []
+
+    def load(run_id):
+        loads.append(run_id)
+        return actual_rows_for("2026-06")
+    store.fail_on = "/evaluations/"
+    with pytest.raises(OSError):
+        mon.record_month(store, stream="s", cycle=1, month="2026-06", forecast=forecast, actual_rows=actual_rows_for("2026-06"), actual_published_at=published,
+                         actual_run_id="run-june", data_origin="LAB_RUNTIME")
+    assert not store.exists("vercel-lab/ml/monitoring/s/evaluations/2026-06.json")
+    pub = [{"month": "2026-06", "run_id": "run-june", "finished_at": published}]
+    first = mon.repair_stream(store, stream="s", cycle=1, published=pub, forecasts={"2026-06": forecast}, load_actual_rows=load)
+    assert first["evaluated"] == ["2026-06"] and loads == ["run-june"]
+    row = json.loads(store.get("vercel-lab/ml/monitoring/s/evaluations/2026-06.json"))
+    assert row["status"] == "EVALUATED" and row["actual_published_at"] == published               # honest time guard: original publish time, not the retry time
+    again = mon.repair_stream(store, stream="s", cycle=1, published=pub, forecasts={"2026-06": forecast}, load_actual_rows=load)
+    assert again["unchanged"] == ["2026-06"] and loads == ["run-june"]                          # second retry touches nothing and loads nothing
+    assert json.loads(store.get("vercel-lab/ml/monitoring/s/summary/through=2026-06.json"))["counted_months"] == 1
+
+
+def test_retry_never_creates_a_shadow_and_never_counts_a_late_one(tmp_path):
+    rows = make_rows(5)
+    store = FlakyStore(tmp_path)                                                                 # no shadow was ever recorded for this forecast
+    forecast = {"forecast_run_id": "fc-none", "method_type": "BASELINE", "model_name": "trailing_3_month_mean", "results": {g: 20000.0 for g in G}}
+    pub = [{"month": "2026-06", "run_id": "r", "finished_at": T0.isoformat()}]
+    out = mon.repair_stream(store, stream="s", cycle=1, published=pub, forecasts={"2026-06": forecast}, load_actual_rows=lambda _r: actual_rows_for("2026-06"))
+    assert out["evaluated"] == ["2026-06"]
+    row = json.loads(store.get("vercel-lab/ml/monitoring/s/evaluations/2026-06.json"))
+    assert row["status"] == "EXCLUDED" and row["exclusion_reason"] == "NO_SHADOW"
+    assert not [k for k in store.list("vercel-lab/ml") if "shadow_forecast" in k]                # recovery wrote no shadow
+    # a shadow recorded AFTER the actual was published (e.g. a regenerated draft) is not counted either
+    b, store2, _p = june_setup(tmp_path / "late")
+    early = (datetime.fromisoformat(b["shadow"]["created_at"]) - timedelta(minutes=1)).isoformat()
+    out2 = mon.repair_stream(store2, stream="s", cycle=1, published=[{"month": "2026-06", "run_id": "r", "finished_at": early}], forecasts={"2026-06": official_from(b, "fc-real")},
+                             load_actual_rows=lambda _r: actual_rows_for("2026-06"))
+    assert json.loads(store2.get("vercel-lab/ml/monitoring/s/evaluations/2026-06.json"))["exclusion_reason"] == "SHADOW_NOT_RECORDED_BEFORE_ACTUAL"
+
+
+def test_repair_skips_months_without_a_sealed_forecast_and_months_being_recorded_now(tmp_path):
+    b, store, published = june_setup(tmp_path)
+    pub = [{"month": "2026-06", "run_id": "a", "finished_at": published}, {"month": "2026-07", "run_id": "b", "finished_at": published}]
+    out = mon.repair_stream(store, stream="s", cycle=1, published=pub, forecasts={"2026-06": official_from(b, "fc-real")}, load_actual_rows=lambda _r: actual_rows_for("2026-06"),
+                            skip_months=("2026-06",))
+    assert out["skipped"] == ["2026-06", "2026-07"] and out["evaluated"] == []
+    assert not store.exists("vercel-lab/ml/monitoring/s/evaluations/2026-07.json")
+
+
+# ------------------------------------------------------------------ data origin isolation
+def test_origin_is_stored_in_every_evaluation_and_mismatching_origins_are_never_summed():
+    rows = [mon.evaluate_month(month=m, forecast=sealed_forecast(m, 8000), shadow=shadow_for(m, "fc-" + m, 8000, 6000), actual_by_group={g: 20000.0 for g in G},
+                               actual_published_at=(T0 + timedelta(days=1)).isoformat(), actual_run_id="r", data_origin=o)
+            for m, o in zip(months(5), ("SYNTHETIC_FIXTURE", "LOCAL_REAL_SOURCE_TEST", "PRODUCTION", "PRODUCTION", "PRODUCTION"))]
+    assert [r["data_origin"] for r in rows] == ["SYNTHETIC_FIXTURE", "LOCAL_REAL_SOURCE_TEST", "PRODUCTION", "PRODUCTION", "PRODUCTION"]
+    prod = mon.summarize(rows, stream="s", data_origin="PRODUCTION")
+    assert prod["counted_months"] == 3 and prod["evidence_level"] == "PRELIMINARY"               # only the three production rows
+    assert sorted(e["month"] for e in prod["excluded"] if e["exclusion_reason"] == "DATA_ORIGIN_MISMATCH") == months(2)
+    synth = mon.summarize(rows, stream="s", data_origin="SYNTHETIC_FIXTURE")
+    assert synth["counted_months"] == 1 and synth["evidence_level"] == "INSUFFICIENT_EVIDENCE"
+    assert all(r["data_origin"] == "PRODUCTION" for r in prod["rows"])
+    legacy = {k: v for k, v in rows[2].items() if k != "data_origin"}
+    assert mon.summarize([legacy], stream="s", data_origin="PRODUCTION")["counted_months"] == 0   # evidence with no recorded origin is not trusted
+
+
+def test_a_stream_written_under_one_origin_does_not_absorb_a_later_run_of_another_origin(tmp_path):
+    b, store, published = june_setup(tmp_path)
+    forecast = official_from(b, "fc-real")
+    mon.record_month(store, stream="s", cycle=1, month="2026-06", forecast=forecast, actual_rows=actual_rows_for("2026-06"), actual_published_at=published,
+                     actual_run_id="r", data_origin="SYNTHETIC_FIXTURE")
+    b2 = tr.run_experiment(make_rows(6), "2026-07", kind="OFFICIAL_LINKED", source={**SRC, "source_run_id": "r2"}, official_forecast_id="fc-july")
+    tr.persist(store, b2)
+    pub2 = (datetime.fromisoformat(b2["shadow"]["created_at"]) + timedelta(minutes=5)).isoformat()
+    out = mon.record_month(store, stream="s", cycle=1, month="2026-07", forecast=official_from(b2, "fc-july"), actual_rows=actual_rows_for("2026-07"), actual_published_at=pub2,
+                           actual_run_id="r2", data_origin="PRODUCTION")
+    assert out["counted_months"] == 1                                                            # July counts alone under PRODUCTION; the synthetic June is shown as excluded
+    summary = json.loads(store.get("vercel-lab/ml/monitoring/s/summary/through=2026-07.json"))
+    assert summary["data_origin"] == "PRODUCTION" and [e["exclusion_reason"] for e in summary["excluded"]] == ["DATA_ORIGIN_MISMATCH"]
+
+
+def test_late_repair_of_an_earlier_month_publishes_a_new_summary_revision_and_keeps_history(tmp_path):
+    """Month 1 and 3 were evaluated, month 2 failed. After the repair the newest summary (a new revision) counts all three; the old file is untouched."""
+    store = FlakyStore(tmp_path)
+    forecasts, published, shadows = {}, [], {}
+    for k, month in enumerate(("2026-06", "2026-07", "2026-08")):
+        rows = make_rows(5 + k)
+        b = tr.run_experiment(rows, month, kind="OFFICIAL_LINKED", source={**SRC, "source_run_id": f"r{k}"}, official_forecast_id=f"fc-{k}")
+        tr.persist(store, b)
+        forecasts[month] = official_from(b, f"fc-{k}")
+        published.append({"month": month, "run_id": f"run-{k}", "finished_at": (datetime.fromisoformat(b["shadow"]["created_at"]) + timedelta(minutes=5)).isoformat()})
+    for item in (published[0], published[2]):
+        mon.record_month(store, stream="s", cycle=1, month=item["month"], forecast=forecasts[item["month"]], actual_rows=actual_rows_for(item["month"]),
+                         actual_published_at=item["finished_at"], actual_run_id=item["run_id"])
+    old_path = "vercel-lab/ml/monitoring/s/summary/through=2026-08.json"
+    old_bytes = store.get(old_path)
+    assert json.loads(old_bytes)["counted_months"] == 2
+    out = mon.repair_stream(store, stream="s", cycle=1, published=published, forecasts=forecasts, load_actual_rows=lambda _r: actual_rows_for("2026-07"))
+    assert out["evaluated"] == ["2026-07"] and out["latest_summary_through"] == "2026-08"
+    assert store.get(old_path) == old_bytes                                                      # history is immutable
+    newest = json.loads(store.get("vercel-lab/ml/monitoring/s/summary/through=2026-08.rev1.json"))
+    assert newest["counted_months"] == 3 and [m["month"] for m in newest["monthly"]] == ["2026-06", "2026-07", "2026-08"]
+    again = mon.repair_stream(store, stream="s", cycle=1, published=published, forecasts=forecasts, load_actual_rows=lambda _r: (_ for _ in ()).throw(AssertionError("must not load")))
+    assert again["unchanged"] == ["2026-06", "2026-07", "2026-08"] and not store.exists("vercel-lab/ml/monitoring/s/summary/through=2026-08.rev2.json")

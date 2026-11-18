@@ -452,13 +452,28 @@ def test_12b_ml_can_never_become_the_official_forecast_automatically(env, monkey
         env["worker"].run_forecast(data["ticket"])
     assert "LAB_POLICY_ML_NOT_OFFICIAL" in str(blocked.value)
     assert q("SELECT COUNT(*) FROM demo_ml.forecast_run")[0][0] == before + 1      # nothing was written by the blocked attempt
+    monkeypatch.setattr(mf_module, "generate_forecast", real)
+    # drafts per month are capped (a replayed or repeated request cannot create unlimited drafts)
+    cap = 5
+    while q("SELECT COUNT(*) FROM demo_ml.forecast_run WHERE target_month='2026-06-01' AND status='DRAFT'")[0][0] < cap - 1:
+        forecast_for(env, "2026-06")
+    status, held = fc("POST", "generate", body={"month": "2026-06", "actor": "business.owner"})
+    assert status == 202                                               # 4 drafts: one more is still allowed
+    forecast_for(env, "2026-06")                                       # 5th draft
+    status, refused = fc("POST", "generate", body={"month": "2026-06", "actor": "business.owner"})
+    assert status == 429 and refused["error_code"] == "DRAFT_LIMIT"
+    with pytest.raises(RuntimeError) as replay:                         # the ticket issued earlier cannot be replayed past the cap either
+        env["worker"].run_forecast(held["ticket"])
+    assert "LAB_DRAFT_LIMIT" in str(replay.value)
+    assert q("SELECT COUNT(*) FROM demo_ml.forecast_run WHERE target_month='2026-06-01' AND status='DRAFT'")[0][0] == cap
 
 
 def test_13_seal_once_is_immutable_and_unlocks_june(env):
     draft = env["ctx"]["june_draft"]
     status, bad = fc("POST", "seal", body={"forecast_run_id": draft["forecast_run_id"]})
     assert status == 400                                   # actor required
-    other = forecast_for(env, "2026-06")                   # drafts may be retried; only one can ever become official
+    other_id = [r[0] for r in q("SELECT forecast_run_id::text FROM demo_ml.forecast_run WHERE target_month='2026-06-01' AND status='DRAFT' AND forecast_run_id::text<>%s", (draft["forecast_run_id"],))][0]
+    other = {"forecast_run_id": other_id}                  # other drafts exist (retries); only one can ever become official
     status, sealed = fc("POST", "seal", body={"forecast_run_id": draft["forecast_run_id"], "actor": "business.owner"})
     assert status == 200 and sealed["status"] == "SEALED"
     assert fc("POST", "seal", body={"forecast_run_id": draft["forecast_run_id"], "actor": "x"})[0] == 409
@@ -589,6 +604,10 @@ def test_17_mlops_evidence_runs_are_additive_and_never_touch_forecasts(env):
         out = env["worker"].run_mlops(data["ticket"])
         assert out["status"] == "RECORDED" and out["summary"]["official_selection_changed"] is False
         results[(month, kind)] = out["summary"]
+    again_status, again_ticket = fc("POST", "mlops_run", body={"month": "2026-06", "kind": "HISTORICAL_EVALUATION", "actor": "ml.tester"})
+    assert again_status == 202                                            # (the API harness has no object store; the worker is the idempotency authority)
+    repeat = env["worker"].run_mlops(again_ticket["ticket"])
+    assert repeat["summary"]["mlops"]["status"] == "ALREADY_RECORDED" and repeat["summary"]["mlops"]["training_run_id"] == results[("2026-06", "HISTORICAL_EVALUATION")]["mlops"]["training_run_id"]
     june = results[("2026-06", "HISTORICAL_EVALUATION")]["mlops"]
     july = results[("2026-07", "HISTORICAL_EVALUATION")]["mlops"]
     assert june["evaluation_status"] == "EXPERIMENTAL_INSUFFICIENT_VALIDATION" and july["evaluation_status"] == "ELIGIBLE"
@@ -699,3 +718,39 @@ def test_19_concurrent_monitoring_writers_are_serialised_by_the_stream_lock(env,
         return sorted(results)
     assert race("race-locked", True) == ["ALREADY_RECORDED"] * 3 + ["EVALUATED"]                         # exactly one writer wins, the rest see it
     assert race("race-open", False) != ["ALREADY_RECORDED"] * 3 + ["EVALUATED"]                         # without the lock the race is real (why the lock exists)
+
+
+def test_20_a_failed_monitoring_month_is_recovered_from_the_original_evidence(env):
+    """September's monitoring was killed in test 16. Recovery evaluates it from the sealed Official + the shadow recorded BEFORE the actual was published."""
+    cycle = q("SELECT cycle_number FROM demo_control.dataset_state")[0][0]
+    base = f"vercel-lab/ml/monitoring/lab-cycle-{cycle}"
+    snap = lambda: {key: data for (_b, key), data in env["s3"].objects.items()}
+    before_objects = snap()
+    assert f"{base}/evaluations/2026-09.json" not in before_objects
+    forecasts_before = (q("SELECT forecast_run_id::text,status,is_official,sealed_at FROM demo_ml.forecast_run ORDER BY 1"),
+                        q("SELECT forecast_run_id::text,product_group_id,predicted_net_revenue FROM demo_ml.forecast_result ORDER BY 1,2"))
+    status, ticket = fc("POST", "monitoring_repair", body={})
+    assert status == 202 and ticket["ticket"]
+    out = env["worker"].run_monitoring_repair(ticket["ticket"])["summary"]["repair"]
+    assert out["evaluated"] == ["2026-09"] and out["latest_summary_through"] == "2026-10"
+    after = snap()
+    new_keys = sorted(set(after) - set(before_objects))
+    assert new_keys == [f"{base}/evaluations/2026-09.json", f"{base}/summary/through=2026-10.rev1.json"]   # only the missing evaluation and a new summary revision
+    assert all(after[k] == v for k, v in before_objects.items())                                         # nothing existing was rewritten
+    row = json.loads(after[f"{base}/evaluations/2026-09.json"])
+    sept_run = q("SELECT finished_at FROM demo_control.pipeline_runs WHERE result_summary->>'batch'='incremental_08' AND status='SUCCEEDED'")[0][0]
+    assert row["status"] == "EVALUATED" and row["data_origin"] == "LOCAL_REAL_SOURCE_TEST"
+    assert datetime.fromisoformat(row["actual_published_at"]) == sept_run                                  # original publish time, not the time of the retry
+    assert row["shadow_created_at"] < row["actual_published_at"]
+    oracle = oracle_groups()["2026-09"]
+    assert row["actual"]["shop"] == pytest.approx(sum(oracle.values()), abs=0.1)
+    old_summary = json.loads(after[f"{base}/summary/through=2026-10.json"])
+    new_summary = json.loads(after[f"{base}/summary/through=2026-10.rev1.json"])
+    assert old_summary["counted_months"] == 4 and new_summary["counted_months"] == 5                       # history kept, newest revision is complete
+    assert [m["month"] for m in new_summary["monthly"]] == ["2026-06", "2026-07", "2026-08", "2026-09", "2026-10"]
+    status2, ticket2 = fc("POST", "monitoring_repair", body={})                                           # a second recovery changes nothing and counts nothing twice
+    out2 = env["worker"].run_monitoring_repair(ticket2["ticket"])["summary"]["repair"]
+    assert out2["evaluated"] == [] and out2["summary_repaired"] == [] and snap() == after
+    assert forecasts_before == (q("SELECT forecast_run_id::text,status,is_official,sealed_at FROM demo_ml.forecast_run ORDER BY 1"),
+                                q("SELECT forecast_run_id::text,product_group_id,predicted_net_revenue FROM demo_ml.forecast_result ORDER BY 1,2"))
+    assert q("SELECT DISTINCT method_type FROM demo_ml.forecast_run") == [("BASELINE",)]

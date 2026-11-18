@@ -17,11 +17,12 @@ let status = 200, json = null;
 const res = {
   setHeader() {}, status(code) { status = code; return this; }, json(value) { json = value; return this; }
 };
-const req = { method: input.method, query: input.query || {}, body: input.body, headers: { host: "localhost" } };
+const req = { method: input.method, query: input.query || {}, body: input.body, headers: { host: "localhost", origin: "http://localhost", "sec-fetch-site": "same-origin", ...(input.headers || {}) } };
 if (input.module === "forecast") {
   // batch.json files that the Python test copied out of its in-memory object storage
   const readBatchSummary = async runId => JSON.parse(readFileSync(`${process.env.DQ_TEST_SUMMARY_DIR}/${runId}.json`, "utf8"));
-  await labForecast(req, res, { sql, readBatchSummary });
+  const noObjects = { list: async () => [], getJson: async () => null };           // the object store is not part of this harness
+  await labForecast(req, res, { sql, readBatchSummary, mlopsStorage: noObjects });
 } else {
   await labDQ(req, res, { sql });
 }

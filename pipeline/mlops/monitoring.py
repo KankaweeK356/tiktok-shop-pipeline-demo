@@ -38,9 +38,10 @@ def _excluded(month, forecast, reason, detail, **extra):
             "official_forecast_id": forecast.get("forecast_run_id"), "official_method": forecast.get("method_type"), **extra}
 
 
-def evaluate_month(*, month: str, forecast: dict, shadow: dict | None, actual_by_group: dict | None, actual_published_at, actual_run_id: str | None) -> dict:
+def evaluate_month(*, month: str, forecast: dict, shadow: dict | None, actual_by_group: dict | None, actual_published_at, actual_run_id: str | None,
+                   data_origin: str = "LAB_RUNTIME") -> dict:
     """One month. `forecast` = the sealed official forecast row; `shadow` = shadow_forecast.json found through the forecast id (or None)."""
-    base = {"actual_run_id": actual_run_id, "actual_published_at": str(actual_published_at)}
+    base = {"actual_run_id": actual_run_id, "actual_published_at": str(actual_published_at), "data_origin": data_origin}
     if shadow is None:
         return _excluded(month, forecast, "NO_SHADOW", "ไม่มี Shadow Forecast ที่บันทึกไว้คู่กับ Forecast นี้ (เช่น Seal ก่อนเปิดใช้ MLOps)", **base)
     if shadow.get("kind") != "OFFICIAL_LINKED" or shadow.get("official_forecast_id") != forecast.get("forecast_run_id"):
@@ -87,6 +88,11 @@ def evaluate_month(*, month: str, forecast: dict, shadow: dict | None, actual_by
 def summarize(rows: list[dict], *, stream, data_origin: str = "LAB_RUNTIME") -> dict:
     if data_origin not in ORIGINS:
         raise ValueError("MONITORING_DATA_ORIGIN_INVALID")
+    foreign = [r for r in rows if r.get("data_origin") != data_origin]        # evidence of another origin (or none recorded) is never merged
+    rows = [r for r in rows if r not in foreign]
+    rows = rows + [{"month": r["month"], "status": "EXCLUDED", "exclusion_reason": "DATA_ORIGIN_MISMATCH",
+                    "detail": f"หลักฐานเดือนนี้มาจาก {r.get('data_origin') or 'ไม่ระบุ'} ไม่ใช่ {data_origin} จึงไม่รวมในผล Monitoring ชุดนี้",
+                    "row_data_origin": r.get("data_origin"), "official_forecast_id": r.get("official_forecast_id")} for r in foreign]
     ev = sorted((r for r in rows if r["status"] == "EVALUATED"), key=lambda r: r["month"])
     excl = sorted((r for r in rows if r["status"] != "EVALUATED"), key=lambda r: r["month"])
     n = len(ev)
@@ -147,33 +153,105 @@ def summarize(rows: list[dict], *, stream, data_origin: str = "LAB_RUNTIME") -> 
             "separation_note": "นับเฉพาะ Shadow Forecast ที่บันทึกก่อน Publish Actual · ไม่รวม Historical Evaluation, Experiment Only หรือ Backtest"}
 
 
+def _load_rows(store, base: str, month: str) -> list[dict]:
+    import json
+    rows = []
+    for i in range(WINDOW_MONTHS):                                               # this month and earlier ones of the same stream (rolling window)
+        key = f"{base}/evaluations/{month_add(month, -i)}.json"
+        if store.exists(key):
+            rows.append(json.loads(store.get(key)))
+    return rows
+
+
+MAX_REVISIONS = 9
+
+
+def _latest_revision(store, base: str, month: str):
+    """(key, bytes) of the newest summary file of a through-month: `through=M.json`, then `through=M.rev1.json`, `.rev2` ... (None if none)."""
+    key = f"{base}/summary/through={month}.json"
+    if not store.exists(key):
+        return None
+    latest = (key, store.get(key))
+    for n in range(1, MAX_REVISIONS + 1):
+        nxt = f"{base}/summary/through={month}.rev{n}.json"
+        if not store.exists(nxt):
+            break
+        latest = (nxt, store.get(nxt))
+    return latest
+
+
+def _write_summary(store, base: str, stream: str, month: str, data_origin: str) -> dict:
+    """Immutable, deterministic summary files. If late evidence (a repaired earlier month) changes the content, a NEW revision file is written; older files stay as history."""
+    summary = summarize(_load_rows(store, base, month), stream=stream, data_origin=data_origin)
+    body = dumps(summary)
+    latest = _latest_revision(store, base, month)
+    if latest is None:
+        put_new(store, f"{base}/summary/through={month}.json", body)
+    elif latest[1] != body:
+        n = int(latest[0].rsplit(".rev", 1)[1][:-5]) + 1 if ".rev" in latest[0] else 1
+        if n > MAX_REVISIONS:
+            raise StoreError("MONITORING_SUMMARY_REVISION_LIMIT")
+        put_new(store, f"{base}/summary/through={month}.rev{n}.json", body)
+    return summary
+
+
 def record_month(store, *, stream: str, cycle, month: str, forecast: dict, actual_rows: list[dict], actual_published_at, actual_run_id: str | None,
                  data_origin: str = "LAB_RUNTIME", prefix: str = DEFAULT_PREFIX) -> dict:
-    """Called when the actual of `month` is published. Evaluates it, stores the evaluation write-once and a new immutable summary file.
-    `forecast` = the sealed official forecast {forecast_run_id, method_type, model_name, results{group: sealed value}}. Callers serialise per stream."""
+    """Called when the actual of `month` is published (or by recovery). Evaluates it, stores the evaluation write-once and an immutable summary.
+    `forecast` = the sealed official forecast {forecast_run_id, method_type, model_name, results{group: sealed value}}. Callers serialise per stream.
+    Recovery: an evaluation that already exists is never recomputed; if its summary is missing it is rebuilt from the stored evidence only."""
     import json
     base = f"{prefix}/monitoring/{stream}"
-    if store.exists(f"{base}/evaluations/{month}.json"):
-        return {"status": "ALREADY_RECORDED", "month": month}                  # an evaluation is never recomputed or overwritten
+    eval_key, summary_key = f"{base}/evaluations/{month}.json", f"{base}/summary/through={month}.json"
+    if store.exists(eval_key):
+        if store.exists(summary_key):
+            return {"status": "ALREADY_RECORDED", "month": month}
+        summary = _write_summary(store, base, stream, month, data_origin)         # crash between the two writes: rebuild the missing summary
+        return {"status": "SUMMARY_REPAIRED", "month": month, "counted_months": summary["counted_months"], "evidence_level": summary["evidence_level"],
+                "recommendation": summary["recommendation"]["status"]}
     pointer_key = f"{prefix}/monitoring/by_forecast/{forecast['forecast_run_id']}.json"
     shadow = None
     if store.exists(pointer_key):
         pointer = json.loads(store.get(pointer_key))
         skey = f"{pointer['run_path']}/shadow_forecast.json"
-        shadow = json.loads(store.get(skey)) if store.exists(skey) else None
+        shadow = json.loads(store.get(skey)) if store.exists(skey) else None         # a shadow that was never recorded is never created afterwards
     actual = {g: sum(float(r["net_revenue"]) for r in actual_rows if r["month"] == month and r["group"] == g) if any(r["month"] == month and r["group"] == g for r in actual_rows) else None
               for g in GROUPS}
-    row = evaluate_month(month=month, forecast=forecast, shadow=shadow, actual_by_group=actual, actual_published_at=actual_published_at, actual_run_id=actual_run_id)
+    row = evaluate_month(month=month, forecast=forecast, shadow=shadow, actual_by_group=actual, actual_published_at=actual_published_at, actual_run_id=actual_run_id, data_origin=data_origin)
     row.update({"cycle": cycle, "stream": stream})
-    state = put_new(store, f"{base}/evaluations/{month}.json", dumps(row))
-    if state != "CREATED":
+    if put_new(store, eval_key, dumps(row)) != "CREATED":
         return {"status": "ALREADY_RECORDED", "month": month}
-    rows = [row]                                                                 # earlier months of the same stream, newest window only (no calendar range)
-    for i in range(1, WINDOW_MONTHS):
-        key = f"{base}/evaluations/{month_add(month, -i)}.json"
-        if store.exists(key):
-            rows.append(json.loads(store.get(key)))
-    summary = summarize(rows, stream=stream, data_origin=data_origin)
-    put_new(store, f"{base}/summary/through={month}.json", dumps(summary))
+    summary = _write_summary(store, base, stream, month, data_origin)
     return {"status": row["status"], "exclusion_reason": row.get("exclusion_reason"), "month": month, "counted_months": summary["counted_months"],
             "evidence_level": summary["evidence_level"], "recommendation": summary["recommendation"]["status"]}
+
+
+def repair_stream(store, *, stream: str, cycle, published: list[dict], forecasts: dict, load_actual_rows, data_origin: str = "LAB_RUNTIME",
+                  skip_months=(), prefix: str = DEFAULT_PREFIX) -> dict:
+    """Idempotent recovery after a temporary monitoring failure.
+    `published` = [{month, run_id, finished_at}] of months whose actual is Published; `forecasts` = {month: sealed official forecast};
+    `load_actual_rows(run_id)` returns the published monthly rows of that run. Months already evaluated are untouched; months without a sealed
+    forecast are skipped; the original Publish time is used for the 'shadow recorded before actual' check (never the time of the retry)."""
+    out = {"evaluated": [], "summary_repaired": [], "unchanged": [], "skipped": []}
+    for item in sorted(published, key=lambda x: x["month"]):
+        month = item["month"]
+        if month in skip_months or month not in forecasts:
+            out["skipped"].append(month)
+            continue
+        base = f"{prefix}/monitoring/{stream}"
+        had_eval = store.exists(f"{base}/evaluations/{month}.json")
+        had_summary = store.exists(f"{base}/summary/through={month}.json")
+        if had_eval and had_summary:
+            out["unchanged"].append(month)
+            continue
+        res = record_month(store, stream=stream, cycle=cycle, month=month, forecast=forecasts[month],
+                           actual_rows=[] if had_eval else load_actual_rows(item["run_id"]), actual_published_at=item["finished_at"],
+                           actual_run_id=item["run_id"], data_origin=data_origin, prefix=prefix)
+        (out["summary_repaired"] if had_eval else out["evaluated"]).append(month)
+    if out["evaluated"]:                                                          # late evidence changes the newest through-month: publish it as a new revision
+        base = f"{prefix}/monitoring/{stream}"
+        evaluated_months = [it["month"] for it in published if store.exists(f"{base}/evaluations/{it['month']}.json")]
+        if evaluated_months:
+            _write_summary(store, base, stream, max(evaluated_months), data_origin)
+            out["latest_summary_through"] = max(evaluated_months)
+    return out

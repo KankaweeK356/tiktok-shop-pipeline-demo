@@ -10,7 +10,7 @@ def block(start: str, end: str) -> str:
 
 
 def test_business_actual_reads_published_er2_and_has_no_fallback_figures():
-    biz = block("  // ---- ภาพรวมธุรกิจ (Business Actual)", "  // ---- Published KPI gates")
+    biz = block("  // ---- ภาพรวมธุรกิจ (Business Actual)", "adv.append(body); root.append(adv);")
     assert "state.warehouseSnapshot" in biz and "business?.shop_months" in biz
     for fake in ("88136", "80000", "14.68", "fallbackGroups", "report.json", "Scenario Studio", "Assumed Demand Lift", "baseAds"):
         assert fake not in biz

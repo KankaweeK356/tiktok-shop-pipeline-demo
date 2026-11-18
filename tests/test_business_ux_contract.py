@@ -73,6 +73,6 @@ def test_cleanup_notes_10_to_14_are_in_the_forecast_page():
     assert "fc-topbar" in fc and "fc-stickybar" not in fc and "fc-cards" not in fc           # one sticky top bar, no duplicated cards/bottom bar
     assert "fc-stepbtns" not in fc and "custom" not in fc.split("function fcVoucherBox")[1].split("function fcBulkRow")[0]   # no +/- buttons, no custom voucher
     assert "ใช้คูปองที่เลือกได้" in fc and "ต่ำกว่า 10%" in fc and "Margin กลุ่ม" in fc
-    assert "คูปอง (ใช้กับทั้งร้าน" in fc and "สัดส่วนออเดอร์ที่ใช้คูปอง" in fc
+    assert "คูปอง (ทั้งร้าน)" in fc and "ลูกค้าที่ใช้คูปองจริง" in fc
     for label in ("−10%", "+10%", "−1 จุด", "+1 จุด", "↺ คืนค่าแผน"):
         assert label in fc

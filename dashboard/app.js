@@ -4136,15 +4136,17 @@
   }
   function fcVoucherBox(d) {
     const f = state.fc, v = f.ctl.voucher, master = d.vouchers;
-    const sel = chooseField("คูปอง (ใช้กับทั้งร้าน · ใช้ได้ 1 ใบต่อออเดอร์)", [["none", "ไม่ใช้คูปอง"], ...master.map(m => [m.id, m.id + " · " + pct(100 * m.rate, 0)])], v.mode, id => {
+    const sel = chooseField("เลือกคูปอง (ใช้กับทั้งร้าน · 1 ใบต่อออเดอร์)", [["none", "ไม่ใช้คูปอง"], ...master.map(m => [m.id, m.id + " · " + pct(100 * m.rate, 0)])], v.mode, id => {
       fcSetControl(x => { if (id === "none") x.voucher = { mode: "none", base: null, rate: 0, min_spend: 0, cap: null, groups: [], usage: 0 };
         else { const m = master.find(z => z.id === id); x.voucher = { mode: id, base: id, rate: round2n(100 * m.rate), min_spend: m.min_spend, cap: m.cap, groups: [...m.eligible_groups], usage: round2n(100 * m.reference_usage_share) }; } }); renderForecast(); });
-    const box1 = box("fc-vbox", sel);
+    const box1 = box("fc-vbox", node("strong", "", "คูปอง (ทั้งร้าน)"), sel);
     if (v.mode === "none") { box1.append(small("ไม่ใช้คูปอง")); return box1; }
     const usage = node("input", "fc-num"); usage.type = "number"; usage.min = "0"; usage.max = "100"; usage.step = "1"; usage.value = v.usage;
     usage.addEventListener("input", e => { const raw = Math.min(100, Math.max(0, Number(e.target.value) || 0)); fcSetControl(x => { x.voucher.usage = raw; }); });
-    const lab = node("label", "field fc-vusage"); add(lab, node("span", "", "สัดส่วนออเดอร์ที่ใช้คูปอง (%)"), usage);
-    box1.append(small(v.mode + " · " + pct(v.rate, 0) + " · ขั้นต่ำ ฿" + money(v.min_spend, 0) + " · เพดาน " + (v.cap === null ? "ไม่จำกัด" : "฿" + money(v.cap, 0)) + " · ใช้ได้: " + v.groups.join(", ")), lab);
+    const lab = node("label", "field fc-vusage"); add(lab, node("span", "", "ลูกค้าที่ใช้คูปองจริง (% ของออเดอร์ที่มีสิทธิ์)"), usage);
+    const adv = node("details", "dq-details"); adv.open = Boolean(f.vAdvOpen); adv.addEventListener("toggle", () => { f.vAdvOpen = adv.open; });
+    adv.append(node("summary", "", "ตั้งค่าขั้นสูง (สัดส่วนที่ใช้ " + pct(v.usage, 2) + ")"), lab, small("ค่าเริ่มต้นมาจากออเดอร์จริงเดือนก่อน เป็นสมมติฐาน ปรับเมื่ออยากทดลองว่าลูกค้าใช้คูปองมากขึ้นหรือน้อยลง"));
+    box1.append(small(v.mode + " · " + pct(v.rate, 0) + " · ขั้นต่ำ ฿" + money(v.min_spend, 0) + " · เพดาน " + (v.cap === null ? "ไม่จำกัด" : "฿" + money(v.cap, 0))), adv);
     return box1;
   }
   function fcBulkRow() {
@@ -4235,8 +4237,8 @@
     table.append(tb);
     const foot = small("ค่าอ้างอิงจากออเดอร์จริงเดือนก่อน (" + d.basis.reference_orders + " ออเดอร์) "); const fi = node("span", "fc-info", "ⓘ");
     fi.title = "ปรับสเกล ×" + money(d.basis.scale_factor, 3) + " ให้ใกล้ Official Forecast เป็นสมมติฐานปริมาณคงที่ ไม่ใช่ผลทำนาย ML · " + d.basis.note + " · Margin รายกลุ่มเป็นค่าประมาณ (Fulfillment, Sample, Claim กระจายตามสัดส่วน)"; foot.append(fi);
-    const left = box("v-stack", node("strong", "", "① เลือกแผนเริ่มต้น"), tpl, fcVoucherBox(d), node("strong", "", "② ปรับค่าแผนรายกลุ่มสินค้า (5 กลุ่ม)"), fcBulkRow(), box("bz-table-wrap", table), foot);
-    root.append(box("fc-main", panel("เลือกและปรับแผน", "", box("panel-body", left)), box("fc-side", fcGroupPanel(d))));
+    const left = box("v-stack", node("strong", "", "① เลือกแผนเริ่มต้น"), tpl, node("strong", "", "② ปรับค่าแผนรายกลุ่มสินค้า (5 กลุ่ม)"), fcBulkRow(), box("bz-table-wrap", table), foot);
+    root.append(box("fc-main", panel("เลือกและปรับแผน", "", box("panel-body", left)), box("fc-side", fcGroupPanel(d), fcVoucherBox(d))));
     const review = node("button", "button button-primary fc-save-btn", "ตรวจผลและบันทึกแผน →"); review.type = "button"; review.disabled = !f.sim || f.simBusy;
     review.addEventListener("click", () => { f.review = true; renderForecast(); });
     const skip = node("button", "button button-outline", "ข้ามแผน ไปรัน Actual เดือนถัดไป"); skip.type = "button"; skip.addEventListener("click", () => setView("pipeline"));

@@ -729,3 +729,7 @@ tr:hover td{background:#fff8f0}.metric-label,.metric-sub,.panel-description{colo
   font-weight: 700;
   flex-shrink: 0;
 }
+
+/* DQ Review & Fix: collapsed evidence / manual steps */
+.dq-details { margin: 8px 0; }
+.dq-details > summary { cursor: pointer; font-weight: 600; color: var(--accent, #741D2B); padding: 6px 0; }

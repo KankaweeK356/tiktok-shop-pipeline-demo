@@ -2480,7 +2480,22 @@
   }
   function dqForm(issueId) {
     return state.dq.forms[issueId] || (state.dq.forms[issueId] =
-      { value: "", reason: "", evidence: "", actor: state.dq.actor || "", key: null, busy: false, error: "" });
+      { value: "", reason: "", evidence: "", actor: state.dq.actor || dqStoredActor(), key: null, busy: false, error: "",
+        reasonTouched: false, evidenceTouched: false, showAll: false, detailsOpen: false });
+  }
+  function dqStoredActor() { try { return localStorage.getItem("dq_actor") || ""; } catch (_) { return ""; } }
+  function dqStoreActor(name) { try { localStorage.setItem("dq_actor", name); } catch (_) { /* storage may be blocked */ } }
+  /** Editable starting text only. The human still picks the value from Master and confirms. */
+  function dqSuggestReason(issue, value) {
+    return `${issue.column_name} "${issue.invalid_value}" ในแถว ${JSON.stringify(issue.pk_json)} ไม่มีอยู่ใน ${issue.parent_table || "ข้อมูลหลัก (Master)"} ตรวจกับต้นฉบับแล้วค่าที่ถูกต้องคือ "${value}"`;
+  }
+  function dqSuggestEvidence(issue) {
+    return `${issue.source_file} แถว ${Object.values(issue.pk_json || {}).join(", ")} (Source ZIP ${String(issue.source_zip_sha256 || "").slice(0, 8)})`;
+  }
+  function dqApplySuggestions(issue, form) {
+    if (!form.value) return;
+    if (!form.reasonTouched) form.reason = dqSuggestReason(issue, form.value);
+    if (!form.evidenceTouched) form.evidence = dqSuggestEvidence(issue);
   }
   async function loadDqCandidates(issueId) {
     const { ok, data } = await dqApi("candidates", { query: { issue_id: issueId } });
@@ -2513,27 +2528,64 @@
     }
     if (state.view === "pipeline") renderPipeline();
   }
-  async function submitDqCorrection(issue) {
+  function dqFormError(form) {
+    if (!form.value) return "เลือกค่าที่ถูกต้องจากข้อมูลหลัก (Master)";
+    if (!form.actor.trim()) return "ระบุชื่อผู้ยืนยัน (Actor)";
+    if (form.reason.trim().length < 10) return "ระบุเหตุผลการแก้ไขอย่างน้อย 10 ตัวอักษร";
+    if (form.evidence.trim().length < 3) return "ระบุหลักฐานอ้างอิง (เช่น เลขที่เอกสาร/ลิงก์ใบสั่งซื้อต้นฉบับ)";
+    return "";
+  }
+  /** One audited POST per issue (append-only correction). Returns true on success; never renders. */
+  async function postDqCorrection(issue) {
     const form = dqForm(issue.issue_id);
-    form.error = "";
-    if (!form.value) form.error = "เลือกค่าที่ถูกต้องจากข้อมูลหลัก (Master)";
-    else if (!form.actor.trim()) form.error = "ระบุชื่อผู้ยืนยัน (Actor)";
-    else if (form.reason.trim().length < 10) form.error = "ระบุเหตุผลการแก้ไขอย่างน้อย 10 ตัวอักษร";
-    else if (form.evidence.trim().length < 3) form.error = "ระบุหลักฐานอ้างอิง (เช่น เลขที่เอกสาร/ลิงก์ใบสั่งซื้อต้นฉบับ)";
-    if (form.error) { renderPipeline(); return; }
-    form.busy = true; form.key = form.key || dqKey(); state.dq.actor = form.actor.trim();
-    renderPipeline();
+    form.error = dqFormError(form);
+    if (form.error) return false;
+    form.busy = true; form.key = form.key || dqKey(); state.dq.actor = form.actor.trim(); dqStoreActor(state.dq.actor);
     const { ok, data } = await dqApi("correct", { method: "POST", body: {
       issue_id: issue.issue_id, corrected_value: form.value, actor: form.actor.trim(),
       reason: form.reason.trim(), evidence_ref: form.evidence.trim(),
       expected_version: issue.current_version, idempotency_key: form.key } });
     form.busy = false;
-    if (ok) Object.assign(form, { value: "", reason: "", evidence: "", key: null, error: "" });
+    if (ok) Object.assign(form, { value: "", reason: "", evidence: "", key: null, error: "", reasonTouched: false, evidenceTouched: false });
     else {
       form.error = data.error || "บันทึกการแก้ไขไม่สำเร็จ";
       if (data.error_code === "IDEMPOTENCY_KEY_REUSED") form.key = null;
     }
+    return ok;
+  }
+  async function submitDqCorrection(issue) {
+    renderPipeline();
+    await postDqCorrection(issue);
     await refreshDqState();
+    renderPipeline();
+  }
+  /** Convenience for the classroom: correction -> revalidation -> resume, as three separately audited steps. */
+  async function confirmDqAndResume() {
+    const dq = state.dq;
+    if (dq.busy) return;
+    const todo = dq.issues.filter(i => i.status === "OPEN");
+    dq.error = "";
+    for (const issue of todo) {
+      const form = dqForm(issue.issue_id);
+      form.error = dqFormError(form);
+      if (form.error) { dq.error = "กรุณาเลือกค่าที่ถูกต้องให้ครบทุก Issue ก่อนกดยืนยัน"; renderPipeline(); return; }
+    }
+    dq.busy = "confirm"; renderPipeline();
+    try {
+      for (const issue of todo) {
+        if (!(await postDqCorrection(issue))) throw new Error(dqForm(issue.issue_id).error || "บันทึกการแก้ไขไม่สำเร็จ");
+      }
+      await refreshDqState();
+      dq.busy = "";
+      await runDqRevalidation();
+      if (!state.dq.ready) throw new Error(state.dq.error || "ตรวจซ้ำแล้วยังไม่พร้อมรันต่อ ดูรายละเอียดใน Revalidation");
+      state.dq.open = false;
+      renderPipeline();
+      startRunAll("month");
+    } catch (error) {
+      state.dq.error = error?.message || "ดำเนินการต่อไม่สำเร็จ";
+    }
+    state.dq.busy = "";
     renderPipeline();
   }
   async function runDqRevalidation() {
@@ -2587,14 +2639,19 @@
     if (!dq.open) return;
 
     const drawer = box("review-fix-drawer");
-    drawer.append(node("h3", "lab-heading", "Review & Fix — ตรวจหลักฐานแล้วเลือกค่าที่ถูกต้องจากข้อมูลหลัก"));
-    drawer.append(small("ระบบไม่เลือกค่าให้และไม่เติมเหตุผลให้ ต้องมีหลักฐานต้นฉบับ ถ้ายังไม่มีหลักฐานให้คงสถานะ BLOCKED ไว้"));
+    drawer.append(node("h3", "lab-heading", "Review & Fix — เลือกค่าที่ถูกต้อง แล้วกดยืนยัน"));
+    drawer.append(small("ระบบไม่เลือกค่าให้ ต้องเลือกจากข้อมูลหลักเองและตรวจกับต้นฉบับ ข้อความเหตุผล/หลักฐานเป็นข้อความตั้งต้นที่แก้ได้ ถ้ายังไม่มีหลักฐานให้คงสถานะ BLOCKED ไว้"));
     const MAX_SHOWN = 20;
     dq.issues.slice(0, MAX_SHOWN).forEach(issue => {
       const form = dqForm(issue.issue_id);
       const card = box("evidence-card");
-      card.append(node("strong", "", `Issue ${issue.table_name}.${issue.column_name} · แถวที่ ${issue.source_row_no} · สถานะ ${issue.status}`));
-      card.append(dataTable([["field", "หลักฐานจากข้อมูลที่นำเข้าจริง"], ["value", "ค่า"]], [
+      card.append(node("strong", "", `ปัญหา: ${issue.table_name}.${issue.column_name} ของแถว ${Object.values(issue.pk_json || {}).join(", ")}`));
+      card.append(small(`ค่า "${issue.invalid_value}" ไม่มีอยู่ใน ${issue.parent_table || "ข้อมูลหลัก"} · ไฟล์ ${issue.source_file} แถวที่ ${issue.source_row_no} · สถานะ ${issue.status}`));
+      const more = node("details", "dq-details");
+      more.open = form.detailsOpen;
+      more.addEventListener("toggle", () => { form.detailsOpen = more.open; });
+      more.append(node("summary", "", "ดูรายละเอียดหลักฐาน"));
+      more.append(dataTable([["field", "หลักฐานจากข้อมูลที่นำเข้าจริง"], ["value", "ค่า"]], [
         { field: "กฎ (Rule)", value: issue.rule_id },
         { field: "ไฟล์ต้นทาง", value: issue.source_file },
         { field: "รหัสแถว (Primary Key)", value: JSON.stringify(issue.pk_json) },
@@ -2603,9 +2660,10 @@
         { field: "SHA-256 ไฟล์ต้นทาง", value: issue.source_file_sha256 },
         { field: "SHA-256 Source ZIP", value: issue.source_zip_sha256 }
       ]));
-      card.append(node("strong", "", "ข้อมูลทั้งแถวตามต้นฉบับ"), dqKeyValueTable(issue.row_snapshot));
+      more.append(node("strong", "", "ข้อมูลทั้งแถวตามต้นฉบับ"), dqKeyValueTable(issue.row_snapshot));
       Object.entries(issue.context || {}).forEach(([table, row]) =>
-        card.append(node("strong", "", "ข้อมูลที่เกี่ยวข้อง: " + table), dqKeyValueTable(row)));
+        more.append(node("strong", "", "ข้อมูลที่เกี่ยวข้อง: " + table), dqKeyValueTable(row)));
+      card.append(more);
       if (issue.latest_correction) {
         card.append(node("strong", "", `ประวัติการแก้ไข (ล่าสุด v${issue.latest_correction.version})`),
           dataTable([["version", "เวอร์ชัน"], ["corrected_value", "ค่าที่แก้"], ["actor", "ผู้ยืนยัน"], ["reason", "เหตุผล"], ["evidence_ref", "หลักฐาน"], ["created_at", "เวลา"]],
@@ -2619,16 +2677,28 @@
           const groups = new Set(cand.hint?.product_group_ids || []);
           if (cand.hint) card.append(small(`${cand.hint.note} · ราคาขาย ${cand.hint.base_unit_price} ตรงกับกลุ่ม: ${[...groups].join(", ") || "—"} (★ = ตรงตัวช่วย)`));
           const idKey = cand.master_column;
-          const options = [["", `— เลือกค่าจาก ${cand.master_table} (${cand.count} รายการ) —`], ...cand.candidates
-            .map(r => [String(r[idKey]), (groups.has(r.Product_Group_ID) ? "★ " : "") + String(r[idKey]) + " · " +
-              Object.entries(r).filter(([k, v]) => k !== idKey && v !== null && v !== "").slice(0, 4).map(([, v]) => v).join(" · ")])];
-          card.append(chooseField("ค่าที่ถูกต้อง (จาก Master เท่านั้น)", options, form.value, v => { form.value = v; form.key = null; }));
+          const matching = cand.candidates.filter(r => groups.has(r.Product_Group_ID));
+          const narrowed = matching.length > 0 && !form.showAll;
+          const shown = narrowed ? matching : cand.candidates;
+          const label = r => (groups.has(r.Product_Group_ID) ? "★ " : "") + String(r[idKey]) + " · " +
+            Object.entries(r).filter(([k, v]) => k !== idKey && v !== null && v !== "").slice(0, 4).map(([, v]) => v).join(" · ");
+          const options = [["", narrowed ? `— เลือกค่าที่ตรงกับราคา (${matching.length} รายการ) —` : `— เลือกค่าจาก ${cand.master_table} (${cand.count} รายการ) —`],
+            ...shown.map(r => [String(r[idKey]), label(r)])];
+          card.append(chooseField("ค่าที่ถูกต้อง (จาก Master เท่านั้น)", options, form.value, v => {
+            form.value = v; form.key = null; dqApplySuggestions(issue, form); renderPipeline(); }));
+          if (matching.length > 0) {
+            const toggleAll = node("button", "button button-outline", form.showAll ? "แสดงเฉพาะที่ตรงกับราคา" : `ดูทั้งหมด ${cand.count} รายการ`);
+            toggleAll.type = "button";
+            toggleAll.addEventListener("click", () => { form.showAll = !form.showAll; renderPipeline(); });
+            card.append(toggleAll);
+          }
         }
         const field = (label, kind, key, placeholder) => {
           const wrap = node("label", "field"), input = node(kind === "textarea" ? "textarea" : "input");
           if (kind !== "textarea") input.type = "text";
           input.value = form[key]; input.placeholder = placeholder;
-          input.addEventListener("input", e => { form[key] = e.target.value; form.key = null; });
+          input.addEventListener("input", e => { form[key] = e.target.value; form.key = null;
+            if (key === "reason") form.reasonTouched = true; if (key === "evidence") form.evidenceTouched = true; });
           add(wrap, node("span", "", label), input); return wrap;
         };
         card.append(field("ผู้ยืนยันความถูกต้อง (Actor)", "text", "actor", "ชื่อผู้รับผิดชอบข้อมูล"),
@@ -2646,7 +2716,15 @@
 
     const open = dq.issues.filter(i => i.status === "OPEN").length;
     const last = dq.revalidation;
-    drawer.append(box("evidence-card",
+    const confirmBtn = node("button", "button button-primary", dq.busy === "confirm" ? "กำลังบันทึก ตรวจซ้ำ และรันต่อ…" : "ยืนยันแก้ไขและรันต่อ");
+    confirmBtn.type = "button";
+    confirmBtn.disabled = Boolean(dq.busy) || state.stageBusy || state.isRunAllActive || open === 0 && !dq.ready;
+    confirmBtn.addEventListener("click", () => (open === 0 && dq.ready) ? (dq.open = false, startRunAll("month")) : confirmDqAndResume());
+    drawer.append(small("ปุ่มนี้ทำ 3 ขั้นตามลำดับ: บันทึกการแก้ไข → ตรวจซ้ำด้วยกฎเดิม → รันเดือนนี้ต่อ แต่ละขั้นบันทึกประวัติแยกกัน"),
+      box("h-stack", confirmBtn));
+    const manual = node("details", "dq-details");
+    manual.append(node("summary", "", "ขั้นตอนแยก (Revalidate / Resume)"));
+    manual.append(box("evidence-card",
       node("strong", "", "Revalidate & Resume"),
       dataTable([["field", "รายการ"], ["value", "สถานะ"]], [
         { field: "Issue ที่ยังไม่ได้แก้", value: String(open) },
@@ -2655,17 +2733,18 @@
         { field: "พร้อม Resume", value: dq.ready ? "ใช่ (READY_TO_RESUME)" : "ยังไม่พร้อม" }
       ])));
     const actions = box("h-stack");
-    const reval = node("button", "button button-primary", dq.busy === "revalidate" ? "กำลัง Revalidate…" : "Revalidate (ตรวจซ้ำด้วยกฎเดิม)");
+    const reval = node("button", "button button-outline", dq.busy === "revalidate" ? "กำลัง Revalidate…" : "Revalidate (ตรวจซ้ำด้วยกฎเดิม)");
     reval.type = "button"; reval.disabled = Boolean(dq.busy) || open > 0 || dq.issues.length === 0;
     reval.addEventListener("click", runDqRevalidation);
-    const resume = node("button", "button button-primary", "Resume (รันเดือนนี้ใหม่ตั้งแต่ Stage 1 จนจบ)");
+    const resume = node("button", "button button-outline", "Resume (รันเดือนนี้ใหม่ตั้งแต่ Stage 1 จนจบ)");
     resume.type = "button"; resume.disabled = !dq.ready || state.stageBusy || state.isRunAllActive || Boolean(dq.busy);
     resume.addEventListener("click", () => { dq.open = false; startRunAll("month"); });
     const close = node("button", "button button-outline", "ปิด");
     close.type = "button";
     close.addEventListener("click", () => { dq.open = false; renderPipeline(); });
     actions.append(reval, resume, close);
-    drawer.append(actions);
+    manual.append(actions);
+    drawer.append(manual);
     root.append(drawer);
   }
 

@@ -128,7 +128,7 @@ def test_frontend_has_real_filters_and_no_hardcoded_accuracy():
     css = (ROOT / "dashboard" / "styles.css").read_text(encoding="utf-8")
     for element in ("monthFilter", "groupFilter", "modelFilter", "exportCurrent", "app"):
         assert 'id="' + element + '"' in html
-    for word in ("renderBusiness", "renderPipeline", "renderML", "renderScenario",
+    for word in ("renderBusiness", "renderPipeline", "renderML",
                  "serving_replay", "fetch(", "report.json"):
         if word == "serving_replay":
             assert "serving_predictions" in js

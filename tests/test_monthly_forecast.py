@@ -91,3 +91,20 @@ def test_planning_seed_is_a_labelled_simulated_input_without_actuals():
     planning = bg.load_planning()
     assert planning["label"] == "SIMULATED_PRECONFIGURED_FOR_CLASSROOM" and planning["months"]["2026-06"]["revenue_target_thb"] == 94000
     assert len(planning["source_sha256"]) == 64 and all("net" not in v and "actual" not in v for v in planning["months"].values())
+
+
+def test_forecast_requires_all_five_product_groups_in_every_published_month():
+    """A group-month that is absent from the warehouse must stop the forecast, never become a silent 0 in the baseline."""
+    import pytest
+    from pipeline import monthly_forecast as mf
+    groups = ["PG01", "PG02", "PG03", "PG04", "PG05"]
+    rows = [{"month": m, "group": g, "net_revenue": 10000 + 100 * i + 10 * k} for i, m in enumerate(["2026-01", "2026-02", "2026-03", "2026-04", "2026-05"]) for k, g in enumerate(groups)]
+    ok = mf.generate_forecast(rows, "2026-06", allow_ml=False)
+    assert sorted(ok["predictions"]) == groups and all(v > 0 for v in ok["predictions"].values())
+    for drop in (("2026-05", "PG03"), ("2026-02", "PG01"), ("2026-01", "PG05")):
+        broken = [r for r in rows if (r["month"], r["group"]) != drop]
+        with pytest.raises(mf.ForecastError) as err:
+            mf.generate_forecast(broken, "2026-06", allow_ml=False)
+        assert str(err.value).startswith("FORECAST_INCOMPLETE_GROUP_MONTHS")
+    with pytest.raises(mf.ForecastError):
+        mf.generate_forecast(rows + [{"month": "2026-05", "group": "PG06", "net_revenue": 1}], "2026-06", allow_ml=False)

@@ -142,6 +142,10 @@ def generate_forecast(rows: list[dict], target_month: str, *, min_train_months: 
     expected = [month_add(months[0], i) for i in range(len(months))]
     if months != expected:
         raise ForecastError("FORECAST_MONTH_GAP", f"published months are not contiguous: {months}")
+    present = {(r["month"], r["group"]) for r in rows}
+    missing = [(m, g) for m in months for g in GROUPS if (m, g) not in present]
+    if missing:                                                    # a missing group-month must never be silently treated as zero revenue
+        raise ForecastError("FORECAST_INCOMPLETE_GROUP_MONTHS", f"every published month needs all five groups; missing {missing[:5]}")
     for name in FEATURE_NAMES:
         if any(token in name for token in FORBIDDEN_FEATURE_TOKENS):
             raise ForecastError("FORECAST_FORBIDDEN_FEATURE", name)

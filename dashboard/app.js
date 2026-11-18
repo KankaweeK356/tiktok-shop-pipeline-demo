@@ -4279,7 +4279,7 @@
     } catch (error) { ml.error = error.message; }
     ml.busy = ""; await loadMlops(f.month, true);
   }
-  function mlJourney(data, run, official) {
+  function mlJourney(data, run, official, monSummary) {
     const rp = run?.report, fs = run?.feature_set, dr = run?.drift;
     const steps = [
       ["Published ER2", run ? "ข้อมูลถึง " + thaiMonth(rp.data_window.cutoff_month) + " · " + rp.data_window.months.length + " เดือน" : "—", Boolean(run)],
@@ -4288,7 +4288,8 @@
       ["Validation", rp ? rp.data_window.valid_origins + " origin · " + rp.evaluation_status.replace(/_/g, " ").toLowerCase() : "—", Boolean(rp)],
       ["Model Selection", rp ? (rp.official_selection.method_type === "ML" ? "ML" : "Baseline") + " (ตรรกะเดิม)" : "—", Boolean(rp)],
       ["Forecast", official ? "Official SEALED" : "ยังไม่ Seal", Boolean(official)],
-      ["Monitoring", dr ? DRIFT_TH[dr.overall_status] || dr.overall_status : "—", Boolean(dr)]];
+      ["Monitoring", dr ? DRIFT_TH[dr.overall_status] || dr.overall_status : "—", Boolean(dr)],
+      ["Decision", monSummary ? (MON_STATUS[monSummary.recommendation.status] || monSummary.recommendation.status) + " · คนตัดสินนอกระบบ" : "รอผล Monitoring", Boolean(monSummary)]];
     return box("mlops-journey", ...steps.map(([t, s, on], i) => box("mlops-step" + (on ? " on" : ""), node("span", "mlops-step-n", String(i + 1)), node("strong", "", t), small(s))));
   }
   function mlRunBody(run, kindKey, official) {
@@ -4444,9 +4445,9 @@
     if (tab === "official_linked") {
       det.append(box("mlops-official", node("strong", "", "Official Forecast " + thaiMonth(f.month)), official ? small("SEALED · " + official.method_type + " (" + official.model_name + ") ยอดร้าน ฿" + money(official.shop_forecast, 2) + " · Seal เมื่อ " + official.sealed_at) : small("ยังไม่มี Official Forecast ที่ Seal ของเดือนนี้")));
     }
-    if (cur?.latest) { det.append(mlJourney(data, cur.latest, tab === "official_linked" ? official : tab === "historical_evaluation" ? official : null), mlRunBody(cur.latest, tab, official)); }
+    if (cur?.latest) { det.append(mlJourney(data, cur.latest, tab === "official_linked" ? official : tab === "historical_evaluation" ? official : null, ml.mon?.data?.summary), mlRunBody(cur.latest, tab, official)); }
     else {
-      det.append(mlJourney(data, null, official));
+      det.append(mlJourney(data, null, official, ml.mon?.data?.summary));
       const msg = tab === "official_linked" ? "ไม่มี Training Run ที่ผูกกับ Official Forecast เดือนนี้ (Forecast ที่ Seal ก่อนเปิดใช้ MLOps จะไม่มี) ดู Historical Evaluation แทน" :
         tab === "historical_evaluation" ? "ยังไม่มี Historical Evaluation ของเดือนนี้" : "ยังไม่มีการทดลอง (Experiment Only) ของเดือนนี้";
       det.append(notice(msg));

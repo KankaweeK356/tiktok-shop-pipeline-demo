@@ -4023,87 +4023,184 @@
     if (!r.ok) f.error = r.data.error || "Seal ไม่สำเร็จ";
     f.busy = ""; await loadForecastView();
   }
-  // ---- Forecast & Planning: 3 steps, 4 business controls ---------------------------------
-  // Plan templates are fixed, auditable proportions of the REFERENCE plan (previous month's published actuals).
-  // They are starting points for a what-if, never a "best plan"; demand (orders) is held constant by assumption.
+  // ---- Forecast & Planning (v5): Product Group table + side panel + live What-if --------------------------------
+  // Plan templates are documented relative adjustments of the REFERENCE plan (previous published month). They are what-if
+  // starting points, never a "best plan" and never an ML result. Demand (the order baskets) is a fixed assumption.
   const PLAN_TEMPLATES = {
-    A: { title: "A · คงแผนเดิม", desc: "ใช้ค่าอ้างอิงจากเดือนก่อน (×1.00 ทุกตัวแปร)", mult: { ads: 1, campaign: 1, voucher: 1, affiliate: 1 } },
-    B: { title: "B · ควบคุมกำไร", desc: "ลด Ads, Campaign, Voucher ลง 10% จากค่าอ้างอิง (×0.90) Affiliate เท่าเดิม", mult: { ads: 0.9, campaign: 0.9, voucher: 0.9, affiliate: 1 } },
-    C: { title: "C · ทดลองเร่งยอดขาย", desc: "เพิ่ม Ads 20% และส่วนลด Campaign 10% (×1.20 / ×1.10) · ปริมาณคำสั่งซื้อคงที่ จึงเห็นต้นทุนที่เพิ่ม ไม่ใช่ยอดขายที่เพิ่ม", mult: { ads: 1.2, campaign: 1.1, voucher: 1, affiliate: 1 } }
+    A: { title: "แผน A — คงแผนเดิม", desc: "ใช้ค่าอ้างอิงจากเดือนก่อน (×1.00)", mult: { ads: 1, campaign: 1, voucher: 1 } },
+    B: { title: "แผน B — ควบคุมต้นทุน", desc: "ลด Ads, ส่วนลด Campaign และอัตราคูปอง 10% จากค่าอ้างอิง (×0.90) Affiliate เท่าเดิม", mult: { ads: 0.9, campaign: 0.9, voucher: 0.9 } },
+    C: { title: "แผน C — ทดลองเร่งยอดขาย", desc: "เพิ่ม Ads 20% และส่วนลด Campaign 10% (×1.20 / ×1.10) ปริมาณคำสั่งซื้อคงที่ จึงดูต้นทุนที่เพิ่ม ไม่ใช่ยอดขายที่เพิ่ม", mult: { ads: 1.2, campaign: 1.1, voucher: 1 } }
   };
   const round2n = v => Math.round(v * 100) / 100;
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
   function fcStoredActor() { try { return localStorage.getItem("fc_actor") || ""; } catch (_) { return ""; } }
-  /** Reference values of the four controls, derived from the server-provided defaults (never typed in the browser). */
-  function fcReference(d) {
-    if (!d || d.status !== "OK") return null;
-    const adsTotal = groups.reduce((s, g) => s + Number(d.controls.ads_budget[g] || 0), 0);
-    let gross = 0, afterCampaign = 0;
-    d.baskets.forEach(b => b.lines.forEach(l => { gross += b.orders * l.units * l.base_price; afterCampaign += b.orders * l.units * (l.campaign_unit_price ?? l.base_price); }));
-    return { ads: round2n(adsTotal), campaign: gross > 0 ? round2n(100 * (1 - afterCampaign / gross)) : 0,
-      voucher: d.controls.voucher && d.controls.voucher.rate !== null ? round2n(100 * d.controls.voucher.rate) : null,
-      affiliate: d.assumptions.affiliate_rate === null ? null : round2n(100 * d.assumptions.affiliate_rate) };
+  const groupName = (d, g) => d.groups[g]?.name || g;
+  /** Control values of the reference plan (plan A) read from the server defaults. */
+  function fcReferenceControls(d) {
+    const ctl = { ads: {}, campaign: {}, affiliate: {}, voucher: null };
+    const onDepths = groups.filter(g => d.groups[g].campaign.participating).map(g => d.groups[g].campaign.depth_pct_reference);
+    const fallbackDepth = onDepths.length ? round2n(onDepths.reduce((s, x) => s + x, 0) / onDepths.length) : 5;
+    for (const g of groups) {
+      ctl.ads[g] = round2n(d.controls.ads_budget[g]);
+      ctl.campaign[g] = { on: d.groups[g].campaign.participating, depth: d.groups[g].campaign.participating ? d.groups[g].campaign.depth_pct_reference : fallbackDepth };
+      ctl.affiliate[g] = d.controls.affiliate_rate[g] === null ? null : round2n(100 * d.controls.affiliate_rate[g]);
+    }
+    const v = d.controls.voucher;
+    ctl.voucher = v ? { mode: v.id, base: v.id, rate: round2n(100 * v.rate), min_spend: v.min_spend, cap: v.cap, groups: [...v.eligible_groups], usage: round2n(100 * v.usage_share) }
+      : { mode: "none", base: null, rate: 0, min_spend: 0, cap: null, groups: [], usage: 0 };
+    return ctl;
   }
   function fcApplyTemplate(code) {
-    const f = state.fc, ref = fcReference(f.defaults[f.month]); if (!ref) return;
-    const m = PLAN_TEMPLATES[code].mult;
-    f.tpl = code; f.planCode = code; f.sim = null; f.planTitle = ""; f.planReason = "";
-    f.ctl = { ads: round2n(ref.ads * m.ads), campaign: round2n(ref.campaign * m.campaign),
-      voucher: ref.voucher === null ? null : round2n(ref.voucher * m.voucher), affiliate: ref.affiliate === null ? null : round2n(ref.affiliate * m.affiliate) };
+    const f = state.fc, d = f.defaults[f.month]; if (!d || d.status !== "OK") return;
+    const m = PLAN_TEMPLATES[code]?.mult || PLAN_TEMPLATES.A.mult, c = fcReferenceControls(d);
+    for (const g of groups) { c.ads[g] = round2n(c.ads[g] * m.ads); if (c.campaign[g].on) c.campaign[g].depth = round2n(clamp(c.campaign[g].depth * m.campaign, 0, 100)); }
+    if (c.voucher.mode !== "none" && m.voucher !== 1) c.voucher = { ...c.voucher, mode: "custom", rate: round2n(c.voucher.rate * m.voucher) };
+    f.ctl = c; f.tpl = code; f.planCode = code; f.sim = null; f.review = false; f.sel = f.sel || groups[0]; fcScheduleCalc(0);
   }
-  /** Build the exact payload the server recomputes: the four controls patched onto the server defaults. */
-  function fcBuildScenario() {
-    const f = state.fc, d = f.defaults[f.month], ref = fcReference(d), c = f.ctl;
-    const out = JSON.parse(JSON.stringify({ assumptions: d.assumptions, controls: d.controls, baskets: d.baskets }));
-    const share = g => ref.ads > 0 ? Number(d.controls.ads_budget[g] || 0) / ref.ads : 1 / groups.length;
-    groups.forEach(g => { out.controls.ads_budget[g] = round2n(c.ads * share(g)); });
-    out.controls.voucher = c.voucher === null ? null : { ...(d.controls.voucher || { min_spend: 0, cap: null }), rate: c.voucher / 100 };
-    out.assumptions.affiliate_rate = c.affiliate === null ? null : c.affiliate / 100;
-    out.baskets.forEach(b => b.lines.forEach(l => { l.campaign_unit_price = round2n(l.base_price * (1 - c.campaign / 100)); }));
-    return out;
+  /** Exact controls payload the server recomputes. Unknown values stay null (INCOMPLETE), never zero. */
+  function fcControlsPayload() {
+    const c = state.fc.ctl, v = c.voucher;
+    return { ads_budget: Object.fromEntries(groups.map(g => [g, c.ads[g]])),
+      campaign_depth_pct: Object.fromEntries(groups.map(g => [g, c.campaign[g].on ? c.campaign[g].depth : 0])),
+      affiliate_rate: Object.fromEntries(groups.map(g => [g, c.affiliate[g] === null ? null : c.affiliate[g] / 100])),
+      voucher: v.mode === "none" ? null : { id: v.mode === "custom" ? (v.base || "CUSTOM") : v.mode, rate: v.rate / 100, min_spend: v.min_spend, cap: v.cap === "" || v.cap === null ? null : v.cap,
+        eligible_groups: v.groups, usage_share: v.usage / 100, custom: v.mode === "custom" } };
   }
-  async function runScenario() {
-    const f = state.fc; f.busy = "simulate"; f.error = ""; renderForecast();
-    const r = await fcApi("simulate", { method: "POST", body: { month: f.month, ...fcBuildScenario() } });
-    f.sim = r.ok ? r.data : null; if (!r.ok) f.error = r.data.error || "คำนวณไม่สำเร็จ";
-    f.busy = ""; renderForecast();
+  /** Live what-if: debounced; every response carries the request number so an older answer never overwrites a newer one. */
+  let fcTimer = null;
+  function fcScheduleCalc(delay = 250) {
+    const f = state.fc; f.simSeq = (f.simSeq || 0) + 1; const seq = f.simSeq; f.simBusy = true; fcPaintResult();
+    clearTimeout(fcTimer);
+    fcTimer = setTimeout(async () => {
+      const d = f.defaults[f.month]; if (!d || !f.ctl) return;
+      const r = await fcApi("simulate", { method: "POST", body: { month: f.month, baskets: d.baskets, assumptions: d.assumptions, controls: fcControlsPayload() } });
+      if (seq !== f.simSeq) return;                                  // a newer calculation is already on its way
+      f.simBusy = false; f.sim = r.ok ? r.data : null; f.simError = r.ok ? "" : (r.data.error || "คำนวณไม่ได้"); fcPaintResult();
+    }, delay);
   }
   async function sealPlan() {
     const f = state.fc; if (f.busy) return;
     const tpl = PLAN_TEMPLATES[f.planCode];
-    const title = f.planTitle.trim() || (tpl ? tpl.title : "แผนกำหนดเอง") + " · " + thaiMonth(f.month);
-    const reason = f.planReason.trim() || `เลือกแผน ${tpl ? tpl.title : "กำหนดเอง"} เป็นแผนทดลอง (What-if) ภายใต้สมมติฐานปริมาณคำสั่งซื้อคงที่`;
     if (!f.actor.trim()) { f.error = "ระบุชื่อผู้เลือกแผน"; renderForecast(); return; }
-    f.busy = "seal_plan"; f.error = "";
-    const r = await fcApi("seal_plan", { method: "POST", body: { month: f.month, plan_code: f.planCode, plan_title: title, reason, actor: f.actor.trim(), ...fcBuildScenario() } });
-    if (!r.ok) f.error = r.data.error || "บันทึกแผนไม่สำเร็จ";
+    f.busy = "seal_plan"; f.error = ""; renderForecast();
+    const title = (tpl ? tpl.title : "แผนกำหนดเอง") + " · " + thaiMonth(f.month);
+    const reason = f.planReason.trim() || `เลือก ${tpl ? tpl.title : "แผนกำหนดเอง"} เป็นแผนทดลอง (What-if) ภายใต้สมมติฐานปริมาณคำสั่งซื้อคงที่`;
+    const r = await fcApi("seal_plan", { method: "POST", body: { month: f.month, plan_code: f.planCode, plan_title: title, reason, actor: f.actor.trim(), controls: fcControlsPayload() } });
+    if (!r.ok) f.error = r.data.error || "บันทึกแผนไม่สำเร็จ"; else { f.review = false; f.savedAt = new Date().toISOString(); }
     f.busy = ""; await loadForecastView();
   }
-  function fcControl(key, label, unit, hint, max, step) {
-    const f = state.fc, ref = fcReference(f.defaults[f.month]), value = f.ctl[key];
-    const card = box("fc-control");
-    const head = box("fc-control-head", node("strong", "", label));
-    const input = node("input", "fc-num"); input.type = "number"; input.step = String(step); input.min = "0"; input.value = value === null ? "" : value;
-    input.placeholder = "ไม่ทราบ";
-    const range = node("input", "fc-range"); range.type = "range"; range.min = "0"; range.max = String(max); range.step = String(step); range.value = value === null ? "0" : value;
-    const note = small(""), setNote = () => {
-      const v = f.ctl[key], r0 = ref[key];
-      note.textContent = v === null ? "ไม่ทราบค่าอ้างอิงจากเดือนก่อน — ต้องระบุก่อนคำนวณ (ใส่ 0 หากไม่มี)" :
-        "ค่าอ้างอิง " + money(r0, 2) + " " + unit + (r0 !== null && r0 !== v ? " · ต่างจากอ้างอิง " + (v - r0 >= 0 ? "+" : "") + money(v - r0, 2) : "");
-    };
-    const onValue = raw => {
-      f.ctl[key] = raw === "" || raw === null ? null : Math.max(0, Number(raw)); f.sim = null; f.tpl = "CUSTOM"; f.planCode = "CUSTOM";
-      input.value = f.ctl[key] === null ? "" : f.ctl[key]; if (f.ctl[key] !== null) range.value = f.ctl[key]; setNote();
-      document.querySelectorAll(".fc-calc").forEach(b => { b.disabled = Object.values(f.ctl).some(x => x === null) || Boolean(f.busy); });
-      const res = document.querySelector(".fc-result-slot"); if (res) res.replaceChildren(fcResultPlaceholder());
-    };
-    input.addEventListener("input", e => onValue(e.target.value)); range.addEventListener("input", e => onValue(e.target.value));
-    head.append(box("fc-control-input", input, node("span", "fc-unit", unit)));
-    setNote(); card.append(head, range, small(hint), note); return card;
+  function fcSetControl(mutator) {            // every edit: change, mark as custom plan, recalc (no save)
+    const f = state.fc; mutator(f.ctl); f.tpl = "CUSTOM"; f.planCode = "CUSTOM"; f.review = false; f.dirtyAfterSave = Boolean(f.forecast?.plan_versions);
+    fcScheduleCalc(); fcPaintGroupRows();
   }
-  const fcResultPlaceholder = () => box("fc-placeholder", node("strong", "", "ยังไม่ได้คำนวณ"), small("ปรับตัวแปรทางซ้ายแล้วกด “คำนวณ What-if” ผลลัพธ์ภายใต้สมมติฐานปริมาณคำสั่งซื้อคงที่"));
+  function fcSlider(label, value, min, max, step, unit, onChange, hint, refText, disabled = false) {
+    const row = box("fc-ctl-row" + (disabled ? " is-disabled" : ""));
+    const num = node("input", "fc-num"); num.type = "number"; num.min = String(min); num.step = String(step); num.value = value === null ? "" : value; num.placeholder = "ไม่ทราบ"; num.disabled = disabled;
+    const rng = node("input", "fc-range"); rng.type = "range"; rng.min = String(min); rng.max = String(max); rng.step = String(step); rng.value = value === null ? String(min) : String(clamp(value, min, max)); rng.disabled = disabled;
+    const apply = raw => { const v = raw === "" ? null : Math.max(0, Number(raw)); num.value = v === null ? "" : v; if (v !== null) rng.value = String(clamp(v, min, max)); onChange(v); };
+    num.addEventListener("input", e => apply(e.target.value)); rng.addEventListener("input", e => apply(e.target.value));
+    row.append(box("fc-ctl-head", node("strong", "", label), box("fc-control-input", num, node("span", "fc-unit", unit))), rng, small(hint + (refText ? " · " + refText : "")));
+    return row;
+  }
   function fcStepper(step) {
     return box("fc-stepper", ...[["1", "ตรวจ Forecast"], ["2", "เลือกและปรับแผน"], ["3", "ตรวจผลและบันทึก"]].map(([n, label], i) =>
       box("fc-step" + (i + 1 < step ? " fc-step-done" : i + 1 === step ? " fc-step-now" : ""), node("span", "fc-step-n", i + 1 < step ? "✓" : n), node("span", "", label))));
+  }
+  const gateBadgeFc = s => node("span", "status " + (s === "PASS" ? "status-pass" : s === "FAIL" ? "status-fail" : "status-pending"), ({ PASS: "ผ่าน", FAIL: "ไม่ผ่าน", INCOMPLETE: "ข้อมูลไม่ครบ", MISSING_TARGET: "ไม่มีเป้า", MISSING_POLICY: "ไม่มีเกณฑ์" })[s] || s);
+  /** Result summary (sticky bar). Re-painted in place on every calculation so sliders keep their focus. */
+  function fcResultNode() {
+    const f = state.fc, official = f.forecast?.official, r = f.sim?.result;
+    const wrap = box("fc-result" + (f.simBusy ? " is-busy" : ""));
+    if (!r) { wrap.append(box("fc-result-head", node("strong", "", "ผล What-if (ตามสมมติฐาน)"), node("span", "fc-pill", "จำลองเท่านั้น")),
+      small(f.simBusy ? "กำลังคำนวณ…" : (f.simError || "ยังไม่มีผลคำนวณ")), small("ไม่แสดงตัวเลขเก่าหรือตัวเลขตัวอย่างแทนผลที่ยังไม่ได้คำนวณ")); return wrap; }
+    const g = r.gates, tgtGap = g.revenue.gap, delta = r.net_revenue - official.shop_forecast;
+    const cell = (label, value, status, sub) => box("fc-rcell", node("span", "fc-rlabel", label), node("strong", "fc-rvalue", value), status ? gateBadgeFc(status) : null, sub ? small(sub) : null);
+    wrap.append(box("fc-result-head", node("strong", "", "ผล What-if (ตามสมมติฐาน)"), node("span", "fc-pill", "จำลองเท่านั้น"), f.simBusy ? node("span", "fc-pill fc-pill-busy", "กำลังคำนวณ…") : null),
+      box("fc-rgrid",
+        cell("Scenario Net Revenue", "฿" + money(r.net_revenue, 2), null, "เทียบ Forecast " + (delta >= 0 ? "+" : "") + money(delta, 2)),
+        cell("Revenue Gap vs เป้า", tgtGap === undefined ? "—" : (tgtGap >= 0 ? "+" : "−") + "฿" + money(Math.abs(tgtGap), 2), g.revenue.status, g.revenue.target ? "เป้า ฿" + money(g.revenue.target, 0) : "ไม่มีเป้า"),
+        cell("Contribution Profit", r.contribution_profit === null ? "ข้อมูลไม่ครบ" : "฿" + money(r.contribution_profit, 2), null, r.unknown_inputs.length ? "ไม่ทราบ: " + r.unknown_inputs.join(", ") : "ต้นทุนครบ"),
+        cell("Profit Protection", g.profit_protection.rate_pct === undefined ? "—" : pct(g.profit_protection.rate_pct, 2), g.profit_protection.status, "เกณฑ์ ≥ 10%" + (g.profit_protection.status === "FAIL" ? " · ขาดกำไร ฿" + money(g.profit_protection.required - r.contribution_profit, 2) : "")),
+        cell("Marketing GAP", g.marketing_gap.rate_pct === undefined ? "—" : pct(g.marketing_gap.rate_pct, 2), g.marketing_gap.status, "เกณฑ์ ≤ 30%" + (g.marketing_gap.status === "FAIL" ? " · เกินกรอบ ฿" + money(g.marketing_gap.overage, 2) : ""))),
+      small("สมมติฐาน: ตะกร้าคำสั่งซื้อจริงเดือนก่อน ปริมาณคงที่ · Ads เพิ่มไม่ทำให้ยอดขายเพิ่มอัตโนมัติ · Official Forecast ฿" + money(official.shop_forecast, 2) + " ไม่เปลี่ยนตามตัวเลื่อน · สูตร " + r.calculator_version));
+    return wrap;
+  }
+  function fcPaintResult() { const slot = document.querySelector(".fc-result-slot"); if (slot) slot.replaceChildren(fcResultNode());
+    document.querySelectorAll(".fc-save-btn").forEach(b => { b.disabled = !state.fc.sim || state.fc.simBusy || Boolean(state.fc.busy); }); }
+  function fcGroupRowValues(g) {
+    const f = state.fc, c = f.ctl, d = f.defaults[f.month], gr = f.sim?.result?.by_group?.[g];
+    const v = c.voucher, eligible = v.mode !== "none" && v.groups.includes(g);
+    return { ads: "฿" + money(c.ads[g], 0), campaign: c.campaign[g].on ? pct(c.campaign[g].depth, 1) : "ไม่เข้าร่วม", affiliate: c.affiliate[g] === null ? "ไม่ทราบ" : pct(c.affiliate[g], 2),
+      voucher: eligible ? "✓ ใช้ได้" : (v.mode === "none" ? "—" : "✗ ไม่ใช้"), result: gr && gr.protection_pct !== null && gr.protection_pct !== undefined ? pct(gr.protection_pct, 1) : (f.simBusy ? "…" : "—"), eligible, name: groupName(d, g) };
+  }
+  function fcPaintGroupRows() {
+    document.querySelectorAll("[data-fc-group]").forEach(tr => { const g = tr.dataset.fcGroup, v = fcGroupRowValues(g);
+      tr.querySelector(".fc-c-ads").textContent = v.ads; tr.querySelector(".fc-c-camp").textContent = v.campaign; tr.querySelector(".fc-c-aff").textContent = v.affiliate;
+      const vc = tr.querySelector(".fc-c-vch"); vc.textContent = v.voucher; vc.className = "fc-c-vch " + (v.eligible ? "fc-ok" : "fc-no"); tr.querySelector(".fc-c-res").textContent = v.result; });
+  }
+  function fcGroupPanel(d) {
+    const f = state.fc, g = f.sel || groups[0], c = f.ctl, ref = fcReferenceControls(d), gi = d.groups[g];
+    const p = box("fc-panel", box("fc-panel-title", node("strong", "", "ปรับ " + g + " · " + gi.name), node("span", "fc-pill", "ค่าปัจจุบัน: " + (f.tpl === "CUSTOM" ? "กำหนดเอง" : (PLAN_TEMPLATES[f.tpl]?.title.split(" — ")[0] || "แผน A")))));
+    const adsMax = Math.max(5000, Math.ceil(ref.ads[g] * 3 / 1000) * 1000);
+    p.append(fcSlider("Ads / งบโฆษณา", c.ads[g], 0, adsMax, 100, "บาท", v => fcSetControl(x => { x.ads[g] = v === null ? 0 : v; }), "ช่วง 0–" + money(adsMax, 0) + " บาท", "อ้างอิง ฿" + money(ref.ads[g], 0)));
+    const camp = c.campaign[g], on = node("input"); on.type = "checkbox"; on.checked = camp.on;
+    on.addEventListener("change", e => { fcSetControl(x => { x.campaign[g].on = e.target.checked; }); renderForecast(); });
+    const onLabel = node("label", "fc-check"); onLabel.append(on, node("span", "", "เข้าร่วม Campaign (ทั้งเดือนที่วางแผน)")); p.append(onLabel);
+    p.append(fcSlider("Campaign / ส่วนลดแคมเปญ", camp.depth, 0, 30, 0.5, "%", v => fcSetControl(x => { x.campaign[g].depth = v === null ? 0 : v; }), "ช่วง 0–30% · ราคาอ้างอิงลดเฉลี่ยของกลุ่ม", "อ้างอิง " + pct(ref.campaign[g].depth, 1), !camp.on));
+    const aff = c.affiliate[g], affMax = Math.max(20, Math.ceil((ref.affiliate[g] || 0) * 2));
+    p.append(fcSlider("Affiliate / ค่านายหน้า Creator", aff, 0, affMax, 0.25, "%", v => fcSetControl(x => { x.affiliate[g] = v; }), "ช่วง 0–" + affMax + "% · คิดเฉพาะรายการที่มี Creator บน Net หลังคูปอง", "กฎเดิม " + pct(ref.affiliate[g], 2)));
+    const step = box("fc-stepbtns", ...[[-1, "−1 จุด"], [-0.5, "−0.5"], [0.5, "+0.5"], [1, "+1 จุด"]].map(([dv, t]) => { const b = node("button", "button button-outline fc-mini", t); b.type = "button";
+      b.addEventListener("click", () => { fcSetControl(x => { x.affiliate[g] = Math.max(0, round2n((x.affiliate[g] ?? ref.affiliate[g] ?? 0) + dv)); }); renderForecast(); }); return b; }));
+    p.append(step, small("Creator คิดเป็น " + (gi.affiliate.creator_net_share === null ? "—" : pct(100 * gi.affiliate.creator_net_share, 0)) + " ของยอดขายสุทธิกลุ่มนี้เดือนก่อน (สมมติฐานอ่านอย่างเดียว)"));
+    p.append(small("เดือนก่อน: Net ฿" + money(gi.prior.net, 2) + " · กำไร " + (gi.prior.protection_pct === null ? "—" : pct(gi.prior.protection_pct, 1)) + " ของ Gross"));
+    return p;
+  }
+  function fcVoucherPanel(d) {
+    const f = state.fc, v = f.ctl.voucher, master = d.vouchers;
+    const modeSel = chooseField("เลือกคูปอง (ใช้ได้ 1 ใบต่อออเดอร์)", [["none", "ไม่ใช้คูปอง"], ...master.map(m => [m.id, m.id + " · " + pct(100 * m.rate, 0) + " ขั้นต่ำ ฿" + money(m.min_spend, 0) + " เพดาน ฿" + (m.cap === null ? "ไม่จำกัด" : money(m.cap, 0))]), ["custom", "กำหนดเอง (คูปองสมมติ)"]],
+      v.mode, id => { fcSetControl(x => { if (id === "none") x.voucher = { mode: "none", base: null, rate: 0, min_spend: 0, cap: null, groups: [], usage: 0 };
+        else if (id === "custom") x.voucher = { ...x.voucher, mode: "custom", base: x.voucher.base }; else { const m = master.find(z => z.id === id);
+          x.voucher = { mode: id, base: id, rate: round2n(100 * m.rate), min_spend: m.min_spend, cap: m.cap, groups: [...m.eligible_groups], usage: round2n(100 * m.reference_usage_share) }; } }); renderForecast(); });
+    const p = box("fc-panel", box("fc-panel-title", node("strong", "", "Voucher (คูปองระดับออเดอร์)"),
+      node("span", "fc-pill" + (v.mode === "custom" ? " fc-pill-warn" : ""), v.mode === "custom" ? "คูปองสมมติ ไม่มีใน Master" : v.mode === "none" ? "ไม่ใช้" : "จาก Master")), modeSel);
+    if (v.mode !== "none") {
+      const edit = (label, key, unit, step, nullable) => { const w = node("label", "field fc-vfield"), i = node("input", "fc-num"); i.type = "number"; i.step = String(step); i.min = "0"; i.value = v[key] === null ? "" : v[key];
+        i.placeholder = nullable ? "ไม่จำกัด" : ""; i.addEventListener("input", e => { const raw = e.target.value === "" ? null : Math.max(0, Number(e.target.value));
+          fcSetControl(x => { x.voucher[key] = raw === null && !nullable ? 0 : raw; if (x.voucher.mode !== "custom") { x.voucher.base = x.voucher.mode; x.voucher.mode = "custom"; } }); renderForecast(); });
+        add(w, node("span", "", label + (unit ? " (" + unit + ")" : "")), i); return w; };
+      p.append(box("fc-vgrid", edit("อัตราคูปอง", "rate", "%", 0.5, false), edit("ยอดซื้อขั้นต่ำ", "min_spend", "บาท", 10, false), edit("เพดานส่วนลด", "cap", "บาท", 5, true), edit("สัดส่วนออเดอร์ที่ใช้คูปอง", "usage", "%", 1, false)));
+      p.append(small("ยอดขั้นต่ำและเพดานนับจากรายการที่มีสิทธิ์หลังหัก Campaign ก่อนคูปอง · สัดส่วนที่ใช้จริงเป็นสมมติฐาน (อ้างอิงจากเดือนก่อน)"));
+      const chk = box("fc-chips");
+      groups.forEach(g => { const l = node("label", "fc-check"), c = node("input"); c.type = "checkbox"; c.checked = v.groups.includes(g); c.disabled = v.mode !== "custom";
+        c.addEventListener("change", e => { fcSetControl(x => { x.voucher.groups = e.target.checked ? [...new Set([...x.voucher.groups, g])] : x.voucher.groups.filter(z => z !== g); }); renderForecast(); });
+        l.append(c, node("span", "", g + " · " + groupName(d, g))); chk.append(l); });
+      p.append(node("strong", "", "กลุ่มสินค้าที่ใช้คูปองได้"), chk, small(v.mode === "custom" ? "ปรับเงื่อนไขเพื่อทดลอง Scenario เท่านั้น ไม่แก้ Master คูปองจริง" : "สิทธิ์ตามคูปองจริงใน Master (อ่านอย่างเดียว) เลือก “กำหนดเอง” เพื่อทดลองเงื่อนไขอื่น"));
+    }
+    return p;
+  }
+  function fcBulkPanel() {
+    const f = state.fc, p = node("details", "dq-details"); p.append(node("summary", "", "ปรับทุกกลุ่มพร้อมกัน (ตัวช่วย)"));
+    const row = (label, apply) => { const b = box("h-stack"), i = node("input", "fc-num"); i.type = "number"; i.step = "1"; i.value = "10"; const bt = node("button", "button button-outline", "ใช้กับทุกกลุ่ม"); bt.type = "button";
+      bt.addEventListener("click", () => { const v = Number(i.value); if (Number.isFinite(v)) { fcSetControl(x => apply(x, v)); renderForecast(); } }); b.append(node("span", "", label), i, bt); return b; };
+    p.append(row("Ads เปลี่ยน (%)", (x, v) => groups.forEach(g => { x.ads[g] = round2n(Math.max(0, x.ads[g] * (1 + v / 100))); })),
+      row("Campaign เปลี่ยน (จุด%)", (x, v) => groups.forEach(g => { if (x.campaign[g].on) x.campaign[g].depth = round2n(clamp(x.campaign[g].depth + v, 0, 30)); })),
+      row("Affiliate เปลี่ยน (จุด%)", (x, v) => groups.forEach(g => { if (x.affiliate[g] !== null) x.affiliate[g] = round2n(Math.max(0, x.affiliate[g] + v)); })));
+    p.append(small("ตัวช่วยนี้แก้ค่ารายกลุ่มทีเดียว ไม่ใช่ตัวเลื่อนระดับร้าน และยังไม่บันทึกแผน")); return p;
+  }
+  function fcReviewPanel(d, official) {
+    const f = state.fc, r = f.sim.result, c = f.ctl, v = c.voucher;
+    const tbl = dataTable([["g", "กลุ่ม"], ["ads", "Ads"], ["camp", "Campaign"], ["aff", "Affiliate"], ["vch", "Voucher"]], groups.map(g => { const x = fcGroupRowValues(g); return { g: g + " · " + x.name, ads: x.ads, camp: x.campaign, aff: x.affiliate, vch: x.voucher }; }));
+    const actor = node("input", "fc-num fc-actor"); actor.type = "text"; actor.value = f.actor; actor.placeholder = "ชื่อผู้เลือกแผน";
+    actor.addEventListener("input", e => { f.actor = e.target.value; try { localStorage.setItem("fc_actor", f.actor); } catch (_) { /* storage may be blocked */ } });
+    const reason = node("textarea", "fc-reason"); reason.placeholder = "เหตุผลที่เลือกแผนนี้ (ไม่บังคับ มีข้อความตั้งต้นให้)"; reason.value = f.planReason; reason.addEventListener("input", e => { f.planReason = e.target.value; });
+    const confirm = node("button", "button button-primary fc-save-btn", f.busy === "seal_plan" ? "กำลังบันทึก…" : "ยืนยันบันทึกแผนที่เลือก"); confirm.type = "button"; confirm.disabled = Boolean(f.busy);
+    confirm.addEventListener("click", sealPlan);
+    const back = node("button", "button button-outline", "กลับไปแก้"); back.type = "button"; back.addEventListener("click", () => { f.review = false; renderForecast(); });
+    return panel("ขั้น 3 · ตรวจผลก่อนบันทึก", "", box("panel-body", box("v-stack",
+      small("Forecast ID " + official.forecast_run_id + " · เดือนเป้าหมาย " + thaiMonth(f.month) + " · ฐานข้อมูลถึง " + official.training_cutoff_date), tbl,
+      small("Voucher: " + (v.mode === "none" ? "ไม่ใช้" : (v.mode === "custom" ? "คูปองสมมติ (ดัดแปลงจาก " + (v.base || "—") + ")" : v.mode) + " · อัตรา " + pct(v.rate, 1) + " · ขั้นต่ำ ฿" + money(v.min_spend, 0) + " · เพดาน " + (v.cap === null || v.cap === "" ? "ไม่จำกัด" : "฿" + money(v.cap, 0)) + " · ใช้จริง " + pct(v.usage, 0) + " ของออเดอร์ที่มีสิทธิ์")),
+      fcResultNode(), box("fc-reviewform", node("label", "field", ""), actor, reason), box("h-stack", back, confirm),
+      small("บันทึกเป็นเวอร์ชันต่อท้าย (ผู้ดำเนินการ เวลา สมมติฐาน และสูตรถูกเก็บไว้) แก้ย้อนหลังไม่ได้ · เซิร์ฟเวอร์คำนวณซ้ำก่อนบันทึก"))));
   }
   function renderForecast() {
     const root = $("#app"); root.replaceChildren(); state.rows = [];
@@ -4112,39 +4209,33 @@
     if (!f.loaded) { root.append(notice("กำลังโหลดสถานะ Forecast จาก Backend…")); return; }
     if (!st) { root.append(notice(f.error || "ไม่พบข้อมูล Forecast", true)); if (/Migration|demo_ml/.test(f.error)) root.append(small("ต้อง Apply sql/neon_demo_ml_migration.sql บน Neon Test Branch หลังได้รับอนุมัติ")); return; }
     if (!f.actor) f.actor = fcStoredActor();
-    const cur = st.months.find(m => m.month === f.month), detail = f.forecast;
-    if (!st.published_through) {
-      const go = node("button", "button button-primary", "ไปที่ทดสอบการนำเข้าข้อมูล"); go.type = "button"; go.addEventListener("click", () => setView("pipeline"));
-      root.append(box("decision-panel bz-empty", node("h3", "", "ยังไม่มีเดือนที่ Publish"), node("p", "text-muted", "ต้องนำเข้าและ Publish อย่างน้อย 1 เดือนก่อนจึงจะสร้าง Forecast เดือนถัดไปได้"), go)); return;
-    }
-    const official = detail?.official, draft = (detail?.drafts || [])[0], shown = official || draft;
-    const step = !official ? 1 : (f.sim ? 3 : 2);
-    // header: month + actor (remembered)
+    const cur = st.months.find(m => m.month === f.month), detail = f.forecast, rd = st.readiness || { published_months: 0, required_months: 5, ready: false };
+    // readiness (5 consecutive PUBLISHED months, read from the warehouse runs)
+    const bar = box("fc-ready" + (rd.ready ? " is-ready" : ""), box("h-stack", node("strong", "", "ข้อมูล Publish แล้ว " + rd.published_months + "/" + rd.required_months + " เดือน" + (rd.ready ? " ✓" : "")),
+      small(rd.ready ? "ครบเกณฑ์เริ่ม Forecast ของ Demo (ไม่ได้หมายความว่า ML แม่นแล้ว)" : "ต้องครบ " + rd.required_months + " เดือนต่อเนื่องก่อนสร้าง Official Forecast")));
+    if (!rd.ready) { const meter = box("fc-meter"); for (let i = 0; i < rd.required_months; i += 1) meter.append(node("span", "fc-meter-cell" + (i < rd.published_months ? " on" : ""), "")); bar.append(meter); }
     const actorInput = node("input", "fc-num fc-actor"); actorInput.type = "text"; actorInput.value = f.actor; actorInput.placeholder = "ชื่อผู้ดำเนินการ";
     actorInput.addEventListener("input", e => { f.actor = e.target.value; try { localStorage.setItem("fc_actor", f.actor); } catch (_) { /* storage may be blocked */ } });
-    const monthSel = st.months.length > 1 ? chooseField("เดือนเป้าหมาย", st.months.map(m => [m.month, thaiMonth(m.month)]), f.month, v => { f.month = v; f.sim = null; f.ctl = null; f.tpl = ""; loadForecastView(); }) : null;
-    root.append(box("bz-banner", box("v-stack", node("strong", "bz-banner-title", "วางแผน " + thaiMonth(f.month)),
-      small("Publish แล้วถึง " + thaiMonth(st.published_through) + " · เป้าหมายจากไฟล์วางแผน " + st.planning.label + " (" + st.planning.policy_version + ")")),
+    const monthSel = st.months.length > 1 ? chooseField("เดือนเป้าหมาย", st.months.map(m => [m.month, thaiMonth(m.month)]), f.month, v => { f.month = v; f.sim = null; f.ctl = null; f.tpl = ""; f.review = false; loadForecastView(); }) : null;
+    const official = detail?.official, draft = (detail?.drafts || [])[0], shown = official || draft;
+    root.append(box("bz-banner", box("v-stack", node("strong", "bz-banner-title", "วางแผนการตลาด " + thaiMonth(f.month)),
+      small((official ? "Forecast SEALED" : shown ? "Forecast DRAFT" : "ยังไม่มี Forecast") + " · Publish แล้วถึง " + (st.published_through ? thaiMonth(st.published_through) : "ยังไม่มี") + (shown ? " · ข้อมูลฐานถึง " + shown.training_cutoff_date + " · " + (shown.method_type === "BASELINE" ? "Baseline (" + shown.model_name + ") ไม่ใช่ ML" : "ML " + shown.model_name) : ""))),
       box("h-stack", monthSel, (() => { const w = node("label", "field"); add(w, node("span", "", "ผู้ดำเนินการ"), actorInput); return w; })())));
+    root.append(bar);
+    const step = !official ? 1 : (f.review ? 3 : 2);
     root.append(fcStepper(step));
     if (f.error) root.append(notice(f.error, true));
-
-    // Step 1: official forecast vs target
-    const tgt = cur?.target?.status === "OK" ? cur.target : null;
-    const gap = shown && tgt ? shown.shop_forecast - tgt.revenue_target_thb : null;
-    const badge = shown ? node("span", "status " + (official ? "status-pass" : "status-pending"), official ? "OFFICIAL · SEALED" : "DRAFT · ยังไม่ Seal") : null;
+    const tgt = cur?.target?.status === "OK" ? cur.target : null, gap = shown && tgt ? shown.shop_forecast - tgt.revenue_target_thb : null;
     root.append(box("fc-cards",
-      box("bz-kpi", box("h-stack", node("div", "bz-kpi-label", "Forecast " + thaiMonth(f.month)), badge), node("div", "bz-kpi-value", shown ? "฿" + money(shown.shop_forecast, 2) : "—"),
-        small(shown ? (shown.method_type === "BASELINE" ? "Baseline (" + shown.model_name + ") — ไม่ใช่ ML · " : "ML (" + shown.model_name + ") · ") + "ข้อมูลถึง " + shown.training_cutoff_date : "ยังไม่ได้สร้าง Forecast")),
-      box("bz-kpi", node("div", "bz-kpi-label", "เป้ายอดขาย " + thaiMonth(f.month)), node("div", "bz-kpi-value", tgt ? "฿" + money(tgt.revenue_target_thb, 0) : "—"),
-        small(tgt ? "Planning target กำหนดล่วงหน้า · Profit ≥ " + pct(tgt.minimum_profit_protection_rate * 100, 0) + " · GAP ≤ " + pct(tgt.maximum_marketing_gap_rate * 100, 0) : "ไม่มีเป้าหมายเดือนนี้ (MISSING_TARGET)")),
-      box("bz-kpi" + (gap !== null && gap < 0 ? " bz-kpi-focus" : ""), node("div", "bz-kpi-label", gap === null ? "ช่องว่างเทียบเป้า" : gap < 0 ? "คาดว่าจะขาดเป้า" : "คาดว่าเกินเป้า"),
-        node("div", "bz-kpi-value", gap === null ? "—" : "฿" + money(Math.abs(gap), 2)), small(gap === null ? "" : pct(100 * Math.abs(gap) / tgt.revenue_target_thb, 2) + " ของเป้า · ไม่ใช่ผลคำนวณจาก Ads"))));
+      box("bz-kpi", box("h-stack", node("div", "bz-kpi-label", "Official Forecast (ยอดขายสุทธิที่คาดการณ์)"), shown ? node("span", "status " + (official ? "status-pass" : "status-pending"), official ? "SEALED" : "DRAFT") : null),
+        node("div", "bz-kpi-value", shown ? "฿" + money(shown.shop_forecast, 2) : "—"), small(shown ? "ไม่เปลี่ยนตามตัวเลื่อน · ID " + String(shown.forecast_run_id).slice(0, 8) : "ยังไม่ได้สร้าง Forecast")),
+      box("bz-kpi", node("div", "bz-kpi-label", "เป้ายอดขาย (Revenue Target)"), node("div", "bz-kpi-value", tgt ? "฿" + money(tgt.revenue_target_thb, 0) : "—"), small(tgt ? "ตั้งไว้ล่วงหน้า · Profit ≥ " + pct(tgt.minimum_profit_protection_rate * 100, 0) + " · GAP ≤ " + pct(tgt.maximum_marketing_gap_rate * 100, 0) : "ไม่มีเป้าหมายเดือนนี้")),
+      box("bz-kpi" + (gap !== null && gap < 0 ? " bz-kpi-focus" : ""), node("div", "bz-kpi-label", gap === null ? "ช่องว่างเทียบเป้า" : gap < 0 ? "คาดว่าขาดเป้า (Revenue Gap)" : "คาดว่าเกินเป้า"),
+        node("div", "bz-kpi-value", gap === null ? "—" : "฿" + money(Math.abs(gap), 2)), small(gap === null ? "" : "เทียบกับเป้า " + pct(100 * Math.abs(gap) / tgt.revenue_target_thb, 2)))));
     if (shown) {
       const det = node("details", "dq-details"); det.append(node("summary", "", "ดู Forecast รายกลุ่มและที่มา"));
       det.append(dataTable([["group", "กลุ่มสินค้า"], ["pred", "Forecast Net Revenue (THB)"]], [...Object.entries(shown.results).map(([g, v]) => ({ group: g, pred: money(v, 2) })), { group: "รวมร้าน (ผลรวม 5 กลุ่ม)", pred: money(shown.shop_forecast, 2) }]),
-        notice(shown.selection_reason),
-        small("Forecast ID " + shown.forecast_run_id + " · Cutoff " + shown.training_cutoff_date + " · Warehouse Run " + shown.source_warehouse_run_id + " · snapshot sha256 " + String(shown.source_snapshot_sha256).slice(0, 12) + "… · " + shown.model_version + " / " + shown.feature_version));
+        notice(shown.selection_reason), small("Forecast ID " + shown.forecast_run_id + " · Cutoff " + shown.training_cutoff_date + " · Warehouse Run " + shown.source_warehouse_run_id + " · snapshot sha256 " + String(shown.source_snapshot_sha256).slice(0, 12) + "… · " + shown.model_version + " / " + shown.feature_version));
       root.append(det);
     }
     if (!official) {
@@ -4152,62 +4243,37 @@
       gen.type = "button"; gen.disabled = !cur?.can_generate || Boolean(f.busy); gen.addEventListener("click", generateForecast);
       const actions = box("h-stack", gen);
       if (draft && cur?.can_seal) { const seal = node("button", "button button-primary", f.busy === "seal" ? "กำลัง Seal…" : "Save & Seal Official Forecast"); seal.type = "button"; seal.disabled = Boolean(f.busy); seal.addEventListener("click", () => sealForecast(draft.forecast_run_id)); actions.append(seal); }
-      if (!cur?.can_generate && !draft) actions.append(small("ปิดอยู่เพราะ: " + (({ TARGET_ALREADY_INGESTED: "เดือนนี้เริ่มนำเข้าข้อมูลแล้ว" })[cur?.reason] || cur?.reason || "")));
-      root.append(actions, small("Scenario และแผนเปิดหลัง Seal Official Forecast · Seal แล้วแก้หรือสร้างใหม่ทับไม่ได้"));
+      if (!cur?.can_generate && !draft) actions.append(small("ปิดอยู่เพราะ: " + (({ INSUFFICIENT_HISTORY: "ข้อมูล Publish ยังไม่ครบ " + rd.required_months + " เดือน (ตอนนี้ " + rd.published_months + "/" + rd.required_months + ")", TARGET_ALREADY_INGESTED: "เดือนนี้เริ่มนำเข้าข้อมูลแล้ว" })[cur?.reason] || cur?.reason || "")));
+      if (!rd.ready) { const go = node("button", "button button-outline", "ไปรันเดือนถัดไปที่ทดสอบการนำเข้าข้อมูล"); go.type = "button"; go.addEventListener("click", () => setView("pipeline")); actions.append(go); }
+      root.append(actions, small("Seal แล้วแก้หรือสร้างใหม่ทับไม่ได้ · Scenario และแผนเปิดหลัง Seal Official Forecast"));
       return;
     }
-
-    // Step 2: templates + 4 controls
-    const defaults = f.defaults[f.month];
-    if (!defaults || defaults.status !== "OK") { root.append(notice("ยังคำนวณ What-if ไม่ได้: " + (defaults?.status || "กำลังโหลดค่าอ้างอิง"), true)); return; }
+    const d = f.defaults[f.month];
+    if (!d || d.status !== "OK") { root.append(notice("ยังคำนวณ What-if ไม่ได้: " + (d?.status || "กำลังโหลดค่าอ้างอิง") + (d?.status === "BASKET_NOT_RECONCILED" ? " (ออเดอร์เดือนก่อนไม่ตรงกับยอด Published)" : ""), true)); return; }
     if (!f.ctl) fcApplyTemplate("A");
-    const tplRow = box("fc-templates");
-    Object.entries(PLAN_TEMPLATES).forEach(([code, t]) => {
-      const b = node("button", "fc-template" + (f.tpl === code ? " fc-template-on" : ""), ""); b.type = "button";
-      b.append(node("strong", "", t.title), small(t.desc)); b.addEventListener("click", () => { fcApplyTemplate(code); renderForecast(); }); tplRow.append(b);
-    });
-    const controls = box("fc-controls",
-      fcControl("ads", "Ads · งบโฆษณารวมทั้งเดือน", "บาท", "กระจายให้ 5 กลุ่มตามสัดส่วนเดือนก่อน (ดูรายกลุ่มใน “ตั้งค่าเพิ่มเติม”)", Math.max(10000, Math.ceil(fcReference(defaults).ads * 3 / 1000) * 1000), 100),
-      fcControl("campaign", "Campaign · ส่วนลดราคา", "%", "ราคาหลัง Campaign ต่อชิ้น · แยกจาก Voucher", 30, 0.5),
-      fcControl("voucher", "Voucher · คูปองลูกค้า", "%", "คิดระดับคำสั่งซื้อ · ยอดขั้นต่ำ/เพดานอยู่ใน “ตั้งค่าเพิ่มเติม”", 30, 0.5),
-      fcControl("affiliate", "Affiliate · ค่านายหน้า", "% ของ Net", "ใช้กับยอดขายที่มาจากครีเอเตอร์เท่านั้น ไม่ใช่ Voucher", 30, 0.5));
-    const adv = node("details", "dq-details"); adv.append(node("summary", "", "ตั้งค่าเพิ่มเติมและต้นทุนอ้างอิง (อ่านอย่างเดียว)"));
-    const a = defaults.assumptions;
-    adv.append(dataTable([["k", "ต้นทุน/สมมติฐานที่ระบบกำหนด"], ["v", "ค่า"], ["s", "ที่มา"]], [
-      { k: "COGS (สัดส่วนของราคาเต็ม)", v: pct(100 * a.cogs_rate_of_base, 1), s: "กฎของโครงการ" }, { k: "ค่าธรรมเนียม Platform (ของ Net)", v: pct(100 * a.platform_fee_rate_of_net, 1), s: "กฎของโครงการ" },
-      { k: "Fulfillment ต่อรายการ", v: a.fulfillment_cost_per_order === null ? "ไม่ทราบ" : money(a.fulfillment_cost_per_order, 2), s: "เฉลี่ยจากเดือนก่อน (Published)" },
-      { k: "Free Sample รวม", v: a.free_sample_cost === null ? "ไม่ทราบ" : money(a.free_sample_cost, 2), s: "เดือนก่อน (Published)" }, { k: "Claim รวม", v: a.claim_cost === null ? "ไม่ทราบ" : money(a.claim_cost, 2), s: "เดือนก่อน (Published)" },
-      { k: "Voucher ยอดขั้นต่ำ / เพดาน", v: "ไม่ระบุ (0 / ไม่จำกัด)", s: "ไม่มีในข้อมูล Warehouse จึงไม่เดา" }]),
-      small("ปริมาณคำสั่งซื้อต่อกลุ่ม (สมมติให้คงที่ ไม่ใช่ผลทำนาย ML): " + defaults.baskets.map(b => b.lines[0].group + " " + b.orders).join(" · ")), notice(defaults.basis.note));
-    const leftCol = box("v-stack", node("strong", "", "เลือกทิศทางแผน"), small("3 แบบเป็นจุดเริ่มต้นที่คำนวณจากแผนอ้างอิงด้วยสัดส่วนคงที่ ไม่ใช่ “แผนที่ดีที่สุด” และไม่ถูกเลือกให้อัตโนมัติ"), tplRow,
-      node("strong", "", "ปรับเฉพาะ 4 รายการการตลาด"), controls, adv);
-
-    // Step 3: result + save
-    const slot = box("fc-result-slot");
-    const ready = !Object.values(f.ctl).some(x => x === null);
-    if (!f.sim) slot.append(fcResultPlaceholder());
-    else {
-      const r = f.sim.result, delta = (r.net_revenue - official.shop_forecast);
-      slot.append(notice(r.note),
-        box("bz-kpi-grid fc-kpis", metric("Net Revenue (สมมติฐาน)", "฿" + money(r.net_revenue, 2), "เทียบ Forecast " + (delta >= 0 ? "+" : "") + money(delta, 2)),
-          metric("Contribution Profit", r.contribution_profit === null ? "INCOMPLETE" : "฿" + money(r.contribution_profit, 2), r.unknown_inputs.length ? "ไม่ทราบ: " + r.unknown_inputs.join(", ") : "ต้นทุนครบ"),
-          metric("Profit Protection", r.gates.profit_protection.rate_pct === undefined ? "—" : pct(r.gates.profit_protection.rate_pct, 2), "เกณฑ์ ≥ 10% ของ Gross"),
-          metric("Marketing GAP", r.gates.marketing_gap.rate_pct === undefined ? "—" : pct(r.gates.marketing_gap.rate_pct, 2), "เกณฑ์ ≤ 30% ของ Gross")),
-        dataTable([["g", "เกณฑ์"], ["s", "สถานะ"], ["d", "รายละเอียด"]], [
-          { g: "Revenue ≥ เป้า", s: r.gates.revenue.status, d: r.gates.revenue.gap === undefined ? "—" : "ช่องว่าง " + money(r.gates.revenue.gap, 2) + " บาท" },
-          { g: "Profit Protection ≥ 10%", s: r.gates.profit_protection.status, d: pct(r.gates.profit_protection.rate_pct, 2) },
-          { g: "Marketing GAP ≤ 30%", s: r.gates.marketing_gap.status, d: pct(r.gates.marketing_gap.rate_pct, 2) }], { s: { kind: "status" } }),
-        small("ถ้างบ Ads เพิ่มโดยปริมาณคำสั่งซื้อคงที่ กำไรจะลดลงเท่างบที่เพิ่ม — ระบบไม่สรุปว่า Ads เพิ่มแล้วยอดขายจะเพิ่ม"));
-    }
-    const calc = node("button", "button button-outline fc-calc", f.busy === "simulate" ? "กำลังคำนวณ…" : "คำนวณ What-if");
-    calc.type = "button"; calc.disabled = !ready || Boolean(f.busy); calc.addEventListener("click", runScenario);
-    const save = node("button", "button button-primary", f.busy === "seal_plan" ? "กำลังบันทึก…" : "บันทึกแผนที่เลือก");
-    save.type = "button"; save.disabled = !f.sim || Boolean(f.busy); save.addEventListener("click", sealPlan);
-    const plans = detail.plan_versions;
-    const rightCol = box("v-stack", node("strong", "", "ผล What-if ของแผนที่เลือก"), slot, box("h-stack", calc, save),
-      small(plans ? "บันทึกแล้ว เวอร์ชัน " + plans + " · " + (detail.selected_plan?.plan_title || "") + " · บันทึกใหม่ได้เป็นเวอร์ชันต่อท้าย" : "ไม่บังคับเลือกแผน — ข้ามได้และไปรันเดือนถัดไปที่ “ทดสอบการนำเข้าข้อมูล” เมื่อ Forecast ถูก Seal แล้ว"),
-      small("บันทึกเป็นเวอร์ชันต่อท้าย แก้ย้อนหลังไม่ได้ · เซิร์ฟเวอร์คำนวณซ้ำก่อนบันทึก · ปิดรับเมื่อเริ่มนำเข้าเดือนเป้าหมาย"));
-    root.append(box("bz-two-col fc-two", panel("ขั้น 2 · เลือกและปรับแผน", "", box("panel-body", leftCol)), panel("ขั้น 3 · ตรวจผลและบันทึก", "", box("panel-body", rightCol))));
+    if (f.review && f.sim) { root.append(fcReviewPanel(d, official)); return; }
+    const tpl = box("fc-templates");
+    Object.entries(PLAN_TEMPLATES).forEach(([code, t]) => { const b = node("button", "fc-template" + (f.tpl === code ? " fc-template-on" : ""), ""); b.type = "button";
+      b.append(node("strong", "", t.title), small(t.desc)); b.addEventListener("click", () => { fcApplyTemplate(code); renderForecast(); }); tpl.append(b); });
+    const reset = node("button", "button button-outline", "↺ คืนค่าแผน"); reset.type = "button"; reset.addEventListener("click", () => { fcApplyTemplate(f.tpl && PLAN_TEMPLATES[f.tpl] ? f.tpl : "A"); renderForecast(); });
+    const table = node("table", "bz-group-table fc-table"), head = node("tr", ""); ["กลุ่มสินค้า", "Ads (บาท)", "Campaign", "Affiliate", "Voucher", "กำไรกลุ่ม (ผล)", ""].forEach(h => head.append(node("th", "", h)));
+    const th = node("thead", ""); th.append(head); table.append(th); const tb = node("tbody", "");
+    groups.forEach(g => { const v = fcGroupRowValues(g), tr = node("tr", f.sel === g ? "fc-row-sel" : ""); tr.dataset.fcGroup = g;
+      const btn = node("button", "button " + (f.sel === g ? "button-primary" : "button-outline") + " bz-detail-btn", "✎ ปรับกลุ่มนี้"); btn.type = "button"; btn.addEventListener("click", () => { f.sel = g; renderForecast(); });
+      tr.append(node("td", "", g + " · " + v.name), node("td", "num fc-c-ads", v.ads), node("td", "num fc-c-camp", v.campaign), node("td", "num fc-c-aff", v.affiliate), node("td", "fc-c-vch " + (v.eligible ? "fc-ok" : "fc-no"), v.voucher), node("td", "num fc-c-res", v.result), node("td", "", "")); tr.lastChild.append(btn); tb.append(tr); });
+    table.append(tb);
+    const left = box("v-stack", box("h-stack", node("strong", "", "① เลือกแผนเริ่มต้น"), reset), small("3 แบบเป็นค่าตั้งต้นจากแผนอ้างอิง (สัดส่วนคงที่) ไม่ใช่ “แผนที่ดีที่สุด” และไม่ถูกเลือกให้อัตโนมัติ"), tpl,
+      node("strong", "", "② ปรับค่าแผนรายกลุ่มสินค้า (5 กลุ่ม)"), box("bz-table-wrap", table), fcBulkPanel(),
+      small("ค่าอ้างอิงจากเดือนก่อน: ตะกร้า " + d.basis.reference_orders + " ออเดอร์ (ปรับสเกล ×" + money(d.basis.scale_factor, 3) + " ให้ใกล้ Official Forecast) · " + d.basis.note));
+    const right = box("v-stack", fcGroupPanel(d), fcVoucherPanel(d));
+    root.append(box("fc-main", panel("เลือกและปรับแผน", "", box("panel-body", left)), box("fc-side", right)));
+    const slot = box("fc-result-slot"); slot.append(fcResultNode());
+    const review = node("button", "button button-primary fc-save-btn", "ตรวจผลและบันทึกแผน →"); review.type = "button"; review.disabled = !f.sim || f.simBusy;
+    review.addEventListener("click", () => { f.review = true; renderForecast(); });
+    const skip = node("button", "button button-outline", "ข้ามแผน ไปรัน Actual เดือนถัดไป"); skip.type = "button"; skip.addEventListener("click", () => setView("pipeline"));
+    const saved = detail.plan_versions ? small("บันทึกแล้ว เวอร์ชัน " + detail.plan_versions + (detail.selected_plan?.plan_title ? " · " + detail.selected_plan.plan_title : "") + (f.dirtyAfterSave ? " · แก้ไขหลังบันทึก — ยังไม่ได้บันทึกค่าใหม่" : "")) : small("● ยังไม่ได้บันทึกแผน (เลื่อนตัวเลื่อนไม่บันทึกอัตโนมัติ)");
+    root.append(box("fc-stickybar", slot, box("fc-stickyactions", saved, box("h-stack", skip, review))));
+    if (f.simSeq === undefined || !f.sim) fcScheduleCalc(0);
   }
   async function loadEvaluationView() {
     const r = await fcApi("evaluations");

@@ -18,22 +18,23 @@ def test_business_actual_reads_published_er2_and_has_no_fallback_figures():
     assert "getPublishedMonthData" not in APP and "renderScenario" not in APP
 
 
-def test_forecast_planning_exposes_exactly_four_business_controls_and_no_demand_lift():
-    fc = block("  // ---- Forecast & Planning: 3 steps", "  async function loadEvaluationView")
-    for key in ('fcControl("ads"', 'fcControl("campaign"', 'fcControl("voucher"', 'fcControl("affiliate"'):
-        assert key in fc
-    assert fc.count("fcControl(\"") == 4
-    for banned in ("cogs_rate_of_base\", \"COGS", "SCENARIO_FIELDS", "Demand Lift", "demand_lift"):
+def test_forecast_planning_v5_is_group_based_live_and_never_autosaves():
+    fc = block("  // ---- Forecast & Planning (v5)", "  async function loadEvaluationView")
+    for needle in ("fcGroupPanel", "fcVoucherPanel", "fcControlsPayload", "fcScheduleCalc", "simSeq", "data-fc-group", "fcReferenceControls", "คืนค่าแผน",
+                   "ข้ามแผน", "INSUFFICIENT_HISTORY", "published_months"):
+        assert needle in fc
+    assert "Calculate" not in fc and "fc-calc" not in fc                     # no manual calculate button: live recalculation
+    for banned in ("SCENARIO_FIELDS", "Demand Lift", "demand_lift", "cogs_rate_of_base\", \"COGS"):
         assert banned not in fc
+    assert fc.count("sealPlan") == 2 and "addEventListener(\"click\", sealPlan)" in fc      # saved only from the explicit confirm button
     for code in ("A:", "B:", "C:"):
-        assert code in fc                       # templates are fixed proportions of the reference plan
-    assert "fcApplyTemplate(\"A\")" in fc and "mult:" in fc
+        assert code in fc
+    assert "if (seq !== f.simSeq) return;" in fc                              # out-of-order answers are ignored
 
 
-def test_voucher_unknown_is_never_defaulted_to_zero():
-    assert "voucherReference = eligible > 0 ?" in SERVER and ": null;" in SERVER
-    fc = block("  // ---- Forecast & Planning: 3 steps", "  async function loadEvaluationView")
-    assert "Object.values(f.ctl).some(x => x === null)" in fc        # calculate stays disabled until every control is known
+def test_voucher_unknown_is_never_defaulted_to_zero_and_affiliate_unknown_stays_null():
+    fc = block("  // ---- Forecast & Planning (v5)", "  async function loadEvaluationView")
+    assert "c.affiliate[g] === null ? null" in fc and "ไม่ทราบ" in fc
 
 
 def test_forecast_vs_actual_uses_signed_error_without_good_bad_colouring_and_handles_no_plan():

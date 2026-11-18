@@ -1551,13 +1551,13 @@
   function dqStoreActor(name) { try { localStorage.setItem("dq_actor", name); } catch (_) { /* storage may be blocked */ } }
   /** Editable starting text only. The human still picks the value from Master and confirms. */
   function dqSuggestReason(issue, value) {
-    return `${issue.column_name} "${issue.invalid_value}" ในแถว ${JSON.stringify(issue.pk_json)} ไม่มีอยู่ใน ${issue.parent_table || "ข้อมูลหลัก (Master)"} ตรวจกับต้นฉบับแล้วค่าที่ถูกต้องคือ "${value}"`;
+    const target = value ? `ค่าที่ถูกต้องคือ "${value}"` : "ต้องแก้เป็นค่าที่เลือกจากข้อมูลหลัก (Master)";
+    return `${issue.column_name} "${issue.invalid_value}" ในแถว ${JSON.stringify(issue.pk_json)} ไม่มีอยู่ใน ${issue.parent_table || "ข้อมูลหลัก (Master)"} ตรวจกับต้นฉบับแล้ว ${target}`;
   }
   function dqSuggestEvidence(issue) {
     return `${issue.source_file} แถว ${Object.values(issue.pk_json || {}).join(", ")} (Source ZIP ${String(issue.source_zip_sha256 || "").slice(0, 8)})`;
   }
   function dqApplySuggestions(issue, form) {
-    if (!form.value) return;
     if (!form.reasonTouched) form.reason = dqSuggestReason(issue, form.value);
     if (!form.evidenceTouched) form.evidence = dqSuggestEvidence(issue);
   }
@@ -1765,14 +1765,15 @@
             if (key === "reason") form.reasonTouched = true; if (key === "evidence") form.evidenceTouched = true; });
           add(wrap, node("span", "", label), input); return wrap;
         };
-        card.append(field("ผู้ยืนยันความถูกต้อง (Actor)", "text", "actor", "ชื่อผู้รับผิดชอบข้อมูล"),
-          field("เหตุผลการแก้ไข (ต้องเขียนเอง)", "textarea", "reason", "อธิบายว่าทำไมค่านี้ถูกต้อง"),
+        dqApplySuggestions(issue, form);
+        card.append(field("ผู้ยืนยันความถูกต้อง (Actor)", "text", "actor", "ชื่อผู้รับผิดชอบข้อมูล"));
+        const extra = node("details", "dq-details");
+        extra.open = Boolean(form.reasonTouched || form.evidenceTouched);
+        extra.append(node("summary", "", "เหตุผลและหลักฐาน (เติมให้อัตโนมัติ แก้ได้)"),
+          field("เหตุผลการแก้ไข", "textarea", "reason", "อธิบายว่าทำไมค่านี้ถูกต้อง"),
           field("หลักฐานอ้างอิง", "text", "evidence", "เลขที่เอกสาร หรือลิงก์หลักฐานต้นฉบับ"));
+        card.append(extra);
         if (form.error) card.append(notice(form.error, true));
-        const save = node("button", "button button-primary", form.busy ? "กำลังบันทึก…" : "บันทึกการแก้ไข (Append Correction)");
-        save.type = "button"; save.disabled = form.busy;
-        save.addEventListener("click", () => submitDqCorrection(issue));
-        card.append(save);
       }
       drawer.append(card);
     });
@@ -1807,6 +1808,10 @@
     close.type = "button";
     close.addEventListener("click", () => { dq.open = false; renderPipeline(); });
     actions.append(reval, resume, close);
+    dq.issues.filter(i => i.status !== "RESOLVED").forEach(issue => {
+      const one = node("button", "button button-outline", "บันทึกการแก้ไขอย่างเดียว · " + issue.table_name + "." + issue.column_name);
+      one.type = "button"; one.disabled = Boolean(dqForm(issue.issue_id).busy); one.addEventListener("click", () => submitDqCorrection(issue)); actions.append(one);
+    });
     manual.append(actions);
     drawer.append(manual);
     root.append(drawer);

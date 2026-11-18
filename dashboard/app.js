@@ -2066,6 +2066,14 @@
   // From June on the backend refuses a month until its Official Forecast is sealed (no browser-only gating).
   function stopRunToMay() { state.isRunAllActive = false; renderPipeline(); }
 
+  /** Real figures of the last PUBLISHED run for the descriptive Pipeline panels (never sample numbers). */
+  function liveFacts() {
+    const r = state.warehouseSnapshot?.result, months = r?.business?.shop_months || [];
+    const net = months.reduce((a, m) => a + (Number(m.net) || 0), 0);
+    return { orders: Number.isFinite(Number(r?.orders_after)) ? Number(r.orders_after) : null, net: months.length ? net : null,
+      runId: state.warehouseSnapshot?.current_run_id || r?.run_id || null, lastMonth: months.length ? months[months.length - 1] : null };
+  }
+  const factOrders = () => { const f = liveFacts(); return f.orders === null ? "—" : money(f.orders); };
   const ALL_ER1_TABLES_META = [
     { name: "Fact_Orders", type: "Fact (ตารางคำสั่งซื้อหลัก)", expected_jan: 274 },
     { name: "Fact_Order_Items", type: "Fact (รายการย่อยสินค้า)", expected_jan: 320 },
@@ -2253,34 +2261,6 @@
       { month: "2026-01", net_revenue: 88136.00, revenue_target: 80000.00, achievement_pct: 110.2, contribution_profit: 12906.00, protection_rate_pct: 14.64 }
     ]}
   ];
-
-  const STAGE_5_RECONCILIATION_CHECKS = [
-    { id: "DQ01_File_Integrity", name: "DQ01: File Completeness & Hash Check", category: "Integrity", status: "PASS", expected: "21 CSVs verified SHA-256 Checksum", actual: "21/21 CSVs matched 100%", failed_records: 0, sql: "SELECT COUNT(*) FROM source_manifest WHERE sha256_match = true;" },
-    { id: "DQ02_Schema_Validation", name: "DQ02: Column Contract & Schema Match", category: "Schema", status: "PASS", expected: "All columns match ER1 contract types", actual: "25/25 tables matched 100%", failed_records: 0, sql: "SELECT COUNT(*) FROM information_schema.columns WHERE data_type_mismatch = true;" },
-    { id: "DQ03_Not_Null_Constraint", name: "DQ03: Mandatory Business Fields (Not Null)", category: "Completeness", status: "PASS", expected: "0 nulls in Order_ID, SKU_ID, Paid_Amount", actual: "0 null records found", failed_records: 0, sql: "SELECT COUNT(*) FROM demo_er1.\"Fact_Orders\" WHERE \"Order_ID\" IS NULL;" },
-    { id: "DQ04_PK_Uniqueness", name: "DQ04: Primary Key Uniqueness Check", category: "Uniqueness", status: "PASS", expected: "274 Unique Order IDs, 0 duplicates", actual: "274 Unique Order IDs (100%)", failed_records: 0, sql: "SELECT \"Order_ID\", COUNT(*) FROM demo_er1.\"Fact_Orders\" GROUP BY \"Order_ID\" HAVING COUNT(*) > 1;" },
-    { id: "DQ05_Referential_Integrity", name: "DQ05: Foreign Key Referential Integrity", category: "Validity", status: "PASS", expected: "All Order Items belong to valid Dim_SKU", actual: "320/320 items linked to Dim_SKU", failed_records: 0, sql: "SELECT COUNT(*) FROM demo_er1.\"Fact_Order_Items\" i LEFT JOIN demo_er1.\"Dim_SKU\" s ON i.\"SKU_ID\" = s.\"SKU_ID\" WHERE s.\"SKU_ID\" IS NULL;" },
-    { id: "DQ06_Financial_Reconciliation", name: "DQ06: Financial Gross Revenue Parity", category: "Financial Parity", status: "PASS", expected: "Source Gross = Lake Gross = DuckDB Gross = ฿88,136", actual: "฿88,136.00 exact match across all layers", failed_records: 0, sql: "SELECT (SELECT SUM(\"Total_Amount\") FROM demo_er1.\"Fact_Orders\") - (SELECT SUM(gross_revenue) FROM duckdb.Fact_Orders) AS diff;" }
-  ];
-
-  async function loadNeonLabTable(table = "Fact_Orders") {
-    state.selectedOutputTable = table;
-    state.labNeonBusy = true;
-    state.labNeonError = "";
-    renderPipeline();
-    try {
-      const res = await fetch("/api/lab-neon-evidence?table=" + encodeURIComponent(table), { cache: "no-store" });
-      const data = await res.json();
-      if (!res.ok || !data.connected) throw new Error(data.error || "Query Neon ไม่สำเร็จ");
-      state.labNeon = data;
-    } catch (err) {
-      state.labNeonError = err.message || "ไม่สามารถติดต่อ Neon ได้";
-      state.labNeon = null;
-    } finally {
-      state.labNeonBusy = false;
-      renderPipeline();
-    }
-  }
 
   const NOTEBOOK_STAGES = [
     ["ingest", "Source → Database", "นำข้อมูลจำลองเข้าฐานข้อมูลต้นทาง และ sync 25 ตารางไป Neon"],
@@ -2958,11 +2938,10 @@
             srcHeader.append(
               node("h4", "lab-subheading", "แหล่งข้อมูลต้นทาง (Source Package Metadata)"),
               dataTable([["field", "รายการ"], ["val", "รายละเอียดจริง"]], [
-                { field: "แหล่งที่มา (Source Origin)", val: "GitHub Releases (classroom-source-v1) · Object Storage" },
+                { field: "แหล่งที่มา (Source Origin)", val: "Final Source ที่ล็อกด้วย SHA-256 (classroom_v2_2026_11_16)" },
                 { field: "ชื่อไฟล์ชุดข้อมูล (Archive)", val: `classroom-source-${sourceMonthForBatch(currentViewBatch)}.zip` },
-                { field: "รหัสตรวจสอบ (SHA-256)", val: "88806540c4f828fd93bcf9509dfd66cfba75ddcff7137f68e0d4bc044fa73491" },
-                { field: "จำนวนไฟล์ต้นทาง", val: "21 ไฟล์ CSV + 1 source_manifest.json" },
-                { field: "จำนวนแถวข้อมูลรวมทุกตาราง", val: "1,582 แถว (Verified Deterministic Source)" }
+                { field: "รหัสตรวจสอบ (SHA-256)", val: ((state.currentCycleRuns || []).find(r => r.source_batch === currentViewBatch || r.batch === currentViewBatch)?.source_zip_sha256) || "ยังไม่มีรอบที่รันเดือนนี้" },
+                { field: "จำนวนไฟล์ต้นทาง", val: "ไฟล์ CSV ตามสัญญา Source + source_manifest.json" }
               ])
             );
             body.append(srcHeader);
@@ -3042,7 +3021,7 @@
                     { field: "ฐานข้อมูลต้นทาง", val: "Neon PostgreSQL (demo_er1)" },
                     { field: "รูปแบบปลายทางใน Data Lake", val: "Snappy Parquet (lake/raw/" + t.name.toLowerCase() + "/)" },
                     { field: "พาร์ทิชัน (Partition Strategy)", val: "Year-Month (YYYY-MM)" },
-                    { field: "จำนวนแถวคาดหวังในรอบนี้", val: money(t.expected_jan) + " แถว" }
+                    { field: "จำนวนแถวอ้างอิงของชุดมกราคม (ตัวอย่างเอกสาร ไม่ใช่ผลของรอบนี้)", val: money(t.expected_jan) + " แถว" }
                   ])
                 );
               },
@@ -3121,10 +3100,10 @@
             body.append(splitView);
           } else {
             const auditLayers = [
-              { id: "layer_source", label: "1. Source CSV Package", sublabel: "classroom-source-2026-01.zip", count: 1582, badge: "Source", badgeType: "neutral" },
-              { id: "layer_neon", label: "2. Neon PostgreSQL (demo_er1)", sublabel: "25 ER1 Tables", count: 274, badge: "Database", badgeType: "neutral" },
-              { id: "layer_lake", label: "3. Data Lake (lake/standardized/)", sublabel: "Snappy Parquet", count: 274, badge: "Lake", badgeType: "neutral" },
-              { id: "layer_warehouse", label: "4. DuckDB Data Warehouse", sublabel: "Star Schema & Marts", count: 274, badge: "Warehouse", badgeType: "validated" }
+              { id: "layer_source", label: "1. Source CSV Package", sublabel: "classroom-source-" + sourceMonthForBatch(currentViewBatch) + ".zip", count: "—", badge: "Source", badgeType: "neutral" },
+              { id: "layer_neon", label: "2. Neon PostgreSQL (demo_er1)", sublabel: "25 ER1 Tables", count: factOrders() + " orders", badge: "Database", badgeType: "neutral" },
+              { id: "layer_lake", label: "3. Data Lake (lake/standardized/)", sublabel: "Snappy Parquet", count: "—", badge: "Lake", badgeType: "neutral" },
+              { id: "layer_warehouse", label: "4. DuckDB Data Warehouse", sublabel: "Star Schema & Marts", count: factOrders() + " orders", badge: "Warehouse", badgeType: "validated" }
             ];
             const splitView = renderMasterDetailSplitView({
               items: auditLayers,
@@ -3142,8 +3121,8 @@
                   dataTable([["field", "รายการ"], ["val", "สถานะ"]], [
                     { field: "ชั้นสถาปัตยกรรม", val: item.label },
                     { field: "ตำแหน่งอ้างอิง", val: item.sublabel },
-                    { field: "จำนวนคำสั่งซื้อ (Orders)", val: "274 ออเดอร์ (Parity Matched)" },
-                    { field: "ยอดขายรวมสุทธิ (Net Revenue)", val: "฿88,136.00 (Parity Matched)" }
+                    { field: "จำนวนคำสั่งซื้อ (Orders)", val: item.count === "—" ? "ไม่มีตัวเลขจริงของชั้นนี้ในระบบ" : String(item.count) },
+                    { field: "หมายเหตุ", val: "แสดงเฉพาะตัวเลขจริงที่ระบบมี ไม่ใช่ผลเปรียบเทียบข้ามชั้น" }
                   ])
                 );
               },
@@ -3160,17 +3139,17 @@
           if (id === "ingest") {
             steps = [
               { num: "1", title: "Read & Verify Source ZIP", desc: `ดาวน์โหลดและตรวจสอบ Integrity ของไฟล์ classroom-source-${sourceMonthForBatch(currentViewBatch)}.zip`, ev: "Verified SHA-256 Checksum · 21 CSVs + Manifest" },
-              { num: "2", title: "Parse & Standardize CSV Files", desc: "อ่านไฟล์ CSV ทั้ง 21 ไฟล์ (1,582 แถว) และแปลงตาม ER1 Schema Data Types", ev: "21 Files parsed · 100% Contract matched" },
-              { num: "3", title: "Load Local ER1 SQLite Engine", desc: "นำเข้าข้อมูลเข้าสู่ SQLite (er1.sqlite) เป็นฐานข้อมูลคำนวณชั่วคราว", ev: "er1.sqlite initialized · 21 tables created" },
-              { num: "4", title: "Generate Derived ER1 Tables", desc: "คำนวณ 4 ตารางอนุพันธ์ทางธุรกิจ (FIFO Allocation, Platform Fees, Inventory Snapshot, Movement)", ev: "4 Derived Tables generated · FIFO Cost & Fees computed" },
-              { num: "5", title: "Sync & Reconcile to Neon PostgreSQL", desc: "ซิงก์ทั้ง 25 ตารางเข้า Schema demo_er1 ใน Neon PostgreSQL ภายใต้ Transaction เดียวกัน", ev: "Neon live sync verified · 274 orders in Fact_Orders" },
+              { num: "2", title: "Parse & Standardize CSV Files", desc: "อ่านไฟล์ CSV ตามสัญญา Source และแปลงตาม ER1 Schema Data Types", ev: "ตรวจตามสัญญา Source (ผลจริงดูในแท็บ Output/Validation ของรอบนี้)" },
+              { num: "3", title: "Load Local ER1 SQLite Engine", desc: "นำเข้าข้อมูลเข้าสู่ SQLite (er1.sqlite) เป็นฐานข้อมูลคำนวณชั่วคราว", ev: "สร้าง er1.sqlite สำหรับคำนวณชั่วคราว" },
+              { num: "4", title: "Generate Derived ER1 Tables", desc: "คำนวณ 4 ตารางอนุพันธ์ทางธุรกิจ (FIFO Allocation, Platform Fees, Inventory Snapshot, Movement)", ev: "สร้างตารางอนุพันธ์ (FIFO, Platform Fees, Inventory, Movement)" },
+              { num: "5", title: "Sync & Reconcile to Neon PostgreSQL", desc: "ซิงก์ทั้ง 25 ตารางเข้า Schema demo_er1 ใน Neon PostgreSQL ภายใต้ Transaction เดียวกัน", ev: `Neon sync · Fact_Orders สะสม ${factOrders()} ออเดอร์ (ค่าจริงของรอบล่าสุด)` },
               { num: "6", title: "Record Execution Checkpoint & Stage Run", desc: "บันทึก Checkpoint ลง S3 และบันทึกสถานะลง demo_control.stage_runs", ev: "Checkpoint ZIP saved · stage_runs updated to SUCCESS" }
             ];
           } else if (id === "extract") {
             steps = [
               { num: "1", title: "Connect to Neon PostgreSQL (demo_er1)", desc: "เชื่อมต่อไปยังสคีมา demo_er1 ใน Neon PostgreSQL ผ่าน Read-only Transaction", ev: "SSL Connection Established" },
-              { num: "2", title: "Stream Tables in Micro-batches", desc: "สตรีมข้อมูล 25 ตารางแบบแบ่งพาร์ทิชันรายเดือน ไม่บล็อกงานอื่น", ev: "274 Orders streamed" },
-              { num: "3", title: "Convert to Apache Parquet Format", desc: "แปลงเป็นรูปแบบ Columnar Parquet พร้อมบีบอัดด้วยอัลกอริทึม Snappy", ev: "Snappy compression verified (~68% space saved)" },
+              { num: "2", title: "Stream Tables in Micro-batches", desc: "สตรีมข้อมูล 25 ตารางแบบแบ่งพาร์ทิชันรายเดือน ไม่บล็อกงานอื่น", ev: `สตรีม Orders สะสม ${factOrders()} รายการ` },
+              { num: "3", title: "Convert to Apache Parquet Format", desc: "แปลงเป็นรูปแบบ Columnar Parquet พร้อมบีบอัดด้วยอัลกอริทึม Snappy", ev: "บีบอัดด้วย Snappy" },
               { num: "4", title: "Write to Object Storage (lake/raw/)", desc: "เขียนไฟล์ Parquet ลง Object Storage (S3-compatible Lake Bucket)", ev: "lake/raw/orders/ written" },
               { num: "5", title: "Verify File Checksums & Audit Receipts", desc: "ตรวจสอบ SHA-256 Checksums และบันทึก Manifest ใบรับรองการสกัดข้อมูล", ev: "landing_manifest.json created" }
             ];
@@ -3178,25 +3157,25 @@
             steps = [
               { num: "1", title: "Read Raw Parquet from Lake Bucket", desc: "อ่านไฟล์ Raw Parquet จาก lake/raw/ ผ่าน Arrow Stream Reader", ev: "Raw Arrow Stream initialized" },
               { num: "2", title: "Cast & Normalize Data Types", desc: "ปรับปรุงรูปแบบวันที่ เวลา และ Timezone (UTC ➔ Asia/Bangkok UTC+7)", ev: "All timestamps normalized to ICT" },
-              { num: "3", title: "Apply Referential Integrity DQ Gate", desc: "ตรวจสอบความสอดคล้องระหว่าง Fact_Order_Items กับ Dim_SKU Master", ev: "Integrity gate active (100% matched in Jan)" },
+              { num: "3", title: "Apply Referential Integrity DQ Gate", desc: "ตรวจสอบความสอดคล้องระหว่าง Fact_Order_Items กับ Dim_SKU Master", ev: "DQ Gate ทำงานทุกรอบ (ผลจริงดูในแท็บ Validation)" },
               { num: "4", title: "Quarantine Route on Error", desc: "หากพบรายการไม่ผ่านเงื่อนไข จะแยกกักเก็บที่ lake/governance/quarantine/ ทันที", ev: "Quarantine area ready" },
               { num: "5", title: "Publish Standardized Parquet", desc: "บันทึกข้อมูลที่ผ่านการขัดเกลาและตรวจสอบแล้วลง lake/standardized/", ev: "standardized_orders.parquet created" }
             ];
           } else if (id === "load") {
             steps = [
-              { num: "1", title: "Initialize DuckDB Analytics Engine", desc: "เปิดฐานข้อมูล DuckDB ประสิทธิภาพสูงสำหรับการวิเคราะห์ระดับองค์กร", ev: "DuckDB v1.0.0 engine started" },
+              { num: "1", title: "Initialize DuckDB Analytics Engine", desc: "เปิดฐานข้อมูล DuckDB ประสิทธิภาพสูงสำหรับการวิเคราะห์ระดับองค์กร", ev: "เปิด DuckDB สำหรับสร้าง ER2" },
               { num: "2", title: "Ingest Standardized Parquet into Warehouse", desc: "นำเข้าไฟล์ Standardized Parquet เข้าสู่โมเดล Star Schema (ER2)", ev: "Zero-copy Parquet scan applied" },
-              { num: "3", title: "Build Conformed Dimension Tables", desc: "สร้างและปรับปรุงมิติข้อมูล Dim_Date, Dim_Product, Dim_SKU, Dim_Shop, Dim_Campaign", ev: "6 Dimensions loaded" },
-              { num: "4", title: "Materialize Granular Fact Tables", desc: "คำนวณ Fact_Orders, Fact_Order_Items, Fact_Settlements พร้อม Foreign Keys", ev: "4 Fact tables populated" },
+              { num: "3", title: "Build Conformed Dimension Tables", desc: "สร้างและปรับปรุงมิติข้อมูล Dim_Date, Dim_Product, Dim_SKU, Dim_Shop, Dim_Campaign", ev: "สร้างมิติข้อมูล (Dim_*)" },
+              { num: "4", title: "Materialize Granular Fact Tables", desc: "คำนวณ Fact_Orders, Fact_Order_Items, Fact_Settlements พร้อม Foreign Keys", ev: "สร้างตารางข้อเท็จจริง (Fact_*)" },
               { num: "5", title: "Aggregate Daily Mart & Business KPI Views", desc: "สร้าง Mart_Daily_Shop_Performance และ View_Monthly_Business_KPI", ev: "Marts & Views refreshed" }
             ];
           } else {
             steps = [
-              { num: "1", title: "Cross-Layer Row Count Reconciliation", desc: "ตรวจสอบจำนวนแถวระหว่าง Source CSV, Neon PostgreSQL, Lake และ DuckDB", ev: "274 = 274 = 274 rows parity matched" },
-              { num: "2", title: "Financial Metric Parity (Net Revenue)", desc: "ตรวจสอบยอดขายสุทธิรวมระดับเศษสตางค์ ไม่ให้มีเศษหลุดรอด", ev: "฿88,136.00 exact match across all layers" },
-              { num: "3", title: "Cost & Fee Reconciliation Gate", desc: "เทียบยอดต้นทุนสินค้า (COGS), ค่าโฆษณา และค่าธรรมเนียม Platform", ev: "All cost items reconciled (0 diff)" },
-              { num: "4", title: "Publication Approval Sign-off", desc: "ออกใบรับรองความถูกต้องของข้อมูล (Reconciliation Certificate)", ev: "Certificate SHA-256 generated" },
-              { num: "5", title: "Publish Warehouse Snapshot for Analytics", desc: "เผยแพร่ Snapshot ของ DuckDB ไปยัง Business Dashboard และ ML Lab", ev: "Snapshot #ER2_2026-01 Published" }
+              { num: "1", title: "Cross-Layer Row Count Reconciliation", desc: "ตรวจสอบจำนวนแถวระหว่าง Source CSV, Neon PostgreSQL, Lake และ DuckDB", ev: `Orders สะสมใน Warehouse ${factOrders()} (รายละเอียดดู Published Summary)` },
+              { num: "2", title: "Financial Metric Parity (Net Revenue)", desc: "ตรวจสอบยอดขายสุทธิรวมระดับเศษสตางค์ ไม่ให้มีเศษหลุดรอด", ev: `Net Revenue สะสมใน Warehouse ${liveFacts().net === null ? "—" : "฿" + money(liveFacts().net, 2)}` },
+              { num: "3", title: "Cost & Fee Reconciliation Gate", desc: "เทียบยอดต้นทุนสินค้า (COGS), ค่าโฆษณา และค่าธรรมเนียม Platform", ev: "ต้นทุนรายเดือนดูได้ที่หน้าภาพรวมธุรกิจ (กระทบยอดรายกลุ่มกับยอดร้าน)" },
+              { num: "4", title: "Publication Approval", desc: "บันทึก Published Snapshot ของรอบนี้ลง demo_control.published_snapshot", ev: `Snapshot Run ${liveFacts().runId || "—"}` },
+              { num: "5", title: "Publish Warehouse Snapshot for Analytics", desc: "เผยแพร่ Snapshot ของ DuckDB ไปยัง Business Dashboard และ ML Lab", ev: `Published Snapshot Run ${liveFacts().runId || "—"}` }
             ];
           }
           steps.forEach(st => {
@@ -3236,64 +3215,7 @@
                 { field: "Correction ที่นำมาใช้", value: `${d.corrections_applied} (Set ${d.correction_set_id || "—"})` }
               ])), small("รายการกฎด้านล่างเป็นคำอธิบายมาตรฐานของระบบ ผลจริงของรอบนี้อยู่ในตารางด้านบนและตาราง demo_control.dq_rule_result"));
           }
-          if (id === "validate") {
-            const splitView = renderMasterDetailSplitView({
-              items: STAGE_5_RECONCILIATION_CHECKS.map(c => ({
-                id: c.id,
-                label: c.name,
-                sublabel: c.category,
-                count: "0 errors",
-                badge: c.status,
-                badgeType: c.status === "PASS" ? "validated" : "blocked",
-                raw: c
-              })),
-              selectedId: state.selectedReconciliationRule || "DQ01_File_Integrity",
-              onSelect: (id) => {
-                state.selectedReconciliationRule = id;
-                renderPipeline();
-              },
-              renderDetail: (item) => {
-                const c = item.raw;
-                return box("v-stack",
-                  box("alert-banner-header",
-                    node("strong", "", c.name),
-                    node("span", "badge-validated", "✓ " + c.status)
-                  ),
-                  dataTable([["field", "รายการ"], ["val", "ค่าจากการตรวจสอบ"]], [
-                    { field: "หมวดหมู่การตรวจสอบ", val: c.category },
-                    { field: "เกณฑ์ที่คาดหวัง (Expected)", val: c.expected },
-                    { field: "ค่าที่ตรวจพบจริง (Actual)", val: c.actual },
-                    { field: "จำนวนรายการผิดพลาด", val: String(c.failed_records) + " รายการ" },
-                    { field: "ผลการตรวจสอบ", val: c.status + " (ผ่านเกณฑ์ 100%)" }
-                  ]),
-                  node("h5", "lab-subheading", "SQL Query Expression สำหรับตรวจสอบ"),
-                  node("code", "source-hash-code", c.sql)
-                );
-              },
-              searchPlaceholder: "ค้นหากฎ Reconciliation…",
-              leftTitle: "กฎการ Reconcile (6 กฎ)",
-              filterKey: "label"
-            });
-            body.append(splitView);
-          } else {
-            const dqTable = dataTable([
-              ["num", "ข้อ"],
-              ["rule", "กฎการตรวจสอบ (Data Quality Rule)"],
-              ["criteria", "เกณฑ์การตรวจสอบ"],
-              ["expected", "ค่าที่คาดหวัง (Expected)"],
-              ["actual", "ค่าที่ตรวจพบ (Actual)"],
-              ["failed", "รายการผิดพลาด"],
-              ["status", "ผลตรวจ"]
-            ], [
-              { num: "1", rule: "File Completeness", criteria: "ความครบถ้วนของไฟล์ใน Source Package", expected: "21 CSVs + Manifest", actual: "21 CSVs + Manifest", failed: "0", status: "PASS" },
-              { num: "2", rule: "Schema & Column Structure", criteria: "โครงสร้างคอลัมน์ตรงกับ ER1 Contract", expected: "21 ตารางตรงตาม Contract", actual: "21 ตารางตรง 100%", failed: "0", status: "PASS" },
-              { num: "3", rule: "Required Fields (Not Null)", criteria: "ฟิลด์บังคับต้องไม่เป็น Null (Order_ID ฯลฯ)", expected: "0 Nulls ใน Required Fields", actual: "0 Nulls", failed: "0", status: "PASS" },
-              { num: "4", rule: "Primary Key Uniqueness", criteria: "คีย์หลักไม่ซ้ำซ้อนใน Fact_Orders", expected: "274 Unique Keys (100%)", actual: "274 Unique Keys (100%)", failed: "0", status: "PASS" },
-              { num: "5", rule: "Referential Integrity", criteria: "Order Items มี SKU และ Order ตรงกับ Master", expected: "100% Valid Foreign Keys", actual: "320/320 Items Valid (100%)", failed: "0", status: "PASS" },
-              { num: "6", rule: "Row Reconciliation", criteria: "จำนวนแถวใน SQLite ตรงกับ Neon PostgreSQL", expected: "274 แถวใน Fact_Orders", actual: "274 แถวใน Neon", failed: "0", status: "PASS" }
-            ]);
-            body.append(dqTable);
-          }
+          if (!evidence?.dq) body.append(notice("ยังไม่มีผลตรวจคุณภาพข้อมูลจริงของขั้นตอนนี้ในรอบนี้ ระบบจะแสดงผลเมื่อขั้นตอนทำงานแล้วเท่านั้น (ไม่แสดงตัวเลขตัวอย่าง)"));
         } else if (activeSubtab === "output") {
           body.append(node("strong", "", "ข้อมูลส่งออก (Output)"));
           if (id === "ingest") {
@@ -3482,11 +3404,10 @@
             });
             body.append(splitView);
           } else {
+            const facts = liveFacts(), lm = facts.lastMonth;
             const artifacts = [
-              { id: "art_snapshot", label: "Published Warehouse Snapshot (#ER2_2026-01)", sublabel: "DuckDB Embedded Warehouse", count: "12 tables", badge: "Published", badgeType: "validated" },
-              { id: "art_kpis", label: "Executive Business KPIs (JSON)", sublabel: "Net Rev ฿88,136 · Margin 14.64%", count: "10 metrics", badge: "Ready", badgeType: "validated" },
-              { id: "art_ml", label: "ML Demand Forecast v1.3 (Parquet)", sublabel: "WAPE 8.7% · 4-week Horizon", count: "4 weeks", badge: "Trained", badgeType: "validated" },
-              { id: "art_cert", label: "Reconciliation Sign-off Certificate", sublabel: "6/6 DQ Rules PASS", count: "1 cert", badge: "Verified", badgeType: "validated" }
+              { id: "art_snapshot", label: "Published Warehouse Snapshot (Run " + String(facts.runId || "—").slice(0, 8) + ")", sublabel: "DuckDB Embedded Warehouse", count: "Published", badge: "Published", badgeType: "validated" },
+              { id: "art_kpis", label: "Business KPI ของเดือนล่าสุดที่ Publish", sublabel: lm ? thaiMonth(lm.month) + " · Net ฿" + money(lm.net, 2) + (lm.gates?.profit_protection?.rate_pct === null || lm.gates?.profit_protection?.rate_pct === undefined ? "" : " · Profit Protection " + pct(lm.gates.profit_protection.rate_pct, 2)) : "ยังไม่มีเดือนที่ Publish", count: lm ? "1 เดือน" : "—", badge: "Ready", badgeType: "validated" }
             ];
             const splitView = renderMasterDetailSplitView({
               items: artifacts,
@@ -3504,8 +3425,7 @@
                   dataTable([["field", "รายการ"], ["val", "รายละเอียด"]], [
                     { field: "ชื่อผลลัพธ์", val: item.label },
                     { field: "คำอธิบาย", val: item.sublabel },
-                    { field: "สถานะการตรวจสอบ", val: "ผ่านการรับรองความถูกต้องข้ามชั้นข้อมูล (Reconciliation Verified)" },
-                    { field: "ปลายทางการใช้งาน", val: "Business Overview & ML Lab Analytics" }
+                    { field: "ปลายทางการใช้งาน", val: "ภาพรวมธุรกิจ และ Forecast & Planning" }
                   ])
                 );
               },

@@ -455,7 +455,7 @@ def test_14_scenario_is_pre_target_only_recomputed_server_side_and_append_only(e
     status, v2 = fc("POST", "seal_plan", body=base2)
     assert status == 201 and v2["decision_version"] == 2
     rows = q("SELECT decision_version,supersedes_decision_id IS NOT NULL,approved_target_amount::float,calculator_version FROM demo_ml.scenario_decision ORDER BY 1")
-    assert rows == [(1, False, 94000.0, "scenario-calc-1"), (2, True, 94000.0, "scenario-calc-1")]
+    assert rows == [(1, False, 94000.0, "scenario-calc-2"), (2, True, 94000.0, "scenario-calc-2")]
     with psycopg.connect(DB_URL) as db:
         with pytest.raises(Exception):
             db.execute("UPDATE demo_ml.scenario_decision SET plan_title='x'")

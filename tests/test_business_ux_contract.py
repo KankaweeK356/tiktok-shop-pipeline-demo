@@ -51,3 +51,8 @@ def test_v4_business_actual_uses_shared_helpers_and_no_hardcoded_month_or_amount
         assert fake not in biz
     html = (Path(__file__).resolve().parents[1] / "dashboard" / "index.html").read_text(encoding="utf-8")
     assert html.index("business-insights.js") < html.index("app.js")
+
+
+def test_pipeline_panels_do_not_claim_fixed_results():
+    for fake in ("Parity Matched", "88,136", "Certificate SHA-256 generated", "WAPE 8.7%", "6/6 DQ Rules PASS", "1,582", "88806540c4f828fd"):
+        assert fake not in APP, fake

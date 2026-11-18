@@ -41,3 +41,12 @@ def test_forecast_vs_actual_uses_signed_error_without_good_bad_colouring_and_han
     assert "Actual − Forecast" in ev and "Underforecast" in ev and "Overforecast" in ev
     assert "ไม่มีแผนที่เลือกไว้" in ev and "Execution not verified" in ev
     assert "ยังตัดสินความแม่นยำระยะยาว" in ev and "รอยอดจริง" in ev
+
+
+def test_v4_business_actual_uses_shared_helpers_and_no_hardcoded_month_or_amounts():
+    biz = block("  function marketingFrame", "adv.append(body); root.append(adv);")
+    assert "window.BusinessInsights" in biz and "groupDrawer" in biz and "ดูรายละเอียด" in biz
+    for fake in ("3,174.12", "34,324.80", "37,498.92", "กรกฎาคม", "มิถุนายน", "7.06"):
+        assert fake not in biz
+    html = (Path(__file__).resolve().parents[1] / "dashboard" / "index.html").read_text(encoding="utf-8")
+    assert html.index("business-insights.js") < html.index("app.js")

@@ -16,6 +16,24 @@ from .ml_weekly import weekly_readiness
 ROOT = Path(__file__).resolve().parents[1]
 
 
+
+# Per-month x Product Group roll-up of the Published mart (every cost column is the plain SUM of the mart grain;
+# profit is NULL when any contributing row is incomplete so an unknown cost is never shown as zero).
+GROUPS_SQL = '''SELECT d.Year_Month AS month,m.Product_Group_ID AS group_id,
+                MAX(m.Product_Group_Name) AS group_name,
+                SUM(m.Net_Revenue) AS net,SUM(m.Gross_Reference_Sales) AS gross,
+                CASE WHEN COUNT(*)=COUNT(m.Contribution_Profit)
+                     THEN SUM(m.Contribution_Profit) ELSE NULL END AS profit,
+                SUM(m.Ads_Cost) AS ads_cost,SUM(m.Campaign_Price_Reduction) AS campaign_reduction,
+                SUM(m.Voucher_Discount) AS voucher_discount,
+                SUM(m.COGS) AS cogs,SUM(m.Platform_Fee_Cost) AS platform_fee,
+                SUM(m.Fulfillment_Cost) AS fulfillment,SUM(m.Affiliate_Cost) AS affiliate,
+                SUM(m.Sample_Cost) AS sample,SUM(m.Claim_Cost) AS claim,
+                SUM(CASE WHEN m.Data_Cost_Basis='INCOMPLETE' OR m.Contribution_Profit IS NULL
+                         THEN 1 ELSE 0 END) AS incomplete_rows
+                FROM Mart_Product_Group_Daily_Performance m
+                JOIN Dim_Date d ON d.Date_Key=m.Date_Key GROUP BY 1,2 ORDER BY 1,2'''
+
 def run_stage_and_save(batch: str, stage: str) -> dict:
     if batch not in BATCHES and batch != "incremental_02_error":
         raise ValueError("Invalid batch")
@@ -82,15 +100,7 @@ def finalize(batch: str) -> dict:
                 Profit_Protection_Status AS protection_status,
                 Profit_Data_Status AS profit_data_status,Target_Status AS target_status
                 FROM View_Shop_Monthly_KPI ORDER BY Year_Month'''),
-            "groups": rows('''SELECT d.Year_Month AS month,m.Product_Group_ID AS group_id,
-                MAX(m.Product_Group_Name) AS group_name,
-                SUM(m.Net_Revenue) AS net,SUM(m.Gross_Reference_Sales) AS gross,
-                CASE WHEN COUNT(*)=COUNT(m.Contribution_Profit)
-                     THEN SUM(m.Contribution_Profit) ELSE NULL END AS profit,
-                SUM(m.Ads_Cost) AS ads_cost,SUM(m.Campaign_Price_Reduction) AS campaign_reduction,
-                SUM(m.Voucher_Discount) AS voucher_discount
-                FROM Mart_Product_Group_Daily_Performance m
-                JOIN Dim_Date d ON d.Date_Key=m.Date_Key GROUP BY 1,2 ORDER BY 1,2'''),
+            "groups": rows(GROUPS_SQL),
             "days": rows('''SELECT d.Year_Month AS month,d.Full_Date AS day,
                 m.Product_Group_ID AS group_id,m.Net_Revenue AS net,
                 m.Gross_Reference_Sales AS gross,m.Contribution_Profit AS profit,

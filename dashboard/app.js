@@ -246,13 +246,50 @@
     });
     wrap.append(box("bz-mk-row bz-mk-total", node("span", "bz-mk-name", "รวมต้นทุนการตลาด"), node("span", ""), node("span", "bz-mk-val", "฿" + money(total, 2))));
     wrap.append(small("หารด้วย Gross Reference Sales ฿" + money(selected.gross, 2) + " · ไม่รวม COGS / Platform / Fulfillment / Claim"));
+    wrap.append(marketingFrame(selected));
     return wrap;
+  }
+  function marketingFrame(selected) {
+    const cap = window.BusinessInsights.marketingCap(selected, selected.gates?.marketing_gap?.max_rate_pct);
+    if (cap.status !== "OVER" && cap.status !== "WITHIN")
+      return box("bz-frame bz-frame-na", node("strong", "", { INCOMPLETE: "ไม่สามารถสรุปกรอบได้: ข้อมูลค่าใช้จ่ายการตลาดไม่ครบ", NO_GROSS: "ไม่สามารถคำนวณ Marketing GAP ได้ (Gross เป็นศูนย์)", NO_POLICY: "ไม่มีเพดานจากนโยบายแผน" }[cap.status]));
+    const over = cap.status === "OVER";
+    return box("bz-frame" + (over ? " bz-frame-over" : " bz-frame-ok"),
+      box("bz-frame-cells",
+        box("bz-frame-cell", node("span", "bz-frame-label", "กรอบที่กำหนด (≤ " + money(cap.max_rate_pct, 0) + "% ของ Gross)"), node("strong", "", "฿" + money(cap.allowed, 2))),
+        box("bz-frame-cell", node("span", "bz-frame-label", "ค่าใช้จ่ายการตลาดจริง (" + money(cap.rate_pct, 2) + "% ของ Gross)"), node("strong", "", "฿" + money(cap.actual, 2))),
+        box("bz-frame-cell bz-frame-result", node("span", "bz-frame-label", over ? "ส่วนที่เกินกรอบ" : "ต่ำกว่ากรอบ"), node("strong", "", (over ? "+฿" + money(cap.overage, 2) : "฿" + money(cap.headroom, 2))))),
+      small(over ? "Marketing GAP " + money(cap.rate_pct, 2) + "% — สูงกว่าเกณฑ์ " + money(cap.max_rate_pct, 0) + "% อยู่ " + money(cap.over_pct_points, 2) + " จุดเปอร์เซ็นต์ (" + money(cap.overage, 2) + " บาท)" : "อยู่ในกรอบ เหลือ " + money(cap.headroom, 2) + " บาท"));
   }
   function costStructureRows(s) {
     const rows = [["Gross Reference Sales", s.gross], ["− ส่วนลด Campaign", s.campaign_reduction], ["− Voucher", s.voucher], ["= Net Revenue", s.net],
       ["− COGS", s.cogs], ["− Platform Fee", s.platform_fee], ["− Fulfillment", s.fulfillment], ["− Affiliate", s.affiliate], ["− Ads", s.ads],
       ["− Free Sample", s.sample], ["− Claim", s.claim], ["= Contribution Profit", s.profit]];
     return rows.map(([item, v]) => ({ item, value: v === null || v === undefined ? "INCOMPLETE" : "฿" + money(v, 2) }));
+  }
+  function groupDrawer(selected, groupRows, runId) {
+    const BI = window.BusinessInsights, row = groupRows.find(r => r.group_id === state.groupDrawer.group);
+    const close = () => { state.groupDrawer = null; renderBusiness(); };
+    const overlay = box("bz-drawer-backdrop"); overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
+    if (!window.__bzEsc) { window.__bzEsc = true; document.addEventListener("keydown", e => { if (e.key === "Escape" && state.groupDrawer) { state.groupDrawer = null; renderBusiness(); } }); }
+    const dlg = box("bz-drawer"); dlg.setAttribute("role", "dialog"); dlg.setAttribute("aria-modal", "true");
+    const x = node("button", "button button-outline", "ปิด"); x.type = "button"; x.addEventListener("click", close);
+    if (!row) { dlg.append(node("h3", "", "ไม่พบข้อมูลกลุ่มนี้ในเดือนที่เลือก"), x); overlay.append(dlg); return overlay; }
+    const b = BI.groupBreakdown(row), name = row.group_name || row.group_id;
+    dlg.append(box("h-stack", node("h3", "", "รายละเอียดต้นทุนและกำไร — " + name + " | " + thaiMonth(selected.month)), x));
+    if (!b.snapshot_has_costs) dlg.append(notice("ข้อมูลต้นทุนไม่ครบใน Snapshot นี้ (Publish ก่อนเพิ่มรายละเอียดต้นทุนรายกลุ่ม) รันเดือนถัดไปหรือรันใหม่เพื่อให้ได้รายละเอียดครบ ระบบไม่แสดง 0 แทนข้อมูลที่ไม่มี", true));
+    if (b.incomplete) dlg.append(notice("ข้อมูลต้นทุนของกลุ่มนี้ในเดือนนี้ไม่ครบ (INCOMPLETE) จึงไม่แสดงกำไรสุดท้าย", true));
+    const gross = Number(row.gross);
+    dlg.append(dataTable([["item", "รายการ"], ["value", "จำนวนเงิน"], ["share", "% ของ Gross"]], b.lines.map(l => ({
+      item: l.label, value: l.missing ? "ข้อมูลต้นทุนไม่ครบ" : "฿" + money(l.value, 2), share: l.missing || !(gross > 0) ? "—" : pct(100 * l.value / gross, 2) }))));
+    dlg.append(small("Profit Protection = Contribution Profit ÷ Gross Reference Sales ของกลุ่มนี้ = " + (b.protection_pct === null ? "—" : pct(b.protection_pct, 2)) + " · เกณฑ์ 10% เป็นเกณฑ์ระดับร้าน ใช้รายกลุ่มเป็นข้อมูลอ้างอิงเท่านั้น"));
+    if (b.protection_pct !== null && b.protection_pct < 10)
+      dlg.append(notice(name + " มี Profit Protection " + pct(b.protection_pct, 2) + " ต่ำกว่าเกณฑ์อ้างอิง 10% ควรตรวจรายละเอียดต้นทุนและส่วนลดของกลุ่มนี้ (ยังไม่ระบุสาเหตุ)", true));
+    const mismatch = BI.reconcile(groupRows, selected);
+    dlg.append(mismatch.length ? notice("ผลรวม 5 กลุ่มไม่ตรงกับยอดร้านที่: " + mismatch.map(m => m.label + " (กลุ่มรวม " + money(m.groups, 2) + " ≠ ร้าน " + money(m.shop, 2) + ")").join(", "), true)
+      : small("ตรวจกระทบยอดแล้ว: ผลรวม 5 กลุ่มตรงกับยอดร้านเดือนนี้ทุกรายการที่เปรียบเทียบได้"));
+    dlg.append(small("แหล่งข้อมูล: Published ER2 (Mart_Product_Group_Daily_Performance) · เดือน " + selected.month + " · กลุ่ม " + row.group_id + " · Run " + String(runId)));
+    overlay.append(dlg); return overlay;
   }
   function renderBusiness() {
     const root = $("#app"); root.replaceChildren(); state.rows = [];
@@ -310,26 +347,42 @@
         box("panel-body", trendChart(shopMonths), box("bz-legend", node("span", "bz-legend-actual", "Actual"), node("span", "bz-legend-target", "เป้า")))),
       panel("งบและส่วนลดการตลาด · " + thaiMonth(selected.month), "ค่าใช้จ่ายที่รวมอยู่ใน Marketing GAP", box("panel-body", marketingBreakdown(selected)))));
 
-    // 5) product groups + attention/CTA
+    // 5) product groups (+ drill-down) and the "ประเด็นที่ควรตรวจสอบ" box
+    const BI = window.BusinessInsights;
     const groupRows = (result.business.groups || []).filter(r => r.month === selected.month);
     state.rows = groupRows;
-    const withRate = groupRows.map(r => ({ ...r, rate: r.profit === null || r.profit === undefined || !r.gross ? null : 100 * r.profit / r.gross }));
-    const worst = withRate.filter(r => r.rate !== null).sort((a, b) => a.rate - b.rate)[0];
-    const groupTable = dataTable([["group", "กลุ่มสินค้า"], ["net", "Net Revenue"], ["profit", "Contribution Profit"], ["rate", "Profit Protection"]],
-      withRate.map(r => ({ group: (r.group_name ? r.group_id + " · " + r.group_name : r.group_id) + (worst && r.group_id === worst.group_id ? " ⚠" : ""),
-        net: "฿" + money(r.net, 2), profit: r.profit === null || r.profit === undefined ? "ข้อมูลไม่ครบ" : "฿" + money(r.profit, 2), rate: r.rate === null ? "—" : pct(r.rate, 2) })));
-    const next = nextSourceMonth(selected.month);
-    const cta = node("button", "button button-primary", next ? "ไปวางแผนเดือน" + thaiMonth(next).split(" ")[0] + " →" : "ครบเดือนสุดท้ายของชุดข้อมูลแล้ว");
-    cta.type = "button"; cta.disabled = !next || selected.month !== shopMonths[shopMonths.length - 1].month;
-    cta.title = cta.disabled ? "วางแผนได้จากเดือนล่าสุดที่ Publish เท่านั้น" : "";
+    const withRate = groupRows.map(r => ({ ...r, rate: BI.groupBreakdown(r).protection_pct }));
+    const lowest = withRate.filter(r => r.rate !== null).sort((a, b) => a.rate - b.rate)[0];
+    const gTable = node("table", "bz-group-table");
+    const head = node("tr", ""); ["กลุ่มสินค้า", "Net Revenue", "Contribution Profit", "Profit Protection", ""].forEach(h => head.append(node("th", "", h)));
+    const thead = node("thead", ""); thead.append(head); gTable.append(thead);
+    const tbody = node("tbody", "");
+    withRate.forEach(r => {
+      const low = r.rate !== null && r.rate < 10, tr = node("tr", low ? "bz-row-low" : "");
+      const btn = node("button", "button button-outline bz-detail-btn", "ดูรายละเอียด ›"); btn.type = "button";
+      btn.setAttribute("aria-label", "ดูรายละเอียดต้นทุนและกำไรของ " + (r.group_name || r.group_id));
+      btn.addEventListener("click", () => { state.groupDrawer = { month: selected.month, group: r.group_id }; renderBusiness(); });
+      tr.append(node("td", "", (r.group_name ? r.group_id + " · " + r.group_name : r.group_id) + (lowest && r.group_id === lowest.group_id && low ? " ⚠" : "")),
+        node("td", "num", "฿" + money(r.net, 2)), node("td", "num", r.profit === null || r.profit === undefined ? "ข้อมูลไม่ครบ" : "฿" + money(r.profit, 2)),
+        node("td", "num" + (low ? " bz-low" : ""), r.rate === null ? "—" : pct(r.rate, 2)), node("td", "", "")); tr.lastChild.append(btn); tbody.append(tr);
+    });
+    gTable.append(tbody);
+    const tableWrap = box("bz-table-wrap", gTable);
+    const next = nextSourceMonth(selected.month), isLatest = selected.month === shopMonths[shopMonths.length - 1].month, ready5 = shopMonths.length >= 5;
+    const nextName = next ? thaiMonth(next).split(" ")[0] : "";
+    const cta = node("button", "button button-primary", next ? "ไปวางแผนเดือน" + nextName + " →" : "ครบเดือนสุดท้ายของชุดข้อมูลแล้ว");
+    cta.type = "button"; cta.disabled = !next || !isLatest || !ready5;
+    cta.title = !next ? "ไม่มีเดือนถัดไปในชุดข้อมูล" : !isLatest ? "วางแผนได้จากเดือนล่าสุดที่ Publish เท่านั้น" : !ready5 ? "ต้อง Publish ครบ 5 เดือนก่อนสร้าง Forecast (ตอนนี้ " + shopMonths.length + "/5)" : "";
     cta.addEventListener("click", () => setView("forecast"));
+    const points = BI.insights({ shop: selected, groups: groupRows, maxMarketingPct: g.marketing_gap.max_rate_pct });
     const attention = box("v-stack");
-    if (!shortfalls.length) attention.append(small("ทุกเกณฑ์ผ่านในเดือนนี้"));
-    shortfalls.forEach((s, i) => attention.append(box("bz-attn" + (i === 0 ? " bz-attn-first" : ""), node("strong", "", (i === 0 ? "ควรดูก่อน · " : (i + 1) + " · ")), node("span", "", s.text))));
-    attention.append(small("ผลจากตัวเลข KPI เท่านั้น ยังไม่สรุปสาเหตุเชิงเหตุผล"));
+    points.forEach((p, i) => attention.append(box("bz-attn bz-attn-" + p.tone, node("strong", "", p.title), small(p.detail))));
+    attention.append(small("สรุปจากตัวเลขที่วัดได้เท่านั้น ยังไม่ระบุสาเหตุ ต้องตรวจรายละเอียดประกอบ"));
+    if (next && isLatest && !ready5) attention.append(notice("วางแผนเดือน" + nextName + "ได้เมื่อ Publish ครบ 5 เดือน (ตอนนี้ " + shopMonths.length + "/5)", true));
     root.append(box("bz-two-col",
-      panel("ผลรายกลุ่มสินค้า", "คำนวณจาก Daily Mart รายกลุ่ม · ยังไม่มีเป้าหมายรายกลุ่ม จึงไม่ตัดสินผ่าน/ไม่ผ่านรายกลุ่ม", box("panel-body", groupTable)),
-      panel("สิ่งที่ควรรู้ก่อนวางแผนเดือนถัดไป", "", box("panel-body", attention, box("h-stack", cta)))));
+      panel("ผลรายกลุ่มสินค้า", "คำนวณจาก Daily Mart รายกลุ่ม · ยังไม่มีเป้าหมายรายกลุ่ม จึงไม่ตัดสินผ่าน/ไม่ผ่านรายกลุ่ม", box("panel-body", tableWrap)),
+      panel(next ? "ประเด็นที่ควรตรวจสอบก่อนวางแผน" + nextName : "ประเด็นที่ควรตรวจสอบ", "", box("panel-body", attention, box("h-stack", cta)))));
+    if (state.groupDrawer && state.groupDrawer.month === selected.month) root.append(groupDrawer(selected, groupRows, runId));
 
     // 6) advanced (collapsed)
     const adv = node("details", "advanced-settings-section");

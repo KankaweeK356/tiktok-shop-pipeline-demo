@@ -790,3 +790,20 @@ tr:hover td{background:#fff8f0}.metric-label,.metric-sub,.panel-description{colo
 .ev-pair{flex:1;display:flex;align-items:flex-end;gap:4px;width:100%;justify-content:center}
 .ev-bar{width:36%;min-height:2px;border-radius:3px 3px 0 0}.ev-bar-f{background:#e0b9c0}.ev-bar-a{background:#741D2B}
 .ev-label{font-size:12px;color:#6b4a4d;text-align:center}.ev-err{font-size:11px;color:#421D20}
+
+/* Business Actual v4: marketing frame, group drill-down */
+.bz-frame{margin-top:10px;border-radius:10px;padding:10px 12px;border:1px solid #e9b7bd;background:#fbf3f4}
+.bz-frame-ok{border-color:#b9e0c6;background:#f1faf4}.bz-frame-na{border-color:#e4c9ce;background:#faf6f6}
+.bz-frame-cells{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:6px}
+.bz-frame-cell{display:flex;flex-direction:column;gap:2px;font-size:13px}.bz-frame-cell strong{font-size:17px}
+.bz-frame-label{font-size:12px;color:#6b4a4d}.bz-frame-result strong{color:#a3283a}.bz-frame-ok .bz-frame-result strong{color:#1c6b3a}
+.bz-table-wrap{overflow-x:auto}.bz-group-table{width:100%;border-collapse:collapse;font-size:14px}
+.bz-group-table th{text-align:left;font-size:12px;color:#6b4a4d;padding:8px 6px;border-bottom:1px solid #f0e2e6}
+.bz-group-table td{padding:8px 6px;border-bottom:1px solid #f6ecee}.bz-group-table .num{text-align:right;font-variant-numeric:tabular-nums}
+.bz-row-low{background:#fbeaea}.bz-low{color:#a3283a;font-weight:700}.bz-detail-btn{padding:4px 10px;font-size:13px;white-space:nowrap}
+.bz-attn small{display:block;margin-top:3px}.bz-attn-ok{background:#f1faf4}.bz-attn-warn{background:#fbeaea}.bz-attn-na{background:#f4f1f1}
+.bz-drawer-backdrop{position:fixed;inset:0;background:rgba(66,29,32,.35);display:flex;justify-content:flex-end;z-index:50}
+.bz-drawer{width:min(520px,100%);height:100%;overflow:auto;background:#fff;padding:18px 20px;box-shadow:-6px 0 24px rgba(0,0,0,.15);display:flex;flex-direction:column;gap:10px}
+.bz-drawer h3{margin:0;font-size:17px;color:#421D20}
+@media (max-width:600px){.bz-frame-cells{grid-template-columns:1fr}.bz-drawer{padding:14px}}
+@media (max-width:600px){.bz-group-table{font-size:12px}.bz-group-table th,.bz-group-table td{padding:6px 3px}.bz-detail-btn{padding:3px 6px;font-size:12px}}

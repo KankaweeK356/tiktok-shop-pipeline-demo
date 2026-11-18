@@ -1,0 +1,52 @@
+{
+  "baselines": {
+    "baseline_naive_previous_month": {
+      "groups": {
+        "PG01": 23677.96,
+        "PG02": 14978.56,
+        "PG03": 16129.89,
+        "PG04": 13494.5,
+        "PG05": 24058.24
+      },
+      "model": "baseline_naive_previous_month",
+      "model_version": "baseline-naive-1",
+      "shop": 92339.15
+    },
+    "baseline_trailing_3_month_mean": {
+      "groups": {
+        "PG01": 22877.23,
+        "PG02": 18321.76,
+        "PG03": 17307.45,
+        "PG04": 13529.16,
+        "PG05": 21593.04
+      },
+      "model": "baseline_trailing_3_month_mean",
+      "model_version": "baseline-trailing3-1",
+      "shop": 93628.64
+    }
+  },
+  "created_at": "2026-11-18T15:56:13.616961+00:00",
+  "cutoff_month": "2026-07",
+  "data_cutoff": "2026-07-31",
+  "feature_version": "mlops-features-1",
+  "kind": "OFFICIAL_LINKED",
+  "ml": {
+    "alpha": 1.0,
+    "groups": {
+      "PG01": 23153.03,
+      "PG02": 19189.95,
+      "PG03": 17076.38,
+      "PG04": 14339.03,
+      "PG05": 21902.74
+    },
+    "model": "ridge_base",
+    "model_version": "mlops-ridge-1",
+    "shop": 95661.13
+  },
+  "note": "Recorded before the target month is published. Only an OFFICIAL_LINKED shadow bound to the sealed forecast id counts for monitoring.",
+  "official_forecast_id": "c147899a-820e-4692-a540-4b3cdbd626da",
+  "shadow_version": "shadow-1",
+  "source_run_id": "9156d0b3-173f-4c47-843f-36f4d7ac08d5",
+  "target_month": "2026-08",
+  "training_run_id": "3d6f07cd-8572-46b4-882d-26f0044b6180"
+}

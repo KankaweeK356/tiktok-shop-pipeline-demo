@@ -1,5 +1,6 @@
 """Champion-Challenger monitoring rules (locked by the project owner). Synthetic rows are TEST FIXTURES for the rules only."""
 import json
+from pathlib import Path
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -18,25 +19,36 @@ def months(n, start="2026-06"):
     return [mf.month_add(start, i) for i in range(n)]
 
 
-def shadow_for(month, fid, b_err, m_err, *, per_group_ml=None, created=None, kind="OFFICIAL_LINKED", with_ml=True):
-    """Actual is 20,000 per group. Baseline / ML shop error = b_err / m_err (spread equally unless per_group_ml is given)."""
+def baseline_groups(b_err):
+    return {g: 20000 + b_err / 5 for g in G}
+
+
+def sealed_forecast(month, b_err, *, model="trailing_3_month_mean", method="BASELINE"):
+    return {"forecast_run_id": "fc-" + month, "method_type": method, "model_name": model, "results": baseline_groups(b_err)}
+
+
+def shadow_for(month, fid, b_err, m_err, *, per_group_ml=None, created=None, kind="OFFICIAL_LINKED", with_ml=True, naive_err=None):
+    """Actual is 20,000 per group. Official baseline / ML shop error = b_err / m_err (spread equally unless per_group_ml is given)."""
     cutoff = mf.month_add(month, -1)
     ml_groups = per_group_ml or {g: 20000 + m_err / 5 for g in G}
+    def base(name, err):
+        return {"model": name, "model_version": "b1", "groups": baseline_groups(err), "shop": 100000 + err}
     return {"kind": kind, "target_month": month, "official_forecast_id": fid, "training_run_id": "run-" + month, "created_at": (created or T0).isoformat(),
             "cutoff_month": cutoff, "data_cutoff": cutoff + "-28", "feature_version": "mlops-features-1",
-            "baseline": {"model": mon.CHAMPION, "model_version": "b1", "groups": {g: 20000 + b_err / 5 for g in G}, "shop": 100000 + b_err},
+            "baselines": {"baseline_trailing_3_month_mean": base("baseline_trailing_3_month_mean", b_err),
+                          "baseline_naive_previous_month": base("baseline_naive_previous_month", b_err + 7777 if naive_err is None else naive_err)},
             "ml": {"model": mon.CHALLENGER, "model_version": "r1", "groups": ml_groups, "shop": sum(ml_groups.values())} if with_ml else None}
 
 
 def row(month, b_err, m_err, **kw):
     fid = "fc-" + month
-    return mon.evaluate_month(month=month, forecast={"forecast_run_id": fid, "method_type": "BASELINE", "model_name": "trailing_3_month_mean"},
-                              shadow=kw.pop("shadow", None) or shadow_for(month, fid, b_err, m_err, **kw), actual_by_group={g: 20000.0 for g in G},
+    forecast = kw.pop("forecast", None) or sealed_forecast(month, b_err)
+    return mon.evaluate_month(month=month, forecast=forecast, shadow=kw.pop("shadow", None) or shadow_for(month, fid, b_err, m_err, **kw), actual_by_group={g: 20000.0 for g in G},
                               actual_published_at=(T0 + timedelta(days=1)).isoformat(), actual_run_id="r-" + month)
 
 
 def series(pairs, **kw):
-    return mon.summarize([row(m, b, e, **kw) for m, (b, e) in zip(months(len(pairs)), pairs)], cycle=1)
+    return mon.summarize([row(m, b, e, **kw) for m, (b, e) in zip(months(len(pairs)), pairs)], stream="lab-cycle-1")
 
 
 def test_evidence_levels_are_locked():
@@ -49,7 +61,7 @@ def test_evidence_levels_are_locked():
 def test_cumulative_wape_is_total_error_over_total_actual_not_the_mean_of_monthly_wape():
     rows = [row("2026-06", 10000, 0), row("2026-07", 1000, 0)]
     rows[1]["actual"]["shop"] = 20000.0; rows[1]["baseline"]["shop_abs_error"] = 1000.0            # a smaller month: weights must differ
-    s = mon.summarize(rows, cycle=1)
+    s = mon.summarize(rows, stream="lab-cycle-1")
     assert s["cumulative"]["baseline"]["wape_pct"] == pytest.approx(100 * 11000 / 120000)
     assert s["cumulative"]["baseline"]["wape_pct"] != pytest.approx((10.0 + 5.0) / 2)
     assert s["cumulative"]["baseline"]["abs_error_total"] == 11000
@@ -80,7 +92,7 @@ def test_group_guardrail_boundary_is_five_points():
         return g
     def run(extra):
         rows = [row(m, 10000, 0, per_group_ml=groups(extra)) for m in months(6)]
-        return mon.summarize(rows, cycle=1)
+        return mon.summarize(rows, stream="lab-cycle-1")
     # baseline group WAPE is 10% (2000 error per group of 20000); ML group PG01 WAPE = extra/20000
     ok = run(2000 + 0.05 * 20000)                                       # PG01 gap exactly +5.00 pp -> allowed
     bad = run(2000 + 0.0501 * 20000)                                    # +5.01 pp -> fails
@@ -91,7 +103,8 @@ def test_group_guardrail_boundary_is_five_points():
 
 def test_only_pre_actual_complete_pairs_are_counted_and_every_exclusion_has_a_reason():
     fid = "fc-2026-06"
-    base = dict(month="2026-06", forecast={"forecast_run_id": fid, "method_type": "BASELINE"}, actual_by_group={g: 20000.0 for g in G},
+    forecast = sealed_forecast("2026-06", 1)
+    base = dict(month="2026-06", forecast=forecast, actual_by_group={g: 20000.0 for g in G},
                 actual_published_at=(T0 + timedelta(days=1)).isoformat(), actual_run_id="r")
     cases = {
         "NO_SHADOW": None,
@@ -106,8 +119,26 @@ def test_only_pre_actual_complete_pairs_are_counted_and_every_exclusion_has_a_re
     assert hist["exclusion_reason"] == "SHADOW_NOT_BOUND_TO_SEALED_FORECAST"                       # a backtest/historical run can never be counted
     assert mon.evaluate_month(shadow=shadow_for("2026-06", fid, 1, 1), **{**base, "actual_by_group": {**{g: 1.0 for g in G[:4]}, "PG05": None}})["exclusion_reason"] == "ACTUAL_INCOMPLETE"
     assert mon.evaluate_month(shadow=shadow_for("2026-07", fid, 1, 1), **base)["exclusion_reason"] == "SHADOW_TARGET_MISMATCH"
-    s = mon.summarize([mon.evaluate_month(shadow=v, **base) for v in cases.values()], cycle=1)
+    s = mon.summarize([mon.evaluate_month(shadow=v, **base) for v in cases.values()], stream="lab-cycle-1")
     assert s["counted_months"] == 0 and len(s["excluded"]) == 4 and s["evidence_level"] == "INSUFFICIENT_EVIDENCE"
+
+
+def test_champion_is_the_official_baseline_actually_sealed_each_month():
+    naive = row("2026-06", 3000, 2000, forecast=sealed_forecast("2026-06", 5555, model="naive_previous_month"), naive_err=5555)
+    assert naive["status"] == "EVALUATED" and naive["champion_model"] == "baseline_naive_previous_month"
+    assert naive["baseline"]["shop_error"] == 5555 and naive["baseline"]["shop_abs_error"] == 5555      # the sealed values, not trailing-3 (3000)
+    tr3 = row("2026-07", 3000, 2000)
+    assert tr3["champion_model"] == "baseline_trailing_3_month_mean" and tr3["baseline"]["shop_error"] == 3000
+    s = mon.summarize([naive, tr3], stream="s")
+    assert s["champion_models_by_month"] == {"2026-06": "baseline_naive_previous_month", "2026-07": "baseline_trailing_3_month_mean"}
+    assert s["pair"]["champion"] == "OFFICIAL_BASELINE_OF_EACH_MONTH"
+
+
+def test_official_must_be_a_baseline_and_must_match_its_shadow():
+    ml_official = row("2026-06", 1000, 500, forecast=sealed_forecast("2026-06", 1000, method="ML", model="ridge_pooled_group_month"))
+    assert ml_official["status"] == "EXCLUDED" and ml_official["exclusion_reason"] == "OFFICIAL_NOT_BASELINE"
+    tampered = sealed_forecast("2026-06", 1000); tampered["results"]["PG01"] += 5
+    assert row("2026-06", 1000, 500, forecast=tampered)["exclusion_reason"] == "OFFICIAL_BASELINE_MISMATCH"
 
 
 def test_error_sign_and_ape_use_the_same_actual_for_both_models():
@@ -117,12 +148,40 @@ def test_error_sign_and_ape_use_the_same_actual_for_both_models():
     assert r["actual"]["shop"] == 100000 and set(r["ml"]["group_error"]) == set(G)
 
 
+def test_recommendation_carries_its_evidence_and_offers_no_way_to_change_the_champion():
+    r = series([(8000, 6000)] * 6)["recommendation"]
+    assert r["status"] == "RECOMMEND_REVIEW" and r["champion_change_function_in_system"] is False and r["auto_switch_champion"] is False
+    assert len(r["evidence"]["counted_months"]) == 6 and len(r["evidence"]["official_forecast_ids"]) == 6 and len(r["evidence"]["shadow_training_runs"]) == 6
+    assert "ไม่มีฟังก์ชันเปลี่ยน Champion" in r["message"]
+
+
+def test_data_origin_is_recorded_and_validated():
+    assert mon.summarize([], stream="s", data_origin="SYNTHETIC_FIXTURE")["data_origin"] == "SYNTHETIC_FIXTURE"
+    with pytest.raises(ValueError):
+        mon.summarize([], stream="s", data_origin="made-up")
+
+
+def test_month_arithmetic_crosses_years_and_nothing_is_tied_to_2026():
+    assert mon.month_add("2026-12", 1) == "2027-01" and mon.month_add("2027-01", -1) == "2026-12" and mon.month_add("2026-11", 14) == "2028-01"
+    ms = ["2026-11", "2026-12", "2027-01", "2027-02", "2027-03", "2027-04"]
+    rows = [row(m, 8000, 6000) for m in ms]
+    assert all(r["status"] == "EVALUATED" for r in rows)                          # cutoff check works across the year boundary
+    s = mon.summarize(rows, stream="long")
+    assert s["through_month"] == "2027-04" and s["counted_months"] == 6 and s["recommendation"]["status"] == "RECOMMEND_REVIEW"
+
+
 # ------------------------------------------------------------------ end to end with the real training run + write-once store
-def real_shadow_store(tmp_path, fid="fc-real"):
-    rows = make_rows(5)
-    b = tr.run_experiment(rows, "2026-06", kind="OFFICIAL_LINKED", source=SRC, official_forecast_id=fid)
+def real_shadow_store(tmp_path, fid="fc-real", month="2026-06", rows=None):
+    rows = rows or make_rows(5)
+    b = tr.run_experiment(rows, month, kind="OFFICIAL_LINKED", source=SRC, official_forecast_id=fid)
     store = LocalDirStore(tmp_path)
     return rows, b, store, tr.persist(store, b)
+
+
+def official_from(b, fid):
+    """What the worker would load from Neon: the sealed official forecast (policy: always a baseline)."""
+    logic = b["evaluation"]["official_logic_result"]
+    return {"forecast_run_id": fid, "method_type": logic["method_type"], "model_name": logic["model_name"], "results": logic["predictions"]}
 
 
 def actual_rows_for(month, net=20000.0):
@@ -134,8 +193,9 @@ def test_training_run_writes_a_shadow_with_all_audit_fields_and_a_forecast_point
     shadow = json.loads(store.get(f"{out['run_path']}/shadow_forecast.json"))
     for key in ("target_month", "created_at", "data_cutoff", "feature_version", "official_forecast_id", "cutoff_month"):
         assert shadow[key]
-    assert shadow["data_cutoff"] == "2026-05-31" and shadow["baseline"]["model_version"] and shadow["ml"]["model_version"]
-    assert set(shadow["baseline"]["groups"]) == set(G) and set(shadow["ml"]["groups"]) == set(G) and shadow["ml"]["shop"] == pytest.approx(sum(shadow["ml"]["groups"].values()), abs=0.02)
+    assert shadow["data_cutoff"] == "2026-05-31" and set(shadow["baselines"]) == {"baseline_trailing_3_month_mean", "baseline_naive_previous_month"}
+    assert all(v["model_version"] for v in shadow["baselines"].values()) and shadow["ml"]["model_version"]
+    assert set(shadow["ml"]["groups"]) == set(G) and shadow["ml"]["shop"] == pytest.approx(sum(shadow["ml"]["groups"].values()), abs=0.02)
     assert store.exists("vercel-lab/ml/monitoring/by_forecast/fc-real.json")
     hist = tr.run_experiment(make_rows(5), "2026-06", kind="HISTORICAL_EVALUATION", source=SRC, official_forecast_id="fc-hist")
     tr.persist(store, hist)
@@ -145,31 +205,109 @@ def test_training_run_writes_a_shadow_with_all_audit_fields_and_a_forecast_point
 def test_record_month_is_automatic_write_once_and_ignores_historical_runs(tmp_path):
     _rows, b, store, out = real_shadow_store(tmp_path)
     created = datetime.fromisoformat(b["shadow"]["created_at"])
-    res = mon.record_month(store, cycle=3, month="2026-06", forecast={"forecast_run_id": "fc-real", "method_type": "BASELINE"}, actual_rows=actual_rows_for("2026-06"),
-                           actual_published_at=(created + timedelta(minutes=5)).isoformat(), actual_run_id="run-june")
+    forecast = official_from(b, "fc-real")
+    res = mon.record_month(store, stream="lab-cycle-3", cycle=3, month="2026-06", forecast=forecast, actual_rows=actual_rows_for("2026-06"),
+                           actual_published_at=(created + timedelta(minutes=5)).isoformat(), actual_run_id="run-june", data_origin="SYNTHETIC_FIXTURE")
     assert res["status"] == "EVALUATED" and res["counted_months"] == 1 and res["evidence_level"] == "INSUFFICIENT_EVIDENCE"
-    assert store.exists("vercel-lab/ml/monitoring/3/evaluations/2026-06.json") and store.exists("vercel-lab/ml/monitoring/3/summary/through=2026-06.json")
-    again = mon.record_month(store, cycle=3, month="2026-06", forecast={"forecast_run_id": "fc-real", "method_type": "BASELINE"}, actual_rows=actual_rows_for("2026-06", 1.0),
+    assert store.exists("vercel-lab/ml/monitoring/lab-cycle-3/evaluations/2026-06.json") and store.exists("vercel-lab/ml/monitoring/lab-cycle-3/summary/through=2026-06.json")
+    assert json.loads(store.get("vercel-lab/ml/monitoring/lab-cycle-3/summary/through=2026-06.json"))["data_origin"] == "SYNTHETIC_FIXTURE"
+    again = mon.record_month(store, stream="lab-cycle-3", cycle=3, month="2026-06", forecast=forecast, actual_rows=actual_rows_for("2026-06", 1.0),
                              actual_published_at=(created + timedelta(minutes=9)).isoformat(), actual_run_id="run-june")
     assert again["status"] == "ALREADY_RECORDED"                                                     # never rewritten
-    stored = json.loads(store.get("vercel-lab/ml/monitoring/3/evaluations/2026-06.json"))
-    assert stored["actual"]["shop"] == 100000.0
-    late = mon.record_month(store, cycle=3, month="2026-07", forecast={"forecast_run_id": "fc-none", "method_type": "BASELINE"}, actual_rows=actual_rows_for("2026-07"),
+    assert json.loads(store.get("vercel-lab/ml/monitoring/lab-cycle-3/evaluations/2026-06.json"))["actual"]["shop"] == 100000.0
+    late = mon.record_month(store, stream="lab-cycle-3", cycle=3, month="2026-07", forecast={**forecast, "forecast_run_id": "fc-none"}, actual_rows=actual_rows_for("2026-07"),
                             actual_published_at=T0.isoformat(), actual_run_id="run-july")
     assert late["status"] == "EXCLUDED" and late["exclusion_reason"] == "NO_SHADOW"
-    summary = json.loads(store.get("vercel-lab/ml/monitoring/3/summary/through=2026-07.json"))
+    summary = json.loads(store.get("vercel-lab/ml/monitoring/lab-cycle-3/summary/through=2026-07.json"))
     assert summary["counted_months"] == 1 and [e["month"] for e in summary["excluded"]] == ["2026-07"]
     # published BEFORE the shadow existed (e.g. regenerated after the actual) -> excluded
     _r2, b2, store2, _o2 = real_shadow_store(tmp_path / "b", fid="fc-late")
     early = datetime.fromisoformat(b2["shadow"]["created_at"]) - timedelta(minutes=1)
-    r = mon.record_month(store2, cycle=1, month="2026-06", forecast={"forecast_run_id": "fc-late", "method_type": "BASELINE"}, actual_rows=actual_rows_for("2026-06"),
+    r = mon.record_month(store2, stream="s", cycle=1, month="2026-06", forecast=official_from(b2, "fc-late"), actual_rows=actual_rows_for("2026-06"),
                          actual_published_at=early.isoformat(), actual_run_id="x")
     assert r["exclusion_reason"] == "SHADOW_NOT_RECORDED_BEFORE_ACTUAL" and r["counted_months"] == 0
+
+
+def test_streams_never_mix_and_the_same_month_is_counted_once_per_stream(tmp_path):
+    """Two dataset cycles replaying the same months are separate streams; a month can never be double counted inside one stream."""
+    _rows, b, store, _out = real_shadow_store(tmp_path)
+    pub = (datetime.fromisoformat(b["shadow"]["created_at"]) + timedelta(minutes=1)).isoformat()
+    kw = dict(month="2026-06", forecast=official_from(b, "fc-real"), actual_rows=actual_rows_for("2026-06"), actual_published_at=pub, actual_run_id="r")
+    assert mon.record_month(store, stream="lab-cycle-1", cycle=1, **kw)["counted_months"] == 1
+    assert mon.record_month(store, stream="lab-cycle-2", cycle=2, **kw)["counted_months"] == 1          # new cycle starts from its own evidence
+    assert mon.record_month(store, stream="lab-cycle-1", cycle=2, **kw)["status"] == "ALREADY_RECORDED"  # same stream + month: no double count
+    for st in ("lab-cycle-1", "lab-cycle-2"):
+        assert json.loads(store.get(f"vercel-lab/ml/monitoring/{st}/summary/through=2026-06.json"))["counted_months"] == 1
+
+
+def test_one_long_stream_accumulates_across_cycles_and_years(tmp_path):
+    """An explicitly configured long-term stream keeps counting distinct months even when the cycle number changes and the year rolls over."""
+    store = LocalDirStore(tmp_path)
+    for k, (cycle, n_months) in enumerate(((1, 5), (2, 6), (3, 7))):                                   # data from Aug 2026: targets Jan, Feb, Mar 2027
+        target_rows = make_rows(n_months, start="2026-08")
+        target = mf.month_add("2026-08", n_months)
+        b = tr.run_experiment(target_rows, target, kind="OFFICIAL_LINKED", source={**SRC, "source_run_id": f"r{k}"}, official_forecast_id=f"fc-{k}")
+        tr.persist(store, b)
+        pub = (datetime.fromisoformat(b["shadow"]["created_at"]) + timedelta(minutes=1)).isoformat()
+        out = mon.record_month(store, stream="long", cycle=cycle, month=target, forecast=official_from(b, f"fc-{k}"), actual_rows=actual_rows_for(target), actual_published_at=pub, actual_run_id=f"a{k}")
+        assert out["counted_months"] == k + 1
+    last = json.loads(store.get("vercel-lab/ml/monitoring/long/summary/through=2027-03.json"))
+    assert [m["month"] for m in last["monthly"]] == ["2027-01", "2027-02", "2027-03"] and last["evidence_level"] == "PRELIMINARY"
+    assert {r["cycle"] for r in last["rows"]} == {1, 2, 3}
 
 
 def test_monitoring_never_modifies_official_selection_or_forecast():
     rows = make_rows(5)
     core = [{"month": r["month"], "group": r["group"], "net_revenue": r["net_revenue"]} for r in rows]
-    before = mf.generate_forecast(core, "2026-06")
+    before = mf.generate_forecast(core, "2026-06", allow_ml=False)
     series([(8000, 6000)] * 6)
-    assert mf.generate_forecast(core, "2026-06") == before
+    assert mf.generate_forecast(core, "2026-06", allow_ml=False) == before
+
+
+# ------------------------------------------------------------------ ML can never become Official automatically
+def ml_winning_rows():
+    """Synthetic series on which the ORIGINAL logic selects ML (strong cross-group trend that baselines lag behind)."""
+    rows = []
+    for i in range(9):
+        month = mf.month_add("2026-01", i)
+        for k, g in enumerate(G):
+            net = 10000 + 2500 * i * (1 + 0.15 * k) + 400 * k
+            rows.append({"month": month, "group": g, "net_revenue": net})
+    return rows
+
+
+def test_ml_is_never_selected_as_official_even_when_it_wins_walk_forward():
+    rows = ml_winning_rows()
+    original = mf.generate_forecast(rows, "2026-10")                                      # default = original behaviour (research/backtests)
+    assert original["method_type"] == "ML" and original["validation"]["status"] == "OK", "fixture must make ML win under the original logic"
+    official = mf.generate_forecast(rows, "2026-10", allow_ml=False)
+    assert official["method_type"] == "BASELINE" and official["model_name"] in ("trailing_3_month_mean", "naive_previous_month")
+    assert official["ml_passed_validation_blocked_by_policy"] is True and "human decision" in official["selection_reason"]
+    assert official["validation"]["status"] == "OK"                                       # the validation is still computed and reported
+    assert sorted(official["predictions"]) == G
+
+
+def test_every_official_forecast_call_site_in_code_enforces_the_policy():
+    import re
+    root = Path(__file__).resolve().parents[1]
+    offenders = []
+    for path in list((root / "api").glob("*.py")) + list((root / "pipeline").rglob("*.py")):
+        if path.name == "monthly_forecast.py":
+            continue
+        for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            if re.search(r"generate_forecast\(", line) and "allow_ml=False" not in line and "unrestricted" not in line:
+                offenders.append(f"{path.relative_to(root)}:{lineno}")
+    assert not offenders, offenders
+    worker = (root / "api" / "lab-worker.py").read_text(encoding="utf-8")
+    assert 'result["method_type"] != "BASELINE"' in worker and "LAB_POLICY_ML_NOT_OFFICIAL" in worker      # runtime guard before anything is saved
+    for forbidden in ("champion_approval", "approve_champion", "champion_ledger", "approver_id", "owner01", "switch_champion"):                                                    # scope: no approval workflow was added
+        assert forbidden not in (root / "lib" / "lab-forecast.js").read_text(encoding="utf-8").lower()
+
+
+def test_official_logic_records_what_the_original_logic_would_have_done_without_acting_on_it():
+    rows = ml_winning_rows()
+    shaped = [dict(r, gross_reference_sales=r["net_revenue"] * 1.1, ads_cost=r["net_revenue"] * 0.2, campaign_reduction=r["net_revenue"] * 0.05,
+                   voucher_discount=r["net_revenue"] * 0.02, affiliate_cost=r["net_revenue"] * 0.06) for r in rows]
+    b = tr.run_experiment(shaped, "2026-10", kind="OFFICIAL_LINKED", source=SRC, official_forecast_id="fc-x")
+    logic = b["evaluation"]["official_logic_result"]
+    assert logic["method_type"] == "BASELINE" and logic["ml_would_be_selected_without_policy"] is True

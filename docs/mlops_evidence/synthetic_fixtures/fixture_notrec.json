@@ -1,0 +1,809 @@
+{
+ "monitoring_version": "champion-challenger-1",
+ "stream": "synthetic-fixture",
+ "data_origin": "SYNTHETIC_FIXTURE",
+ "window_months": 36,
+ "through_month": "2026-12",
+ "pair": {
+  "champion": "OFFICIAL_BASELINE_OF_EACH_MONTH",
+  "challenger": "ridge_base",
+  "note": "Champion = Baseline ที่ Seal เป็น Official ของแต่ละเดือน (ดีที่สุดระหว่าง trailing 3 กับ naive) · Ridge + Marketing อยู่ใน Experiment Only ไม่อยู่ในคู่เปรียบเทียบนี้"
+ },
+ "champion_models_by_month": {
+  "2026-06": "baseline_trailing_3_month_mean",
+  "2026-07": "baseline_trailing_3_month_mean",
+  "2026-08": "baseline_trailing_3_month_mean",
+  "2026-09": "baseline_trailing_3_month_mean",
+  "2026-10": "baseline_trailing_3_month_mean",
+  "2026-11": "baseline_trailing_3_month_mean",
+  "2026-12": "baseline_trailing_3_month_mean"
+ },
+ "counted_months": 7,
+ "evidence_level": "ADEQUATE",
+ "levels": {
+  "preliminary_from": 3,
+  "adequate_from": 6
+ },
+ "cumulative": {
+  "baseline": {
+   "wape_pct": 8.457142857142857,
+   "mae": 8457.142857142857,
+   "bias": 8457.142857142857,
+   "abs_error_total": 59200.0
+  },
+  "ml": {
+   "wape_pct": 8.771428571428572,
+   "mae": 8771.42857142857,
+   "bias": 8771.42857142857,
+   "abs_error_total": 61400.0
+  },
+  "groups": {
+   "PG01": {
+    "baseline": 8.457142857142857,
+    "ml": 8.771428571428572,
+    "gap_pp": 0.31428571428571495
+   },
+   "PG02": {
+    "baseline": 8.457142857142857,
+    "ml": 8.771428571428572,
+    "gap_pp": 0.31428571428571495
+   },
+   "PG03": {
+    "baseline": 8.457142857142857,
+    "ml": 8.771428571428572,
+    "gap_pp": 0.31428571428571495
+   },
+   "PG04": {
+    "baseline": 8.457142857142857,
+    "ml": 8.771428571428572,
+    "gap_pp": 0.31428571428571495
+   },
+   "PG05": {
+    "baseline": 8.457142857142857,
+    "ml": 8.771428571428572,
+    "gap_pp": 0.31428571428571495
+   }
+  }
+ },
+ "monthly": [
+  {
+   "month": "2026-06",
+   "actual": 100000.0,
+   "baseline_forecast": 108000.0,
+   "ml_forecast": 109500.0,
+   "baseline_error": 8000.0,
+   "ml_error": 9500.0,
+   "baseline_ape_pct": 8.0,
+   "ml_ape_pct": 9.5,
+   "cum_abs_error_baseline": 8000.0,
+   "cum_abs_error_ml": 9500.0,
+   "ml_better": false
+  },
+  {
+   "month": "2026-07",
+   "actual": 100000.0,
+   "baseline_forecast": 108000.0,
+   "ml_forecast": 106000.0,
+   "baseline_error": 8000.0,
+   "ml_error": 6000.0,
+   "baseline_ape_pct": 8.0,
+   "ml_ape_pct": 6.0,
+   "cum_abs_error_baseline": 16000.0,
+   "cum_abs_error_ml": 15500.0,
+   "ml_better": true
+  },
+  {
+   "month": "2026-08",
+   "actual": 100000.0,
+   "baseline_forecast": 110000.0,
+   "ml_forecast": 111000.0,
+   "baseline_error": 10000.0,
+   "ml_error": 11000.0,
+   "baseline_ape_pct": 10.0,
+   "ml_ape_pct": 11.0,
+   "cum_abs_error_baseline": 26000.0,
+   "cum_abs_error_ml": 26500.0,
+   "ml_better": false
+  },
+  {
+   "month": "2026-09",
+   "actual": 100000.0,
+   "baseline_forecast": 107500.0,
+   "ml_forecast": 106000.0,
+   "baseline_error": 7500.0,
+   "ml_error": 6000.0,
+   "baseline_ape_pct": 7.5,
+   "ml_ape_pct": 6.0,
+   "cum_abs_error_baseline": 33500.0,
+   "cum_abs_error_ml": 32500.0,
+   "ml_better": true
+  },
+  {
+   "month": "2026-10",
+   "actual": 100000.0,
+   "baseline_forecast": 109500.0,
+   "ml_forecast": 112800.0,
+   "baseline_error": 9500.0,
+   "ml_error": 12800.0,
+   "baseline_ape_pct": 9.5,
+   "ml_ape_pct": 12.8,
+   "cum_abs_error_baseline": 43000.0,
+   "cum_abs_error_ml": 45300.0,
+   "ml_better": false
+  },
+  {
+   "month": "2026-11",
+   "actual": 100000.0,
+   "baseline_forecast": 108200.0,
+   "ml_forecast": 109100.0,
+   "baseline_error": 8200.0,
+   "ml_error": 9100.0,
+   "baseline_ape_pct": 8.2,
+   "ml_ape_pct": 9.1,
+   "cum_abs_error_baseline": 51200.0,
+   "cum_abs_error_ml": 54400.0,
+   "ml_better": false
+  },
+  {
+   "month": "2026-12",
+   "actual": 100000.0,
+   "baseline_forecast": 108000.0,
+   "ml_forecast": 107000.0,
+   "baseline_error": 8000.0,
+   "ml_error": 7000.0,
+   "baseline_ape_pct": 8.0,
+   "ml_ape_pct": 7.0,
+   "cum_abs_error_baseline": 59200.0,
+   "cum_abs_error_ml": 61400.0,
+   "ml_better": true
+  }
+ ],
+ "rows": [
+  {
+   "month": "2026-06",
+   "status": "EVALUATED",
+   "official_forecast_id": "fc-2026-06",
+   "official_method": "BASELINE",
+   "official_model": "trailing_3_month_mean",
+   "shadow_training_run_id": "run-2026-06",
+   "shadow_created_at": "2026-07-01T00:00:00+00:00",
+   "data_cutoff": "2026-05-28",
+   "feature_version": "mlops-features-1",
+   "actual_run_id": "r-2026-06",
+   "actual_published_at": "2026-07-02T00:00:00+00:00",
+   "actual": {
+    "groups": {
+     "PG01": 20000.0,
+     "PG02": 20000.0,
+     "PG03": 20000.0,
+     "PG04": 20000.0,
+     "PG05": 20000.0
+    },
+    "shop": 100000.0
+   },
+   "champion_model": "baseline_trailing_3_month_mean",
+   "baseline": {
+    "model": "baseline_trailing_3_month_mean",
+    "model_version": "b1",
+    "groups": {
+     "PG01": 21600.0,
+     "PG02": 21600.0,
+     "PG03": 21600.0,
+     "PG04": 21600.0,
+     "PG05": 21600.0
+    },
+    "shop": 108000.0,
+    "shop_error": 8000.0,
+    "shop_abs_error": 8000.0,
+    "shop_ape_pct": 8.0,
+    "group_error": {
+     "PG01": 1600.0,
+     "PG02": 1600.0,
+     "PG03": 1600.0,
+     "PG04": 1600.0,
+     "PG05": 1600.0
+    },
+    "group_abs_error": {
+     "PG01": 1600.0,
+     "PG02": 1600.0,
+     "PG03": 1600.0,
+     "PG04": 1600.0,
+     "PG05": 1600.0
+    }
+   },
+   "ml": {
+    "model": "ridge_base",
+    "model_version": "r1",
+    "groups": {
+     "PG01": 21900.0,
+     "PG02": 21900.0,
+     "PG03": 21900.0,
+     "PG04": 21900.0,
+     "PG05": 21900.0
+    },
+    "shop": 109500.0,
+    "shop_error": 9500.0,
+    "shop_abs_error": 9500.0,
+    "shop_ape_pct": 9.5,
+    "group_error": {
+     "PG01": 1900.0,
+     "PG02": 1900.0,
+     "PG03": 1900.0,
+     "PG04": 1900.0,
+     "PG05": 1900.0
+    },
+    "group_abs_error": {
+     "PG01": 1900.0,
+     "PG02": 1900.0,
+     "PG03": 1900.0,
+     "PG04": 1900.0,
+     "PG05": 1900.0
+    }
+   }
+  },
+  {
+   "month": "2026-07",
+   "status": "EVALUATED",
+   "official_forecast_id": "fc-2026-07",
+   "official_method": "BASELINE",
+   "official_model": "trailing_3_month_mean",
+   "shadow_training_run_id": "run-2026-07",
+   "shadow_created_at": "2026-07-01T00:00:00+00:00",
+   "data_cutoff": "2026-06-28",
+   "feature_version": "mlops-features-1",
+   "actual_run_id": "r-2026-07",
+   "actual_published_at": "2026-07-02T00:00:00+00:00",
+   "actual": {
+    "groups": {
+     "PG01": 20000.0,
+     "PG02": 20000.0,
+     "PG03": 20000.0,
+     "PG04": 20000.0,
+     "PG05": 20000.0
+    },
+    "shop": 100000.0
+   },
+   "champion_model": "baseline_trailing_3_month_mean",
+   "baseline": {
+    "model": "baseline_trailing_3_month_mean",
+    "model_version": "b1",
+    "groups": {
+     "PG01": 21600.0,
+     "PG02": 21600.0,
+     "PG03": 21600.0,
+     "PG04": 21600.0,
+     "PG05": 21600.0
+    },
+    "shop": 108000.0,
+    "shop_error": 8000.0,
+    "shop_abs_error": 8000.0,
+    "shop_ape_pct": 8.0,
+    "group_error": {
+     "PG01": 1600.0,
+     "PG02": 1600.0,
+     "PG03": 1600.0,
+     "PG04": 1600.0,
+     "PG05": 1600.0
+    },
+    "group_abs_error": {
+     "PG01": 1600.0,
+     "PG02": 1600.0,
+     "PG03": 1600.0,
+     "PG04": 1600.0,
+     "PG05": 1600.0
+    }
+   },
+   "ml": {
+    "model": "ridge_base",
+    "model_version": "r1",
+    "groups": {
+     "PG01": 21200.0,
+     "PG02": 21200.0,
+     "PG03": 21200.0,
+     "PG04": 21200.0,
+     "PG05": 21200.0
+    },
+    "shop": 106000.0,
+    "shop_error": 6000.0,
+    "shop_abs_error": 6000.0,
+    "shop_ape_pct": 6.0,
+    "group_error": {
+     "PG01": 1200.0,
+     "PG02": 1200.0,
+     "PG03": 1200.0,
+     "PG04": 1200.0,
+     "PG05": 1200.0
+    },
+    "group_abs_error": {
+     "PG01": 1200.0,
+     "PG02": 1200.0,
+     "PG03": 1200.0,
+     "PG04": 1200.0,
+     "PG05": 1200.0
+    }
+   }
+  },
+  {
+   "month": "2026-08",
+   "status": "EVALUATED",
+   "official_forecast_id": "fc-2026-08",
+   "official_method": "BASELINE",
+   "official_model": "trailing_3_month_mean",
+   "shadow_training_run_id": "run-2026-08",
+   "shadow_created_at": "2026-07-01T00:00:00+00:00",
+   "data_cutoff": "2026-07-28",
+   "feature_version": "mlops-features-1",
+   "actual_run_id": "r-2026-08",
+   "actual_published_at": "2026-07-02T00:00:00+00:00",
+   "actual": {
+    "groups": {
+     "PG01": 20000.0,
+     "PG02": 20000.0,
+     "PG03": 20000.0,
+     "PG04": 20000.0,
+     "PG05": 20000.0
+    },
+    "shop": 100000.0
+   },
+   "champion_model": "baseline_trailing_3_month_mean",
+   "baseline": {
+    "model": "baseline_trailing_3_month_mean",
+    "model_version": "b1",
+    "groups": {
+     "PG01": 22000.0,
+     "PG02": 22000.0,
+     "PG03": 22000.0,
+     "PG04": 22000.0,
+     "PG05": 22000.0
+    },
+    "shop": 110000.0,
+    "shop_error": 10000.0,
+    "shop_abs_error": 10000.0,
+    "shop_ape_pct": 10.0,
+    "group_error": {
+     "PG01": 2000.0,
+     "PG02": 2000.0,
+     "PG03": 2000.0,
+     "PG04": 2000.0,
+     "PG05": 2000.0
+    },
+    "group_abs_error": {
+     "PG01": 2000.0,
+     "PG02": 2000.0,
+     "PG03": 2000.0,
+     "PG04": 2000.0,
+     "PG05": 2000.0
+    }
+   },
+   "ml": {
+    "model": "ridge_base",
+    "model_version": "r1",
+    "groups": {
+     "PG01": 22200.0,
+     "PG02": 22200.0,
+     "PG03": 22200.0,
+     "PG04": 22200.0,
+     "PG05": 22200.0
+    },
+    "shop": 111000.0,
+    "shop_error": 11000.0,
+    "shop_abs_error": 11000.0,
+    "shop_ape_pct": 11.0,
+    "group_error": {
+     "PG01": 2200.0,
+     "PG02": 2200.0,
+     "PG03": 2200.0,
+     "PG04": 2200.0,
+     "PG05": 2200.0
+    },
+    "group_abs_error": {
+     "PG01": 2200.0,
+     "PG02": 2200.0,
+     "PG03": 2200.0,
+     "PG04": 2200.0,
+     "PG05": 2200.0
+    }
+   }
+  },
+  {
+   "month": "2026-09",
+   "status": "EVALUATED",
+   "official_forecast_id": "fc-2026-09",
+   "official_method": "BASELINE",
+   "official_model": "trailing_3_month_mean",
+   "shadow_training_run_id": "run-2026-09",
+   "shadow_created_at": "2026-07-01T00:00:00+00:00",
+   "data_cutoff": "2026-08-28",
+   "feature_version": "mlops-features-1",
+   "actual_run_id": "r-2026-09",
+   "actual_published_at": "2026-07-02T00:00:00+00:00",
+   "actual": {
+    "groups": {
+     "PG01": 20000.0,
+     "PG02": 20000.0,
+     "PG03": 20000.0,
+     "PG04": 20000.0,
+     "PG05": 20000.0
+    },
+    "shop": 100000.0
+   },
+   "champion_model": "baseline_trailing_3_month_mean",
+   "baseline": {
+    "model": "baseline_trailing_3_month_mean",
+    "model_version": "b1",
+    "groups": {
+     "PG01": 21500.0,
+     "PG02": 21500.0,
+     "PG03": 21500.0,
+     "PG04": 21500.0,
+     "PG05": 21500.0
+    },
+    "shop": 107500.0,
+    "shop_error": 7500.0,
+    "shop_abs_error": 7500.0,
+    "shop_ape_pct": 7.5,
+    "group_error": {
+     "PG01": 1500.0,
+     "PG02": 1500.0,
+     "PG03": 1500.0,
+     "PG04": 1500.0,
+     "PG05": 1500.0
+    },
+    "group_abs_error": {
+     "PG01": 1500.0,
+     "PG02": 1500.0,
+     "PG03": 1500.0,
+     "PG04": 1500.0,
+     "PG05": 1500.0
+    }
+   },
+   "ml": {
+    "model": "ridge_base",
+    "model_version": "r1",
+    "groups": {
+     "PG01": 21200.0,
+     "PG02": 21200.0,
+     "PG03": 21200.0,
+     "PG04": 21200.0,
+     "PG05": 21200.0
+    },
+    "shop": 106000.0,
+    "shop_error": 6000.0,
+    "shop_abs_error": 6000.0,
+    "shop_ape_pct": 6.0,
+    "group_error": {
+     "PG01": 1200.0,
+     "PG02": 1200.0,
+     "PG03": 1200.0,
+     "PG04": 1200.0,
+     "PG05": 1200.0
+    },
+    "group_abs_error": {
+     "PG01": 1200.0,
+     "PG02": 1200.0,
+     "PG03": 1200.0,
+     "PG04": 1200.0,
+     "PG05": 1200.0
+    }
+   }
+  },
+  {
+   "month": "2026-10",
+   "status": "EVALUATED",
+   "official_forecast_id": "fc-2026-10",
+   "official_method": "BASELINE",
+   "official_model": "trailing_3_month_mean",
+   "shadow_training_run_id": "run-2026-10",
+   "shadow_created_at": "2026-07-01T00:00:00+00:00",
+   "data_cutoff": "2026-09-28",
+   "feature_version": "mlops-features-1",
+   "actual_run_id": "r-2026-10",
+   "actual_published_at": "2026-07-02T00:00:00+00:00",
+   "actual": {
+    "groups": {
+     "PG01": 20000.0,
+     "PG02": 20000.0,
+     "PG03": 20000.0,
+     "PG04": 20000.0,
+     "PG05": 20000.0
+    },
+    "shop": 100000.0
+   },
+   "champion_model": "baseline_trailing_3_month_mean",
+   "baseline": {
+    "model": "baseline_trailing_3_month_mean",
+    "model_version": "b1",
+    "groups": {
+     "PG01": 21900.0,
+     "PG02": 21900.0,
+     "PG03": 21900.0,
+     "PG04": 21900.0,
+     "PG05": 21900.0
+    },
+    "shop": 109500.0,
+    "shop_error": 9500.0,
+    "shop_abs_error": 9500.0,
+    "shop_ape_pct": 9.5,
+    "group_error": {
+     "PG01": 1900.0,
+     "PG02": 1900.0,
+     "PG03": 1900.0,
+     "PG04": 1900.0,
+     "PG05": 1900.0
+    },
+    "group_abs_error": {
+     "PG01": 1900.0,
+     "PG02": 1900.0,
+     "PG03": 1900.0,
+     "PG04": 1900.0,
+     "PG05": 1900.0
+    }
+   },
+   "ml": {
+    "model": "ridge_base",
+    "model_version": "r1",
+    "groups": {
+     "PG01": 22560.0,
+     "PG02": 22560.0,
+     "PG03": 22560.0,
+     "PG04": 22560.0,
+     "PG05": 22560.0
+    },
+    "shop": 112800.0,
+    "shop_error": 12800.0,
+    "shop_abs_error": 12800.0,
+    "shop_ape_pct": 12.8,
+    "group_error": {
+     "PG01": 2560.0,
+     "PG02": 2560.0,
+     "PG03": 2560.0,
+     "PG04": 2560.0,
+     "PG05": 2560.0
+    },
+    "group_abs_error": {
+     "PG01": 2560.0,
+     "PG02": 2560.0,
+     "PG03": 2560.0,
+     "PG04": 2560.0,
+     "PG05": 2560.0
+    }
+   }
+  },
+  {
+   "month": "2026-11",
+   "status": "EVALUATED",
+   "official_forecast_id": "fc-2026-11",
+   "official_method": "BASELINE",
+   "official_model": "trailing_3_month_mean",
+   "shadow_training_run_id": "run-2026-11",
+   "shadow_created_at": "2026-07-01T00:00:00+00:00",
+   "data_cutoff": "2026-10-28",
+   "feature_version": "mlops-features-1",
+   "actual_run_id": "r-2026-11",
+   "actual_published_at": "2026-07-02T00:00:00+00:00",
+   "actual": {
+    "groups": {
+     "PG01": 20000.0,
+     "PG02": 20000.0,
+     "PG03": 20000.0,
+     "PG04": 20000.0,
+     "PG05": 20000.0
+    },
+    "shop": 100000.0
+   },
+   "champion_model": "baseline_trailing_3_month_mean",
+   "baseline": {
+    "model": "baseline_trailing_3_month_mean",
+    "model_version": "b1",
+    "groups": {
+     "PG01": 21640.0,
+     "PG02": 21640.0,
+     "PG03": 21640.0,
+     "PG04": 21640.0,
+     "PG05": 21640.0
+    },
+    "shop": 108200.0,
+    "shop_error": 8200.0,
+    "shop_abs_error": 8200.0,
+    "shop_ape_pct": 8.2,
+    "group_error": {
+     "PG01": 1640.0,
+     "PG02": 1640.0,
+     "PG03": 1640.0,
+     "PG04": 1640.0,
+     "PG05": 1640.0
+    },
+    "group_abs_error": {
+     "PG01": 1640.0,
+     "PG02": 1640.0,
+     "PG03": 1640.0,
+     "PG04": 1640.0,
+     "PG05": 1640.0
+    }
+   },
+   "ml": {
+    "model": "ridge_base",
+    "model_version": "r1",
+    "groups": {
+     "PG01": 21820.0,
+     "PG02": 21820.0,
+     "PG03": 21820.0,
+     "PG04": 21820.0,
+     "PG05": 21820.0
+    },
+    "shop": 109100.0,
+    "shop_error": 9100.0,
+    "shop_abs_error": 9100.0,
+    "shop_ape_pct": 9.1,
+    "group_error": {
+     "PG01": 1820.0,
+     "PG02": 1820.0,
+     "PG03": 1820.0,
+     "PG04": 1820.0,
+     "PG05": 1820.0
+    },
+    "group_abs_error": {
+     "PG01": 1820.0,
+     "PG02": 1820.0,
+     "PG03": 1820.0,
+     "PG04": 1820.0,
+     "PG05": 1820.0
+    }
+   }
+  },
+  {
+   "month": "2026-12",
+   "status": "EVALUATED",
+   "official_forecast_id": "fc-2026-12",
+   "official_method": "BASELINE",
+   "official_model": "trailing_3_month_mean",
+   "shadow_training_run_id": "run-2026-12",
+   "shadow_created_at": "2026-07-01T00:00:00+00:00",
+   "data_cutoff": "2026-11-28",
+   "feature_version": "mlops-features-1",
+   "actual_run_id": "r-2026-12",
+   "actual_published_at": "2026-07-02T00:00:00+00:00",
+   "actual": {
+    "groups": {
+     "PG01": 20000.0,
+     "PG02": 20000.0,
+     "PG03": 20000.0,
+     "PG04": 20000.0,
+     "PG05": 20000.0
+    },
+    "shop": 100000.0
+   },
+   "champion_model": "baseline_trailing_3_month_mean",
+   "baseline": {
+    "model": "baseline_trailing_3_month_mean",
+    "model_version": "b1",
+    "groups": {
+     "PG01": 21600.0,
+     "PG02": 21600.0,
+     "PG03": 21600.0,
+     "PG04": 21600.0,
+     "PG05": 21600.0
+    },
+    "shop": 108000.0,
+    "shop_error": 8000.0,
+    "shop_abs_error": 8000.0,
+    "shop_ape_pct": 8.0,
+    "group_error": {
+     "PG01": 1600.0,
+     "PG02": 1600.0,
+     "PG03": 1600.0,
+     "PG04": 1600.0,
+     "PG05": 1600.0
+    },
+    "group_abs_error": {
+     "PG01": 1600.0,
+     "PG02": 1600.0,
+     "PG03": 1600.0,
+     "PG04": 1600.0,
+     "PG05": 1600.0
+    }
+   },
+   "ml": {
+    "model": "ridge_base",
+    "model_version": "r1",
+    "groups": {
+     "PG01": 21400.0,
+     "PG02": 21400.0,
+     "PG03": 21400.0,
+     "PG04": 21400.0,
+     "PG05": 21400.0
+    },
+    "shop": 107000.0,
+    "shop_error": 7000.0,
+    "shop_abs_error": 7000.0,
+    "shop_ape_pct": 7.0,
+    "group_error": {
+     "PG01": 1400.0,
+     "PG02": 1400.0,
+     "PG03": 1400.0,
+     "PG04": 1400.0,
+     "PG05": 1400.0
+    },
+    "group_abs_error": {
+     "PG01": 1400.0,
+     "PG02": 1400.0,
+     "PG03": 1400.0,
+     "PG04": 1400.0,
+     "PG05": 1400.0
+    }
+   }
+  }
+ ],
+ "excluded": [],
+ "recommendation": {
+  "status": "NOT_RECOMMENDED",
+  "message": "ยังไม่ผ่านเกณฑ์: Cumulative WAPE ของ ML ต่ำกว่า Baseline อย่างน้อย 2 จุด; Monthly APE ของ ML ต่ำกว่า Baseline อย่างน้อย 4 จาก 6 เดือนล่าสุด",
+  "rules": [
+   {
+    "rule": "EVIDENCE_ADEQUATE",
+    "label": "มีเดือนเปรียบเทียบจริงอย่างน้อย 6 เดือน",
+    "passed": true,
+    "detail": "7 เดือน"
+   },
+   {
+    "rule": "CUMULATIVE_WAPE_GAP",
+    "label": "Cumulative WAPE ของ ML ต่ำกว่า Baseline อย่างน้อย 2 จุด",
+    "passed": false,
+    "detail": "Baseline 8.46% − ML 8.77% = -0.31 จุด"
+   },
+   {
+    "rule": "MONTHLY_WINS",
+    "label": "Monthly APE ของ ML ต่ำกว่า Baseline อย่างน้อย 4 จาก 6 เดือนล่าสุด",
+    "passed": false,
+    "detail": "3 จาก 6 เดือนล่าสุด"
+   },
+   {
+    "rule": "GROUP_GUARDRAIL",
+    "label": "ไม่มี Product Group ใดที่ Cumulative WAPE ของ ML แย่กว่า Baseline เกิน 5 จุด",
+    "passed": true,
+    "detail": "ไม่มีกลุ่มเกินเกณฑ์ · แย่สุด +0.31 จุด"
+   }
+  ],
+  "rule_values": {
+   "min_months": 6,
+   "wape_gap_pp": 2.0,
+   "wins_required": 4,
+   "wins_window": 6,
+   "group_tolerance_pp": 5.0
+  },
+  "human_decision_required": true,
+  "auto_switch_champion": false,
+  "auto_retrain": false,
+  "champion_change_function_in_system": false,
+  "evidence": {
+   "counted_months": [
+    "2026-06",
+    "2026-07",
+    "2026-08",
+    "2026-09",
+    "2026-10",
+    "2026-11",
+    "2026-12"
+   ],
+   "official_forecast_ids": [
+    "fc-2026-06",
+    "fc-2026-07",
+    "fc-2026-08",
+    "fc-2026-09",
+    "fc-2026-10",
+    "fc-2026-11",
+    "fc-2026-12"
+   ],
+   "shadow_training_runs": [
+    "run-2026-06",
+    "run-2026-07",
+    "run-2026-08",
+    "run-2026-09",
+    "run-2026-10",
+    "run-2026-11",
+    "run-2026-12"
+   ]
+  }
+ },
+ "separation_note": "นับเฉพาะ Shadow Forecast ที่บันทึกก่อน Publish Actual · ไม่รวม Historical Evaluation, Experiment Only หรือ Backtest"
+}

@@ -179,14 +179,19 @@ def record_monitoring(client, bucket: str, cycle: int, batch: str, run_id: str, 
             row = db.execute("SELECT forecast_run_id::text,method_type,model_name FROM demo_ml.forecast_run WHERE dataset_key='classroom' "
                              "AND cycle_number=%s AND target_month=%s AND is_official AND status='SEALED'", (cycle, month + "-01")).fetchone()
             finished = db.execute("SELECT finished_at FROM demo_control.pipeline_runs WHERE run_id=%s::uuid", (run_id,)).fetchone()
+            sealed = db.execute("SELECT product_group_id,predicted_net_revenue::float FROM demo_ml.forecast_result WHERE forecast_run_id=%s::uuid", (row[0],)).fetchall() if row else []
         if not row:
             return {"status": "NO_SEALED_FORECAST"}
         if not finished or finished[0] is None:
             return {"status": "SKIPPED", "error": "published time unavailable"}
         rows = monthly_forecast.read_published_group_months(workspace / "er2.duckdb")
-        forecast = {"forecast_run_id": row[0], "method_type": row[1], "model_name": row[2]}
-        return monitoring.record_month(S3Store(client, bucket), cycle=cycle, month=month, forecast=forecast, actual_rows=rows,
-                                       actual_published_at=finished[0].isoformat(), actual_run_id=run_id)
+        forecast = {"forecast_run_id": row[0], "method_type": row[1], "model_name": row[2], "results": {g: v for g, v in sealed}}
+        stream = os.environ.get("CLASSROOM_MONITORING_STREAM") or f"lab-cycle-{cycle}"       # one stream per dataset cycle unless an explicit long-term stream is configured
+        from pipeline.mlops.locks import stream_lock
+        with stream_lock(os.environ["NEON_DEMO_DATABASE_URL"], stream):                      # concurrent workers cannot race on the same month
+            return monitoring.record_month(S3Store(client, bucket), stream=stream, cycle=cycle, month=month, forecast=forecast, actual_rows=rows,
+                                           actual_published_at=finished[0].isoformat(), actual_run_id=run_id,
+                                           data_origin=os.environ.get("CLASSROOM_EVIDENCE_ORIGIN", "LAB_RUNTIME"))
     except Exception as error:                                           # the month is already published and unaffected
         return {"status": "FAILED", "error": f"{type(error).__name__}: {error}"[:300]}
 
@@ -472,7 +477,9 @@ def run_forecast(ticket: str) -> dict:
             mlops_error = None
         except Exception as error:
             mlops_rows, mlops_wh_sha, mlops_error = None, None, f"{type(error).__name__}: {error}"[:300]
-    result = monthly_forecast.generate_forecast(rows, target)
+    result = monthly_forecast.generate_forecast(rows, target, allow_ml=False)       # policy: ML is never selected as Official automatically
+    if result["method_type"] != "BASELINE":
+        raise RuntimeError("LAB_POLICY_ML_NOT_OFFICIAL: the official forecast must be a baseline")
     forecast_id = neon_control.save_draft_forecast(url, int(cycle), previous, result,
                                                    str(claim.get("actor") or "")[:120] or None)
     mlops_summary = {"status": "SKIPPED", "error": mlops_error}

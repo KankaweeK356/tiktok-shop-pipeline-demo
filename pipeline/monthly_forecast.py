@@ -126,8 +126,11 @@ def _metrics(pairs: list[tuple[dict, dict]]) -> dict:
 
 def generate_forecast(rows: list[dict], target_month: str, *, min_train_months: int = 2, min_origins: int = 3,
                       alpha: float = 1.0, group_degradation_tolerance_pp: float = 5.0,
-                      improvement_margin_pp: float = 0.0) -> dict:
-    """Forecast `target_month` using only `rows` (monthly group Net Revenue <= cutoff)."""
+                      improvement_margin_pp: float = 0.0, allow_ml: bool = True) -> dict:
+    """Forecast `target_month` using only `rows` (monthly group Net Revenue <= cutoff).
+
+    allow_ml=False is the project policy for the OFFICIAL forecast: ML may be validated and reported but is never selected here; changing the
+    champion to ML is a decision made outside this system. The default (True) keeps the original behaviour for research/backtests."""
     if not rows:
         raise ForecastError("FORECAST_NO_PUBLISHED_DATA")
     cutoff = month_add(target_month, -1)
@@ -177,6 +180,7 @@ def generate_forecast(rows: list[dict], target_month: str, *, min_train_months: 
     # ---- selection ----------------------------------------------------------------------
     notes, method, model_name = [], "BASELINE", best_baseline
     selection = ""
+    ml_passed_but_blocked = False
     if len(ml_pairs) < min_origins:
         selection = (f"INSUFFICIENT_VALIDATION: only {len(ml_pairs)} valid walk-forward origin(s) for the ML challenger "
                      f"(need {min_origins}); official forecast uses BASELINE {best_baseline}")
@@ -190,7 +194,15 @@ def generate_forecast(rows: list[dict], target_month: str, *, min_train_months: 
             ml_metrics["group_wape_pct"][g] is None or compare["group_wape_pct"][g] is None or
             ml_metrics["group_wape_pct"][g] <= compare["group_wape_pct"][g] + group_degradation_tolerance_pp
             for g in GROUPS)
-        if beats_shop and group_ok:
+        if beats_shop and group_ok and not allow_ml:
+            ml_passed_but_blocked = True
+            best_baseline = best_same
+            model_name = best_same
+            selection = (f"BASELINE {best_same} selected by policy: ML challenger passed walk-forward (shop WAPE {ml_metrics['shop_wape_pct']}% < "
+                         f"{compare['shop_wape_pct']}% on {len(ml_pairs)} origins) but ML cannot become the Official model automatically; "
+                         f"champion change is a human decision outside this system")
+            notes.append("ML passed walk-forward validation but is not eligible to be Official under the project policy.")
+        elif beats_shop and group_ok:
             method, model_name = "ML", "ridge_pooled_group_month"
             selection = (f"ML selected: shop WAPE {ml_metrics['shop_wape_pct']}% < best baseline ({best_same}) "
                          f"{compare['shop_wape_pct']}% on the same {len(ml_pairs)} walk-forward origins; "
@@ -222,7 +234,7 @@ def generate_forecast(rows: list[dict], target_month: str, *, min_train_months: 
         "method_type": method, "model_name": model_name,
         "model_version": ML_VERSION if method == "ML" else "baseline-1", "feature_version": FEATURE_VERSION,
         "predictions": predictions, "shop_prediction": round(sum(predictions.values()), 2),
-        "selection_reason": selection, "validation_notes": " | ".join(notes) or None,
+        "selection_reason": selection, "ml_passed_validation_blocked_by_policy": ml_passed_but_blocked, "validation_notes": " | ".join(notes) or None,
         "baseline_validation_wape_pct": (base_metrics_same if len(ml_pairs) else base_metrics_all)[best_baseline]["shop_wape_pct"],
         "model_validation_wape_pct": ml_metrics["shop_wape_pct"] if len(ml_pairs) >= min_origins else None,
         "validation": {"min_origins_required": min_origins, "ml_origins": origins, "ml": ml_metrics,

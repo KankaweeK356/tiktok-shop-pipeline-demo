@@ -31,6 +31,7 @@ import subprocess
 import sys
 import time
 import uuid
+from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -84,6 +85,7 @@ def env(tmp_path_factory):
         "CLASSROOM_STORAGE_BUCKET": BUCKET,
         "CLASSROOM_LAB_WRITER_URL": DB_URL,
         "CLASSROOM_LAB_ADMIN_KEY": ADMIN_KEY,
+        "CLASSROOM_EVIDENCE_ORIGIN": "LOCAL_REAL_SOURCE_TEST",       # real Final source through the real worker, but a throwaway test database (not Production)
     }.items():
         mp.setenv(key, value)
     sys.path.insert(0, str(ROOT))
@@ -426,6 +428,32 @@ def test_12_june_forecast_uses_data_through_may_only_and_is_honest_about_method(
     env["ctx"]["june_draft"] = draft
 
 
+def test_12b_ml_can_never_become_the_official_forecast_automatically(env, monkeypatch):
+    from pipeline import monthly_forecast as mf_module
+    real = mf_module.generate_forecast
+    calls = []
+
+    def spy(rows, target, **kw):
+        calls.append(kw.get("allow_ml", True))
+        return real(rows, target, **kw)
+    monkeypatch.setattr(mf_module, "generate_forecast", spy)
+    before = q("SELECT COUNT(*) FROM demo_ml.forecast_run")[0][0]
+    forecast_for(env, "2026-06")
+    assert calls[0] is False                                           # the worker's official selection call forbids ML
+    assert q("SELECT COUNT(*) FROM demo_ml.forecast_run")[0][0] == before + 1
+
+    def ml_result(rows, target, **kw):                                  # a regression that returns ML must be stopped before anything is saved
+        result = real(rows, target, **kw)
+        return {**result, "method_type": "ML", "model_name": "ridge_pooled_group_month"}
+    monkeypatch.setattr(mf_module, "generate_forecast", ml_result)
+    status, data = fc("POST", "generate", body={"month": "2026-06", "actor": "business.owner"})
+    assert status == 202
+    with pytest.raises(RuntimeError) as blocked:
+        env["worker"].run_forecast(data["ticket"])
+    assert "LAB_POLICY_ML_NOT_OFFICIAL" in str(blocked.value)
+    assert q("SELECT COUNT(*) FROM demo_ml.forecast_run")[0][0] == before + 1      # nothing was written by the blocked attempt
+
+
 def test_13_seal_once_is_immutable_and_unlocks_june(env):
     draft = env["ctx"]["june_draft"]
     status, bad = fc("POST", "seal", body={"forecast_run_id": draft["forecast_run_id"]})
@@ -442,6 +470,8 @@ def test_13_seal_once_is_immutable_and_unlocks_june(env):
     f = fc("GET", "forecast", {"month": "2026-06"})[1]
     assert f["official"]["forecast_run_id"] == draft["forecast_run_id"] and f["plan_status"] == "NO_SELECTED_PLAN"
     assert f["official"]["results"] == draft["predictions"]          # persisted exactly as generated (survives refresh)
+    env["ctx"]["june_sealed"] = {"results": f["official"]["results"], "sealed_at": str(f["official"]["sealed_at"]), "forecast_run_id": f["official"]["forecast_run_id"],
+                                 "shop": f["official"]["shop_forecast"]}
 
 
 def test_14_scenario_is_pre_target_only_recomputed_server_side_and_append_only(env):
@@ -581,7 +611,7 @@ def test_18_champion_challenger_monitoring_is_automatic_pre_actual_and_isolated(
     assert status["2026-07"]["status"] == "EVALUATED" and status["2026-08"]["status"] == "EVALUATED" and status["2026-10"]["status"] == "EVALUATED"
     assert status["2026-09"]["status"] == "FAILED" and "injected" in status["2026-09"]["error"]          # failure is reported, publish was SUCCESS (asserted in test 16)
     cycle = q("SELECT cycle_number FROM demo_control.dataset_state")[0][0]
-    base = f"vercel-lab/ml/monitoring/{cycle}"
+    base = f"vercel-lab/ml/monitoring/lab-cycle-{cycle}"
     evals = {k.rsplit("/", 1)[1][:-5]: json.loads(v) for k, v in objects.items() if k.startswith(f"{base}/evaluations/")}
     assert sorted(evals) == ["2026-06", "2026-07", "2026-08", "2026-10"]                                  # September was not recorded: not guessed afterwards
     summaries = sorted(k for k in objects if k.startswith(f"{base}/summary/"))
@@ -593,17 +623,33 @@ def test_18_champion_challenger_monitoring_is_automatic_pre_actual_and_isolated(
     sealed_id = env["ctx"]["june_draft"]["forecast_run_id"]
     pointer = json.loads(objects[f"vercel-lab/ml/monitoring/by_forecast/{sealed_id}.json"])
     assert evals["2026-06"]["shadow_training_run_id"] == pointer["training_run_id"] and evals["2026-06"]["official_forecast_id"] == sealed_id
-    # independent oracle: actual comes from the QA file, predictions from the stored shadow files; cumulative WAPE = sum|err| / sum(actual)
+    # independent oracle: actual comes from the QA file; champion = the SEALED official baseline of each month (read back through the API); ML = stored shadow
     oracle = oracle_groups()
-    for key, side in (("baseline", "baseline"), ("ml", "ml")):
+    sealed_by_month = {m: fc("GET", "forecast", {"month": m})[1]["official"] for m in evals}
+    assert all(o["method_type"] == "BASELINE" for o in sealed_by_month.values())
+    for key in ("baseline", "ml"):
         err = act = 0.0
         for month, ev in evals.items():
             shadow = json.loads(objects[f"vercel-lab/ml/runs/{ev['shadow_training_run_id']}/shadow_forecast.json"])
             assert shadow["kind"] == "OFFICIAL_LINKED" and shadow["created_at"] < ev["actual_published_at"]    # recorded before the actual was published
-            assert shadow["target_month"] == month and shadow["data_cutoff"] < month + "-01" and shadow["feature_version"] and shadow[side]["model_version"]
-            err += abs(shadow[side]["shop"] - sum(oracle[month].values()))
+            assert shadow["target_month"] == month and shadow["data_cutoff"] < month + "-01" and shadow["feature_version"] and shadow["ml"]["model_version"]
+            if key == "baseline":
+                official = sealed_by_month[month]
+                assert ev["champion_model"] == "baseline_" + official["model_name"]
+                assert shadow["baselines"][ev["champion_model"]]["shop"] == pytest.approx(official["shop_forecast"], abs=0.02)    # shadow baseline == sealed official
+                predicted = official["shop_forecast"]
+            else:
+                predicted = shadow["ml"]["shop"]
+            err += abs(predicted - sum(oracle[month].values()))
             act += sum(oracle[month].values())
         assert summary["cumulative"][key]["wape_pct"] == pytest.approx(100 * err / act, abs=0.05)
+    assert summary["data_origin"] == "LOCAL_REAL_SOURCE_TEST" and summary["stream"] == f"lab-cycle-{cycle}"
+    assert summary["champion_models_by_month"] == {m: "baseline_" + o["model_name"] for m, o in sealed_by_month.items()}
+    # the sealed June official forecast is exactly what it was when it was sealed
+    june = fc("GET", "forecast", {"month": "2026-06"})[1]["official"]
+    assert june["results"] == env["ctx"]["june_sealed"]["results"] and str(june["sealed_at"]) == env["ctx"]["june_sealed"]["sealed_at"]
+    assert june["forecast_run_id"] == env["ctx"]["june_sealed"]["forecast_run_id"] and june["method_type"] == "BASELINE"
+    assert q("SELECT DISTINCT method_type FROM demo_ml.forecast_run") == [("BASELINE",)]               # no ML forecast row exists, sealed or draft
     assert set(summary["cumulative"]["groups"]) == {"PG01", "PG02", "PG03", "PG04", "PG05"}
     # historical evaluations / experiments created after the actuals (test 17) never entered the monitoring
     hist_ids = {json.loads(v)["training_run_id"] for k, v in objects.items() if "/index/HISTORICAL_EVALUATION/" in k or "/index/EXPERIMENT_ONLY/" in k}
@@ -617,3 +663,39 @@ def test_18_champion_challenger_monitoring_is_automatic_pre_actual_and_isolated(
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes(data)
         (Path(out) / "cycle.txt").write_text(str(cycle))
+
+
+def test_19_concurrent_monitoring_writers_are_serialised_by_the_stream_lock(env, tmp_path):
+    import threading
+    from pipeline.mlops import locks, monitoring as mon
+    from pipeline.mlops.store import LocalDirStore
+    from tests.test_mlops_monitoring import actual_rows_for, official_from, real_shadow_store
+
+    class SlowStore(LocalDirStore):                                    # widens the check-then-write window the real object store has
+        def put(self, key, data):
+            time.sleep(0.25)
+            super().put(key, data)
+
+    def race(stream, locked):
+        _rows, b, _store, _out = real_shadow_store(tmp_path / ("a" if locked else "b"))
+        store = SlowStore(tmp_path / ("a" if locked else "b"))
+        pub = (datetime.fromisoformat(b["shadow"]["created_at"]) + timedelta(minutes=1)).isoformat()
+        results, barrier = [], threading.Barrier(4)
+
+        def work():
+            barrier.wait()
+            try:
+                kw = dict(stream=stream, cycle=1, month="2026-06", forecast=official_from(b, "fc-real"), actual_rows=actual_rows_for("2026-06"), actual_published_at=pub, actual_run_id="r")
+                if locked:
+                    with locks.stream_lock(DB_URL, stream):
+                        results.append(mon.record_month(store, **kw)["status"])
+                else:
+                    results.append(mon.record_month(store, **kw)["status"])
+            except Exception as error:
+                results.append(type(error).__name__)
+        threads = [threading.Thread(target=work) for _ in range(4)]
+        [t.start() for t in threads]
+        [t.join() for t in threads]
+        return sorted(results)
+    assert race("race-locked", True) == ["ALREADY_RECORDED"] * 3 + ["EVALUATED"]                         # exactly one writer wins, the rest see it
+    assert race("race-open", False) != ["ALREADY_RECORDED"] * 3 + ["EVALUATED"]                         # without the lock the race is real (why the lock exists)

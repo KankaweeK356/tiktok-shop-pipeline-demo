@@ -142,11 +142,12 @@ def run_experiment(rows: list[dict], target_month: str, *, kind: str, source: di
 
     # what the UNCHANGED official logic decides on the same rows (recorded for comparison only)
     core = [{"month": r["month"], "group": r["group"], "net_revenue": r["net_revenue"]} for r in rows]
-    official = mf.generate_forecast(core, target_month)
-    official_logic = {"method_type": official["method_type"], "model_name": official["model_name"], "predictions": official["predictions"],
+    official = mf.generate_forecast(core, target_month, allow_ml=False)           # project policy: ML never becomes Official automatically
+    unrestricted = mf.generate_forecast(core, target_month)                       # what the original logic alone would have picked (audit only)
+    official_logic = {"ml_would_be_selected_without_policy": unrestricted["method_type"] == "ML", "method_type": official["method_type"], "model_name": official["model_name"], "predictions": official["predictions"],
                       "shop_prediction": official["shop_prediction"], "selection_reason": official["selection_reason"],
                       "validation_status": official["validation"]["status"], "ml_origins": len(official["validation"]["ml_origins"]),
-                      "note": "Output of the unchanged monthly_forecast.generate_forecast on the same rows. Not produced by this run."}
+                      "note": "Output of monthly_forecast.generate_forecast(allow_ml=False) on the same rows (the Official policy). Not produced by this run."}
 
     post_hoc = None
     if actual_by_group is not None:
@@ -200,7 +201,8 @@ def run_experiment(rows: list[dict], target_month: str, *, kind: str, source: di
     shadow = {"shadow_version": "shadow-1", "kind": kind, "training_run_id": run_id, "target_month": target_month, "created_at": run["created_at"],
               "cutoff_month": built["cutoff"], "data_cutoff": f"{built['cutoff']}-{calendar.monthrange(y, m)[1]:02d}", "feature_version": FEATURE_VERSION,
               "official_forecast_id": official_forecast_id, "source_run_id": source.get("source_run_id"),
-              "baseline": _side("baseline_trailing_3_month_mean"), "ml": _side("ridge_base"),
+              "baselines": {"baseline_trailing_3_month_mean": _side("baseline_trailing_3_month_mean"), "baseline_naive_previous_month": _side("baseline_naive_previous_month")},
+              "ml": _side("ridge_base"),
               "note": "Recorded before the target month is published. Only an OFFICIAL_LINKED shadow bound to the sealed forecast id counts for monitoring."}
     bundle_core = {"run": run, "evaluation": evaluation, "feature_meta": feature_meta}
     report = report_mod.build_report(bundle_core)

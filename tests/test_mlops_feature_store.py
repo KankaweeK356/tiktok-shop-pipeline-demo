@@ -75,7 +75,7 @@ def test_forbidden_feature_names_are_rejected(monkeypatch):
 def test_ridge_base_and_baselines_reproduce_the_official_logic_numbers_exactly():
     rows = make_rows(6)
     core = [{"month": r["month"], "group": r["group"], "net_revenue": r["net_revenue"]} for r in rows]
-    official = mf.generate_forecast(core, "2026-07")
+    official = mf.generate_forecast(core, "2026-07", allow_ml=False)       # the Official policy (ML is never selected)
     out = tr.run_experiment(rows, "2026-07", kind="EXPERIMENT_ONLY", source=SRC)
     ev = out["evaluation"]
     for key in ("shop_wape_pct", "shop_mae", "shop_bias"):
@@ -281,6 +281,7 @@ def test_monitoring_block_is_inside_the_existing_panel_and_read_only():
     assert 'fcApi("monitoring")' in block and "renderMonitoringBlock" in app[app.index("function renderMlopsPanel"):]
     for label in ("Insufficient Evidence", "Preliminary", "Adequate", "Cumulative WAPE", "ผลรวมความคลาดเคลื่อนสะสม", "เดือนที่มีผลจริงสำหรับเปรียบเทียบ", "ไม่เปลี่ยน Champion และไม่สั่ง Retrain"):
         assert label in block
+    assert "MON_ORIGIN" in block and "SYNTHETIC_FIXTURE" in block and "LOCAL_REAL_SOURCE_TEST" in block                 # simulated / test evidence is labelled in the UI
     assert "ridge_marketing" not in block and "Ridge + Marketing" not in block                      # the experimental challenger is not a column here
     assert '"seal"' not in block and "POST" not in block and "mlops_run" not in block
     import re

@@ -1,4 +1,4 @@
-"""Champion-Challenger monitoring: Baseline (trailing 3 months) vs Ridge, one shadow forecast per sealed official forecast.
+"""Champion-Challenger monitoring: the OFFICIAL baseline of each month (best of trailing-3 / naive, as sealed) vs Ridge, one shadow forecast per sealed forecast.
 
 Counted months = months where BOTH models have a shadow forecast that was recorded (OFFICIAL_LINKED, bound to the sealed forecast id)
 BEFORE the actual was published, and the actual of all 5 groups is available. Historical evaluations / experiments / backtests are never read here.
@@ -12,11 +12,17 @@ from .definitions import DEFAULT_PREFIX, GROUPS
 from .store import StoreError, dumps, put_new
 
 MONITORING_VERSION = "champion-challenger-1"
-CHAMPION, CHALLENGER = "baseline_trailing_3_month_mean", "ridge_base"
+CHALLENGER = "ridge_base"
+ORIGINS = ("SYNTHETIC_FIXTURE", "LOCAL_REAL_SOURCE_TEST", "LAB_RUNTIME", "PRODUCTION")   # where the evidence came from (never mixed in one stream)
 LEVEL_PRELIMINARY, LEVEL_ADEQUATE = 3, 6
 RULES = {"min_months": 6, "wape_gap_pp": 2.0, "wins_required": 4, "wins_window": 6, "group_tolerance_pp": 5.0}
 EPS = 1e-9
-MONTHS = [f"2026-{i:02d}" for i in range(6, 12)]       # forecast gate (June) .. last forecastable month
+WINDOW_MONTHS = 36           # evaluation files looked up per summary (rolling window; no calendar range is hard-coded)
+
+
+def month_add(month: str, delta: int) -> str:
+    y, m = int(month[:4]), int(month[5:7]) - 1 + delta
+    return f"{y + m // 12}-{m % 12 + 1:02d}"
 
 
 def _ts(value):
@@ -41,8 +47,15 @@ def evaluate_month(*, month: str, forecast: dict, shadow: dict | None, actual_by
         return _excluded(month, forecast, "SHADOW_NOT_BOUND_TO_SEALED_FORECAST", "Shadow ไม่ได้ผูกกับ Forecast ID ที่ Seal จริง", **base)
     if shadow.get("target_month") != month:
         return _excluded(month, forecast, "SHADOW_TARGET_MISMATCH", "เดือนเป้าหมายของ Shadow ไม่ตรง", **base)
-    if shadow.get("baseline") is None or shadow.get("ml") is None:
-        return _excluded(month, forecast, "ML_OR_BASELINE_MISSING", "ต้องมีคำทำนายทั้ง Baseline และ ML จึงจะเทียบ (ไม่นับเดือนนี้ทั้งคู่)", **base)
+    if forecast.get("method_type") != "BASELINE":
+        return _excluded(month, forecast, "OFFICIAL_NOT_BASELINE", "Official ของเดือนนี้ไม่ใช่ Baseline จึงไม่ใช่การเทียบ Champion Baseline กับ ML", **base)
+    champion_key = "baseline_" + str(forecast.get("model_name"))
+    champion_shadow = (shadow.get("baselines") or {}).get(champion_key)
+    sealed = forecast.get("results") or {}
+    if champion_shadow is None or shadow.get("ml") is None or any(sealed.get(g) is None for g in GROUPS):
+        return _excluded(month, forecast, "ML_OR_BASELINE_MISSING", "ต้องมีคำทำนายทั้ง Baseline ที่เป็น Official และ ML จึงจะเทียบ (ไม่นับเดือนนี้ทั้งคู่)", **base)
+    if any(abs(float(sealed[g]) - float(champion_shadow["groups"][g])) > 0.011 for g in GROUPS):
+        return _excluded(month, forecast, "OFFICIAL_BASELINE_MISMATCH", "ค่า Baseline ใน Shadow ไม่ตรงกับ Official ที่ Seal (ไม่ใช้ผลที่ตรวจสอบไม่ได้)", **base)
     if actual_by_group is None or any(actual_by_group.get(g) is None for g in GROUPS):
         return _excluded(month, forecast, "ACTUAL_INCOMPLETE", "Actual ไม่ครบทั้ง 5 กลุ่มสินค้า", **base)
     try:
@@ -52,8 +65,7 @@ def evaluate_month(*, month: str, forecast: dict, shadow: dict | None, actual_by
     if not before:
         return _excluded(month, forecast, "SHADOW_NOT_RECORDED_BEFORE_ACTUAL",
                          f"Shadow สร้างเมื่อ {shadow.get('created_at')} ไม่ก่อนเวลา Publish Actual {actual_published_at}", **base)
-    prev = f"{int(month[:4]) - (month[5:] == '01')}-{(int(month[5:]) - 2) % 12 + 1:02d}"
-    if shadow.get("cutoff_month") != prev:
+    if shadow.get("cutoff_month") != month_add(month, -1):
         return _excluded(month, forecast, "CUTOFF_MISMATCH", "Data Cutoff ของ Shadow ไม่ใช่เดือนก่อนเดือนเป้าหมาย", **base)
     act = {g: float(actual_by_group[g]) for g in GROUPS}
     shop_act = sum(act.values())
@@ -67,10 +79,14 @@ def evaluate_month(*, month: str, forecast: dict, shadow: dict | None, actual_by
     return {"month": month, "status": "EVALUATED", "official_forecast_id": forecast.get("forecast_run_id"), "official_method": forecast.get("method_type"),
             "official_model": forecast.get("model_name"), "shadow_training_run_id": shadow.get("training_run_id"), "shadow_created_at": shadow["created_at"],
             "data_cutoff": shadow["data_cutoff"], "feature_version": shadow["feature_version"], **base,
-            "actual": {"groups": act, "shop": shop_act}, "baseline": side(shadow["baseline"]), "ml": side(shadow["ml"])}
+            "actual": {"groups": act, "shop": shop_act}, "champion_model": champion_key,
+            "baseline": side({"model": champion_key, "model_version": champion_shadow["model_version"], "groups": sealed, "shop": sum(float(sealed[g]) for g in GROUPS)}),
+            "ml": side(shadow["ml"])}
 
 
-def summarize(rows: list[dict], *, cycle) -> dict:
+def summarize(rows: list[dict], *, stream, data_origin: str = "LAB_RUNTIME") -> dict:
+    if data_origin not in ORIGINS:
+        raise ValueError("MONITORING_DATA_ORIGIN_INVALID")
     ev = sorted((r for r in rows if r["status"] == "EVALUATED"), key=lambda r: r["month"])
     excl = sorted((r for r in rows if r["status"] != "EVALUATED"), key=lambda r: r["month"])
     n = len(ev)
@@ -114,45 +130,50 @@ def summarize(rows: list[dict], *, cycle) -> dict:
     elif n < LEVEL_ADEQUATE:
         status, msg = "PRELIMINARY_NOT_ASSESSED", f"ข้อมูลระดับ Preliminary ({n} เดือน) ตัวเลขใช้ดูแนวโน้มเท่านั้น ยังไม่ประเมินเกณฑ์พิจารณาเปลี่ยน Champion จนกว่าจะครบ {LEVEL_ADEQUATE} เดือน"
     elif all(r["passed"] for r in rules):
-        status, msg = "RECOMMEND_REVIEW", "ผ่านทุกเงื่อนไข: แนะนำให้ผู้รับผิดชอบพิจารณาทบทวนการเปลี่ยน Champion จาก Baseline เป็น ML (ระบบไม่เปลี่ยนให้เอง)"
+        status, msg = "RECOMMEND_REVIEW", "ผ่านทุกเงื่อนไข: เป็นคำแนะนำให้พิจารณาทบทวน Champion พร้อมหลักฐานด้านล่างเท่านั้น ระบบนี้ไม่มีฟังก์ชันเปลี่ยน Champion Official ยังเป็น Baseline"
     else:
         status, msg = "NOT_RECOMMENDED", "ยังไม่ผ่านเกณฑ์: " + "; ".join(r["label"] for r in rules if not r["passed"])
-    return {"monitoring_version": MONITORING_VERSION, "cycle": cycle, "through_month": ev[-1]["month"] if ev else None,
-            "pair": {"champion": CHAMPION, "challenger": CHALLENGER, "note": "Ridge + Marketing อยู่ใน Experiment Only ไม่อยู่ในคู่เปรียบเทียบนี้"},
+    return {"monitoring_version": MONITORING_VERSION, "stream": stream, "data_origin": data_origin, "window_months": WINDOW_MONTHS,
+            "through_month": ev[-1]["month"] if ev else None,
+            "pair": {"champion": "OFFICIAL_BASELINE_OF_EACH_MONTH", "challenger": CHALLENGER,
+                     "note": "Champion = Baseline ที่ Seal เป็น Official ของแต่ละเดือน (ดีที่สุดระหว่าง trailing 3 กับ naive) · Ridge + Marketing อยู่ใน Experiment Only ไม่อยู่ในคู่เปรียบเทียบนี้"},
+            "champion_models_by_month": {r["month"]: r["champion_model"] for r in ev},
             "counted_months": n, "evidence_level": level, "levels": {"preliminary_from": LEVEL_PRELIMINARY, "adequate_from": LEVEL_ADEQUATE},
             "cumulative": {"baseline": cb, "ml": cm, "groups": groups}, "monthly": monthly, "rows": ev, "excluded": excl,
-            "official_ml_months": [r["month"] for r in ev if r.get("official_method") == "ML"],
             "recommendation": {"status": status, "message": msg, "rules": rules, "rule_values": RULES, "human_decision_required": True,
-                               "auto_switch_champion": False, "auto_retrain": False},
+                               "auto_switch_champion": False, "auto_retrain": False, "champion_change_function_in_system": False,
+                               "evidence": {"counted_months": [r["month"] for r in ev], "official_forecast_ids": [r["official_forecast_id"] for r in ev],
+                                            "shadow_training_runs": [r["shadow_training_run_id"] for r in ev]}},
             "separation_note": "นับเฉพาะ Shadow Forecast ที่บันทึกก่อน Publish Actual · ไม่รวม Historical Evaluation, Experiment Only หรือ Backtest"}
 
 
-def record_month(store, *, cycle, month: str, forecast: dict, actual_rows: list[dict], actual_published_at, actual_run_id: str | None,
-                 prefix: str = DEFAULT_PREFIX) -> dict:
-    """Called when the actual of `month` is published. Evaluates it, stores the evaluation write-once and a new immutable summary file."""
-    base = f"{prefix}/monitoring/{cycle}"
+def record_month(store, *, stream: str, cycle, month: str, forecast: dict, actual_rows: list[dict], actual_published_at, actual_run_id: str | None,
+                 data_origin: str = "LAB_RUNTIME", prefix: str = DEFAULT_PREFIX) -> dict:
+    """Called when the actual of `month` is published. Evaluates it, stores the evaluation write-once and a new immutable summary file.
+    `forecast` = the sealed official forecast {forecast_run_id, method_type, model_name, results{group: sealed value}}. Callers serialise per stream."""
+    import json
+    base = f"{prefix}/monitoring/{stream}"
     if store.exists(f"{base}/evaluations/{month}.json"):
         return {"status": "ALREADY_RECORDED", "month": month}                  # an evaluation is never recomputed or overwritten
     pointer_key = f"{prefix}/monitoring/by_forecast/{forecast['forecast_run_id']}.json"
     shadow = None
     if store.exists(pointer_key):
-        import json
         pointer = json.loads(store.get(pointer_key))
         skey = f"{pointer['run_path']}/shadow_forecast.json"
         shadow = json.loads(store.get(skey)) if store.exists(skey) else None
     actual = {g: sum(float(r["net_revenue"]) for r in actual_rows if r["month"] == month and r["group"] == g) if any(r["month"] == month and r["group"] == g for r in actual_rows) else None
               for g in GROUPS}
     row = evaluate_month(month=month, forecast=forecast, shadow=shadow, actual_by_group=actual, actual_published_at=actual_published_at, actual_run_id=actual_run_id)
+    row.update({"cycle": cycle, "stream": stream})
     state = put_new(store, f"{base}/evaluations/{month}.json", dumps(row))
     if state != "CREATED":
         return {"status": "ALREADY_RECORDED", "month": month}
-    import json
-    rows = []                                                                    # fixed keys per month: no bucket listing needed
-    for m in MONTHS:
-        key = f"{base}/evaluations/{m}.json"
+    rows = [row]                                                                 # earlier months of the same stream, newest window only (no calendar range)
+    for i in range(1, WINDOW_MONTHS):
+        key = f"{base}/evaluations/{month_add(month, -i)}.json"
         if store.exists(key):
             rows.append(json.loads(store.get(key)))
-    summary = summarize(rows, cycle=cycle)
+    summary = summarize(rows, stream=stream, data_origin=data_origin)
     put_new(store, f"{base}/summary/through={month}.json", dumps(summary))
     return {"status": row["status"], "exclusion_reason": row.get("exclusion_reason"), "month": month, "counted_months": summary["counted_months"],
             "evidence_level": summary["evidence_level"], "recommendation": summary["recommendation"]["status"]}

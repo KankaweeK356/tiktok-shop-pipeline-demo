@@ -1,0 +1,217 @@
+{
+  "champion_models_by_month": {
+    "2026-06": "baseline_trailing_3_month_mean"
+  },
+  "counted_months": 1,
+  "cumulative": {
+    "baseline": {
+      "abs_error_total": 14757.649999999994,
+      "bias": -14757.649999999994,
+      "mae": 14757.649999999994,
+      "wape_pct": 14.091803814674345
+    },
+    "groups": {
+      "PG01": {
+        "baseline": 18.789734461993667,
+        "gap_pp": 5.130249561783927,
+        "ml": 23.919984023777594
+      },
+      "PG02": {
+        "baseline": 20.55764517480549,
+        "gap_pp": 6.078103020392572,
+        "ml": 26.63574819519806
+      },
+      "PG03": {
+        "baseline": 29.10171048550778,
+        "gap_pp": -0.19035383534269812,
+        "ml": 28.911356650165082
+      },
+      "PG04": {
+        "baseline": 8.545261801979931,
+        "gap_pp": -3.0372303581500066,
+        "ml": 5.508031443829925
+      },
+      "PG05": {
+        "baseline": 11.215100928008699,
+        "gap_pp": -4.271309926708258,
+        "ml": 6.943791001300441
+      }
+    },
+    "ml": {
+      "abs_error_total": 17953.190000000002,
+      "bias": -17953.190000000002,
+      "mae": 17953.190000000002,
+      "wape_pct": 17.143165160277782
+    }
+  },
+  "data_origin": "LOCAL_REAL_SOURCE_TEST",
+  "evidence_level": "INSUFFICIENT_EVIDENCE",
+  "excluded": [],
+  "levels": {
+    "adequate_from": 6,
+    "preliminary_from": 3
+  },
+  "monitoring_version": "champion-challenger-1",
+  "monthly": [
+    {
+      "actual": 104725.06,
+      "baseline_ape_pct": 14.091803814674345,
+      "baseline_error": -14757.649999999994,
+      "baseline_forecast": 89967.41,
+      "cum_abs_error_baseline": 14757.649999999994,
+      "cum_abs_error_ml": 17953.190000000002,
+      "ml_ape_pct": 17.143165160277782,
+      "ml_better": false,
+      "ml_error": -17953.190000000002,
+      "ml_forecast": 86771.87,
+      "month": "2026-06"
+    }
+  ],
+  "pair": {
+    "challenger": "ridge_base",
+    "champion": "OFFICIAL_BASELINE_OF_EACH_MONTH",
+    "note": "Champion = Baseline ที่ Seal เป็น Official ของแต่ละเดือน (ดีที่สุดระหว่าง trailing 3 กับ naive) · Ridge + Marketing อยู่ใน Experiment Only ไม่อยู่ในคู่เปรียบเทียบนี้"
+  },
+  "recommendation": {
+    "auto_retrain": false,
+    "auto_switch_champion": false,
+    "champion_change_function_in_system": false,
+    "evidence": {
+      "counted_months": [
+        "2026-06"
+      ],
+      "official_forecast_ids": [
+        "72b24f87-2153-403c-b63c-199600b0179f"
+      ],
+      "shadow_training_runs": [
+        "045103d5-65fe-4edb-bcd6-c5013840927e"
+      ]
+    },
+    "human_decision_required": true,
+    "message": "มีเดือนเปรียบเทียบจริง 1 เดือน (ต้องอย่างน้อย 3) ยังไม่สรุปว่า ML ดีหรือแย่กว่า Baseline",
+    "rule_values": {
+      "group_tolerance_pp": 5.0,
+      "min_months": 6,
+      "wape_gap_pp": 2.0,
+      "wins_required": 4,
+      "wins_window": 6
+    },
+    "rules": [
+      {
+        "detail": "1 เดือน",
+        "label": "มีเดือนเปรียบเทียบจริงอย่างน้อย 6 เดือน",
+        "passed": false,
+        "rule": "EVIDENCE_ADEQUATE"
+      },
+      {
+        "detail": "Baseline 14.09% − ML 17.14% = -3.05 จุด",
+        "label": "Cumulative WAPE ของ ML ต่ำกว่า Baseline อย่างน้อย 2 จุด",
+        "passed": false,
+        "rule": "CUMULATIVE_WAPE_GAP"
+      },
+      {
+        "detail": "0 จาก 1 เดือนล่าสุด",
+        "label": "Monthly APE ของ ML ต่ำกว่า Baseline อย่างน้อย 4 จาก 6 เดือนล่าสุด",
+        "passed": false,
+        "rule": "MONTHLY_WINS"
+      },
+      {
+        "detail": "เกินเกณฑ์: PG01 (+5.13 จุด), PG02 (+6.08 จุด) · แย่สุด +6.08 จุด",
+        "label": "ไม่มี Product Group ใดที่ Cumulative WAPE ของ ML แย่กว่า Baseline เกิน 5 จุด",
+        "passed": false,
+        "rule": "GROUP_GUARDRAIL"
+      }
+    ],
+    "status": "INSUFFICIENT_EVIDENCE"
+  },
+  "rows": [
+    {
+      "actual": {
+        "groups": {
+          "PG01": 26990.11,
+          "PG02": 23366.83,
+          "PG03": 20377.84,
+          "PG04": 13989.39,
+          "PG05": 20000.89
+        },
+        "shop": 104725.06
+      },
+      "actual_published_at": "2026-11-18T15:56:02.355496+00:00",
+      "actual_run_id": "2ad85f23-1e07-4ab9-a113-1bd6349ddbf8",
+      "baseline": {
+        "group_abs_error": {
+          "PG01": 5071.369999999999,
+          "PG02": 4803.670000000002,
+          "PG03": 5930.299999999999,
+          "PG04": 1195.4300000000003,
+          "PG05": 2243.119999999999
+        },
+        "group_error": {
+          "PG01": -5071.369999999999,
+          "PG02": -4803.670000000002,
+          "PG03": -5930.299999999999,
+          "PG04": -1195.4300000000003,
+          "PG05": 2243.119999999999
+        },
+        "groups": {
+          "PG01": 21918.74,
+          "PG02": 18563.16,
+          "PG03": 14447.54,
+          "PG04": 12793.96,
+          "PG05": 22244.01
+        },
+        "model": "baseline_trailing_3_month_mean",
+        "model_version": "baseline-trailing3-1",
+        "shop": 89967.41,
+        "shop_abs_error": 14757.649999999994,
+        "shop_ape_pct": 14.091803814674345,
+        "shop_error": -14757.649999999994
+      },
+      "champion_model": "baseline_trailing_3_month_mean",
+      "cycle": 1,
+      "data_cutoff": "2026-05-31",
+      "feature_version": "mlops-features-1",
+      "ml": {
+        "group_abs_error": {
+          "PG01": 6456.029999999999,
+          "PG02": 6223.93,
+          "PG03": 5891.51,
+          "PG04": 770.539999999999,
+          "PG05": 1388.8199999999997
+        },
+        "group_error": {
+          "PG01": -6456.029999999999,
+          "PG02": -6223.93,
+          "PG03": -5891.51,
+          "PG04": -770.539999999999,
+          "PG05": 1388.8199999999997
+        },
+        "groups": {
+          "PG01": 20534.08,
+          "PG02": 17142.9,
+          "PG03": 14486.33,
+          "PG04": 13218.85,
+          "PG05": 21389.71
+        },
+        "model": "ridge_base",
+        "model_version": "mlops-ridge-1",
+        "shop": 86771.87,
+        "shop_abs_error": 17953.190000000002,
+        "shop_ape_pct": 17.143165160277782,
+        "shop_error": -17953.190000000002
+      },
+      "month": "2026-06",
+      "official_forecast_id": "72b24f87-2153-403c-b63c-199600b0179f",
+      "official_method": "BASELINE",
+      "official_model": "trailing_3_month_mean",
+      "shadow_created_at": "2026-11-18T15:55:49.904318+00:00",
+      "shadow_training_run_id": "045103d5-65fe-4edb-bcd6-c5013840927e",
+      "status": "EVALUATED",
+      "stream": "lab-cycle-1"
+    }
+  ],
+  "separation_note": "นับเฉพาะ Shadow Forecast ที่บันทึกก่อน Publish Actual · ไม่รวม Historical Evaluation, Experiment Only หรือ Backtest",
+  "stream": "lab-cycle-1",
+  "through_month": "2026-06",
+  "window_months": 36
+}

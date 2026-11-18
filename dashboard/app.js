@@ -4337,7 +4337,9 @@
   const MON_LEVEL = { INSUFFICIENT_EVIDENCE: ["Insufficient Evidence", "status-fail"], PRELIMINARY: ["Preliminary", "status-pending"], ADEQUATE: ["Adequate", "status-pass"] };
   const MON_STATUS = { INSUFFICIENT_EVIDENCE: "ข้อมูลยังไม่พอ", PRELIMINARY_NOT_ASSESSED: "Preliminary · ยังไม่ประเมินเกณฑ์เปลี่ยน Champion", RECOMMEND_REVIEW: "แนะนำให้พิจารณาทบทวนการเปลี่ยน Champion", NOT_RECOMMENDED: "ยังไม่ผ่านเกณฑ์เปลี่ยน Champion" };
   const MON_REASON = { NO_SHADOW: "ไม่มี Shadow ที่บันทึกไว้ก่อน Publish", SHADOW_NOT_BOUND_TO_SEALED_FORECAST: "Shadow ไม่ผูกกับ Forecast ที่ Seal", ML_OR_BASELINE_MISSING: "มีคำทำนายไม่ครบทั้งสองวิธี",
-    SHADOW_NOT_RECORDED_BEFORE_ACTUAL: "Shadow ไม่ได้บันทึกก่อน Publish Actual", ACTUAL_INCOMPLETE: "Actual ไม่ครบ 5 กลุ่ม", SHADOW_TARGET_MISMATCH: "เดือนเป้าหมายไม่ตรง", CUTOFF_MISMATCH: "Data Cutoff ไม่ตรง" };
+    SHADOW_NOT_RECORDED_BEFORE_ACTUAL: "Shadow ไม่ได้บันทึกก่อน Publish Actual", ACTUAL_INCOMPLETE: "Actual ไม่ครบ 5 กลุ่ม", SHADOW_TARGET_MISMATCH: "เดือนเป้าหมายไม่ตรง", CUTOFF_MISMATCH: "Data Cutoff ไม่ตรง",
+    OFFICIAL_NOT_BASELINE: "Official ของเดือนนั้นไม่ใช่ Baseline", OFFICIAL_BASELINE_MISMATCH: "Baseline ใน Shadow ไม่ตรงกับ Official ที่ Seal" };
+  const MON_ORIGIN = { SYNTHETIC_FIXTURE: "ข้อมูลสังเคราะห์สำหรับทดสอบกฎเท่านั้น ไม่ใช่ผลจริง ห้ามใช้เป็นหลักฐาน", LOCAL_REAL_SOURCE_TEST: "ผลจากการทดสอบกับข้อมูล Source จริงบนฐานข้อมูลชั่วคราว ไม่ใช่ผลจาก Production" };
   async function loadMonitoring(force = false) {
     const ml = state.fc.ml; if (!ml || (ml.mon && !force)) return;
     ml.mon = { loading: true, data: null, error: "" }; renderForecast();
@@ -4360,10 +4362,12 @@
   function renderMonitoringBlock() {
     const f = state.fc, ml = f.ml, mon = ml.mon, wrap = box("mlops-mon");
     wrap.append(node("h3", "mon-title", "Champion vs Challenger Monitoring"),
-      small("Champion = Baseline ค่าเฉลี่ย 3 เดือน · Challenger = Ridge เดิม · เทียบเฉพาะเดือนที่มี Shadow Forecast บันทึกไว้ก่อน Publish Actual และมี Actual ครบทั้ง 5 กลุ่ม · ไม่รวม Historical Evaluation / Experiment / Backtest"));
+      small("Champion = Baseline ที่ Seal เป็น Official จริงของแต่ละเดือน (ดีที่สุดระหว่าง trailing 3 กับ naive) · Challenger = Ridge เดิม · เทียบเฉพาะเดือนที่มี Shadow Forecast บันทึกไว้ก่อน Publish Actual และมี Actual ครบทั้ง 5 กลุ่ม · ไม่รวม Historical Evaluation / Experiment / Backtest"));
     if (!mon || mon.loading) { wrap.append(small("กำลังอ่านผล Monitoring…")); return wrap; }
     if (!mon.data) { wrap.append(notice(mon.error || "ไม่พบข้อมูล", true)); return wrap; }
-    const s = mon.data.summary, n = s ? s.counted_months : 0, level = s ? s.evidence_level : "INSUFFICIENT_EVIDENCE", L = MON_LEVEL[level];
+    const s = mon.data.summary;
+    if (s && MON_ORIGIN[s.data_origin]) wrap.append(notice(MON_ORIGIN[s.data_origin], true));
+    const n = s ? s.counted_months : 0, level = s ? s.evidence_level : "INSUFFICIENT_EVIDENCE", L = MON_LEVEL[level];
     const meter = box("mon-meter"); for (let i = 1; i <= 6; i += 1) meter.append(node("span", "mon-meter-cell" + (i <= n ? " on" : "") + (i === 3 || i === 6 ? " mark" : ""), ""));
     wrap.append(box("mon-status", node("span", "status " + L[1], L[0]), node("strong", "", "เดือนที่มีผลจริงสำหรับเปรียบเทียบ: " + n), meter,
       small("น้อยกว่า 3 เดือน = Insufficient Evidence · 3–5 = Preliminary · ตั้งแต่ 6 = Adequate")));
@@ -4378,19 +4382,19 @@
     }
     const rec = s.recommendation;
     wrap.append(box("mon-rec mon-rec-" + rec.status.toLowerCase(), node("strong", "", MON_STATUS[rec.status] || rec.status), small(rec.message),
+      rec.status === "RECOMMEND_REVIEW" ? small("หลักฐาน: เดือนที่นับ " + rec.evidence.counted_months.join(", ") + " · Shadow Run " + rec.evidence.shadow_training_runs.map(x => String(x).slice(0, 8)).join(", ")) : null,
       dataTable([["ok", ""], ["label", "เงื่อนไข (ต้องผ่านทุกข้อ)"], ["detail", "ผลตามจริง"]], rec.rules.map(r => ({ ok: r.passed ? "✓" : "✗", label: r.label, detail: r.detail }))),
-      small("ใช้แนะนำให้ผู้รับผิดชอบพิจารณาเท่านั้น · ไม่เปลี่ยน Champion และไม่สั่ง Retrain อัตโนมัติ · Official Model Selection เดิมไม่ถูกแก้")));
-    if (s.official_ml_months.length) wrap.append(notice("เดือน " + s.official_ml_months.join(", ") + " ตรรกะ Official เดิมเลือก ML ไปแล้ว (ตามกติกาเดิม) ตารางนี้ยังเทียบ Baseline trailing 3 กับ Ridge คู่เดิมเสมอ", true));
+      small("เป็นคำแนะนำเท่านั้น · ไม่เปลี่ยน Champion และไม่สั่ง Retrain อัตโนมัติ · ระบบนี้ไม่มีฟังก์ชันเปลี่ยน Official เป็น ML (Official ยังเป็น Baseline)")));
     const c = s.cumulative;
     wrap.append(node("strong", "", "ผลสะสม (ระดับ Shop) · Cumulative WAPE = Σ|error| ÷ Σ Actual ของเดือนชุดเดียวกัน"),
       dataTable([["m", "วิธี"], ["w", "Cumulative WAPE"], ["mae", "MAE/เดือน ฿"], ["b", "Bias/เดือน ฿ (คาด−จริง)"], ["t", "ผลรวมความคลาดเคลื่อนสะสม ฿"]],
-        [["Baseline (Champion)", c.baseline], ["Ridge (Challenger)", c.ml]].map(([name, v]) => ({ m: name, w: pct(v.wape_pct, 2), mae: money(v.mae, 0), b: (v.bias >= 0 ? "+" : "") + money(v.bias, 0), t: money(v.abs_error_total, 0) }))));
+        [["Baseline Official (Champion)", c.baseline], ["Ridge (Challenger)", c.ml]].map(([name, v]) => ({ m: name, w: pct(v.wape_pct, 2), mae: money(v.mae, 0), b: (v.bias >= 0 ? "+" : "") + money(v.bias, 0), t: money(v.abs_error_total, 0) }))));
     const labels = s.monthly.map(m => m.month);
-    wrap.append(box("mon-charts", monChart("แนวโน้ม Forecast Error รายเดือน (APE ระดับ Shop)", labels, [{ name: "Baseline", color: "#741D2B", values: s.monthly.map(m => m.baseline_ape_pct) }, { name: "Ridge", color: "#2F6FB3", values: s.monthly.map(m => m.ml_ape_pct) }], "%", 1),
-      monChart("ความคลาดเคลื่อนสะสม Σ|error| (฿)", labels, [{ name: "Baseline", color: "#741D2B", values: s.monthly.map(m => m.cum_abs_error_baseline) }, { name: "Ridge", color: "#2F6FB3", values: s.monthly.map(m => m.cum_abs_error_ml) }], "", 0)));
+    wrap.append(box("mon-charts", monChart("แนวโน้ม Forecast Error รายเดือน (APE ระดับ Shop)", labels, [{ name: "Baseline Official", color: "#741D2B", values: s.monthly.map(m => m.baseline_ape_pct) }, { name: "Ridge", color: "#2F6FB3", values: s.monthly.map(m => m.ml_ape_pct) }], "%", 1),
+      monChart("ความคลาดเคลื่อนสะสม Σ|error| (฿)", labels, [{ name: "Baseline Official", color: "#741D2B", values: s.monthly.map(m => m.cum_abs_error_baseline) }, { name: "Ridge", color: "#2F6FB3", values: s.monthly.map(m => m.cum_abs_error_ml) }], "", 0)));
     wrap.append(node("strong", "", "ผลรายเดือน (เทียบ Actual เดียวกัน)"),
-      dataTable([["m", "เดือน"], ["a", "Actual ฿"], ["bf", "Baseline ฿"], ["mf", "Ridge ฿"], ["be", "Baseline APE"], ["me", "Ridge APE"], ["w", "ที่แม่นกว่า"]],
-        s.monthly.map(m => ({ m: thaiMonth(m.month), a: money(m.actual, 2), bf: money(m.baseline_forecast, 2), mf: money(m.ml_forecast, 2), be: pct(m.baseline_ape_pct, 2), me: pct(m.ml_ape_pct, 2), w: m.ml_better ? "Ridge" : (m.ml_ape_pct === m.baseline_ape_pct ? "เท่ากัน" : "Baseline") }))));
+      dataTable([["m", "เดือน"], ["ch", "Champion (Baseline ที่ Seal)"], ["a", "Actual ฿"], ["bf", "Baseline ฿"], ["mf", "Ridge ฿"], ["be", "Baseline APE"], ["me", "Ridge APE"], ["w", "ที่แม่นกว่า"]],
+        s.monthly.map(m => ({ m: thaiMonth(m.month), ch: String((s.champion_models_by_month || {})[m.month] || "").replace("baseline_", ""), a: money(m.actual, 2), bf: money(m.baseline_forecast, 2), mf: money(m.ml_forecast, 2), be: pct(m.baseline_ape_pct, 2), me: pct(m.ml_ape_pct, 2), w: m.ml_better ? "Ridge" : (m.ml_ape_pct === m.baseline_ape_pct ? "เท่ากัน" : "Baseline") }))));
     const det = node("details", "dq-details"); det.append(node("summary", "", "ผลสะสมรายกลุ่มสินค้า (ระดับ Product Group)"));
     det.append(dataTable([["g", "กลุ่ม"], ["b", "Baseline WAPE"], ["m", "Ridge WAPE"], ["d", "ส่วนต่าง (Ridge − Baseline)"]],
       Object.entries(c.groups).map(([g, v]) => ({ g, b: pct(v.baseline, 2), m: pct(v.ml, 2), d: (v.gap_pp >= 0 ? "+" : "") + money(v.gap_pp, 2) + " จุด" }))));

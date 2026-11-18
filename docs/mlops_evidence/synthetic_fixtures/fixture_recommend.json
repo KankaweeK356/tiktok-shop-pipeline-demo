@@ -1,0 +1,710 @@
+{
+ "monitoring_version": "champion-challenger-1",
+ "stream": "synthetic-fixture",
+ "data_origin": "SYNTHETIC_FIXTURE",
+ "window_months": 36,
+ "through_month": "2026-11",
+ "pair": {
+  "champion": "OFFICIAL_BASELINE_OF_EACH_MONTH",
+  "challenger": "ridge_base",
+  "note": "Champion = Baseline ที่ Seal เป็น Official ของแต่ละเดือน (ดีที่สุดระหว่าง trailing 3 กับ naive) · Ridge + Marketing อยู่ใน Experiment Only ไม่อยู่ในคู่เปรียบเทียบนี้"
+ },
+ "champion_models_by_month": {
+  "2026-06": "baseline_trailing_3_month_mean",
+  "2026-07": "baseline_trailing_3_month_mean",
+  "2026-08": "baseline_trailing_3_month_mean",
+  "2026-09": "baseline_trailing_3_month_mean",
+  "2026-10": "baseline_trailing_3_month_mean",
+  "2026-11": "baseline_trailing_3_month_mean"
+ },
+ "counted_months": 6,
+ "evidence_level": "ADEQUATE",
+ "levels": {
+  "preliminary_from": 3,
+  "adequate_from": 6
+ },
+ "cumulative": {
+  "baseline": {
+   "wape_pct": 8.7,
+   "mae": 8700.0,
+   "bias": 8700.0,
+   "abs_error_total": 52200.0
+  },
+  "ml": {
+   "wape_pct": 6.4,
+   "mae": 6400.0,
+   "bias": 6400.0,
+   "abs_error_total": 38400.0
+  },
+  "groups": {
+   "PG01": {
+    "baseline": 8.7,
+    "ml": 6.4,
+    "gap_pp": -2.299999999999999
+   },
+   "PG02": {
+    "baseline": 8.7,
+    "ml": 6.4,
+    "gap_pp": -2.299999999999999
+   },
+   "PG03": {
+    "baseline": 8.7,
+    "ml": 6.4,
+    "gap_pp": -2.299999999999999
+   },
+   "PG04": {
+    "baseline": 8.7,
+    "ml": 6.4,
+    "gap_pp": -2.299999999999999
+   },
+   "PG05": {
+    "baseline": 8.7,
+    "ml": 6.4,
+    "gap_pp": -2.299999999999999
+   }
+  }
+ },
+ "monthly": [
+  {
+   "month": "2026-06",
+   "actual": 100000.0,
+   "baseline_forecast": 109000.0,
+   "ml_forecast": 106500.0,
+   "baseline_error": 9000.0,
+   "ml_error": 6500.0,
+   "baseline_ape_pct": 9.0,
+   "ml_ape_pct": 6.5,
+   "cum_abs_error_baseline": 9000.0,
+   "cum_abs_error_ml": 6500.0,
+   "ml_better": true
+  },
+  {
+   "month": "2026-07",
+   "actual": 100000.0,
+   "baseline_forecast": 108000.0,
+   "ml_forecast": 106000.0,
+   "baseline_error": 8000.0,
+   "ml_error": 6000.0,
+   "baseline_ape_pct": 8.0,
+   "ml_ape_pct": 6.0,
+   "cum_abs_error_baseline": 17000.0,
+   "cum_abs_error_ml": 12500.0,
+   "ml_better": true
+  },
+  {
+   "month": "2026-08",
+   "actual": 100000.0,
+   "baseline_forecast": 110000.0,
+   "ml_forecast": 107000.0,
+   "baseline_error": 10000.0,
+   "ml_error": 7000.0,
+   "baseline_ape_pct": 10.0,
+   "ml_ape_pct": 7.0,
+   "cum_abs_error_baseline": 27000.0,
+   "cum_abs_error_ml": 19500.0,
+   "ml_better": true
+  },
+  {
+   "month": "2026-09",
+   "actual": 100000.0,
+   "baseline_forecast": 107500.0,
+   "ml_forecast": 106000.0,
+   "baseline_error": 7500.0,
+   "ml_error": 6000.0,
+   "baseline_ape_pct": 7.5,
+   "ml_ape_pct": 6.0,
+   "cum_abs_error_baseline": 34500.0,
+   "cum_abs_error_ml": 25500.0,
+   "ml_better": true
+  },
+  {
+   "month": "2026-10",
+   "actual": 100000.0,
+   "baseline_forecast": 109500.0,
+   "ml_forecast": 106800.0,
+   "baseline_error": 9500.0,
+   "ml_error": 6800.0,
+   "baseline_ape_pct": 9.5,
+   "ml_ape_pct": 6.8,
+   "cum_abs_error_baseline": 44000.0,
+   "cum_abs_error_ml": 32300.0,
+   "ml_better": true
+  },
+  {
+   "month": "2026-11",
+   "actual": 100000.0,
+   "baseline_forecast": 108200.0,
+   "ml_forecast": 106100.0,
+   "baseline_error": 8200.0,
+   "ml_error": 6100.0,
+   "baseline_ape_pct": 8.2,
+   "ml_ape_pct": 6.1,
+   "cum_abs_error_baseline": 52200.0,
+   "cum_abs_error_ml": 38400.0,
+   "ml_better": true
+  }
+ ],
+ "rows": [
+  {
+   "month": "2026-06",
+   "status": "EVALUATED",
+   "official_forecast_id": "fc-2026-06",
+   "official_method": "BASELINE",
+   "official_model": "trailing_3_month_mean",
+   "shadow_training_run_id": "run-2026-06",
+   "shadow_created_at": "2026-07-01T00:00:00+00:00",
+   "data_cutoff": "2026-05-28",
+   "feature_version": "mlops-features-1",
+   "actual_run_id": "r-2026-06",
+   "actual_published_at": "2026-07-02T00:00:00+00:00",
+   "actual": {
+    "groups": {
+     "PG01": 20000.0,
+     "PG02": 20000.0,
+     "PG03": 20000.0,
+     "PG04": 20000.0,
+     "PG05": 20000.0
+    },
+    "shop": 100000.0
+   },
+   "champion_model": "baseline_trailing_3_month_mean",
+   "baseline": {
+    "model": "baseline_trailing_3_month_mean",
+    "model_version": "b1",
+    "groups": {
+     "PG01": 21800.0,
+     "PG02": 21800.0,
+     "PG03": 21800.0,
+     "PG04": 21800.0,
+     "PG05": 21800.0
+    },
+    "shop": 109000.0,
+    "shop_error": 9000.0,
+    "shop_abs_error": 9000.0,
+    "shop_ape_pct": 9.0,
+    "group_error": {
+     "PG01": 1800.0,
+     "PG02": 1800.0,
+     "PG03": 1800.0,
+     "PG04": 1800.0,
+     "PG05": 1800.0
+    },
+    "group_abs_error": {
+     "PG01": 1800.0,
+     "PG02": 1800.0,
+     "PG03": 1800.0,
+     "PG04": 1800.0,
+     "PG05": 1800.0
+    }
+   },
+   "ml": {
+    "model": "ridge_base",
+    "model_version": "r1",
+    "groups": {
+     "PG01": 21300.0,
+     "PG02": 21300.0,
+     "PG03": 21300.0,
+     "PG04": 21300.0,
+     "PG05": 21300.0
+    },
+    "shop": 106500.0,
+    "shop_error": 6500.0,
+    "shop_abs_error": 6500.0,
+    "shop_ape_pct": 6.5,
+    "group_error": {
+     "PG01": 1300.0,
+     "PG02": 1300.0,
+     "PG03": 1300.0,
+     "PG04": 1300.0,
+     "PG05": 1300.0
+    },
+    "group_abs_error": {
+     "PG01": 1300.0,
+     "PG02": 1300.0,
+     "PG03": 1300.0,
+     "PG04": 1300.0,
+     "PG05": 1300.0
+    }
+   }
+  },
+  {
+   "month": "2026-07",
+   "status": "EVALUATED",
+   "official_forecast_id": "fc-2026-07",
+   "official_method": "BASELINE",
+   "official_model": "trailing_3_month_mean",
+   "shadow_training_run_id": "run-2026-07",
+   "shadow_created_at": "2026-07-01T00:00:00+00:00",
+   "data_cutoff": "2026-06-28",
+   "feature_version": "mlops-features-1",
+   "actual_run_id": "r-2026-07",
+   "actual_published_at": "2026-07-02T00:00:00+00:00",
+   "actual": {
+    "groups": {
+     "PG01": 20000.0,
+     "PG02": 20000.0,
+     "PG03": 20000.0,
+     "PG04": 20000.0,
+     "PG05": 20000.0
+    },
+    "shop": 100000.0
+   },
+   "champion_model": "baseline_trailing_3_month_mean",
+   "baseline": {
+    "model": "baseline_trailing_3_month_mean",
+    "model_version": "b1",
+    "groups": {
+     "PG01": 21600.0,
+     "PG02": 21600.0,
+     "PG03": 21600.0,
+     "PG04": 21600.0,
+     "PG05": 21600.0
+    },
+    "shop": 108000.0,
+    "shop_error": 8000.0,
+    "shop_abs_error": 8000.0,
+    "shop_ape_pct": 8.0,
+    "group_error": {
+     "PG01": 1600.0,
+     "PG02": 1600.0,
+     "PG03": 1600.0,
+     "PG04": 1600.0,
+     "PG05": 1600.0
+    },
+    "group_abs_error": {
+     "PG01": 1600.0,
+     "PG02": 1600.0,
+     "PG03": 1600.0,
+     "PG04": 1600.0,
+     "PG05": 1600.0
+    }
+   },
+   "ml": {
+    "model": "ridge_base",
+    "model_version": "r1",
+    "groups": {
+     "PG01": 21200.0,
+     "PG02": 21200.0,
+     "PG03": 21200.0,
+     "PG04": 21200.0,
+     "PG05": 21200.0
+    },
+    "shop": 106000.0,
+    "shop_error": 6000.0,
+    "shop_abs_error": 6000.0,
+    "shop_ape_pct": 6.0,
+    "group_error": {
+     "PG01": 1200.0,
+     "PG02": 1200.0,
+     "PG03": 1200.0,
+     "PG04": 1200.0,
+     "PG05": 1200.0
+    },
+    "group_abs_error": {
+     "PG01": 1200.0,
+     "PG02": 1200.0,
+     "PG03": 1200.0,
+     "PG04": 1200.0,
+     "PG05": 1200.0
+    }
+   }
+  },
+  {
+   "month": "2026-08",
+   "status": "EVALUATED",
+   "official_forecast_id": "fc-2026-08",
+   "official_method": "BASELINE",
+   "official_model": "trailing_3_month_mean",
+   "shadow_training_run_id": "run-2026-08",
+   "shadow_created_at": "2026-07-01T00:00:00+00:00",
+   "data_cutoff": "2026-07-28",
+   "feature_version": "mlops-features-1",
+   "actual_run_id": "r-2026-08",
+   "actual_published_at": "2026-07-02T00:00:00+00:00",
+   "actual": {
+    "groups": {
+     "PG01": 20000.0,
+     "PG02": 20000.0,
+     "PG03": 20000.0,
+     "PG04": 20000.0,
+     "PG05": 20000.0
+    },
+    "shop": 100000.0
+   },
+   "champion_model": "baseline_trailing_3_month_mean",
+   "baseline": {
+    "model": "baseline_trailing_3_month_mean",
+    "model_version": "b1",
+    "groups": {
+     "PG01": 22000.0,
+     "PG02": 22000.0,
+     "PG03": 22000.0,
+     "PG04": 22000.0,
+     "PG05": 22000.0
+    },
+    "shop": 110000.0,
+    "shop_error": 10000.0,
+    "shop_abs_error": 10000.0,
+    "shop_ape_pct": 10.0,
+    "group_error": {
+     "PG01": 2000.0,
+     "PG02": 2000.0,
+     "PG03": 2000.0,
+     "PG04": 2000.0,
+     "PG05": 2000.0
+    },
+    "group_abs_error": {
+     "PG01": 2000.0,
+     "PG02": 2000.0,
+     "PG03": 2000.0,
+     "PG04": 2000.0,
+     "PG05": 2000.0
+    }
+   },
+   "ml": {
+    "model": "ridge_base",
+    "model_version": "r1",
+    "groups": {
+     "PG01": 21400.0,
+     "PG02": 21400.0,
+     "PG03": 21400.0,
+     "PG04": 21400.0,
+     "PG05": 21400.0
+    },
+    "shop": 107000.0,
+    "shop_error": 7000.0,
+    "shop_abs_error": 7000.0,
+    "shop_ape_pct": 7.0,
+    "group_error": {
+     "PG01": 1400.0,
+     "PG02": 1400.0,
+     "PG03": 1400.0,
+     "PG04": 1400.0,
+     "PG05": 1400.0
+    },
+    "group_abs_error": {
+     "PG01": 1400.0,
+     "PG02": 1400.0,
+     "PG03": 1400.0,
+     "PG04": 1400.0,
+     "PG05": 1400.0
+    }
+   }
+  },
+  {
+   "month": "2026-09",
+   "status": "EVALUATED",
+   "official_forecast_id": "fc-2026-09",
+   "official_method": "BASELINE",
+   "official_model": "trailing_3_month_mean",
+   "shadow_training_run_id": "run-2026-09",
+   "shadow_created_at": "2026-07-01T00:00:00+00:00",
+   "data_cutoff": "2026-08-28",
+   "feature_version": "mlops-features-1",
+   "actual_run_id": "r-2026-09",
+   "actual_published_at": "2026-07-02T00:00:00+00:00",
+   "actual": {
+    "groups": {
+     "PG01": 20000.0,
+     "PG02": 20000.0,
+     "PG03": 20000.0,
+     "PG04": 20000.0,
+     "PG05": 20000.0
+    },
+    "shop": 100000.0
+   },
+   "champion_model": "baseline_trailing_3_month_mean",
+   "baseline": {
+    "model": "baseline_trailing_3_month_mean",
+    "model_version": "b1",
+    "groups": {
+     "PG01": 21500.0,
+     "PG02": 21500.0,
+     "PG03": 21500.0,
+     "PG04": 21500.0,
+     "PG05": 21500.0
+    },
+    "shop": 107500.0,
+    "shop_error": 7500.0,
+    "shop_abs_error": 7500.0,
+    "shop_ape_pct": 7.5,
+    "group_error": {
+     "PG01": 1500.0,
+     "PG02": 1500.0,
+     "PG03": 1500.0,
+     "PG04": 1500.0,
+     "PG05": 1500.0
+    },
+    "group_abs_error": {
+     "PG01": 1500.0,
+     "PG02": 1500.0,
+     "PG03": 1500.0,
+     "PG04": 1500.0,
+     "PG05": 1500.0
+    }
+   },
+   "ml": {
+    "model": "ridge_base",
+    "model_version": "r1",
+    "groups": {
+     "PG01": 21200.0,
+     "PG02": 21200.0,
+     "PG03": 21200.0,
+     "PG04": 21200.0,
+     "PG05": 21200.0
+    },
+    "shop": 106000.0,
+    "shop_error": 6000.0,
+    "shop_abs_error": 6000.0,
+    "shop_ape_pct": 6.0,
+    "group_error": {
+     "PG01": 1200.0,
+     "PG02": 1200.0,
+     "PG03": 1200.0,
+     "PG04": 1200.0,
+     "PG05": 1200.0
+    },
+    "group_abs_error": {
+     "PG01": 1200.0,
+     "PG02": 1200.0,
+     "PG03": 1200.0,
+     "PG04": 1200.0,
+     "PG05": 1200.0
+    }
+   }
+  },
+  {
+   "month": "2026-10",
+   "status": "EVALUATED",
+   "official_forecast_id": "fc-2026-10",
+   "official_method": "BASELINE",
+   "official_model": "trailing_3_month_mean",
+   "shadow_training_run_id": "run-2026-10",
+   "shadow_created_at": "2026-07-01T00:00:00+00:00",
+   "data_cutoff": "2026-09-28",
+   "feature_version": "mlops-features-1",
+   "actual_run_id": "r-2026-10",
+   "actual_published_at": "2026-07-02T00:00:00+00:00",
+   "actual": {
+    "groups": {
+     "PG01": 20000.0,
+     "PG02": 20000.0,
+     "PG03": 20000.0,
+     "PG04": 20000.0,
+     "PG05": 20000.0
+    },
+    "shop": 100000.0
+   },
+   "champion_model": "baseline_trailing_3_month_mean",
+   "baseline": {
+    "model": "baseline_trailing_3_month_mean",
+    "model_version": "b1",
+    "groups": {
+     "PG01": 21900.0,
+     "PG02": 21900.0,
+     "PG03": 21900.0,
+     "PG04": 21900.0,
+     "PG05": 21900.0
+    },
+    "shop": 109500.0,
+    "shop_error": 9500.0,
+    "shop_abs_error": 9500.0,
+    "shop_ape_pct": 9.5,
+    "group_error": {
+     "PG01": 1900.0,
+     "PG02": 1900.0,
+     "PG03": 1900.0,
+     "PG04": 1900.0,
+     "PG05": 1900.0
+    },
+    "group_abs_error": {
+     "PG01": 1900.0,
+     "PG02": 1900.0,
+     "PG03": 1900.0,
+     "PG04": 1900.0,
+     "PG05": 1900.0
+    }
+   },
+   "ml": {
+    "model": "ridge_base",
+    "model_version": "r1",
+    "groups": {
+     "PG01": 21360.0,
+     "PG02": 21360.0,
+     "PG03": 21360.0,
+     "PG04": 21360.0,
+     "PG05": 21360.0
+    },
+    "shop": 106800.0,
+    "shop_error": 6800.0,
+    "shop_abs_error": 6800.0,
+    "shop_ape_pct": 6.8,
+    "group_error": {
+     "PG01": 1360.0,
+     "PG02": 1360.0,
+     "PG03": 1360.0,
+     "PG04": 1360.0,
+     "PG05": 1360.0
+    },
+    "group_abs_error": {
+     "PG01": 1360.0,
+     "PG02": 1360.0,
+     "PG03": 1360.0,
+     "PG04": 1360.0,
+     "PG05": 1360.0
+    }
+   }
+  },
+  {
+   "month": "2026-11",
+   "status": "EVALUATED",
+   "official_forecast_id": "fc-2026-11",
+   "official_method": "BASELINE",
+   "official_model": "trailing_3_month_mean",
+   "shadow_training_run_id": "run-2026-11",
+   "shadow_created_at": "2026-07-01T00:00:00+00:00",
+   "data_cutoff": "2026-10-28",
+   "feature_version": "mlops-features-1",
+   "actual_run_id": "r-2026-11",
+   "actual_published_at": "2026-07-02T00:00:00+00:00",
+   "actual": {
+    "groups": {
+     "PG01": 20000.0,
+     "PG02": 20000.0,
+     "PG03": 20000.0,
+     "PG04": 20000.0,
+     "PG05": 20000.0
+    },
+    "shop": 100000.0
+   },
+   "champion_model": "baseline_trailing_3_month_mean",
+   "baseline": {
+    "model": "baseline_trailing_3_month_mean",
+    "model_version": "b1",
+    "groups": {
+     "PG01": 21640.0,
+     "PG02": 21640.0,
+     "PG03": 21640.0,
+     "PG04": 21640.0,
+     "PG05": 21640.0
+    },
+    "shop": 108200.0,
+    "shop_error": 8200.0,
+    "shop_abs_error": 8200.0,
+    "shop_ape_pct": 8.2,
+    "group_error": {
+     "PG01": 1640.0,
+     "PG02": 1640.0,
+     "PG03": 1640.0,
+     "PG04": 1640.0,
+     "PG05": 1640.0
+    },
+    "group_abs_error": {
+     "PG01": 1640.0,
+     "PG02": 1640.0,
+     "PG03": 1640.0,
+     "PG04": 1640.0,
+     "PG05": 1640.0
+    }
+   },
+   "ml": {
+    "model": "ridge_base",
+    "model_version": "r1",
+    "groups": {
+     "PG01": 21220.0,
+     "PG02": 21220.0,
+     "PG03": 21220.0,
+     "PG04": 21220.0,
+     "PG05": 21220.0
+    },
+    "shop": 106100.0,
+    "shop_error": 6100.0,
+    "shop_abs_error": 6100.0,
+    "shop_ape_pct": 6.1,
+    "group_error": {
+     "PG01": 1220.0,
+     "PG02": 1220.0,
+     "PG03": 1220.0,
+     "PG04": 1220.0,
+     "PG05": 1220.0
+    },
+    "group_abs_error": {
+     "PG01": 1220.0,
+     "PG02": 1220.0,
+     "PG03": 1220.0,
+     "PG04": 1220.0,
+     "PG05": 1220.0
+    }
+   }
+  }
+ ],
+ "excluded": [],
+ "recommendation": {
+  "status": "RECOMMEND_REVIEW",
+  "message": "ผ่านทุกเงื่อนไข: เป็นคำแนะนำให้พิจารณาทบทวน Champion พร้อมหลักฐานด้านล่างเท่านั้น ระบบนี้ไม่มีฟังก์ชันเปลี่ยน Champion Official ยังเป็น Baseline",
+  "rules": [
+   {
+    "rule": "EVIDENCE_ADEQUATE",
+    "label": "มีเดือนเปรียบเทียบจริงอย่างน้อย 6 เดือน",
+    "passed": true,
+    "detail": "6 เดือน"
+   },
+   {
+    "rule": "CUMULATIVE_WAPE_GAP",
+    "label": "Cumulative WAPE ของ ML ต่ำกว่า Baseline อย่างน้อย 2 จุด",
+    "passed": true,
+    "detail": "Baseline 8.70% − ML 6.40% = +2.30 จุด"
+   },
+   {
+    "rule": "MONTHLY_WINS",
+    "label": "Monthly APE ของ ML ต่ำกว่า Baseline อย่างน้อย 4 จาก 6 เดือนล่าสุด",
+    "passed": true,
+    "detail": "6 จาก 6 เดือนล่าสุด"
+   },
+   {
+    "rule": "GROUP_GUARDRAIL",
+    "label": "ไม่มี Product Group ใดที่ Cumulative WAPE ของ ML แย่กว่า Baseline เกิน 5 จุด",
+    "passed": true,
+    "detail": "ไม่มีกลุ่มเกินเกณฑ์ · แย่สุด -2.30 จุด"
+   }
+  ],
+  "rule_values": {
+   "min_months": 6,
+   "wape_gap_pp": 2.0,
+   "wins_required": 4,
+   "wins_window": 6,
+   "group_tolerance_pp": 5.0
+  },
+  "human_decision_required": true,
+  "auto_switch_champion": false,
+  "auto_retrain": false,
+  "champion_change_function_in_system": false,
+  "evidence": {
+   "counted_months": [
+    "2026-06",
+    "2026-07",
+    "2026-08",
+    "2026-09",
+    "2026-10",
+    "2026-11"
+   ],
+   "official_forecast_ids": [
+    "fc-2026-06",
+    "fc-2026-07",
+    "fc-2026-08",
+    "fc-2026-09",
+    "fc-2026-10",
+    "fc-2026-11"
+   ],
+   "shadow_training_runs": [
+    "run-2026-06",
+    "run-2026-07",
+    "run-2026-08",
+    "run-2026-09",
+    "run-2026-10",
+    "run-2026-11"
+   ]
+  }
+ },
+ "separation_note": "นับเฉพาะ Shadow Forecast ที่บันทึกก่อน Publish Actual · ไม่รวม Historical Evaluation, Experiment Only หรือ Backtest"
+}

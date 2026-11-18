@@ -118,6 +118,22 @@ def finalize(batch: str) -> dict:
                 JOIN Dim_Ad_Campaign c ON c.Ad_Campaign_Key=a.Ad_Campaign_Key
                 GROUP BY 1,2,3,4 ORDER BY 1,2,3'''),
         }
+    from .business_gates import load_planning, shop_month_gates
+    planning = load_planning()
+    with duckdb.connect(str(workspace / "er2.duckdb"), read_only=True) as db:
+        shop_rows = json.loads(db.execute('''SELECT d.Year_Month AS month, SUM(m.Gross_Reference_Sales) AS gross,
+            SUM(m.Net_Revenue) AS net, SUM(m.Campaign_Price_Reduction) AS campaign_reduction,
+            SUM(m.Voucher_Discount) AS voucher, SUM(m.Affiliate_Cost) AS affiliate, SUM(m.Ads_Cost) AS ads,
+            SUM(m.Sample_Cost) AS sample, SUM(m.Claim_Cost) AS claim, SUM(m.Fulfillment_Cost) AS fulfillment,
+            SUM(m.COGS) AS cogs, SUM(m.Platform_Fee_Cost) AS platform_fee, SUM(m.Contribution_Profit) AS profit,
+            SUM(CASE WHEN m.Data_Cost_Basis='INCOMPLETE' OR m.Contribution_Profit IS NULL THEN 1 ELSE 0 END) AS incomplete_rows
+            FROM Mart_Product_Group_Daily_Performance m JOIN Dim_Date d ON d.Date_Key=m.Date_Key
+            GROUP BY 1 ORDER BY 1''').df().to_json(orient="records"))
+    kpi_by_month = {row["month"]: row for row in summary["business"]["months"]}
+    for row in shop_rows:
+        kpi = kpi_by_month.get(row["month"])
+        row["gates"] = shop_month_gates(row, {"target": kpi.get("target"), "min_protection_rate": None} if kpi else None, planning)
+    summary["business"]["shop_months"] = shop_rows
     summary["no_duplicate_sales_items"] = total == distinct
     if not summary["no_duplicate_sales_items"]:
         raise RuntimeError("Warehouse contains duplicate sales item IDs")

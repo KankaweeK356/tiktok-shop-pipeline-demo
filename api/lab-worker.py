@@ -211,6 +211,8 @@ def run_ticket(ticket: str) -> dict:
             if earlier and earlier != source_lock.active_version():
                 raise RuntimeError("LAB_SOURCE_VERSION_MIXED: cycle uses " + earlier +
                                    ", worker is configured for " + source_lock.active_version())
+            # June onward: the official forecast must be sealed BEFORE the month's Source is ingested.
+            neon_control.require_sealed_forecast(os.environ["NEON_DEMO_DATABASE_URL"], int(cycle), batch)
 
         target_stage = claim.get("stage")
         from pipeline.generate_classroom_source import BATCHES
@@ -394,6 +396,55 @@ def run_revalidation(ticket: str) -> dict:
                 "status": outcome["status"], "summary": outcome}
 
 
+def run_forecast(ticket: str) -> dict:
+    """Generate a DRAFT next-month forecast from the last PUBLISHED warehouse (cutoff = previous month)."""
+    import re
+    claim = read_ticket(ticket)
+    target, cycle, previous = str(claim.get("target_month", "")), claim.get("cycle"), str(claim.get("previous_run_id", ""))
+    if not re.fullmatch(r"2026-(0[2-9]|1[0-1])", target):
+        raise ValueError("FORECAST_TARGET_INVALID")
+    UUID(claim.get("nonce"))
+    url = os.environ["CLASSROOM_LAB_WRITER_URL"]
+    os.environ["NEON_DEMO_DATABASE_URL"] = url
+    bucket = os.environ["CLASSROOM_STORAGE_BUCKET"]
+    client = storage()
+    from pipeline import monthly_forecast, neon_control
+    if not neon_control.ml_schema_ready(url):
+        raise RuntimeError("LAB_FORECAST_SCHEMA_MISSING: demo_ml migration is not applied")
+    with psycopg.connect(url) as db:
+        state = db.execute("SELECT cycle_number,last_run_id::text FROM demo_control.dataset_state "
+                           "WHERE dataset_key='classroom'").fetchone()
+        if not state or int(state[0]) != int(cycle):
+            raise RuntimeError("LAB_CYCLE_CHANGED")
+        if state[1] != previous:
+            raise RuntimeError("PREVIOUS_RUN_MISMATCH")
+        published = db.execute("SELECT result_summary->>'batch' FROM demo_control.pipeline_runs WHERE run_id=%s::uuid",
+                               (previous,)).fetchone()
+        cutoff_month = monthly_forecast.month_add(target, -1)
+        if not published or not published[0] or neon_control.month_for_batch(published[0]) != cutoff_month:
+            raise RuntimeError(f"LAB_FORECAST_CUTOFF_NOT_PUBLISHED: published through "
+                               f"{neon_control.month_for_batch(published[0]) if published and published[0] else 'nothing'}, need {cutoff_month}")
+        started = db.execute("SELECT 1 FROM demo_control.pipeline_runs WHERE dataset_key='classroom' AND cycle_number=%s "
+                             "AND result_summary->>'batch'=%s AND status<>'CANCELLED' LIMIT 1",
+                             (int(cycle), neon_control.batch_for_month(target))).fetchone()
+        if started:
+            raise RuntimeError("LAB_FORECAST_TARGET_ALREADY_INGESTED: later results can only be a BACKTEST")
+    with tempfile.TemporaryDirectory(prefix="classroom-forecast-") as temp:
+        workspace = Path(temp) / "workspace"
+        workspace.mkdir()
+        restore_run_workspace(client, bucket, previous, workspace)
+        rows = monthly_forecast.read_published_group_months(workspace / "er2.duckdb")
+    result = monthly_forecast.generate_forecast(rows, target)
+    forecast_id = neon_control.save_draft_forecast(url, int(cycle), previous, result,
+                                                   str(claim.get("actor") or "")[:120] or None)
+    put_json(client, bucket, f"vercel-lab/forecast/{forecast_id}/manifest.json", {
+        "forecast_run_id": forecast_id, "source_warehouse_run_id": previous, **result["model_manifest"],
+        "validation": result["validation"], "months_used": result["months_used"]})
+    summary = {k: v for k, v in result.items() if k != "model_manifest"}
+    return {"run_id": str(claim["nonce"]), "batch": neon_control.batch_for_month(target), "stage": "forecast",
+            "status": "DRAFT", "summary": {"forecast_run_id": forecast_id, **summary}}
+
+
 class handler(BaseHTTPRequestHandler):
     def reply(self, status: int, value: dict) -> None:
         body = json.dumps(value, ensure_ascii=False, default=str).encode("utf-8")
@@ -415,8 +466,9 @@ class handler(BaseHTTPRequestHandler):
                                         "error": "มีงานกำลังประมวลผล กรุณารอแล้วตรวจสถานะ"})
             try:
                 ticket = str(request.get("ticket", ""))
-                result = (run_revalidation(ticket) if read_ticket(ticket).get("action") == "revalidate"
-                          else run_ticket(ticket))
+                action = read_ticket(ticket).get("action")
+                result = (run_revalidation(ticket) if action == "revalidate" else
+                          run_forecast(ticket) if action == "forecast" else run_ticket(ticket))
             finally:
                 INVOCATION_LOCK.release()
             self.reply(200, {"accepted": True, "status": result.get("status", "SUCCEEDED"),

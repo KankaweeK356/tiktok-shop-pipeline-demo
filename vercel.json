@@ -10,7 +10,7 @@
     },
     "api/lab-worker.py": {
       "maxDuration": 300,
-      "includeFiles": "{pipeline/**,schemas/**,dashboard/data/classroom_source_contract.json,dashboard/data/source_lock_classroom_v2.json}"
+      "includeFiles": "{pipeline/**,schemas/**,dashboard/data/classroom_source_contract.json,dashboard/data/source_lock_classroom_v2.json,dashboard/data/planning_targets_v1.json}"
     }
   }
 }

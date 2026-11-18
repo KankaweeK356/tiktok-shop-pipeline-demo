@@ -63,7 +63,7 @@ function clientForStorage() {
   });
 }
 
-export default async function handler(req, res) {
+export default async function handler(req, res, deps = {}) {
   res.setHeader("Cache-Control", "no-store");
   if (req.method === "POST" &&
       String(req.headers["content-type"] || "").toLowerCase().includes("application/zip"))
@@ -72,11 +72,11 @@ export default async function handler(req, res) {
     return handleClassroomSourceUpload(req, res);
   if (!["GET", "POST"].includes(req.method))
     return res.status(405).json({ error: "GET/POST only" });
-  if (!ready())
+  if (!deps.sql && !ready())
     return res.status(503).json({ ready: false, error: "Vercel Lab หรือพื้นที่จัดเก็บงานยังตั้งค่าไม่ครบ" });
 
   let sql;
-  try { sql = getNeonSql("live"); }
+  try { sql = deps.sql || getNeonSql("live"); }
   catch (_error) { return res.status(503).json({ ready: false, error: "เชื่อมต่อ Neon Lab ไม่ได้" }); }
 
   let state, runs, orderRows;
@@ -130,7 +130,8 @@ export default async function handler(req, res) {
   if (req.method === "GET") {
     const batchQuery = String(req.query?.batch || "");
     if (batchQuery) {
-      const since = Date.parse(String(req.query?.since || ""));
+      const sinceRaw = String(req.query?.since || "");
+      const since = /^\d{10,}$/.test(sinceRaw) ? Number(sinceRaw) : Date.parse(sinceRaw);   // epoch ms or ISO
       if (!Number.isFinite(since) || (!["initial", "incremental"].includes(batchQuery) && !DELIVERIES.includes(batchQuery)))
         return res.status(400).json({ error: "ข้อมูลติดตาม Run ไม่ถูกต้อง" });
       const type = (batchQuery === "initial" || batchQuery === "RUN1") ? "RUN1" : "RUN2";
@@ -216,6 +217,27 @@ export default async function handler(req, res) {
         "SELECT batch,run_id::text AS run_id,source_version,source_zip_sha256,correction_set_id,published_at,is_current " +
         "FROM demo_control.published_snapshot WHERE dataset_key='classroom' AND cycle_number=$1 ORDER BY published_at", [cycle]);
     } catch (_error) { published = []; }
+    let officialMonths = [];
+    try {
+      officialMonths = (await sql.query("SELECT to_char(target_month,'YYYY-MM') AS m FROM demo_ml.forecast_run " +
+        "WHERE dataset_key='classroom' AND cycle_number=$1 AND is_official AND status='SEALED'", [cycle])).map(r => r.m);
+    } catch (_error) { officialMonths = null; }       // null = demo_ml migration not applied
+    const monthStates = DELIVERIES.map((batch, index) => {
+      const month = monthFor(batch);
+      const mine = runs.filter(r => (r.result_summary?.batch || (r.run_type === "RUN1" ? "initial" : "")) === batch && r.status !== "CANCELLED");
+      const latest = mine[0];
+      let state = "LOCKED", reason = "PREVIOUS_MONTH_NOT_PUBLISHED";
+      if (mine.some(r => r.status === "SUCCEEDED")) { state = "PUBLISHED"; reason = null; }
+      else if (latest && ["RUNNING", "QUEUED"].includes(latest.status)) { state = "RUNNING"; reason = null; }
+      else if (latest && ["BLOCKED_DQ", "READY_TO_RESUME"].includes(latest.status)) { state = "DATA_QUALITY_BLOCKED"; reason = latest.status; }
+      else if (batch === next) {
+        const needsForecast = month >= "2026-06";
+        if (needsForecast && !(officialMonths || []).includes(month)) { state = "LOCKED"; reason = officialMonths === null ? "FORECAST_SCHEMA_MISSING" : "FORECAST_NOT_SEALED"; }
+        else { state = latest && latest.status === "FAILED" ? "SYSTEM_FAILED" : "RUNNABLE"; reason = latest && latest.status === "FAILED" ? "RETRYABLE" : null; }
+      }
+      return { batch, month, state, reason, last_stage: mine[0]?.result_summary?.failed_stage || mine[0]?.result_summary?.active_stage || null,
+        run_id: mine[0] ? String(mine[0].run_id) : null };
+    });
     const partialDataDetected = (phase === "EMPTY" && (orderRows[0]?.n ?? 0) > 0);
     const recoveryReady = !active && !partialDataDetected;
     const recoveryReason = active ? "มี Run กำลังทำงานอยู่" :
@@ -233,6 +255,8 @@ export default async function handler(req, res) {
       stale_recovered: staleRecovered,
       latest_failed_run: latestFailed,
       dq_blocked: dqBlocked,
+      months: monthStates,
+      published_through: (monthStates.filter(m => m.state === "PUBLISHED").pop() || {}).month || null,
       published_snapshots: published,
       partial_data_detected: partialDataDetected,
       recovery_ready: recoveryReady,
@@ -278,6 +302,20 @@ export default async function handler(req, res) {
   if (dqRun && dqRun.status === "BLOCKED_DQ")
     return res.status(409).json({ error_code: "DQ_BLOCKED", status: "BLOCKED_DQ", run_id: String(dqRun.run_id),
       error: "เดือนนี้ถูกหยุดด้วยข้อมูลไม่ผ่านการตรวจ ต้อง Review & Fix และ Revalidate ให้ผ่านก่อนรันต่อ" });
+
+  // Forecast gate (June onward): the official next-month forecast must be sealed BEFORE the month is ingested.
+  if (monthFor(requestedBatch) >= "2026-06") {
+    let sealed = [];
+    try {
+      sealed = await sql.query("SELECT 1 FROM demo_ml.forecast_run WHERE dataset_key='classroom' AND cycle_number=$1 " +
+        "AND target_month=$2::date AND is_official AND status='SEALED'", [cycle, monthFor(requestedBatch) + "-01"]);
+    } catch (_error) {
+      return res.status(409).json({ error_code: "FORECAST_SCHEMA_MISSING",
+        error: "ยังไม่ได้ติดตั้ง Migration demo_ml จึงยังรันเดือนตั้งแต่ มิ.ย. ไม่ได้" });
+    }
+    if (!sealed.length) return res.status(409).json({ error_code: "FORECAST_NOT_SEALED",
+      error: "ต้อง Generate และ Seal Official Forecast ของเดือน " + monthFor(requestedBatch) + " ก่อนจึงจะรันเดือนนี้ได้" });
+  }
 
   const sourceUploadId = String(body.source_upload_id || "");
   if (sourceUploadId) {

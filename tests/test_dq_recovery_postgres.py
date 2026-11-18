@@ -97,6 +97,8 @@ def env(tmp_path_factory):
         db.execute("DROP SCHEMA IF EXISTS demo_control CASCADE; DROP SCHEMA IF EXISTS demo_er1 CASCADE")
         db.execute((ROOT / "sql" / "neon_er1_demo_bootstrap.sql").read_text(encoding="utf-8"))
         db.execute((ROOT / "sql" / "neon_dq_recovery_migration.sql").read_text(encoding="utf-8"))
+        db.execute("DROP SCHEMA IF EXISTS demo_ml CASCADE")
+        db.execute((ROOT / "sql" / "neon_demo_ml_migration.sql").read_text(encoding="utf-8"))
     yield {"worker": worker, "s3": s3, "ctx": {}}
     mp.undo()
     os.environ.clear()
@@ -123,9 +125,14 @@ def run_month(env, batch: str):
     return env["worker"].run_ticket(sign(claim))
 
 
-def api(method, op, query=None, body=None):
-    payload = json.dumps({"method": method, "query": {"dq": op, **(query or {})}, "body": body})
-    child_env = {**os.environ, "DQ_TEST_DATABASE_URL": DB_URL, "CLASSROOM_LAB_ADMIN_KEY": ADMIN_KEY}
+SUMMARY_DIR = Path(os.environ.get("DQ_TEST_SUMMARY_DIR", "")) if os.environ.get("DQ_TEST_SUMMARY_DIR") else None
+
+
+def api(method, op, query=None, body=None, module="dq"):
+    key = "fc" if module == "forecast" else "dq"
+    payload = json.dumps({"method": method, "module": module, "query": {key: op, **(query or {})}, "body": body})
+    child_env = {**os.environ, "DQ_TEST_DATABASE_URL": DB_URL, "CLASSROOM_LAB_ADMIN_KEY": ADMIN_KEY,
+                 "DQ_TEST_SUMMARY_DIR": str(SUMMARY_DIR or "")}
     done = subprocess.run(["node", str(ROOT / "tests" / "integration" / "dq_api_harness.mjs")],
                           input=payload, capture_output=True, text=True, env=child_env, cwd=str(ROOT), timeout=60)
     assert done.returncode == 0, done.stderr[-800:]
@@ -319,25 +326,199 @@ def test_09_revalidate_passes_then_resume_publishes_march(env):
         q('SELECT COUNT(DISTINCT "Order_Item_ID") FROM demo_er1."Fact_Order_Items"')[0][0]
 
 
-def test_10_continue_april_to_october_and_match_independent_oracle(env):
-    last = None
-    for batch in BATCHES[3:]:
-        last = run_month(env, batch)
-        assert last["summary"]["status"] == "SUCCESS"
+# ------------------------------------------------------------------ journey after March
+
+def fc(method, op, query=None, body=None):
+    return api(method, op, query, body, module="forecast")
+
+
+def oracle_groups():
+    with (PACKAGE / "expected_group_monthly.csv").open(encoding="utf-8-sig", newline="") as handle:
+        out = {}
+        for row in csv.DictReader(handle):
+            out.setdefault(row["month"], {})[row["product_group_id"]] = float(row["net_revenue"])
+        return out
+
+
+def publish_summaries(env):
+    """Copy batch.json of every run out of the in-memory object storage for the Node evaluation harness."""
+    SUMMARY_DIR.mkdir(parents=True, exist_ok=True)
+    for (bucket, key), data in env["s3"].objects.items():
+        match = re.fullmatch(r"vercel-lab/results/([0-9a-f-]{36})/batch\.json", key)
+        if match:
+            (SUMMARY_DIR / f"{match.group(1)}.json").write_bytes(data)
+
+
+def forecast_for(env, month, actor="business.owner"):
+    status, data = fc("POST", "generate", body={"month": month, "actor": actor})
+    assert status == 202, data
+    result = env["worker"].run_forecast(data["ticket"])
+    assert result["status"] == "DRAFT"
+    return result["summary"]
+
+
+def test_10_run_to_may_then_stop_and_june_is_locked_until_sealed(env):
+    for batch in ("incremental_03", "incremental_04"):
+        assert run_month(env, batch)["summary"]["status"] == "SUCCESS"
+    # server-side gate: the worker refuses June (no official forecast), nothing is created
+    runs_before = q("SELECT COUNT(*) FROM demo_control.pipeline_runs")[0][0]
+    with pytest.raises(RuntimeError) as locked:
+        run_month(env, "incremental_05")
+    assert "LAB_FORECAST_NOT_SEALED" in str(locked.value)
+    assert q("SELECT COUNT(*) FROM demo_control.pipeline_runs")[0][0] == runs_before
+    status, st = fc("GET", "status")
+    assert st["published_through"] == "2026-05"
+    june = next(m for m in st["months"] if m["month"] == "2026-06")
+    assert june["can_generate"] is True and june["target"]["revenue_target_thb"] == 94000
+    july = next(m for m in st["months"] if m["month"] == "2026-07")
+    assert july["can_generate"] is False and july["reason"].startswith("PUBLISHED_THROUGH")
+    # cannot forecast July yet (cutoff not published)
+    assert fc("POST", "generate", body={"month": "2026-07", "actor": "x"})[0] == 409
+
+
+def test_11_may_actual_gates_match_the_independent_oracle(env):
+    publish_summaries(env)
+    last = [r for r in q("SELECT run_id::text FROM demo_control.dataset_state, demo_control.pipeline_runs "
+                         "WHERE run_id=last_run_id")][0][0]
+    summary = json.loads((SUMMARY_DIR / f"{last}.json").read_text())
+    shop = {m["month"]: m for m in summary["business"]["shop_months"]}
+    may, expected = shop["2026-05"], oracle_kpi()["2026-05"]
+    assert abs(may["net"] - float(expected["net_revenue"])) < 0.05 and abs(may["net"] - 83821.69) < 0.05
+    assert abs(may["gross"] - float(expected["gross_reference_sales"])) < 0.05
+    assert abs(may["profit"] - float(expected["contribution_profit"])) <= 0.50 and abs(may["profit"] - 1875.33) <= 0.50
+    gates = may["gates"]
+    assert gates["revenue"]["status"] == "FAIL" and gates["revenue"]["target"] == 91000.0
+    assert gates["profit_protection"]["status"] == "FAIL" and abs(gates["profit_protection"]["rate_pct"] - 2.05) < 0.02
+    # Marketing GAP: the five components from the independent oracle, over Gross Reference Sales
+    numerator = sum(float(expected[k]) for k in ("campaign_price_reduction", "voucher_discount", "affiliate_cost", "ads_cost", "sample_cost"))
+    assert abs(gates["marketing_gap"]["numerator"] - numerator) < 0.10
+    assert abs(gates["marketing_gap"]["rate_pct"] - 100 * numerator / float(expected["gross_reference_sales"])) < 0.02
+    assert gates["marketing_gap"]["status"] in ("PASS", "FAIL")
+    # business FAIL did not block the publication
+    assert q("SELECT COUNT(*) FROM demo_control.published_snapshot WHERE batch='incremental_04'")[0][0] == 1
+    assert gates["target_policy"]["label"] == "SIMULATED_PRECONFIGURED_FOR_CLASSROOM"
+
+
+def test_12_june_forecast_uses_data_through_may_only_and_is_honest_about_method(env):
+    draft = forecast_for(env, "2026-06")
+    assert draft["published_through"] == "2026-05" and draft["training_cutoff_date"] == "2026-05-31"
+    assert draft["method_type"] == "BASELINE" and draft["validation"]["status"] == "INSUFFICIENT_VALIDATION"
+    assert sorted(draft["predictions"]) == ["PG01", "PG02", "PG03", "PG04", "PG05"]
+    assert abs(sum(draft["predictions"].values()) - draft["shop_prediction"]) < 0.01
+    # independent oracle: the naive baseline equals May's group Net Revenue from the QA file
+    may = oracle_groups()["2026-05"]
+    naive = draft["validation"]["baselines_all_origins"]["naive_previous_month"]
+    assert draft["model_name"] in ("naive_previous_month", "trailing_3_month_mean")
+    if draft["model_name"] == "naive_previous_month":
+        for group, value in draft["predictions"].items():
+            assert abs(value - may[group]) < 0.05
+    assert naive["origins"] == 4
+    row = q("SELECT status,is_official,method_type FROM demo_ml.forecast_run WHERE forecast_run_id=%s", (draft["forecast_run_id"],))[0]
+    assert row == ("DRAFT", False, "BASELINE")
+    assert (BUCKET, f"vercel-lab/forecast/{draft['forecast_run_id']}/manifest.json") in env["s3"].objects
+    env["ctx"]["june_draft"] = draft
+
+
+def test_13_seal_once_is_immutable_and_unlocks_june(env):
+    draft = env["ctx"]["june_draft"]
+    status, bad = fc("POST", "seal", body={"forecast_run_id": draft["forecast_run_id"]})
+    assert status == 400                                   # actor required
+    other = forecast_for(env, "2026-06")                   # drafts may be retried; only one can ever become official
+    status, sealed = fc("POST", "seal", body={"forecast_run_id": draft["forecast_run_id"], "actor": "business.owner"})
+    assert status == 200 and sealed["status"] == "SEALED"
+    assert fc("POST", "seal", body={"forecast_run_id": draft["forecast_run_id"], "actor": "x"})[0] == 409
+    assert fc("POST", "seal", body={"forecast_run_id": other["forecast_run_id"], "actor": "x"})[0] == 409
+    assert fc("POST", "generate", body={"month": "2026-06", "actor": "x"})[0] == 409
+    with psycopg.connect(DB_URL) as db:                    # DB-level immutability
+        with pytest.raises(Exception):
+            db.execute("UPDATE demo_ml.forecast_result SET predicted_net_revenue=1 WHERE forecast_run_id=%s", (draft["forecast_run_id"],))
+    f = fc("GET", "forecast", {"month": "2026-06"})[1]
+    assert f["official"]["forecast_run_id"] == draft["forecast_run_id"] and f["plan_status"] == "NO_SELECTED_PLAN"
+    assert f["official"]["results"] == draft["predictions"]          # persisted exactly as generated (survives refresh)
+
+
+def test_14_scenario_is_pre_target_only_recomputed_server_side_and_append_only(env):
+    base = {"month": "2026-06", "plan_code": "A", "plan_title": "Ads +10%", "actor": "business.owner",
+            "reason": "Try more ads under stated demand assumptions",
+            "assumptions": {"cogs_rate_of_base": 0.4, "platform_fee_rate_of_net": 0.1, "fulfillment_cost_per_order": 12,
+                            "affiliate_rate": 0.08, "affiliate_eligible_share_of_net": 0.5, "free_sample_cost": 1000, "claim_cost": 400},
+            "controls": {"ads_budget": {g: 3200 for g in ("PG01", "PG02", "PG03", "PG04", "PG05")}},
+            "baskets": [{"orders": 300, "lines": [{"group": "PG01", "units": 1, "base_price": 199},
+                                                    {"group": "PG02", "units": 1, "base_price": 229}]},
+                        {"orders": 250, "lines": [{"group": "PG03", "units": 1, "base_price": 279}]}]}
+    status, sim = fc("POST", "simulate", body=base)
+    assert status == 200 and sim["persisted"] is False and sim["result"]["kind"] == "WHAT_IF_ASSUMPTIONS_NOT_A_PREDICTION"
+    assert q("SELECT COUNT(*) FROM demo_ml.scenario_decision")[0][0] == 0         # trying a plan stores nothing
+    status, v1 = fc("POST", "seal_plan", body=base)
+    assert status == 201 and v1["decision_version"] == 1
+    base2 = {**base, "plan_code": "B", "plan_title": "Ads +20%", "controls": {"ads_budget": {g: 3500 for g in ("PG01", "PG02", "PG03", "PG04", "PG05")}}}
+    status, v2 = fc("POST", "seal_plan", body=base2)
+    assert status == 201 and v2["decision_version"] == 2
+    rows = q("SELECT decision_version,supersedes_decision_id IS NOT NULL,approved_target_amount::float,calculator_version FROM demo_ml.scenario_decision ORDER BY 1")
+    assert rows == [(1, False, 94000.0, "scenario-calc-1"), (2, True, 94000.0, "scenario-calc-1")]
+    with psycopg.connect(DB_URL) as db:
+        with pytest.raises(Exception):
+            db.execute("UPDATE demo_ml.scenario_decision SET plan_title='x'")
+    # the forecast itself did not change
+    assert fc("GET", "forecast", {"month": "2026-06"})[1]["official"]["results"] == env["ctx"]["june_draft"]["predictions"]
+
+
+def test_15_june_publishes_then_evaluation_uses_the_same_sealed_forecast(env):
+    run_month(env, "incremental_05")
+    # official forecast can no longer be created/revised after the target month started
+    assert fc("POST", "generate", body={"month": "2026-06", "actor": "x"})[0] == 409
+    plan = {"month": "2026-06", "plan_code": "C", "plan_title": "late", "actor": "x", "reason": "too late to revise", "controls": {}, "assumptions": {}, "baskets": []}
+    assert fc("POST", "seal_plan", body=plan)[0] == 409
+    publish_summaries(env)
+    status, ev = fc("GET", "evaluation", {"month": "2026-06"})
+    assert status == 200 and ev["status"] == "OK"
+    sealed = env["ctx"]["june_draft"]
+    assert ev["forecast"]["id"] == sealed["forecast_run_id"]
+    actual = oracle_groups()["2026-06"]
+    for group in ev["evaluation"]["groups"]:
+        assert abs(group["actual"] - actual[group["group"]]) < 0.05
+        assert group["error"] == pytest.approx(group["actual"] - sealed["predictions"][group["group"]], abs=0.02)   # Actual - Forecast
+        if actual[group["group"]] > 0:
+            assert group["ape_pct"] == pytest.approx(100 * abs(group["error"]) / group["actual"], abs=0.02)
+    shop_actual = sum(actual.values())
+    assert ev["evaluation"]["shop"]["actual"] == pytest.approx(shop_actual, abs=0.1)
+    assert ev["plan"]["status"] == "SELECTED" and ev["plan"]["version"] == 2 and ev["plan"]["evidence_of_execution"] == "NOT_VERIFIED"
+
+
+def test_16_rolling_july_to_october_every_month_forecast_sealed_before_actual(env):
+    for month, batch in (("2026-07", "incremental_06"), ("2026-08", "incremental_07"), ("2026-09", "incremental_08"), ("2026-10", "incremental_09")):
+        with pytest.raises(RuntimeError) as locked:                   # the gate cannot be bypassed
+            run_month(env, batch)
+        assert "LAB_FORECAST_NOT_SEALED" in str(locked.value)
+        draft = forecast_for(env, month)
+        previous = f"2026-{int(month[5:]) - 1:02d}"
+        assert draft["published_through"] == previous                  # only data through the previous month
+        assert fc("POST", "seal", body={"forecast_run_id": draft["forecast_run_id"], "actor": "business.owner"})[0] == 200
+        sealed_at = q("SELECT sealed_at FROM demo_ml.forecast_run WHERE forecast_run_id=%s", (draft["forecast_run_id"],))[0][0]
+        assert run_month(env, batch)["summary"]["status"] == "SUCCESS"
+        first_ingest = q("SELECT MIN(started_at) FROM demo_control.pipeline_runs WHERE result_summary->>'batch'=%s", (batch,))[0][0]
+        assert sealed_at < first_ingest                                # event order: seal BEFORE ingest
+        env["ctx"].setdefault("methods", {})[month] = (draft["method_type"], draft["validation"]["status"])
+    publish_summaries(env)
+    status, all_eval = fc("GET", "evaluations")
+    assert status == 200 and len(all_eval["months"]) == 5              # June..October out-of-sample comparisons
+    oracle = oracle_groups()
+    abs_sum = act_sum = 0.0
+    for item in all_eval["months"]:
+        sealed = fc("GET", "forecast", {"month": item["month"]})[1]["official"]["results"]
+        for group, value in sealed.items():
+            abs_sum += abs(oracle[item["month"]][group] - value)
+            act_sum += oracle[item["month"]][group]
+    assert all_eval["aggregate"]["group_wape_pct"] == pytest.approx(100 * abs_sum / act_sum, abs=0.05)
     assert q("SELECT COUNT(*) FROM demo_control.published_snapshot")[0][0] == 10
-    assert q("SELECT COUNT(*) FROM demo_control.published_snapshot WHERE is_current")[0][0] == 1
-    months = {row["month"]: row for row in last["summary"]["business"]["months"]}
-    expected = oracle_kpi()
-    assert set(expected) == set(months)
-    for month, want in expected.items():
-        got = months[month]
-        assert abs(float(got["net"]) - float(want["net_revenue"])) < 0.05, month
-        assert abs(float(got["gross"]) - float(want["gross_reference_sales"])) < 0.05, month
-        # Contribution profit accumulates per-line cent rounding in the existing (unchanged) formulas;
-        # the oracle rounds differently. Net/Gross match to the satang; profit may differ by a few satang.
-        deviation = abs(float(got["profit"]) - float(want["contribution_profit"]))
-        print(f"PROFIT_DEVIATION {month} {deviation:.2f}")
-        assert deviation <= 0.50, month
-    # Business KPI FAIL does not block data: February misses its revenue target yet was published.
-    assert expected["2026-02"]["revenue_status"] == "FAIL"
-    assert q("SELECT COUNT(*) FROM demo_control.published_snapshot WHERE batch='incremental_01'")[0][0] == 1
+    assert q("SELECT COUNT(*) FROM demo_ml.forecast_run WHERE is_official")[0][0] == 5
+    # July onward has >= 3 walk-forward origins, so the challenger was genuinely evaluated
+    assert env["ctx"]["methods"]["2026-07"][1] == "OK"
+    # every month still matches the independent KPI oracle
+    last = q("SELECT last_run_id::text FROM demo_control.dataset_state")[0][0]
+    months = {m["month"]: m for m in json.loads((SUMMARY_DIR / f"{last}.json").read_text())["business"]["months"]}
+    for month, want in oracle_kpi().items():
+        assert abs(float(months[month]["net"]) - float(want["net_revenue"])) < 0.05
+        assert abs(float(months[month]["profit"]) - float(want["contribution_profit"])) <= 0.50
+    # February: business FAIL still published
+    assert oracle_kpi()["2026-02"]["revenue_status"] == "FAIL"

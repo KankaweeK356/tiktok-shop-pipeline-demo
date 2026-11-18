@@ -1,0 +1,60 @@
+{
+  "policy_version": "DEMO_PLANNING_V1",
+  "source_file": "pipeline/assets/planning_target_seed_v1.csv",
+  "source_sha256": "51b257269e0944b9d54d9732b7ea758ce99a841ed3005965f9f7028df42308f6",
+  "label": "SIMULATED_PRECONFIGURED_FOR_CLASSROOM",
+  "classification": "SYNTHETIC_PLANNING_INPUT",
+  "note": "Pre-configured classroom planning input, not a real company approval. Contains targets/thresholds only: no actuals, no QA labels.",
+  "months": {
+    "2026-01": {
+      "revenue_target_thb": 80000.0,
+      "minimum_profit_protection_rate": 0.1,
+      "maximum_marketing_gap_rate": 0.3
+    },
+    "2026-02": {
+      "revenue_target_thb": 82000.0,
+      "minimum_profit_protection_rate": 0.1,
+      "maximum_marketing_gap_rate": 0.3
+    },
+    "2026-03": {
+      "revenue_target_thb": 85000.0,
+      "minimum_profit_protection_rate": 0.1,
+      "maximum_marketing_gap_rate": 0.3
+    },
+    "2026-04": {
+      "revenue_target_thb": 88000.0,
+      "minimum_profit_protection_rate": 0.1,
+      "maximum_marketing_gap_rate": 0.3
+    },
+    "2026-05": {
+      "revenue_target_thb": 91000.0,
+      "minimum_profit_protection_rate": 0.1,
+      "maximum_marketing_gap_rate": 0.3
+    },
+    "2026-06": {
+      "revenue_target_thb": 94000.0,
+      "minimum_profit_protection_rate": 0.1,
+      "maximum_marketing_gap_rate": 0.3
+    },
+    "2026-07": {
+      "revenue_target_thb": 98000.0,
+      "minimum_profit_protection_rate": 0.1,
+      "maximum_marketing_gap_rate": 0.3
+    },
+    "2026-08": {
+      "revenue_target_thb": 102000.0,
+      "minimum_profit_protection_rate": 0.1,
+      "maximum_marketing_gap_rate": 0.3
+    },
+    "2026-09": {
+      "revenue_target_thb": 106000.0,
+      "minimum_profit_protection_rate": 0.1,
+      "maximum_marketing_gap_rate": 0.3
+    },
+    "2026-10": {
+      "revenue_target_thb": 110000.0,
+      "minimum_profit_protection_rate": 0.1,
+      "maximum_marketing_gap_rate": 0.3
+    }
+  }
+}

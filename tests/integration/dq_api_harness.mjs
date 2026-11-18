@@ -4,6 +4,8 @@ import { createRequire } from "node:module";
 const requireFromEnv = createRequire(process.env.DQ_TEST_PG_PARENT || import.meta.url);
 const pg = requireFromEnv("pg");
 const { default: labDQ } = await import("../../lib/lab-dq.js");
+const { default: labForecast } = await import("../../lib/lab-forecast.js");
+import { readFileSync } from "node:fs";
 
 const input = JSON.parse(await new Promise(resolve => {
   let data = ""; process.stdin.on("data", c => data += c); process.stdin.on("end", () => resolve(data));
@@ -16,6 +18,12 @@ const res = {
   setHeader() {}, status(code) { status = code; return this; }, json(value) { json = value; return this; }
 };
 const req = { method: input.method, query: input.query || {}, body: input.body, headers: { host: "localhost" } };
-await labDQ(req, res, { sql });
+if (input.module === "forecast") {
+  // batch.json files that the Python test copied out of its in-memory object storage
+  const readBatchSummary = async runId => JSON.parse(readFileSync(`${process.env.DQ_TEST_SUMMARY_DIR}/${runId}.json`, "utf8"));
+  await labForecast(req, res, { sql, readBatchSummary });
+} else {
+  await labDQ(req, res, { sql });
+}
 await client.end();
 process.stdout.write(JSON.stringify({ status, json }));

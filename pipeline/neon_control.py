@@ -509,3 +509,65 @@ def _publish_snapshot(cur, run_id: str, batch: str, artifact_uri: str | None) ->
          WHERE dataset_key=%s AND cycle_number=%s AND status IN ('BLOCKED_DQ','READY_TO_RESUME')
            AND result_summary->>'batch'=%s AND run_id<>%s
     """, (run_id, dataset, cycle, batch, run_id))
+
+
+# --------------------------------------------------------------------------
+# Next-month forecast persistence (demo_ml; additive migration sql/neon_demo_ml_migration.sql)
+# --------------------------------------------------------------------------
+FORECAST_GATE_FROM = "2026-06"          # target months from June onward need a sealed official forecast
+BATCH_BY_INDEX = ["initial"] + [f"incremental_{i:02d}" for i in range(1, 10)]
+
+
+def batch_for_month(month: str) -> str:
+    index = int(month[5:7]) - 1
+    if month[:4] != "2026" or not 0 <= index < 10:
+        raise ValueError("MONTH_OUT_OF_RANGE")
+    return BATCH_BY_INDEX[index]
+
+
+def month_for_batch(batch: str) -> str:
+    return f"2026-{BATCH_BY_INDEX.index(batch) + 1:02d}"
+
+
+def ml_schema_ready(database_url: str) -> bool:
+    with psycopg.connect(database_url) as db:
+        with db.cursor() as cur:
+            cur.execute("SELECT to_regclass('demo_ml.forecast_run') IS NOT NULL")
+            return bool(cur.fetchone()[0])
+
+
+def require_sealed_forecast(database_url: str, cycle: int, batch: str) -> None:
+    """Server-side gate: a target month from June on cannot be ingested without an OFFICIAL sealed forecast."""
+    month = month_for_batch(batch)
+    if month < FORECAST_GATE_FROM:
+        return
+    with psycopg.connect(database_url) as db:
+        with db.cursor() as cur:
+            cur.execute("SELECT to_regclass('demo_ml.forecast_run') IS NOT NULL")
+            if not cur.fetchone()[0]:
+                raise RuntimeError("LAB_FORECAST_SCHEMA_MISSING: demo_ml migration is not applied")
+            cur.execute("""SELECT 1 FROM demo_ml.forecast_run
+                            WHERE dataset_key='classroom' AND cycle_number=%s AND target_month=%s
+                              AND is_official AND status='SEALED'""", (cycle, month + "-01"))
+            if not cur.fetchone():
+                raise RuntimeError(f"LAB_FORECAST_NOT_SEALED: seal the official forecast for {month} before running it")
+
+
+def save_draft_forecast(database_url: str, cycle: int, source_run_id: str, result: dict, actor: str | None) -> str:
+    from uuid import uuid4
+    forecast_id = str(uuid4())
+    with psycopg.connect(database_url) as db:
+        with db.cursor() as cur:
+            cur.execute("""
+                INSERT INTO demo_ml.forecast_run
+                  (forecast_run_id,dataset_key,cycle_number,target_month,training_cutoff_date,source_warehouse_run_id,
+                   source_snapshot_sha256,method_type,model_name,model_version,feature_version,
+                   baseline_validation_wape_pct,model_validation_wape_pct,validation_notes,selection_reason,created_by)
+                VALUES (%s,'classroom',%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            """, (forecast_id, cycle, result["target_month"] + "-01", result["training_cutoff_date"], source_run_id,
+                  result["source_snapshot_sha256"], result["method_type"], result["model_name"], result["model_version"],
+                  result["feature_version"], result["baseline_validation_wape_pct"], result["model_validation_wape_pct"],
+                  result["validation_notes"], result["selection_reason"], (actor or "CLASSROOM_DEMO")[:120]))
+            cur.executemany("INSERT INTO demo_ml.forecast_result(forecast_run_id,product_group_id,predicted_net_revenue) "
+                            "VALUES (%s,%s,%s)", [(forecast_id, g, v) for g, v in result["predictions"].items()])
+    return forecast_id

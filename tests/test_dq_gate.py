@@ -39,7 +39,8 @@ def test_no_scenario_specific_literals_in_runtime_code():
                  "fix_patch", "qa_only", "golden_reference", "expected_kpi"]
     runtime = ["pipeline/dq.py", "pipeline/dq_recovery.py", "pipeline/source_lock.py", "pipeline/er1.py",
                "pipeline/neon_control.py", "pipeline/ci_lab_stage.py", "api/lab-worker.py", "lib/lab-dq.js",
-               "dashboard/app.js", "dashboard/pipeline-state.js", "api/lab-batch.js", "api/lab-batch-result.js"]
+               "dashboard/app.js", "dashboard/pipeline-state.js", "api/lab-batch.js", "api/lab-batch-result.js",
+               "pipeline/monthly_forecast.py", "pipeline/business_gates.py", "lib/lab-forecast.js", "lib/scenario-calc.js"]
     for name in runtime:
         text = (ROOT / name).read_text(encoding="utf-8")
         for token in forbidden:
@@ -291,3 +292,19 @@ def test_final_package_march_has_exactly_one_invalid_sku_detected_by_the_generic
         "original_value": patch["old_value"], "new_value": patch["new_value"], "version": 1}]}), encoding="utf-8")
     result = run_batch(ws, "incremental_02", source_root=src)
     assert result["status"] == "SUCCESS" and result["metrics"]["ingest"]["result"]["dq"]["corrections_applied"] == 1
+
+
+@needs_package
+def test_clean_march_fixture_passes_the_same_generic_gate_without_any_special_casing(tmp_path):
+    """A23: the QA golden March (test oracle only) has no invalid SKU, so the same rules must pass it."""
+    ws, src = tmp_path / "ws", tmp_path / "src"
+    src.mkdir()
+    for batch, month in (("initial", "01"), ("incremental_01", "02")):
+        data = (PACKAGE / "monthly_source" / f"classroom-source-2026-{month}.zip").read_bytes()
+        source_lock.unpack_verified(data, src / batch)
+        assert run_batch(ws, batch, source_root=src)["status"] == "SUCCESS"
+    golden = src / "incremental_02"
+    golden.mkdir()
+    zipfile.ZipFile(PACKAGE / "qa_only" / "golden_reference_march_2026.zip").extractall(golden)
+    result = run_batch(ws, "incremental_02", source_root=src)
+    assert result["status"] == "SUCCESS" and result["metrics"]["ingest"]["result"]["dq"]["failed_rows"] == 0

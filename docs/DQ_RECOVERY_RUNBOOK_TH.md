@@ -27,7 +27,7 @@ Business KPI FAIL (ยอดต่ำกว่าเป้า/กำไรต่
 
 ## 3. ขั้นตอนที่ต้องขออนุมัติแยก (Dev ยังไม่ได้ทำ)
 1. **เปิด Neon Test Branch** ใหม่จาก Branch Lab (ห้ามใช้ Cycle 33 เดิม) และตั้ง Writer URL ของ Branch ทดสอบให้ Deployment ทดสอบ
-2. **Apply Migration** `sql/neon_dq_recovery_migration.sql` บน Test Branch (Idempotent; ทดสอบแล้วกับ PostgreSQL 16 สองรอบ) แล้วให้สิทธิ์ SELECT/INSERT/UPDATE ตารางใหม่แก่ Writer Role (ไม่ต้องมี DELETE/TRUNCATE)
+2. **Apply Migration** `sql/neon_dq_recovery_migration.sql` แล้วตามด้วย `sql/neon_demo_ml_migration.sql` (ตาราง `demo_ml`, ต้องมีเพื่อรันเดือน มิ.ย. เป็นต้นไป) บน Test Branch (Idempotent; ทดสอบแล้วกับ PostgreSQL 16 สองรอบ) แล้วให้สิทธิ์ SELECT/INSERT/UPDATE ตารางใหม่แก่ Writer Role (ไม่ต้องมี DELETE/TRUNCATE)
 3. **อัปโหลด 10 ZIP** ของ Final ไปยัง Object Storage ที่ตรวจ Hash ได้ (ห้ามเขียนทับ Release `classroom-source-v1`) และตั้ง `CLASSROOM_SOURCE_VERSION=classroom_v2_2026_11_16` + `CLASSROOM_SOURCE_V2_S3_PREFIX`
 4. **Deploy** Preview (ต้องมี `vercel.json` ที่ Bundle `source_lock_classroom_v2.json` เข้า Worker) รัน Jan → Feb → Mar (คาดว่า BLOCKED_DQ) → Review & Fix → Revalidate → Resume → Apr–Oct
 5. เมื่อผ่านบน Test Branch และ PO อนุมัติ จึงเริ่ม **Cycle ใหม่** บน Lab หลัก (Reset ต้องอนุมัติแยก) ห้ามรัน Final ต่อบน Cycle ที่เคยใช้ v1

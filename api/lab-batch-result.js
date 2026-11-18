@@ -2,6 +2,7 @@
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import labML from "../lib/lab-ml-live.js";
 import labDQ from "../lib/lab-dq.js";
+import labForecast from "../lib/lab-forecast.js";
 import { getNeonSql } from "../lib/neon-router.js";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -28,6 +29,7 @@ function notFound(error) {
 export default async function handler(req, res) {
   if (req.query?.ml === "1") return labML(req, res);
   if (req.query?.dq) return labDQ(req, res);
+  if (req.query?.fc) return labForecast(req, res);
   res.setHeader("Cache-Control", "no-store");
   if (req.method !== "GET") return res.status(405).json({ error: "GET only" });
   if (req.query?.download === "warehouse") {

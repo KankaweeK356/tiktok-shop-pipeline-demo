@@ -492,7 +492,12 @@ def test_15_june_publishes_then_evaluation_uses_the_same_sealed_forecast(env):
     assert ev["plan"]["status"] == "SELECTED" and ev["plan"]["version"] == 2 and ev["plan"]["evidence_of_execution"] == "NOT_VERIFIED"
 
 
-def test_16_rolling_july_to_october_every_month_forecast_sealed_before_actual(env):
+def test_16_rolling_july_to_october_every_month_forecast_sealed_before_actual(env, monkeypatch):
+    from pipeline.mlops import monitoring as monitoring_module
+    real_record = monitoring_module.record_month
+
+    def boom(*_a, **_k):
+        raise RuntimeError("injected monitoring failure")
     for month, batch in (("2026-07", "incremental_06"), ("2026-08", "incremental_07"), ("2026-09", "incremental_08"), ("2026-10", "incremental_09")):
         with pytest.raises(RuntimeError) as locked:                   # the gate cannot be bypassed
             run_month(env, batch)
@@ -502,7 +507,12 @@ def test_16_rolling_july_to_october_every_month_forecast_sealed_before_actual(en
         assert draft["published_through"] == previous                  # only data through the previous month
         assert fc("POST", "seal", body={"forecast_run_id": draft["forecast_run_id"], "actor": "business.owner"})[0] == 200
         sealed_at = q("SELECT sealed_at FROM demo_ml.forecast_run WHERE forecast_run_id=%s", (draft["forecast_run_id"],))[0][0]
-        assert run_month(env, batch)["summary"]["status"] == "SUCCESS"
+        if month == "2026-09":                                           # a monitoring failure must never fail or change a publish
+            monkeypatch.setattr(monitoring_module, "record_month", boom)
+        published = run_month(env, batch)
+        monkeypatch.setattr(monitoring_module, "record_month", real_record)
+        assert published["summary"]["status"] == "SUCCESS"
+        env["ctx"].setdefault("monitoring_status", {})[month] = published["summary"].get("monitoring", {})
         first_ingest = q("SELECT MIN(started_at) FROM demo_control.pipeline_runs WHERE result_summary->>'batch'=%s", (batch,))[0][0]
         assert sealed_at < first_ingest                                # event order: seal BEFORE ingest
         env["ctx"].setdefault("methods", {})[month] = (draft["method_type"], draft["validation"]["status"])
@@ -563,3 +573,47 @@ def test_17_mlops_evidence_runs_are_additive_and_never_touch_forecasts(env):
     exp = results[("2026-07", "EXPERIMENT_ONLY")]["mlops"]
     assert any(key.startswith("vercel-lab/ml/index/EXPERIMENT_ONLY/2026-07/") for key in stored) and exp["training_run_id"]
     assert snapshot() == before
+
+
+def test_18_champion_challenger_monitoring_is_automatic_pre_actual_and_isolated(env):
+    objects = {key: data for (_b, key), data in env["s3"].objects.items()}
+    status = env["ctx"]["monitoring_status"]
+    assert status["2026-07"]["status"] == "EVALUATED" and status["2026-08"]["status"] == "EVALUATED" and status["2026-10"]["status"] == "EVALUATED"
+    assert status["2026-09"]["status"] == "FAILED" and "injected" in status["2026-09"]["error"]          # failure is reported, publish was SUCCESS (asserted in test 16)
+    cycle = q("SELECT cycle_number FROM demo_control.dataset_state")[0][0]
+    base = f"vercel-lab/ml/monitoring/{cycle}"
+    evals = {k.rsplit("/", 1)[1][:-5]: json.loads(v) for k, v in objects.items() if k.startswith(f"{base}/evaluations/")}
+    assert sorted(evals) == ["2026-06", "2026-07", "2026-08", "2026-10"]                                  # September was not recorded: not guessed afterwards
+    summaries = sorted(k for k in objects if k.startswith(f"{base}/summary/"))
+    assert summaries[-1].endswith("through=2026-10.json")
+    summary = json.loads(objects[summaries[-1]])
+    assert summary["counted_months"] == 4 and summary["evidence_level"] == "PRELIMINARY"
+    assert summary["recommendation"]["status"] == "PRELIMINARY_NOT_ASSESSED" and summary["recommendation"]["auto_switch_champion"] is False
+    # June: the shadow counted is the one bound to the SEALED forecast, not the second (unsealed) draft generated in test 13
+    sealed_id = env["ctx"]["june_draft"]["forecast_run_id"]
+    pointer = json.loads(objects[f"vercel-lab/ml/monitoring/by_forecast/{sealed_id}.json"])
+    assert evals["2026-06"]["shadow_training_run_id"] == pointer["training_run_id"] and evals["2026-06"]["official_forecast_id"] == sealed_id
+    # independent oracle: actual comes from the QA file, predictions from the stored shadow files; cumulative WAPE = sum|err| / sum(actual)
+    oracle = oracle_groups()
+    for key, side in (("baseline", "baseline"), ("ml", "ml")):
+        err = act = 0.0
+        for month, ev in evals.items():
+            shadow = json.loads(objects[f"vercel-lab/ml/runs/{ev['shadow_training_run_id']}/shadow_forecast.json"])
+            assert shadow["kind"] == "OFFICIAL_LINKED" and shadow["created_at"] < ev["actual_published_at"]    # recorded before the actual was published
+            assert shadow["target_month"] == month and shadow["data_cutoff"] < month + "-01" and shadow["feature_version"] and shadow[side]["model_version"]
+            err += abs(shadow[side]["shop"] - sum(oracle[month].values()))
+            act += sum(oracle[month].values())
+        assert summary["cumulative"][key]["wape_pct"] == pytest.approx(100 * err / act, abs=0.05)
+    assert set(summary["cumulative"]["groups"]) == {"PG01", "PG02", "PG03", "PG04", "PG05"}
+    # historical evaluations / experiments created after the actuals (test 17) never entered the monitoring
+    hist_ids = {json.loads(v)["training_run_id"] for k, v in objects.items() if "/index/HISTORICAL_EVALUATION/" in k or "/index/EXPERIMENT_ONLY/" in k}
+    assert hist_ids and not hist_ids & {ev["shadow_training_run_id"] for ev in evals.values()}
+    assert q("SELECT COUNT(*) FROM demo_ml.forecast_run WHERE is_official")[0][0] == 5 and q("SELECT COUNT(*) FROM demo_control.published_snapshot")[0][0] == 10
+    out = os.environ.get("DQ_TEST_ML_DIR")
+    if out:                                                                                         # artifacts for the UI check (real pipeline output)
+        for key, data in objects.items():
+            if key.startswith("vercel-lab/ml/"):
+                target = Path(out) / key[len("vercel-lab/"):]
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(data)
+        (Path(out) / "cycle.txt").write_text(str(cycle))

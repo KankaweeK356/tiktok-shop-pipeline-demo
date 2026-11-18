@@ -273,3 +273,16 @@ def test_mlops_read_api_never_writes_and_ticket_cannot_be_official():
     worker = (_ROOT / "api" / "lab-worker.py").read_text(encoding="utf-8")
     seg = worker[worker.index("def run_mlops"):worker.index("class handler")]
     assert "save_draft_forecast" not in seg and "INSERT" not in seg.upper() and "UPDATE " not in seg.upper() and "DELETE" not in seg.upper()
+
+
+def test_monitoring_block_is_inside_the_existing_panel_and_read_only():
+    app = (_ROOT / "dashboard" / "app.js").read_text(encoding="utf-8")
+    block = app[app.index("// ---- Champion vs Challenger Monitoring"):app.index("  function renderMlopsPanel()")]
+    assert 'fcApi("monitoring")' in block and "renderMonitoringBlock" in app[app.index("function renderMlopsPanel"):]
+    for label in ("Insufficient Evidence", "Preliminary", "Adequate", "Cumulative WAPE", "ผลรวมความคลาดเคลื่อนสะสม", "เดือนที่มีผลจริงสำหรับเปรียบเทียบ", "ไม่เปลี่ยน Champion และไม่สั่ง Retrain"):
+        assert label in block
+    assert "ridge_marketing" not in block and "Ridge + Marketing" not in block                      # the experimental challenger is not a column here
+    assert '"seal"' not in block and "POST" not in block and "mlops_run" not in block
+    import re
+    assert not re.search(r"\b\d{1,3},\d{3}(\.\d+)?\b", block)                                      # no hard-coded results
+    assert 'data-view="monitoring"' not in (_ROOT / "dashboard" / "index.html").read_text(encoding="utf-8")   # no new main tab

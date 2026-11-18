@@ -36,6 +36,8 @@ NUMERIC_BASE = ["lag1_group_net", "trailing3_group_net_mean", "days_in_label_mon
 DUMMIES = [f"group_{g}" for g in GROUPS]
 MARKETING = ["ads_to_gross_lag1", "campaign_discount_to_gross_lag1"]
 
+MODEL_VERSIONS = {"baseline_trailing_3_month_mean": "baseline-trailing3-1", "baseline_naive_previous_month": "baseline-naive-1",
+                  "ridge_base": "mlops-ridge-1", "ridge_marketing": "mlops-ridge-marketing-1"}
 MODELS = {
     "baseline_trailing_3_month_mean": {"kind": "baseline", "features": [], "description": "Mean of the last 3 months per group (the official baseline)"},
     "baseline_naive_previous_month": {"kind": "baseline", "features": [], "description": "Previous month per group"},

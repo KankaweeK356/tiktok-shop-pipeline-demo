@@ -165,6 +165,32 @@ def zip_workspace(root: Path) -> bytes:
     return buffer.getvalue()
 
 
+def record_monitoring(client, bucket: str, cycle: int, batch: str, run_id: str, workspace: Path) -> dict:
+    """Champion-Challenger monitoring hook, called AFTER the month is published. Evaluates the shadow forecast recorded before this actual.
+    It only reads (warehouse, sealed forecast) and writes new object-storage files; any failure here is reported and never affects the publish."""
+    try:
+        from pipeline import monthly_forecast, neon_control
+        from pipeline.mlops import monitoring
+        from pipeline.mlops.store import S3Store
+        month = neon_control.month_for_batch(batch)
+        if month < "2026-06":
+            return {"status": "NOT_APPLICABLE"}
+        with psycopg.connect(os.environ["NEON_DEMO_DATABASE_URL"]) as db:
+            row = db.execute("SELECT forecast_run_id::text,method_type,model_name FROM demo_ml.forecast_run WHERE dataset_key='classroom' "
+                             "AND cycle_number=%s AND target_month=%s AND is_official AND status='SEALED'", (cycle, month + "-01")).fetchone()
+            finished = db.execute("SELECT finished_at FROM demo_control.pipeline_runs WHERE run_id=%s::uuid", (run_id,)).fetchone()
+        if not row:
+            return {"status": "NO_SEALED_FORECAST"}
+        if not finished or finished[0] is None:
+            return {"status": "SKIPPED", "error": "published time unavailable"}
+        rows = monthly_forecast.read_published_group_months(workspace / "er2.duckdb")
+        forecast = {"forecast_run_id": row[0], "method_type": row[1], "model_name": row[2]}
+        return monitoring.record_month(S3Store(client, bucket), cycle=cycle, month=month, forecast=forecast, actual_rows=rows,
+                                       actual_published_at=finished[0].isoformat(), actual_run_id=run_id)
+    except Exception as error:                                           # the month is already published and unaffected
+        return {"status": "FAILED", "error": f"{type(error).__name__}: {error}"[:300]}
+
+
 def run_ticket(ticket: str) -> dict:
     claim = read_ticket(ticket)
     batch = claim.get("batch")
@@ -334,6 +360,7 @@ def run_ticket(ticket: str) -> dict:
                          "RUN1" if batch == "initial" else "RUN2",
                          validate_receipt["result"], workspace,
                          artifact_uri=f"s3://{bucket}/vercel-lab/results/{run_id}/warehouse.zip")
+            summary["monitoring"] = record_monitoring(client, bucket, int(cycle), batch, run_id, workspace)
             return {"run_id": run_id, "batch": batch, "summary": summary}
         except Exception as error:
             try:

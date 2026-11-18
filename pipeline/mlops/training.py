@@ -5,6 +5,7 @@ rows only to record (and later prove) what the official selection logic decides.
 """
 from __future__ import annotations
 
+import calendar
 import subprocess
 import time
 import uuid
@@ -16,7 +17,7 @@ from .. import monthly_forecast as mf
 from . import features as ft
 from . import drift as drift_mod
 from . import report as report_mod
-from .definitions import DEFAULT_PREFIX, DUMMIES, FEATURE_VERSION, FEATURES, GROUPS, MODELS
+from .definitions import DEFAULT_PREFIX, DUMMIES, FEATURE_VERSION, FEATURES, GROUPS, MODEL_VERSIONS, MODELS
 from .store import StoreError, dumps, parquet_bytes, put_new, read_parquet
 
 MIN_TRAIN_MONTHS, MIN_ORIGINS, ALPHA = 2, 3, 1.0          # identical to monthly_forecast.generate_forecast defaults
@@ -134,7 +135,7 @@ def run_experiment(rows: list[dict], target_month: str, *, kind: str, source: di
         artifacts[mname] = {"kind": "ridge", "model_name": mname, "alpha": alpha, "features": spec["numeric"] + spec["dummies"], "numeric_standardised": spec["numeric"],
                             "intercept_penalised": False, "beta": [round(float(b), 8) for b in model["beta"]], "mean": [round(float(v), 8) for v in model["mean"]],
                             "std": [round(float(v), 8) for v in model["std"]], "training_rows": int(len(y)), "trained_on_labels_through": months[-1],
-                            "experimental": not spec.get("official_candidate", False)}
+                            "experimental": not spec.get("official_candidate", False), "model_version": MODEL_VERSIONS[mname]}
         final[mname]["artifact"] = artifacts[mname]
     for name in final:
         final[name]["shop_prediction"] = None if final[name]["predictions"] is None else round(sum(final[name]["predictions"].values()), 2)
@@ -189,10 +190,22 @@ def run_experiment(rows: list[dict], target_month: str, *, kind: str, source: di
         if obs:
             realised.append({"month": target_month, "model": key, "ape_pct": obs["shop_ape_pct"]})
     drift = drift_mod.compute_drift(manifest_rows, validation_wape_pct=same["baseline_trailing_3_month_mean"].get("shop_wape_pct"), realised=realised)
+    y, m = int(built["cutoff"][:4]), int(built["cutoff"][5:7])
+    def _side(name):
+        f = final.get(name) or {}
+        if f.get("predictions") is None:
+            return None
+        return {"model": name, "model_version": MODEL_VERSIONS[name], "groups": f["predictions"], "shop": f["shop_prediction"],
+                **({"alpha": alpha} if MODELS[name]["kind"] == "ridge" else {})}
+    shadow = {"shadow_version": "shadow-1", "kind": kind, "training_run_id": run_id, "target_month": target_month, "created_at": run["created_at"],
+              "cutoff_month": built["cutoff"], "data_cutoff": f"{built['cutoff']}-{calendar.monthrange(y, m)[1]:02d}", "feature_version": FEATURE_VERSION,
+              "official_forecast_id": official_forecast_id, "source_run_id": source.get("source_run_id"),
+              "baseline": _side("baseline_trailing_3_month_mean"), "ml": _side("ridge_base"),
+              "note": "Recorded before the target month is published. Only an OFFICIAL_LINKED shadow bound to the sealed forecast id counts for monitoring."}
     bundle_core = {"run": run, "evaluation": evaluation, "feature_meta": feature_meta}
     report = report_mod.build_report(bundle_core)
     return {"run": run, "evaluation": evaluation, "params": params, "artifacts": artifacts, "feature_meta": feature_meta, "feature_rows": manifest_rows,
-            "drift": drift, "report": report,
+            "drift": drift, "report": report, "shadow": shadow,
             "features_used": {k: ({"numeric": v.get("numeric"), "dummies": v.get("dummies")} if v["kind"] == "ridge" else {"features": []}) for k, v in MODELS.items()},
             "status": {"state": "SUCCEEDED", "official_selection_changed": False}}
 
@@ -214,14 +227,18 @@ def persist(store, bundle: dict, *, prefix: str = DEFAULT_PREFIX) -> dict:
     put_new(store, f"{fkey}/manifest.json", dumps({k: v for k, v in fm.items()}))
     rkey = f"{prefix}/runs/{run['training_run_id']}"
     paths = {"run": f"{rkey}/run.json", "evaluation": f"{rkey}/evaluation.json", "params": f"{rkey}/params.json", "features_used": f"{rkey}/features_used.json", "status": f"{rkey}/status.json",
-             "report": f"{rkey}/report.json", "drift": f"{rkey}/drift.json"}
+             "report": f"{rkey}/report.json", "drift": f"{rkey}/drift.json", "shadow": f"{rkey}/shadow_forecast.json"}
     run = {**run, "feature_set_path": fkey, "artifacts": {name: f"{rkey}/models/{name}.json" for name in bundle["artifacts"]}}
     for name, key in (("run", paths["run"]), ("evaluation", paths["evaluation"]), ("params", paths["params"]), ("features_used", paths["features_used"]), ("status", paths["status"]),
-                      ("report", paths["report"]), ("drift", paths["drift"])):
+                      ("report", paths["report"]), ("drift", paths["drift"]), ("shadow", paths["shadow"])):
         put_new(store, key, dumps(run if name == "run" else bundle[name] if name in bundle else bundle["status"]))
     for name, art in bundle["artifacts"].items():
         put_new(store, f"{rkey}/models/{name}.json", dumps(art))
     put_new(store, f"{prefix}/index/{run['kind']}/{fm['target_month']}/{run['training_run_id']}.json",
             dumps({"training_run_id": run["training_run_id"], "kind": run["kind"], "target_month": fm["target_month"], "evaluation_status": run["evaluation_status"],
                    "created_at": run["created_at"], "run_path": rkey}))
+    if run["kind"] == "OFFICIAL_LINKED" and (bundle["shadow"].get("official_forecast_id")):        # lookup used by Champion-Challenger monitoring
+        put_new(store, f"{prefix}/monitoring/by_forecast/{bundle['shadow']['official_forecast_id']}.json",
+                dumps({"official_forecast_id": bundle["shadow"]["official_forecast_id"], "training_run_id": run["training_run_id"], "run_path": rkey,
+                       "created_at": run["created_at"]}))
     return {"training_run_id": run["training_run_id"], "run_path": rkey, "feature_set_path": fkey, "feature_set_state": fstate, "evaluation_status": run["evaluation_status"]}

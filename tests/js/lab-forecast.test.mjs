@@ -144,3 +144,29 @@ test("MLOps: tickets can only be non-official kinds, after the gate, with a publ
   const claim = JSON.parse(Buffer.from(ok.json.ticket.split(".")[0], "base64url").toString());
   assert.equal(claim.action, "mlops"); assert.equal(claim.kind, "HISTORICAL_EVALUATION");
 });
+
+// ---- Champion-Challenger monitoring API (artifacts written by the REAL Jan->Oct worker journey, docs/mlops_evidence/monitoring_journey) ----
+const MON_ROOT = path.resolve("docs/mlops_evidence/monitoring_journey");
+const monStorage = { list: async () => [], getJson: async key => { const f = path.join(MON_ROOT, key.replace(/^vercel-lab\//, "")); return fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, "utf8")) : null; } };
+
+test("Monitoring: API returns the newest immutable summary of the current cycle (4 counted months, Preliminary, no recommendation yet)", async () => {
+  const cycle = Number(fs.readFileSync(path.join(MON_ROOT, "cycle.txt"), "utf8"));
+  const sql = { query: async text => text.includes("dataset_state") ? [{ phase: "RUN2_READY", cycle_number: cycle, last_run_id: "11111111-1111-4111-8111-111111111111" }] : [] };
+  const r = await callWith(sql, { mlopsStorage: monStorage }, "GET", { fc: "monitoring" });
+  assert.equal(r.status, 200); const s = r.json.summary;
+  assert.equal(s.through_month, "2026-10"); assert.equal(s.counted_months, 4); assert.equal(s.evidence_level, "PRELIMINARY");
+  assert.equal(s.recommendation.status, "PRELIMINARY_NOT_ASSESSED"); assert.equal(s.recommendation.auto_switch_champion, false); assert.equal(s.recommendation.auto_retrain, false);
+  assert.deepEqual(s.monthly.map(m => m.month), ["2026-06", "2026-07", "2026-08", "2026-10"]);        // 2026-09 was not recorded, so it is not guessed afterwards
+  assert.equal(s.pair.challenger, "ridge_base"); assert.ok(!JSON.stringify(s).includes("ridge_marketing_in_pair"));
+  const absB = s.rows.reduce((a, x) => a + x.baseline.shop_abs_error, 0), act = s.rows.reduce((a, x) => a + x.actual.shop, 0);
+  assert.ok(Math.abs(s.cumulative.baseline.wape_pct - 100 * absB / act) < 1e-6);                         // sum|err| / sum(actual), not a mean of monthly WAPE
+  const other = await callWith({ query: async text => text.includes("dataset_state") ? [{ phase: "x", cycle_number: cycle + 1, last_run_id: "11111111-1111-4111-8111-111111111111" }] : [] }, { mlopsStorage: monStorage }, "GET", { fc: "monitoring" });
+  assert.equal(other.json.summary, null);                                                                // another cycle never sees this cycle's months
+});
+
+test("Monitoring: storage outage is a plain 503 and the forecast status keeps working; status exposes which months are published", async () => {
+  const bad = await callWith(fakeSql([0, 1, 2, 3, 4]), { mlopsStorage: { list: async () => [], getJson: async () => { throw new Error("down"); } } }, "GET", { fc: "monitoring" });
+  assert.equal(bad.status, 503); assert.equal(bad.json.error_code, "MLOPS_STORAGE_UNAVAILABLE");
+  const st = await callWith(fakeSql([0, 1, 2, 3, 4]), {}, "GET", { fc: "status" });
+  assert.equal(st.json.months.find(m => m.month === "2026-05").published, true); assert.equal(st.json.months.find(m => m.month === "2026-06").published, false);
+});

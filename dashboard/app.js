@@ -4331,15 +4331,86 @@
     wrap.append(node("strong", "", "ข้อจำกัด"), node("ul", "mlops-limits", "")); const ul = wrap.lastChild; rp.limitations.forEach(x => ul.append(node("li", "", x)));
     return wrap;
   }
+  // ---- Champion vs Challenger Monitoring (inside the ML panel) -----------------------------------------------------
+  // Baseline (trailing 3 months) vs Ridge, using only shadow forecasts recorded BEFORE the actual was published. Read-only; a recommendation
+  // asks a human to review and never changes the champion or retrains.
+  const MON_LEVEL = { INSUFFICIENT_EVIDENCE: ["Insufficient Evidence", "status-fail"], PRELIMINARY: ["Preliminary", "status-pending"], ADEQUATE: ["Adequate", "status-pass"] };
+  const MON_STATUS = { INSUFFICIENT_EVIDENCE: "ข้อมูลยังไม่พอ", PRELIMINARY_NOT_ASSESSED: "Preliminary · ยังไม่ประเมินเกณฑ์เปลี่ยน Champion", RECOMMEND_REVIEW: "แนะนำให้พิจารณาทบทวนการเปลี่ยน Champion", NOT_RECOMMENDED: "ยังไม่ผ่านเกณฑ์เปลี่ยน Champion" };
+  const MON_REASON = { NO_SHADOW: "ไม่มี Shadow ที่บันทึกไว้ก่อน Publish", SHADOW_NOT_BOUND_TO_SEALED_FORECAST: "Shadow ไม่ผูกกับ Forecast ที่ Seal", ML_OR_BASELINE_MISSING: "มีคำทำนายไม่ครบทั้งสองวิธี",
+    SHADOW_NOT_RECORDED_BEFORE_ACTUAL: "Shadow ไม่ได้บันทึกก่อน Publish Actual", ACTUAL_INCOMPLETE: "Actual ไม่ครบ 5 กลุ่ม", SHADOW_TARGET_MISMATCH: "เดือนเป้าหมายไม่ตรง", CUTOFF_MISMATCH: "Data Cutoff ไม่ตรง" };
+  async function loadMonitoring(force = false) {
+    const ml = state.fc.ml; if (!ml || (ml.mon && !force)) return;
+    ml.mon = { loading: true, data: null, error: "" }; renderForecast();
+    const r = await fcApi("monitoring");
+    ml.mon = { loading: false, data: r.ok ? r.data : null, error: r.ok ? "" : (r.data.error || "โหลดผล Monitoring ไม่สำเร็จ") };
+    if (state.view === "forecast") renderForecast();
+  }
+  function svgEl(name, attrs = {}, text) { const e = document.createElementNS("http://www.w3.org/2000/svg", name); Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v)); if (text !== undefined) e.textContent = text; return e; }
+  function monChart(title, labels, series, unit, digits) {
+    const W = 460, H = 190, L = 46, R = 12, T = 14, B = 30, vals = series.flatMap(s => s.values).filter(v => v !== null);
+    const max = Math.max(1e-9, ...vals) * 1.15, x = i => L + (labels.length === 1 ? (W - L - R) / 2 : i * (W - L - R) / (labels.length - 1)), y = v => T + (H - T - B) * (1 - v / max);
+    const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, class: "mon-chart", role: "img", "aria-label": title });
+    [0, 0.5, 1].forEach(f => { const v = max * f; svg.append(svgEl("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), class: "mon-grid" }), svgEl("text", { x: L - 6, y: y(v) + 4, class: "mon-axis", "text-anchor": "end" }, money(v, digits) + unit)); });
+    labels.forEach((m, i) => svg.append(svgEl("text", { x: x(i), y: H - 10, class: "mon-axis", "text-anchor": "middle" }, thaiMonthShort(m))));
+    series.forEach(s => { const pts = s.values.map((v, i) => v === null ? null : [x(i), y(v)]).filter(Boolean);
+      svg.append(svgEl("polyline", { points: pts.map(p => p.join(",")).join(" "), fill: "none", stroke: s.color, "stroke-width": 2.2 }));
+      pts.forEach(p => svg.append(svgEl("circle", { cx: p[0], cy: p[1], r: 3.5, fill: s.color }))); });
+    return box("mon-chart-wrap", node("strong", "", title), svg, box("mon-legend", ...series.map(s => { const k = node("span", "mon-key", s.name); k.style.setProperty("--c", s.color); return k; })));
+  }
+  function renderMonitoringBlock() {
+    const f = state.fc, ml = f.ml, mon = ml.mon, wrap = box("mlops-mon");
+    wrap.append(node("h3", "mon-title", "Champion vs Challenger Monitoring"),
+      small("Champion = Baseline ค่าเฉลี่ย 3 เดือน · Challenger = Ridge เดิม · เทียบเฉพาะเดือนที่มี Shadow Forecast บันทึกไว้ก่อน Publish Actual และมี Actual ครบทั้ง 5 กลุ่ม · ไม่รวม Historical Evaluation / Experiment / Backtest"));
+    if (!mon || mon.loading) { wrap.append(small("กำลังอ่านผล Monitoring…")); return wrap; }
+    if (!mon.data) { wrap.append(notice(mon.error || "ไม่พบข้อมูล", true)); return wrap; }
+    const s = mon.data.summary, n = s ? s.counted_months : 0, level = s ? s.evidence_level : "INSUFFICIENT_EVIDENCE", L = MON_LEVEL[level];
+    const meter = box("mon-meter"); for (let i = 1; i <= 6; i += 1) meter.append(node("span", "mon-meter-cell" + (i <= n ? " on" : "") + (i === 3 || i === 6 ? " mark" : ""), ""));
+    wrap.append(box("mon-status", node("span", "status " + L[1], L[0]), node("strong", "", "เดือนที่มีผลจริงสำหรับเปรียบเทียบ: " + n), meter,
+      small("น้อยกว่า 3 เดือน = Insufficient Evidence · 3–5 = Preliminary · ตั้งแต่ 6 = Adequate")));
+    const rows = s ? s.rows : [], seen = new Set([...(s ? s.rows : []), ...(s ? s.excluded : [])].map(r => r.month));
+    const notes = [];
+    (s ? s.excluded : []).forEach(r => notes.push(thaiMonth(r.month) + " · ไม่นับ: " + (MON_REASON[r.exclusion_reason] || r.exclusion_reason)));
+    (f.status?.months || []).filter(m => m.official_forecast_id && !seen.has(m.month)).forEach(m => notes.push(thaiMonth(m.month) + (m.published ? " · ไม่มีผลประเมิน (ไม่มี Shadow ที่บันทึกก่อน Publish หรือการประเมินไม่สำเร็จ) ไม่นับ และไม่ย้อนสร้างทีหลัง" : " · รอ Publish Actual")));
+    if (!s) {
+      wrap.append(notice("ยังไม่มีผลประเมินจริง: เดือนแรกที่นับคือเดือนที่สร้าง Forecast หลังเปิดใช้ MLOps แล้ว Publish Actual ของเดือนนั้น (Forecast ที่ Seal ก่อนเปิดใช้ไม่มี Shadow จึงไม่ย้อนสร้าง)"));
+      if (notes.length) { const ul0 = node("ul", "mlops-limits", ""); notes.forEach(t => ul0.append(node("li", "", t))); wrap.append(ul0); }
+      return wrap;
+    }
+    const rec = s.recommendation;
+    wrap.append(box("mon-rec mon-rec-" + rec.status.toLowerCase(), node("strong", "", MON_STATUS[rec.status] || rec.status), small(rec.message),
+      dataTable([["ok", ""], ["label", "เงื่อนไข (ต้องผ่านทุกข้อ)"], ["detail", "ผลตามจริง"]], rec.rules.map(r => ({ ok: r.passed ? "✓" : "✗", label: r.label, detail: r.detail }))),
+      small("ใช้แนะนำให้ผู้รับผิดชอบพิจารณาเท่านั้น · ไม่เปลี่ยน Champion และไม่สั่ง Retrain อัตโนมัติ · Official Model Selection เดิมไม่ถูกแก้")));
+    if (s.official_ml_months.length) wrap.append(notice("เดือน " + s.official_ml_months.join(", ") + " ตรรกะ Official เดิมเลือก ML ไปแล้ว (ตามกติกาเดิม) ตารางนี้ยังเทียบ Baseline trailing 3 กับ Ridge คู่เดิมเสมอ", true));
+    const c = s.cumulative;
+    wrap.append(node("strong", "", "ผลสะสม (ระดับ Shop) · Cumulative WAPE = Σ|error| ÷ Σ Actual ของเดือนชุดเดียวกัน"),
+      dataTable([["m", "วิธี"], ["w", "Cumulative WAPE"], ["mae", "MAE/เดือน ฿"], ["b", "Bias/เดือน ฿ (คาด−จริง)"], ["t", "ผลรวมความคลาดเคลื่อนสะสม ฿"]],
+        [["Baseline (Champion)", c.baseline], ["Ridge (Challenger)", c.ml]].map(([name, v]) => ({ m: name, w: pct(v.wape_pct, 2), mae: money(v.mae, 0), b: (v.bias >= 0 ? "+" : "") + money(v.bias, 0), t: money(v.abs_error_total, 0) }))));
+    const labels = s.monthly.map(m => m.month);
+    wrap.append(box("mon-charts", monChart("แนวโน้ม Forecast Error รายเดือน (APE ระดับ Shop)", labels, [{ name: "Baseline", color: "#741D2B", values: s.monthly.map(m => m.baseline_ape_pct) }, { name: "Ridge", color: "#2F6FB3", values: s.monthly.map(m => m.ml_ape_pct) }], "%", 1),
+      monChart("ความคลาดเคลื่อนสะสม Σ|error| (฿)", labels, [{ name: "Baseline", color: "#741D2B", values: s.monthly.map(m => m.cum_abs_error_baseline) }, { name: "Ridge", color: "#2F6FB3", values: s.monthly.map(m => m.cum_abs_error_ml) }], "", 0)));
+    wrap.append(node("strong", "", "ผลรายเดือน (เทียบ Actual เดียวกัน)"),
+      dataTable([["m", "เดือน"], ["a", "Actual ฿"], ["bf", "Baseline ฿"], ["mf", "Ridge ฿"], ["be", "Baseline APE"], ["me", "Ridge APE"], ["w", "ที่แม่นกว่า"]],
+        s.monthly.map(m => ({ m: thaiMonth(m.month), a: money(m.actual, 2), bf: money(m.baseline_forecast, 2), mf: money(m.ml_forecast, 2), be: pct(m.baseline_ape_pct, 2), me: pct(m.ml_ape_pct, 2), w: m.ml_better ? "Ridge" : (m.ml_ape_pct === m.baseline_ape_pct ? "เท่ากัน" : "Baseline") }))));
+    const det = node("details", "dq-details"); det.append(node("summary", "", "ผลสะสมรายกลุ่มสินค้า (ระดับ Product Group)"));
+    det.append(dataTable([["g", "กลุ่ม"], ["b", "Baseline WAPE"], ["m", "Ridge WAPE"], ["d", "ส่วนต่าง (Ridge − Baseline)"]],
+      Object.entries(c.groups).map(([g, v]) => ({ g, b: pct(v.baseline, 2), m: pct(v.ml, 2), d: (v.gap_pp >= 0 ? "+" : "") + money(v.gap_pp, 2) + " จุด" }))));
+    wrap.append(det);
+    const d2 = node("details", "dq-details"); d2.append(node("summary", "", "เดือนที่ไม่นับ / รอผล (" + notes.length + ")"));
+    const ul = node("ul", "mlops-limits", ""); (notes.length ? notes : ["ไม่มี"]).forEach(t => ul.append(node("li", "", t))); d2.append(ul);
+    d2.append(small("หลักฐานการบันทึกก่อน Publish: " + rows.map(r => thaiMonth(r.month) + " Shadow " + String(r.shadow_created_at).slice(0, 19).replace("T", " ") + " < Publish " + String(r.actual_published_at).slice(0, 19).replace("T", " ")).join(" · ")));
+    wrap.append(d2);
+    return wrap;
+  }
   function renderMlopsPanel() {
     const f = state.fc, ml = f.ml = f.ml || { byMonth: {}, open: false, tab: "", busy: "", error: "" };
     const det = node("details", "dq-details fc-mlops"); det.open = ml.open; det.id = "mlopsDetails";
     det.append(node("summary", "", "ML Model & Experiment Details · Feature Store · Training Run · Drift"));
-    det.addEventListener("toggle", () => { if (det.open !== ml.open) { ml.open = det.open; if (ml.open) loadMlops(f.month); } });
+    det.addEventListener("toggle", () => { if (det.open !== ml.open) { ml.open = det.open; if (ml.open) { loadMlops(f.month); loadMonitoring(); } else ml.mon = null; } });
     if (!ml.open) return det;
     const slot = ml.byMonth[f.month], data = slot?.data;
     if (!slot || slot.loading) { det.append(small("กำลังอ่าน Artifact จาก Object Storage…")); return det; }
     if (!data) { det.append(notice(slot.error || "ไม่พบข้อมูล", true)); return det; }
+    det.append(renderMonitoringBlock());
     const order = ["official_linked", "historical_evaluation", "experiment_only"];
     const tab = order.includes(ml.tab) ? ml.tab : (order.find(k => data[k]?.latest) || "historical_evaluation");
     const official = f.forecast?.official;

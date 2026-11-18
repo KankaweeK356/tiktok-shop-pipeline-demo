@@ -850,3 +850,14 @@ tr:hover td{background:#fff8f0}.metric-label,.metric-sub,.panel-description{colo
 .fc-stickyactions{margin-top:10px}
 @media (max-width:700px){.fc-topbar{padding:6px 10px}.fc-refline{font-size:12px}.fc-topbar .fc-rgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .fc-vbox{border-top:3px solid #ecd1d5}.fc-side{position:sticky;top:132px;align-self:start}
+
+/* Top summary bar: white card, thick left accent, stronger numbers and badges (white, not red: red means FAIL here) */
+.fc-topbar{background:#fff;border:1px solid #e4c9ce;border-left:6px solid #741D2B;box-shadow:0 6px 18px rgba(116,29,43,.18);padding:10px 16px;gap:8px}
+.fc-refline{padding-bottom:8px;border-bottom:1px solid #f0e2e6;font-size:15px}
+.fc-topbar .fc-result-head strong{font-size:15px;color:#741D2B}
+.fc-topbar .fc-rvalue{font-size:26px;font-weight:800;line-height:1.1;color:#2d1214}
+.fc-topbar .fc-rlabel{font-size:13px;font-weight:600;color:#6b4a4d}
+.fc-topbar .fc-rcell .small{font-size:12px}
+.fc-topbar .status{font-weight:700;padding:3px 10px;border-radius:999px;font-size:12px}
+.fc-topbar .status-fail{background:#c0283d;color:#fff}.fc-topbar .status-pass{background:#1c7a43;color:#fff}.fc-topbar .status-pending{background:#8a5a00;color:#fff}
+@media (max-width:700px){.fc-topbar .fc-rvalue{font-size:20px}}

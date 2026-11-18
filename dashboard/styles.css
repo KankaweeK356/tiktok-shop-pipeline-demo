@@ -835,3 +835,4 @@ tr:hover td{background:#fff8f0}.metric-label,.metric-sub,.panel-description{colo
 .fc-ready.is-ready{padding:6px 12px}
 .fc-cards .bz-kpi{padding:10px 14px}.fc-cards .bz-kpi-value{font-size:22px}
 .fc-stickybar .fc-rvalue{font-size:18px}
+.dq-cascade{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}@media (max-width:700px){.dq-cascade{grid-template-columns:1fr}}

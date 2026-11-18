@@ -1598,7 +1598,7 @@
   function dqForm(issueId) {
     return state.dq.forms[issueId] || (state.dq.forms[issueId] =
       { value: "", reason: "", evidence: "", actor: state.dq.actor || dqStoredActor(), key: null, busy: false, error: "",
-        reasonTouched: false, evidenceTouched: false, showAll: false, detailsOpen: false });
+        reasonTouched: false, evidenceTouched: false, showAll: false, detailsOpen: false, pg: "", color: "", size: "", rawList: false });
   }
   function dqStoredActor() { try { return localStorage.getItem("dq_actor") || ""; } catch (_) { return ""; } }
   function dqStoreActor(name) { try { localStorage.setItem("dq_actor", name); } catch (_) { /* storage may be blocked */ } }
@@ -1802,13 +1802,39 @@
             : Object.entries(r).filter(([k, v]) => k !== idKey && v !== null && v !== "").slice(0, 4).map(([, v]) => v).join(" · "));
           const options = [["", narrowed ? `— เลือกค่าที่ตรงกับราคา (${matching.length} รายการ) —` : `— เลือกค่าจาก ${cand.master_table} (${cand.count} รายการ) —`],
             ...shown.map(r => [String(r[idKey]), label(r)])];
-          card.append(chooseField("ค่าที่ถูกต้อง (จาก Master เท่านั้น)", options, form.value, v => {
-            form.value = v; form.key = null; dqApplySuggestions(issue, form); renderPipeline(); }));
-          if (matching.length > 0) {
-            const toggleAll = node("button", "button button-outline", form.showAll ? "แสดงเฉพาะที่ตรงกับราคา" : `ดูทั้งหมด ${cand.count} รายการ`);
-            toggleAll.type = "button";
-            toggleAll.addEventListener("click", () => { form.showAll = !form.showAll; renderPipeline(); });
-            card.append(toggleAll);
+          const structured = cand.candidates.some(r => r.Color && r.Size && r.Product_Group_ID);
+          if (structured && !form.rawList) {
+            // Pick by what the source document actually shows: product group -> colour -> size. The system never preselects the SKU.
+            const pool = matching.length > 0 && !form.showAll ? matching : cand.candidates;
+            const uniq = (rows, key) => [...new Set(rows.map(r => r[key]).filter(Boolean))].sort();
+            const pickGroup = form.pg && pool.some(r => r.Product_Group_ID === form.pg) ? form.pg : "";
+            const byGroup = pool.filter(r => r.Product_Group_ID === pickGroup);
+            const pickColor = form.color && byGroup.some(r => r.Color === form.color) ? form.color : "";
+            const byColor = byGroup.filter(r => r.Color === pickColor);
+            const pickSize = form.size && byColor.some(r => r.Size === form.size) ? form.size : "";
+            const match = pickSize ? byColor.find(r => r.Size === pickSize) : null;
+            const setValue = () => { const m = (() => { const g = cand.candidates.filter(r => r.Product_Group_ID === form.pg && r.Color === form.color && r.Size === form.size); return g[0]; })();
+              form.value = m ? String(m[idKey]) : ""; form.key = null; dqApplySuggestions(issue, form); renderPipeline(); };
+            const grpName = id => (pool.find(r => r.Product_Group_ID === id)?.SKU_Name || "").split(" ")[0];
+            card.append(box("dq-cascade",
+              chooseField("1 · กลุ่มสินค้า", [["", "— เลือกกลุ่มสินค้า —"], ...uniq(pool, "Product_Group_ID").map(g => [g, g + (grpName(g) ? " · " + grpName(g) : "") + (groups.has(g) ? " ★" : "")])], pickGroup, v => { form.pg = v; form.color = ""; form.size = ""; setValue(); }),
+              chooseField("2 · สี (ตามเอกสารต้นฉบับ)", [["", pickGroup ? "— เลือกสี —" : "— เลือกกลุ่มก่อน —"], ...uniq(byGroup, "Color").map(c => [c, c])], pickColor, v => { form.color = v; form.size = ""; setValue(); }),
+              chooseField("3 · ไซส์ (ตามเอกสารต้นฉบับ)", [["", pickColor ? "— เลือกไซส์ —" : "— เลือกสีก่อน —"], ...uniq(byColor, "Size").map(z => [z, z])], pickSize, v => { form.size = v; setValue(); })));
+            card.append(small(match ? "SKU ที่ได้: " + match[idKey] + " · " + (match.SKU_Name || "") + " (ตรวจกับเอกสารต้นฉบับก่อนยืนยัน)" : "ยังไม่ได้เลือกครบ — ระบบไม่เลือกสี/ไซส์ให้ ต้องดูจากเอกสารต้นฉบับ"));
+            const toRaw = node("button", "button button-outline", "ดูรายการ SKU แบบรายการเดียว"); toRaw.type = "button";
+            toRaw.addEventListener("click", () => { form.rawList = true; renderPipeline(); }); card.append(toRaw);
+            if (matching.length > 0) { const t = node("button", "button button-outline", form.showAll ? "แสดงเฉพาะกลุ่มที่ตรงกับราคา" : "ดูทุกกลุ่มสินค้า"); t.type = "button";
+              t.addEventListener("click", () => { form.showAll = !form.showAll; form.pg = ""; form.color = ""; form.size = ""; form.value = ""; renderPipeline(); }); card.append(t); }
+          } else {
+            card.append(chooseField("ค่าที่ถูกต้อง (จาก Master เท่านั้น)", options, form.value, v => {
+              form.value = v; form.key = null; dqApplySuggestions(issue, form); renderPipeline(); }));
+            if (structured) { const back = node("button", "button button-outline", "เลือกตามกลุ่ม · สี · ไซส์"); back.type = "button"; back.addEventListener("click", () => { form.rawList = false; renderPipeline(); }); card.append(back); }
+            if (matching.length > 0) {
+              const toggleAll = node("button", "button button-outline", form.showAll ? "แสดงเฉพาะที่ตรงกับราคา" : `ดูทั้งหมด ${cand.count} รายการ`);
+              toggleAll.type = "button";
+              toggleAll.addEventListener("click", () => { form.showAll = !form.showAll; renderPipeline(); });
+              card.append(toggleAll);
+            }
           }
         }
         const field = (label, kind, key, placeholder) => {

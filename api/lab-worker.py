@@ -468,6 +468,54 @@ def run_forecast(ticket: str) -> dict:
             "status": "DRAFT", "summary": {"forecast_run_id": forecast_id, "mlops": mlops_summary, **summary}}
 
 
+def run_mlops(ticket: str) -> dict:
+    """ML evidence run (HISTORICAL_EVALUATION / EXPERIMENT_ONLY). Reads published warehouses only; never creates or changes a forecast."""
+    import re
+    claim = read_ticket(ticket)
+    kind, target, cycle = str(claim.get("kind", "")), str(claim.get("target_month", "")), claim.get("cycle")
+    if kind not in ("HISTORICAL_EVALUATION", "EXPERIMENT_ONLY") or not re.fullmatch(r"2026-(0[6-9]|1[0-1])", target):
+        raise ValueError("LAB_MLOPS_REQUEST_INVALID")
+    UUID(claim.get("nonce"))
+    url = os.environ["CLASSROOM_LAB_WRITER_URL"]
+    bucket = os.environ["CLASSROOM_STORAGE_BUCKET"]
+    client = storage()
+    from pipeline import monthly_forecast, neon_control
+    from pipeline.mlops import features as mlops_features, training as mlops_training
+    from pipeline.mlops.store import S3Store
+    cutoff = monthly_forecast.month_add(target, -1)
+    with psycopg.connect(url) as db:
+        state = db.execute("SELECT cycle_number FROM demo_control.dataset_state WHERE dataset_key='classroom'").fetchone()
+        if not state or int(state[0]) != int(cycle):
+            raise RuntimeError("LAB_CYCLE_CHANGED")
+        def published_run(run_id, month):
+            row = db.execute("SELECT result_summary->>'batch' FROM demo_control.pipeline_runs WHERE run_id=%s::uuid AND dataset_key='classroom' "
+                             "AND cycle_number=%s AND status='SUCCEEDED'", (str(run_id), int(cycle))).fetchone()
+            if not row or not row[0] or neon_control.month_for_batch(row[0]) != month:
+                raise RuntimeError(f"LAB_MLOPS_RUN_NOT_PUBLISHED: {month}")
+        published_run(claim["cutoff_run_id"], cutoff)
+        if claim.get("actual_run_id"):
+            published_run(claim["actual_run_id"], target)
+    with tempfile.TemporaryDirectory(prefix="classroom-mlops-") as temp:
+        ws = Path(temp) / "cutoff"; ws.mkdir()
+        restore_run_workspace(client, bucket, str(claim["cutoff_run_id"]), ws)
+        rows = mlops_features.read_published_marketing_months(ws / "er2.duckdb")
+        sha = mlops_features.file_sha256(ws / "er2.duckdb")
+        actual = None
+        if claim.get("actual_run_id"):
+            aws = Path(temp) / "actual"; aws.mkdir()
+            restore_run_workspace(client, bucket, str(claim["actual_run_id"]), aws)
+            later = mlops_features.read_published_marketing_months(aws / "er2.duckdb")
+            actual = {g: sum(r["net_revenue"] for r in later if r["month"] == target and r["group"] == g) for g in mlops_training.GROUPS}
+    bundle = mlops_training.run_experiment(
+        rows, target, kind=kind, actual_by_group=actual,
+        source={"source_run_id": str(claim["cutoff_run_id"]), "warehouse_file_sha256": sha, "published_through": max(r["month"] for r in rows), "rows_read": len(rows)},
+        actual_source={"actual_run_id": str(claim["actual_run_id"])} if actual else None)
+    stored = mlops_training.persist(S3Store(client, bucket), bundle)
+    return {"run_id": str(claim["nonce"]), "batch": neon_control.batch_for_month(target), "stage": "mlops", "status": "RECORDED",
+            "summary": {"mlops": {"status": "RECORDED", **stored}, "kind": kind, "target_month": target,
+                        "drift": bundle["drift"]["overall_status"], "official_selection_changed": False}}
+
+
 class handler(BaseHTTPRequestHandler):
     def reply(self, status: int, value: dict) -> None:
         body = json.dumps(value, ensure_ascii=False, default=str).encode("utf-8")
@@ -491,7 +539,8 @@ class handler(BaseHTTPRequestHandler):
                 ticket = str(request.get("ticket", ""))
                 action = read_ticket(ticket).get("action")
                 result = (run_revalidation(ticket) if action == "revalidate" else
-                          run_forecast(ticket) if action == "forecast" else run_ticket(ticket))
+                          run_forecast(ticket) if action == "forecast" else
+                          run_mlops(ticket) if action == "mlops" else run_ticket(ticket))
             finally:
                 INVOCATION_LOCK.release()
             self.reply(200, {"accepted": True, "status": result.get("status", "SUCCEEDED"),

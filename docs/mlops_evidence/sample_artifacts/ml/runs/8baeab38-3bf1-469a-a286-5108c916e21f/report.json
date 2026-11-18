@@ -1,0 +1,142 @@
+{
+  "data_window": {
+    "cutoff_month": "2026-06",
+    "feature_rows": 30,
+    "feature_version": "mlops-features-1",
+    "first_month": "2026-01",
+    "labelled_rows": 25,
+    "min_origins_required": 3,
+    "months": [
+      "2026-01",
+      "2026-02",
+      "2026-03",
+      "2026-04",
+      "2026-05",
+      "2026-06"
+    ],
+    "valid_origins": 3,
+    "validation_origins": [
+      "2026-03",
+      "2026-04",
+      "2026-05"
+    ]
+  },
+  "evaluation_status": "ELIGIBLE",
+  "forecast_vs_actual": {
+    "actual_shop": null,
+    "label": "ยังไม่มียอดจริงของเดือนเป้าหมาย",
+    "models": {}
+  },
+  "kind": "EXPERIMENT_ONLY",
+  "limitations": [
+    "Walk-forward ที่ใช้เทียบทุกโมเดลมี 3 origin (2026-03, 2026-04, 2026-05) ต้องมีอย่างน้อย 3 จึงจะนับเป็น Eligible",
+    "ข้อมูลจริงมีเพียง 6 เดือน × 5 กลุ่มสินค้า จึงมีแถวฝึกน้อยกว่าจำนวนตัวแปรของ Ridge + Marketing มาก ผลที่ได้ไม่ใช่หลักฐานเรื่องคุณภาพโมเดล",
+    "ผลเปรียบเทียบเป็นผลย้อนหลัง (Validation) ไม่ใช่ความแม่นยำของ Forecast ที่จะเกิดขึ้นจริง",
+    "Ridge + Marketing เป็น Challenger ทดลองเท่านั้น ไม่เข้ากระบวนการเลือก Official ไม่ว่าคะแนนจะเป็นอย่างไร"
+  ],
+  "metric_level": {
+    "group": "ระดับ Product Group: WAPE ของแต่ละกลุ่ม PG01–PG05 = Σ|คาดการณ์ − จริง| ÷ Σจริง ของกลุ่มนั้นทุก origin (ใช้ตรวจว่าโมเดลไม่ทำให้กลุ่มใดแย่ลง)",
+    "shop": "ระดับ Shop: รวมยอดคาดการณ์ของ 5 กลุ่มสินค้าเป็นยอดร้านต่อ origin แล้วเทียบกับยอดจริงของร้านเดือนนั้น WAPE = Σ|ผิดพลาดของร้าน| ÷ Σยอดจริงของร้าน, MAE = ค่าเฉลี่ย |ผิดพลาดของร้าน| ต่อ origin (บาท), Bias = ค่าเฉลี่ย (คาดการณ์ − จริง) ต่อ origin (บวก = คาดสูงเกิน)"
+  },
+  "official_selection": {
+    "decided_by": "monthly_forecast.generate_forecast (ตรรกะเดิม ไม่ถูกแก้)",
+    "method_type": "BASELINE",
+    "ml_origins": 3,
+    "model_name": "trailing_3_month_mean",
+    "reason": "BASELINE trailing_3_month_mean selected: ML challenger does not beat the baseline on the same 3 origins (ML shop WAPE 13.9729% vs 9.8931%)",
+    "ridge_marketing_in_selection": false,
+    "shop_prediction": 94469.09,
+    "validation_status": "OK"
+  },
+  "report_version": "mlops-report-1",
+  "separation_note": "Validation = ผลย้อนหลังก่อนเดือนเป้าหมาย / Forecast vs Actual = เทียบยอดคาดการณ์กับยอดจริงหลังเดือนเป้าหมาย Publish แล้ว สองส่วนนี้ไม่นำมารวมหรือแทนกัน",
+  "target_month": "2026-07",
+  "training_run_id": "8baeab38-3bf1-469a-a286-5108c916e21f",
+  "validation": {
+    "models": [
+      {
+        "final_shop_prediction": 94469.09,
+        "group_wape_pct": {
+          "PG01": 19.2861,
+          "PG02": 10.3017,
+          "PG03": 15.8015,
+          "PG04": 17.4886,
+          "PG05": 6.6859
+        },
+        "label": "Baseline: ค่าเฉลี่ย 3 เดือนล่าสุด",
+        "model": "baseline_trailing_3_month_mean",
+        "origins": 3,
+        "role": "BASELINE_OFFICIAL",
+        "shop_bias": -6988.76,
+        "shop_mae": 9345.96,
+        "shop_wape_pct": 9.8931,
+        "status": "OK",
+        "wape_vs_baseline_pp": 0.0
+      },
+      {
+        "final_shop_prediction": 104725.06,
+        "group_wape_pct": {
+          "PG01": 23.7651,
+          "PG02": 17.806,
+          "PG03": 14.738,
+          "PG04": 18.4274,
+          "PG05": 7.1047
+        },
+        "label": "Baseline: เท่าเดือนก่อน (naive)",
+        "model": "baseline_naive_previous_month",
+        "origins": 3,
+        "role": "BASELINE_REFERENCE",
+        "shop_bias": -4501.7,
+        "shop_mae": 11860.94,
+        "shop_wape_pct": 12.5554,
+        "status": "OK",
+        "wape_vs_baseline_pp": 2.6623
+      },
+      {
+        "final_shop_prediction": 95112.47,
+        "group_wape_pct": {
+          "PG01": 22.3259,
+          "PG02": 16.2039,
+          "PG03": 15.684,
+          "PG04": 16.4883,
+          "PG05": 11.4249
+        },
+        "label": "Ridge เดิม (ML ที่ใช้ในระบบ)",
+        "model": "ridge_base",
+        "origins": 3,
+        "role": "ML_OFFICIAL_CANDIDATE",
+        "shop_bias": -3179.84,
+        "shop_mae": 13200.08,
+        "shop_wape_pct": 13.9729,
+        "status": "OK",
+        "wape_vs_baseline_pp": 4.0798
+      },
+      {
+        "final_shop_prediction": 93606.58,
+        "group_wape_pct": {
+          "PG01": 33.9526,
+          "PG02": 33.207,
+          "PG03": 32.5015,
+          "PG04": 27.7673,
+          "PG05": 30.0452
+        },
+        "label": "Ridge + Marketing (ทดลอง)",
+        "model": "ridge_marketing",
+        "origins": 3,
+        "role": "ML_EXPERIMENTAL",
+        "shop_bias": 9967.04,
+        "shop_mae": 28365.44,
+        "shop_wape_pct": 30.0262,
+        "status": "OK",
+        "wape_vs_baseline_pp": 20.1331
+      }
+    ],
+    "ranking_by_shop_wape": [
+      "baseline_trailing_3_month_mean",
+      "baseline_naive_previous_month",
+      "ridge_base",
+      "ridge_marketing"
+    ],
+    "section": "VALIDATION (walk-forward ย้อนหลัง ใช้เฉพาะข้อมูลถึง cutoff)"
+  }
+}

@@ -3967,6 +3967,7 @@
       if (!state.fc.month || !months.some(m => m.month === state.fc.month))
         state.fc.month = (months.find(m => m.can_generate || m.draft_count || m.official_forecast_id) || months[0]).month;
       const detail = await fcApi("forecast", { query: { month: state.fc.month } });
+      if (state.fc.ml?.open && !state.fc.ml.byMonth[state.fc.month]) loadMlops(state.fc.month);
       if (!fcSeq.isCurrent(token)) return;
       state.fc.forecast = detail.ok ? detail.data : null;
       if (detail.ok && detail.data.official && !state.fc.defaults[state.fc.month]) {
@@ -4177,6 +4178,10 @@
       small("บันทึกเป็นเวอร์ชันต่อท้าย (ผู้ดำเนินการ เวลา สมมติฐาน และสูตรถูกเก็บไว้) แก้ย้อนหลังไม่ได้ · เซิร์ฟเวอร์คำนวณซ้ำก่อนบันทึก"))));
   }
   function renderForecast() {
+    renderForecastCore();
+    if (state.view === "forecast" && state.fc.loaded && state.fc.status) $("#app").append(renderMlopsPanel());
+  }
+  function renderForecastCore() {
     const root = $("#app"); root.replaceChildren(); state.rows = [];
     $("#headerMode").textContent = "Forecast · Official Sealed"; $("#footerStatus").textContent = "Forecast & Planning · ข้อมูลจาก Neon demo_ml";
     const f = state.fc, st = f.status;
@@ -4246,6 +4251,116 @@
     root.append(box("fc-stickyactions", saved, box("h-stack", skip, review)));
     slot.append(fcResultNode());
     if (f.simSeq === undefined || !f.sim) fcScheduleCalc(0);
+  }
+  // ---- ML Model & Experiment Details (MADT8102 Ch.07) -------------------------------------------------------------
+  // Read-only view of real Feature Store / Training Run / Drift artifacts. Official Forecast, Historical Evaluation and Experiment Only are
+  // kept apart. Nothing here writes a forecast, selects a model or retrains; every number comes from the stored run.
+  const ML_KIND = { official_linked: ["OFFICIAL_LINKED", "Official Forecast"], historical_evaluation: ["HISTORICAL_EVALUATION", "Historical Evaluation"], experiment_only: ["EXPERIMENT_ONLY", "Experiment Only"] };
+  const ML_ROLE = { BASELINE_OFFICIAL: "Baseline (Official)", BASELINE_REFERENCE: "Baseline (อ้างอิง)", ML_OFFICIAL_CANDIDATE: "ML (ผู้เข้าเกณฑ์ Official)", ML_EXPERIMENTAL: "ML ทดลอง (ไม่เข้า Official)" };
+  const DRIFT_TH = { STABLE: "คงที่", WATCH: "เฝ้าดู", ALERT: "แจ้งเตือน", INSUFFICIENT_EVIDENCE: "ข้อมูลยังไม่พอ (Insufficient Evidence)" };
+  async function loadMlops(month, force = false) {
+    const ml = state.fc.ml = state.fc.ml || { byMonth: {}, open: false, tab: "", busy: "", error: "" };
+    if (!force && ml.byMonth[month]?.data) return;
+    ml.byMonth[month] = { loading: true, data: null, error: "" }; renderForecast();
+    const r = await fcApi("mlops", { query: { month } });
+    ml.byMonth[month] = { loading: false, data: r.ok ? r.data : null, error: r.ok ? "" : (r.data.error || "โหลด ML Artifact ไม่สำเร็จ") };
+    if (state.view === "forecast") renderForecast();
+  }
+  async function startMlopsRun(kind) {
+    const f = state.fc, ml = f.ml; if (ml.busy) return;
+    if (!f.actor.trim()) { ml.error = "ระบุชื่อผู้ดำเนินการ"; renderForecast(); return; }
+    ml.busy = kind; ml.error = ""; renderForecast();
+    try {
+      const t = await fcApi("mlops_run", { method: "POST", body: { month: f.month, kind, actor: f.actor.trim() } });
+      if (!t.ok) throw new Error(t.data.error || "สั่งรันไม่สำเร็จ");
+      const w = await fetch("/api/lab-worker.py", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ticket: t.data.ticket }) });
+      const out = await w.json();
+      if (!w.ok || out.status !== "RECORDED") throw new Error(out.error || out.error_code || "Worker บันทึก Training Run ไม่สำเร็จ");
+    } catch (error) { ml.error = error.message; }
+    ml.busy = ""; await loadMlops(f.month, true);
+  }
+  function mlJourney(data, run, official) {
+    const rp = run?.report, fs = run?.feature_set, dr = run?.drift;
+    const steps = [
+      ["Published ER2", run ? "ข้อมูลถึง " + thaiMonth(rp.data_window.cutoff_month) + " · " + rp.data_window.months.length + " เดือน" : "—", Boolean(run)],
+      ["Feature Store", fs ? fs.rows + " แถว · " + fs.feature_version : "—", Boolean(fs)],
+      ["Training", run ? "4 โมเดล · Run " + String(run.training_run_id).slice(0, 8) : "—", Boolean(run)],
+      ["Validation", rp ? rp.data_window.valid_origins + " origin · " + rp.evaluation_status.replace(/_/g, " ").toLowerCase() : "—", Boolean(rp)],
+      ["Model Selection", rp ? (rp.official_selection.method_type === "ML" ? "ML" : "Baseline") + " (ตรรกะเดิม)" : "—", Boolean(rp)],
+      ["Forecast", official ? "Official SEALED" : "ยังไม่ Seal", Boolean(official)],
+      ["Monitoring", dr ? DRIFT_TH[dr.overall_status] || dr.overall_status : "—", Boolean(dr)]];
+    return box("mlops-journey", ...steps.map(([t, s, on], i) => box("mlops-step" + (on ? " on" : ""), node("span", "mlops-step-n", String(i + 1)), node("strong", "", t), small(s))));
+  }
+  function mlRunBody(run, kindKey, official) {
+    const rp = run.report, dw = rp.data_window, wrap = box("v-stack mlops-run");
+    const experimental = kindKey === "experiment_only";
+    wrap.append(notice(experimental ? "Experiment Only: ผลทดลองเพื่อเรียนรู้ MLOps ไม่ใช่ Official Forecast และไม่ถูก Seal ไม่ว่าคะแนนจะเป็นอย่างไร" :
+      kindKey === "historical_evaluation" ? "Historical Evaluation: ประเมินย้อนหลังด้วยข้อมูลถึง " + thaiMonth(dw.cutoff_month) + " เท่านั้น ไม่ได้สร้างหรือเปลี่ยน Forecast ที่ Seal" :
+        "Official-linked: หลักฐานการฝึกที่ผูกกับ Forecast ID ของ Official Forecast เดือนนี้", experimental));
+    wrap.append(box("h-stack mlops-badges", node("span", "status " + (rp.evaluation_status === "ELIGIBLE" ? "status-pass" : "status-pending"), rp.evaluation_status === "ELIGIBLE" ? "Eligible" : "Experimental — Insufficient Validation"),
+      node("span", "status status-pending", ML_KIND[kindKey][1]), small("Run " + run.training_run_id + " · code " + (run.code_ref || "—") + " · " + String(run.created_at).slice(0, 19).replace("T", " "))));
+    wrap.append(small("ช่วงข้อมูล: " + dw.first_month + " → " + dw.cutoff_month + " · Walk-forward origins ที่ใช้เทียบทุกโมเดล " + dw.valid_origins + " (" + (dw.validation_origins.join(", ") || "—") + ") · เกณฑ์ขั้นต่ำ " + dw.min_origins_required));
+    wrap.append(box("mlops-level", node("strong", "", "ระดับการคำนวณ Metrics"), small(rp.metric_level.shop), small(rp.metric_level.group)));
+    const rows = rp.validation.models.map(m => ({ m: m.label, role: ML_ROLE[m.role] || m.role, o: m.origins, w: m.shop_wape_pct === null ? "ไม่ได้รัน" : pct(m.shop_wape_pct, 2), mae: money(m.shop_mae, 0), b: m.shop_bias === null ? "—" : (m.shop_bias >= 0 ? "+" : "") + money(m.shop_bias, 0),
+      d: m.wape_vs_baseline_pp === null ? "—" : (m.wape_vs_baseline_pp >= 0 ? "+" : "") + money(m.wape_vs_baseline_pp, 2) + " pp", p: money(m.final_shop_prediction, 2) }));
+    wrap.append(node("strong", "", "① Validation (ย้อนหลัง · ระดับ Shop)"),
+      dataTable([["m", "โมเดล"], ["role", "บทบาท"], ["o", "origins"], ["w", "Shop WAPE"], ["mae", "Shop MAE ฿"], ["b", "Bias ฿"], ["d", "ต่างจาก Baseline"], ["p", "คาดการณ์เดือนเป้าหมาย ฿"]], rows));
+    const det = node("details", "dq-details"); det.append(node("summary", "", "WAPE รายกลุ่มสินค้า (ระดับ Product Group)"));
+    det.append(dataTable([["m", "โมเดล"], ...groups.map(g => [g, g])], rp.validation.models.map(m => ({ m: m.label, ...Object.fromEntries(groups.map(g => [g, (m.group_wape_pct || {})[g] == null ? "—" : pct(m.group_wape_pct[g], 2)])) }))));
+    wrap.append(det);
+    const o = rp.official_selection;
+    wrap.append(node("strong", "", "② การเลือก Official Model"), box("mlops-select", node("span", "", "ตรรกะเดิม (ไม่ถูกแก้) เลือก "), node("strong", "", o.method_type + " · " + o.model_name), node("span", "", " ยอดร้าน ฿" + money(o.shop_prediction, 2)), small(o.reason),
+      small("Ridge + Marketing ไม่อยู่ในการเลือก Official · ML origins ที่ตรรกะเดิมนับ " + o.ml_origins)));
+    const fa = rp.forecast_vs_actual;
+    wrap.append(node("strong", "", "③ Forecast vs Actual (แยกจาก Validation)"));
+    if (fa.actual_shop === null) wrap.append(small(fa.label));
+    else wrap.append(small(fa.label + " · ยอดจริงร้าน ฿" + money(fa.actual_shop, 2)), dataTable([["m", "โมเดล"], ["p", "คาดการณ์ ฿"], ["a", "APE ร้าน"]], Object.values(fa.models).filter(Boolean).map(v => ({ m: v.label, p: money(v.shop_prediction, 2), a: pct(v.shop_ape_pct, 2) }))));
+    wrap.append(small(rp.separation_note));
+    const dr = run.drift;
+    if (dr) {
+      const feats = Object.entries(dr.input_drift.features || {}).map(([k, v]) => ({ k, s: DRIFT_TH[v.status] || v.status, z: v.mean_shift_z === undefined ? "—" : money(v.mean_shift_z, 2), out: v.share_outside_reference_range === undefined ? "—" : pct(100 * v.share_outside_reference_range, 0) }));
+      wrap.append(node("strong", "", "④ Drift Monitoring (แจ้งเตือนและแนะนำเท่านั้น)"), box("mlops-drift mlops-drift-" + dr.overall_status.toLowerCase(), node("strong", "", DRIFT_TH[dr.overall_status] || dr.overall_status), small(dr.message),
+        small("Input drift: " + dr.input_drift.reason + " · Performance drift: " + (dr.performance_drift.status === "INSUFFICIENT_EVIDENCE" ? "Insufficient Evidence — " + dr.performance_drift.reason : DRIFT_TH[dr.performance_drift.status])),
+        small("ไม่มี Retrain อัตโนมัติ และไม่แก้ Forecast ที่ Seal แล้ว")),
+        feats.length ? dataTable([["k", "Feature"], ["s", "สถานะ"], ["z", "ค่าเฉลี่ยเลื่อน (z)"], ["out", "นอกช่วงฝึก"]], feats) : null);
+    }
+    const fsx = run.feature_set, art = [];
+    if (fsx) { wrap.append(node("strong", "", "⑤ Artifact ที่เก็บใน Object Storage"), small("Feature Set " + fsx.feature_version + " · " + fsx.rows + " แถว (labelled " + fsx.labelled_rows + " + inference " + fsx.inference_rows + ") · point-in-time: " + (fsx.point_in_time?.no_future_rows ? "ไม่มีข้อมูลอนาคต" : "ตรวจไม่ผ่าน") + " · input sha256 " + String(fsx.input_sha256).slice(0, 12) + "…")); fsx.files.forEach(p => art.push(p)); }
+    Object.values(run.artifacts || {}).forEach(p => art.push(p));
+    if (art.length) { const d2 = node("details", "dq-details"); d2.append(node("summary", "", "รายการไฟล์ (" + art.length + ") — เขียนครั้งเดียว ไม่เขียนทับ")); d2.append(node("pre", "mlops-paths", art.join("\n"))); wrap.append(d2); }
+    wrap.append(node("strong", "", "ข้อจำกัด"), node("ul", "mlops-limits", "")); const ul = wrap.lastChild; rp.limitations.forEach(x => ul.append(node("li", "", x)));
+    return wrap;
+  }
+  function renderMlopsPanel() {
+    const f = state.fc, ml = f.ml = f.ml || { byMonth: {}, open: false, tab: "", busy: "", error: "" };
+    const det = node("details", "dq-details fc-mlops"); det.open = ml.open; det.id = "mlopsDetails";
+    det.append(node("summary", "", "ML Model & Experiment Details · Feature Store · Training Run · Drift"));
+    det.addEventListener("toggle", () => { if (det.open !== ml.open) { ml.open = det.open; if (ml.open) loadMlops(f.month); } });
+    if (!ml.open) return det;
+    const slot = ml.byMonth[f.month], data = slot?.data;
+    if (!slot || slot.loading) { det.append(small("กำลังอ่าน Artifact จาก Object Storage…")); return det; }
+    if (!data) { det.append(notice(slot.error || "ไม่พบข้อมูล", true)); return det; }
+    const order = ["official_linked", "historical_evaluation", "experiment_only"];
+    const tab = order.includes(ml.tab) ? ml.tab : (order.find(k => data[k]?.latest) || "historical_evaluation");
+    const official = f.forecast?.official;
+    const seg = box("mlops-tabs"); order.forEach(k => { const b = node("button", "mlops-tab" + (tab === k ? " on" : ""), ML_KIND[k][1] + (data[k]?.count ? " (" + data[k].count + ")" : "")); b.type = "button"; b.addEventListener("click", () => { ml.tab = k; renderForecast(); }); seg.append(b); });
+    det.append(small("ใช้ข้อมูลจาก Artifact และ Training Run ที่บันทึกจริง · เดือนเป้าหมาย " + thaiMonth(f.month) + " · Official Forecast, Historical Evaluation และ Experiment Only แยกกันชัดเจน"), seg);
+    const cur = data[tab];
+    if (tab === "official_linked") {
+      det.append(box("mlops-official", node("strong", "", "Official Forecast " + thaiMonth(f.month)), official ? small("SEALED · " + official.method_type + " (" + official.model_name + ") ยอดร้าน ฿" + money(official.shop_forecast, 2) + " · Seal เมื่อ " + official.sealed_at) : small("ยังไม่มี Official Forecast ที่ Seal ของเดือนนี้")));
+    }
+    if (cur?.latest) { det.append(mlJourney(data, cur.latest, tab === "official_linked" ? official : tab === "historical_evaluation" ? official : null), mlRunBody(cur.latest, tab, official)); }
+    else {
+      det.append(mlJourney(data, null, official));
+      const msg = tab === "official_linked" ? "ไม่มี Training Run ที่ผูกกับ Official Forecast เดือนนี้ (Forecast ที่ Seal ก่อนเปิดใช้ MLOps จะไม่มี) ดู Historical Evaluation แทน" :
+        tab === "historical_evaluation" ? "ยังไม่มี Historical Evaluation ของเดือนนี้" : "ยังไม่มีการทดลอง (Experiment Only) ของเดือนนี้";
+      det.append(notice(msg));
+      if (tab !== "official_linked") { const kind = tab === "historical_evaluation" ? "HISTORICAL_EVALUATION" : "EXPERIMENT_ONLY";
+        const b = node("button", "button button-outline", ml.busy === kind ? "กำลังฝึกและประเมิน…" : (tab === "historical_evaluation" ? "สร้าง Historical Evaluation" : "สร้างการทดลอง (Experiment Only)")); b.type = "button"; b.disabled = Boolean(ml.busy);
+        b.addEventListener("click", () => startMlopsRun(kind)); det.append(b, small("เขียนเฉพาะไฟล์ใหม่ใน Object Storage (ไม่แก้ Forecast, ER1/ER2 หรือฐานข้อมูล)")); }
+    }
+    if (ml.error) det.append(notice(ml.error, true));
+    return det;
   }
   async function loadEvaluationView() {
     const r = await fcApi("evaluations");

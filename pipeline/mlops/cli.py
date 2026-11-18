@@ -23,12 +23,13 @@ def run(er2: Path, target_month: str, kind: str, source_run_id: str | None, out:
     rows = ft.read_published_marketing_months(er2)
     source = {"source_run_id": source_run_id or "local", "warehouse_file": er2.name, "warehouse_file_sha256": ft.file_sha256(er2),
               "published_through": max(r["month"] for r in rows), "rows_read": len(rows)}
-    actual = None
+    actual, actual_source = None, None
     if actual_er2 is not None:
         later = ft.read_published_marketing_months(actual_er2)
         actual = {g: sum(r["net_revenue"] for r in later if r["month"] == target_month and r["group"] == g) for g in GROUPS}
-        source["actual_warehouse_file_sha256"] = ft.file_sha256(actual_er2)
-    bundle = tr.run_experiment(rows, target_month, kind=kind, source=source, actual_by_group=actual, official_forecast_id=official_forecast_id)
+        actual_source = {"actual_warehouse_file": actual_er2.name, "actual_warehouse_file_sha256": ft.file_sha256(actual_er2)}
+    bundle = tr.run_experiment(rows, target_month, kind=kind, source=source, actual_by_group=actual, official_forecast_id=official_forecast_id,
+                              actual_source=actual_source)
     result = tr.persist(LocalDirStore(out), bundle, prefix=prefix)
     return {**result, "out": str(out)}
 

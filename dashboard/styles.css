@@ -861,3 +861,20 @@ tr:hover td{background:#fff8f0}.metric-label,.metric-sub,.panel-description{colo
 .fc-topbar .status{font-weight:700;padding:3px 10px;border-radius:999px;font-size:12px}
 .fc-topbar .status-fail{background:#c0283d;color:#fff}.fc-topbar .status-pass{background:#1c7a43;color:#fff}.fc-topbar .status-pending{background:#8a5a00;color:#fff}
 @media (max-width:700px){.fc-topbar .fc-rvalue{font-size:20px}}
+
+/* ML Model & Experiment Details */
+.fc-mlops { margin-top: 16px; border: 1px solid var(--line, #f0e2e6); border-radius: 12px; padding: 4px 16px 12px; background: #fff; }
+.fc-mlops > summary { font-size: 15px; }
+.mlops-journey { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; margin: 10px 0; }
+.mlops-step { border: 1px solid #f0e2e6; border-radius: 10px; padding: 8px; background: #fafafa; opacity: .7; display: flex; flex-direction: column; gap: 2px; font-size: 12px; }
+.mlops-step.on { background: #fff8f0; border-color: #741D2B33; opacity: 1; }
+.mlops-step-n { width: 18px; height: 18px; border-radius: 50%; background: #741D2B; color: #fff; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; }
+.mlops-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
+.mlops-tab { border: 1px solid #741D2B55; background: #fff; color: #741D2B; border-radius: 999px; padding: 6px 14px; cursor: pointer; font: inherit; }
+.mlops-tab.on { background: #741D2B; color: #fff; }
+.mlops-level, .mlops-select, .mlops-official { border-left: 3px solid #741D2B; padding: 4px 10px; background: #fff8f0; border-radius: 4px; }
+.mlops-drift { border-radius: 8px; padding: 8px 12px; border: 1px solid #e5d5d8; }
+.mlops-drift-alert { background: #fdecea; } .mlops-drift-watch { background: #fff6e0; } .mlops-drift-stable { background: #eaf6ee; } .mlops-drift-insufficient_evidence { background: #f1f1f1; }
+.mlops-paths { font-size: 11px; white-space: pre-wrap; word-break: break-all; background: #fafafa; padding: 8px; border-radius: 6px; max-height: 240px; overflow: auto; }
+.mlops-limits { margin: 4px 0 0 18px; font-size: 13px; }
+@media (max-width: 760px) { .mlops-journey { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

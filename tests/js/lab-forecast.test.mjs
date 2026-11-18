@@ -82,3 +82,65 @@ test("S-02: Jan-May published opens June only (the month after the last publishe
   const gap = await call(fakeSql([0, 1, 3, 4, 5]), "GET", { fc: "status" });               // Mar missing -> only 2 consecutive months
   assert.equal(gap.json.readiness.published_months, 2); assert.equal(gap.json.readiness.ready, false);
 });
+
+// ---- MLOps evidence API (reads REAL artifacts generated from the Final source; no network) ----------------------------
+import fs from "node:fs";
+import path from "node:path";
+const ML_ROOT = path.resolve("docs/mlops_evidence/sample_artifacts");
+const fsStorage = {
+  list: async prefix => { const base = path.join(ML_ROOT, prefix.replace(/^vercel-lab\//, "")); if (!fs.existsSync(base)) return [];
+    const out = []; const walk = d => fs.readdirSync(d, { withFileTypes: true }).forEach(e => e.isDirectory() ? walk(path.join(d, e.name)) : out.push("vercel-lab/" + path.relative(ML_ROOT, path.join(d, e.name)).replace(/\\/g, "/"))); walk(base); return out; },
+  getJson: async key => { const f = path.join(ML_ROOT, key.replace(/^vercel-lab\//, "")); return fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, "utf8")) : null; },
+};
+const callWith = (sql, deps, method, query, body) => new Promise(resolve => {
+  let status = 200, json = null;
+  const res = { setHeader() {}, status(c) { status = c; return this; }, json(v) { json = v; resolve({ status, json }); return this; } };
+  process.env.CLASSROOM_LAB_ADMIN_KEY = process.env.CLASSROOM_LAB_ADMIN_KEY || "test-key";
+  labForecast({ method, query, body, headers: { host: "app.test", origin: "https://app.test" } }, res, { sql, ...deps });
+});
+
+test("MLOps: June evidence is a Historical Evaluation (insufficient validation), kept apart from official and experiment runs", async () => {
+  const r = await callWith(fakeSql([0, 1, 2, 3, 4]), { mlopsStorage: fsStorage }, "GET", { fc: "mlops", month: "2026-06" });
+  assert.equal(r.status, 200);
+  assert.equal(r.json.official_linked.latest, null);                              // June was sealed before MLOps existed: nothing is faked
+  assert.equal(r.json.experiment_only.latest, null);
+  const h = r.json.historical_evaluation.latest;
+  assert.equal(h.kind, "HISTORICAL_EVALUATION"); assert.equal(h.report.evaluation_status, "EXPERIMENTAL_INSUFFICIENT_VALIDATION");
+  assert.equal(h.report.data_window.valid_origins, 2); assert.equal(h.report.official_selection.method_type, "BASELINE");
+  assert.equal(h.report.official_selection.shop_prediction, 89967.41);             // equals the sealed June official forecast
+  assert.equal(h.drift.auto_retrain, false); assert.equal(h.drift.performance_drift.status, "INSUFFICIENT_EVIDENCE");
+  assert.ok(h.feature_set.files.some(f => f.endsWith("features.parquet")) && h.feature_set.point_in_time.no_future_rows);
+  assert.deepEqual(Object.keys(h.artifacts).sort(), ["baseline_naive_previous_month", "baseline_trailing_3_month_mean", "ridge_base", "ridge_marketing"]);
+});
+
+test("MLOps: July is an Experiment Only run and is never presented as an official forecast", async () => {
+  const r = await callWith(fakeSql([0, 1, 2, 3, 4, 5]), { mlopsStorage: fsStorage }, "GET", { fc: "mlops", month: "2026-07" });
+  assert.equal(r.status, 200);
+  const e = r.json.experiment_only.latest;
+  assert.equal(e.kind, "EXPERIMENT_ONLY"); assert.equal(e.report.evaluation_status, "ELIGIBLE");
+  assert.equal(r.json.official_linked.latest, null); assert.equal(r.json.historical_evaluation.latest, null);
+  assert.equal(e.status.official_selection_changed, false);
+  assert.equal((await callWith(fakeSql([]), { mlopsStorage: fsStorage }, "GET", { fc: "mlops", month: "2026-13" })).status, 400);
+});
+
+test("MLOps: a storage outage returns a plain error and never breaks the forecast API", async () => {
+  const broken = { list: async () => { throw new Error("boom"); }, getJson: async () => null };
+  const bad = await callWith(fakeSql([0, 1, 2, 3, 4]), { mlopsStorage: broken }, "GET", { fc: "mlops", month: "2026-06" });
+  assert.equal(bad.status, 503); assert.equal(bad.json.error_code, "MLOPS_STORAGE_UNAVAILABLE");
+  const st = await callWith(fakeSql([0, 1, 2, 3, 4]), { mlopsStorage: broken }, "GET", { fc: "status" });
+  assert.equal(st.status, 200); assert.equal(st.json.readiness.ready, true);
+});
+
+test("MLOps: tickets can only be non-official kinds, after the gate, with a published cutoff, and require an actor", async () => {
+  const sql = fakeSql([0, 1, 2, 3, 4]);
+  const post = body => callWith(sql, {}, "POST", { fc: "mlops_run" }, body);
+  assert.equal((await post({ month: "2026-06", kind: "OFFICIAL_LINKED", actor: "a" })).status, 400);
+  assert.equal((await post({ month: "2026-06", kind: "EXPERIMENT_ONLY" })).status, 400);
+  assert.equal((await post({ month: "2026-05", kind: "HISTORICAL_EVALUATION", actor: "a" })).status, 409);
+  const gap = await post({ month: "2026-08", kind: "EXPERIMENT_ONLY", actor: "a" });
+  assert.equal(gap.status, 409); assert.equal(gap.json.error_code, "CUTOFF_NOT_PUBLISHED");
+  const ok = await post({ month: "2026-06", kind: "HISTORICAL_EVALUATION", actor: "a" });
+  assert.equal(ok.status, 202); assert.ok(ok.json.ticket); assert.equal(ok.json.post_hoc_actual, false);   // June not published yet => no post-hoc actual
+  const claim = JSON.parse(Buffer.from(ok.json.ticket.split(".")[0], "base64url").toString());
+  assert.equal(claim.action, "mlops"); assert.equal(claim.kind, "HISTORICAL_EVALUATION");
+});

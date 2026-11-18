@@ -164,3 +164,112 @@ def test_s3_store_works_with_a_minimal_client_and_never_overwrites():
     assert put_new(store, "k", b"1") == "EXISTS_IDENTICAL"
     with pytest.raises(StoreError):
         put_new(store, "k", b"2")
+
+
+# ------------------------------------------------------------------ comparison report + drift (steps 3-4)
+from pipeline.mlops import drift as dr  # noqa: E402
+from pipeline.mlops import report as rp  # noqa: E402
+
+
+def bundle_for(n_months, **kw):
+    rows = make_rows(n_months)
+    target = mf.month_add(rows[-1]["month"], 1)
+    return rows, tr.run_experiment(rows, target, kind="HISTORICAL_EVALUATION", source=SRC, **kw)
+
+
+def test_report_states_levels_origins_selection_and_separates_validation_from_actual():
+    rows, b = bundle_for(5)
+    report = b["report"]
+    assert "ระดับ Shop" in report["metric_level"]["shop"] and "Product Group" in report["metric_level"]["group"]
+    dw = report["data_window"]
+    assert dw["valid_origins"] == 2 and dw["min_origins_required"] == 3 and report["evaluation_status"] == "EXPERIMENTAL_INSUFFICIENT_VALIDATION"
+    names = {m["model"]: m for m in report["validation"]["models"]}
+    assert set(names) == set(D.MODELS) and all(m["origins"] == 2 for m in names.values())          # identical origins for every model
+    assert names["ridge_marketing"]["role"] == "ML_EXPERIMENTAL" and names["baseline_trailing_3_month_mean"]["wape_vs_baseline_pp"] == 0
+    assert report["official_selection"]["ridge_marketing_in_selection"] is False
+    assert report["forecast_vs_actual"]["actual_shop"] is None                                       # no actual was supplied => nothing mixed in
+    assert any("Insufficient" in x for x in report["limitations"])
+    md = rp.render_markdown(report)
+    assert "Validation" in md and "Forecast vs Actual" in md and "WAPE" in md
+
+
+def test_report_post_hoc_actual_is_a_separate_section():
+    rows = make_rows(6)
+    target = "2026-07"
+    actual = {g: 20000.0 + 100 * i for i, g in enumerate(G)}
+    b = tr.run_experiment(rows[:25], "2026-06", kind="HISTORICAL_EVALUATION", source=SRC, actual_by_group={g: 20000.0 for g in G}, actual_source={"actual_run_id": "r"})
+    fa = b["report"]["forecast_vs_actual"]
+    assert fa["actual_shop"] == 100000.0 and set(fa["models"]) == set(D.MODELS)
+    assert b["evaluation"]["post_hoc_evaluation"]["actual_source"] == {"actual_run_id": "r"}
+    assert "actual_run_id" not in b["feature_meta"]["source"]                                         # the actual is never part of the feature set identity
+    assert b["drift"]["performance_drift"]["status"] == "INSUFFICIENT_EVIDENCE" and b["drift"]["performance_drift"]["realised_months"] == 1
+
+
+def test_drift_insufficient_evidence_instead_of_concluding_drift():
+    rows = make_rows(4)                                                    # only 3 labelled origins < MIN_REFERENCE_ORIGINS
+    b = tr.run_experiment(rows, "2026-05", kind="EXPERIMENT_ONLY", source=SRC)
+    d = b["drift"]
+    assert d["overall_status"] == "INSUFFICIENT_EVIDENCE" and d["recommendation"] == "COLLECT_MORE_DATA"
+    assert d["input_drift"]["status"] == "INSUFFICIENT_EVIDENCE" and d["input_drift"]["features"] == {}
+    assert d["auto_retrain"] is False and d["sealed_forecast_modified"] is False and d["mode"] == "ALERT_AND_RECOMMEND_ONLY"
+
+
+def test_drift_alert_recommends_review_only_and_changes_nothing():
+    rows = make_rows(6)
+    shocked = [dict(r, ads_cost=r["ads_cost"] * 4) if r["month"] == "2026-06" else r for r in rows]    # last month's ad ratio jumps 4x
+    target = "2026-07"
+    before = mf.generate_forecast([{"month": r["month"], "group": r["group"], "net_revenue": r["net_revenue"]} for r in shocked], target)
+    b = tr.run_experiment(shocked, target, kind="EXPERIMENT_ONLY", source=SRC)
+    d = b["drift"]
+    assert d["input_drift"]["features"]["ads_to_gross_lag1"]["status"] == "ALERT"
+    assert d["overall_status"] == "ALERT" and d["recommendation"] == "RECOMMEND_RETRAIN_REVIEW" and d["auto_retrain"] is False
+    after = mf.generate_forecast([{"month": r["month"], "group": r["group"], "net_revenue": r["net_revenue"]} for r in shocked], target)
+    assert before["predictions"] == after["predictions"]                                           # monitoring never alters a forecast
+    calm = tr.run_experiment(make_rows(6), target, kind="EXPERIMENT_ONLY", source=SRC)["drift"]
+    assert calm["input_drift"]["features"]["ads_to_gross_lag1"]["status"] != "ALERT"
+
+
+def test_performance_drift_needs_three_realised_months():
+    rows = make_rows(6)
+    two = dr.compute_drift(tr.ft.build_feature_table(rows, "2026-07")["table"], validation_wape_pct=8.0, realised=[{"month": "2026-05", "ape_pct": 30.0}, {"month": "2026-06", "ape_pct": 31.0}])
+    assert two["performance_drift"]["status"] == "INSUFFICIENT_EVIDENCE"
+    three = dr.compute_drift(tr.ft.build_feature_table(rows, "2026-07")["table"], validation_wape_pct=8.0, realised=[{"month": m, "ape_pct": 30.0} for m in ("2026-04", "2026-05", "2026-06")])
+    assert three["performance_drift"]["status"] == "ALERT" and three["recommendation"] == "RECOMMEND_RETRAIN_REVIEW"
+
+
+def test_report_and_drift_are_persisted_write_once(tmp_path):
+    rows, b = bundle_for(5)
+    store = LocalDirStore(tmp_path)
+    out = tr.persist(store, b)
+    for name in ("report", "drift"):
+        assert store.exists(f"{out['run_path']}/{name}.json")
+    with pytest.raises(StoreError):
+        tr.put_new(store, f"{out['run_path']}/report.json", b"{}")
+
+
+# ------------------------------------------------------------------ UI / API contracts (step 5)
+from pathlib import Path  # noqa: E402
+
+_ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_ml_panel_is_collapsible_read_only_and_has_no_hardcoded_results():
+    app = (_ROOT / "dashboard" / "app.js").read_text(encoding="utf-8")
+    block = app[app.index("// ---- ML Model & Experiment Details"):app.index("async function loadEvaluationView")]
+    assert 'node("details", "dq-details fc-mlops")' in block and "det.open = ml.open" in block          # collapsible, closed by default
+    for label in ("Official Forecast", "Historical Evaluation", "Experiment Only", "Published ER2", "Feature Store", "Model Selection", "Monitoring"):
+        assert label in block
+    assert 'fcApi("mlops"' in block and 'fcApi("mlops_run"' in block
+    assert '"seal"' not in block and "sealForecast" not in block and "seal_plan" not in block           # the panel can never seal or select
+    import re
+    assert not re.search(r"\b\d{2,3},\d{3}\.\d{2}\b", block) and not re.search(r"\b89967|104725|7\.43\b", block)   # no static result numbers
+
+
+def test_mlops_read_api_never_writes_and_ticket_cannot_be_official():
+    lib = (_ROOT / "lib" / "lab-mlops.js").read_text(encoding="utf-8")
+    assert "PutObject" not in lib and "DeleteObject" not in lib and "sql" not in lib.lower().replace("lab-mlops", "")
+    fc = (_ROOT / "lib" / "lab-forecast.js").read_text(encoding="utf-8")
+    assert '["HISTORICAL_EVALUATION", "EXPERIMENT_ONLY"].includes(body.kind)' in fc
+    worker = (_ROOT / "api" / "lab-worker.py").read_text(encoding="utf-8")
+    seg = worker[worker.index("def run_mlops"):worker.index("class handler")]
+    assert "save_draft_forecast" not in seg and "INSERT" not in seg.upper() and "UPDATE " not in seg.upper() and "DELETE" not in seg.upper()

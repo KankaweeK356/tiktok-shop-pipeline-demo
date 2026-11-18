@@ -408,7 +408,7 @@
     "ridge_base",
     "ridge_marketing"
   ],
-  "training_run_id": "f9ec05e2-5b36-4d58-8be1-3e222051867a",
+  "training_run_id": "691affc3-6fc1-4b84-bd52-ed5c36e583c5",
   "walk_forward": {
     "identical_origins_for_all_models": true,
     "min_origins_required": 3,

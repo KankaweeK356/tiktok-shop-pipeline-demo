@@ -1,0 +1,116 @@
+{
+  "auto_retrain": false,
+  "current": {
+    "origin": "2026-06",
+    "rows": 5
+  },
+  "drift_version": "mlops-drift-1",
+  "input_drift": {
+    "features": {
+      "ads_to_gross_lag1": {
+        "current_mean": 0.17828,
+        "current_n": 5,
+        "mean_shift_z": -0.8199,
+        "reference_mean": 0.228369,
+        "reference_n": 25,
+        "reference_std": 0.061091,
+        "share_outside_reference_range": 0.0,
+        "status": "STABLE"
+      },
+      "affiliate_to_gross_lag1": {
+        "current_mean": 0.059987,
+        "current_n": 5,
+        "mean_shift_z": -0.0348,
+        "reference_mean": 0.06047,
+        "reference_n": 25,
+        "reference_std": 0.013863,
+        "share_outside_reference_range": 0.0,
+        "status": "STABLE"
+      },
+      "campaign_discount_to_gross_lag1": {
+        "current_mean": 0.064349,
+        "current_n": 5,
+        "mean_shift_z": -0.085,
+        "reference_mean": 0.065334,
+        "reference_n": 25,
+        "reference_std": 0.011591,
+        "share_outside_reference_range": 0.0,
+        "status": "STABLE"
+      },
+      "lag1_group_net": {
+        "current_mean": 20945.012,
+        "current_n": 5,
+        "mean_shift_z": 0.8457,
+        "reference_mean": 17361.2256,
+        "reference_n": 25,
+        "reference_std": 4237.636863,
+        "share_outside_reference_range": 0.2,
+        "status": "WATCH"
+      },
+      "net_trend_2m_pct": {
+        "current_mean": 11.225795,
+        "current_n": 5,
+        "mean_shift_z": 0.0543,
+        "reference_mean": 9.879349,
+        "reference_n": 15,
+        "reference_std": 24.781521,
+        "share_outside_reference_range": 0.0,
+        "status": "STABLE"
+      },
+      "trailing3_group_net_mean": {
+        "current_mean": 18893.82,
+        "current_n": 5,
+        "mean_shift_z": 0.4129,
+        "reference_mean": 17305.668133,
+        "reference_n": 25,
+        "reference_std": 3846.134073,
+        "share_outside_reference_range": 0.2,
+        "status": "WATCH"
+      },
+      "voucher_to_gross_lag1": {
+        "current_mean": 0.020217,
+        "current_n": 5,
+        "mean_shift_z": 0.3086,
+        "reference_mean": 0.018725,
+        "reference_n": 25,
+        "reference_std": 0.004835,
+        "share_outside_reference_range": 0.2,
+        "status": "WATCH"
+      }
+    },
+    "reason": "บาง Feature เริ่มห่างจากช่วงฝึก ควรเฝ้าดู",
+    "status": "WATCH"
+  },
+  "message": "เฝ้าดูต่อในรอบถัดไป ยังไม่แนะนำให้ Retrain",
+  "mode": "ALERT_AND_RECOMMEND_ONLY",
+  "overall_status": "WATCH",
+  "performance_drift": {
+    "observations": [],
+    "realised_months": 0,
+    "reason": "มียอดจริงเทียบแล้ว 0 เดือน (ต้อง ≥ 3) จึงยังสรุป Performance Drift ไม่ได้",
+    "required": 3,
+    "status": "INSUFFICIENT_EVIDENCE"
+  },
+  "recommendation": "MONITOR",
+  "reference": {
+    "origins": [
+      "2026-01",
+      "2026-02",
+      "2026-03",
+      "2026-04",
+      "2026-05"
+    ],
+    "rows": 25
+  },
+  "scope_note": "เปรียบเทียบ Feature ของเดือน cutoff (1 จุดเวลา × 5 กลุ่ม) กับช่วงฝึก เป็นสัญญาณเตือนเบื้องต้น ไม่ใช่การพิสูจน์ว่าโมเดลเสื่อม",
+  "sealed_forecast_modified": false,
+  "thresholds": {
+    "alert_outside_share": 0.4,
+    "alert_z": 2.0,
+    "min_current_values": 5,
+    "min_realised_months": 3,
+    "min_reference_origins": 4,
+    "watch_outside_share": 0.2,
+    "watch_z": 1.0
+  }
+}

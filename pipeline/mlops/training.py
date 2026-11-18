@@ -14,6 +14,8 @@ import numpy as np
 
 from .. import monthly_forecast as mf
 from . import features as ft
+from . import drift as drift_mod
+from . import report as report_mod
 from .definitions import DEFAULT_PREFIX, DUMMIES, FEATURE_VERSION, FEATURES, GROUPS, MODELS
 from .store import StoreError, dumps, parquet_bytes, put_new, read_parquet
 
@@ -52,7 +54,8 @@ def _git_ref():
 
 
 def run_experiment(rows: list[dict], target_month: str, *, kind: str, source: dict, actual_by_group: dict | None = None,
-                   alpha: float = ALPHA, min_train_months: int = MIN_TRAIN_MONTHS, min_origins: int = MIN_ORIGINS, official_forecast_id: str | None = None) -> dict:
+                   alpha: float = ALPHA, min_train_months: int = MIN_TRAIN_MONTHS, min_origins: int = MIN_ORIGINS, official_forecast_id: str | None = None,
+                   actual_source: dict | None = None) -> dict:
     """Build the feature table, train/evaluate every model on identical walk-forward origins and return all artifacts (not yet stored)."""
     if kind not in KINDS:
         raise ValueError("MLOPS_KIND_INVALID")
@@ -148,7 +151,8 @@ def run_experiment(rows: list[dict], target_month: str, *, kind: str, source: di
     if actual_by_group is not None:
         act = {g: float(actual_by_group[g]) for g in GROUPS}
         post_hoc = {"label": "POST_HOC_EVALUATION (the target month was already published; used only for evaluation, never as a feature)",
-                    "actual_net_by_group": {g: round(act[g], 2) for g in GROUPS}, "actual_shop": round(sum(act.values()), 2), "models": {}}
+                    "actual_net_by_group": {g: round(act[g], 2) for g in GROUPS}, "actual_shop": round(sum(act.values()), 2), "models": {},
+                    "actual_source": actual_source or {}}                  # evidence of where the post-hoc actual came from; never part of the feature set
         for name, f in final.items():
             if f["predictions"] is None:
                 post_hoc["models"][name] = None
@@ -178,7 +182,17 @@ def run_experiment(rows: list[dict], target_month: str, *, kind: str, source: di
                   "final_predictions": final, "official_logic_result": official_logic, "post_hoc_evaluation": post_hoc}
     params = {"alpha": alpha, "min_train_months": min_train_months, "min_origins": min_origins, "standardise": "numeric columns only", "intercept_penalised": False,
               "models": {k: {kk: vv for kk, vv in v.items() if kk != "description"} for k, v in MODELS.items()}}
+    realised = []
+    if post_hoc:
+        key = "ridge_base" if official_logic["method_type"] == "ML" else "baseline_" + official_logic["model_name"]
+        obs = post_hoc["models"].get(key)
+        if obs:
+            realised.append({"month": target_month, "model": key, "ape_pct": obs["shop_ape_pct"]})
+    drift = drift_mod.compute_drift(manifest_rows, validation_wape_pct=same["baseline_trailing_3_month_mean"].get("shop_wape_pct"), realised=realised)
+    bundle_core = {"run": run, "evaluation": evaluation, "feature_meta": feature_meta}
+    report = report_mod.build_report(bundle_core)
     return {"run": run, "evaluation": evaluation, "params": params, "artifacts": artifacts, "feature_meta": feature_meta, "feature_rows": manifest_rows,
+            "drift": drift, "report": report,
             "features_used": {k: ({"numeric": v.get("numeric"), "dummies": v.get("dummies")} if v["kind"] == "ridge" else {"features": []}) for k, v in MODELS.items()},
             "status": {"state": "SUCCEEDED", "official_selection_changed": False}}
 
@@ -199,9 +213,11 @@ def persist(store, bundle: dict, *, prefix: str = DEFAULT_PREFIX) -> dict:
     put_new(store, f"{fkey}/feature_definitions.json", dumps({"feature_version": FEATURE_VERSION, "features": FEATURES}))
     put_new(store, f"{fkey}/manifest.json", dumps({k: v for k, v in fm.items()}))
     rkey = f"{prefix}/runs/{run['training_run_id']}"
-    paths = {"run": f"{rkey}/run.json", "evaluation": f"{rkey}/evaluation.json", "params": f"{rkey}/params.json", "features_used": f"{rkey}/features_used.json", "status": f"{rkey}/status.json"}
+    paths = {"run": f"{rkey}/run.json", "evaluation": f"{rkey}/evaluation.json", "params": f"{rkey}/params.json", "features_used": f"{rkey}/features_used.json", "status": f"{rkey}/status.json",
+             "report": f"{rkey}/report.json", "drift": f"{rkey}/drift.json"}
     run = {**run, "feature_set_path": fkey, "artifacts": {name: f"{rkey}/models/{name}.json" for name in bundle["artifacts"]}}
-    for name, key in (("run", paths["run"]), ("evaluation", paths["evaluation"]), ("params", paths["params"]), ("features_used", paths["features_used"]), ("status", paths["status"])):
+    for name, key in (("run", paths["run"]), ("evaluation", paths["evaluation"]), ("params", paths["params"]), ("features_used", paths["features_used"]), ("status", paths["status"]),
+                      ("report", paths["report"]), ("drift", paths["drift"])):
         put_new(store, key, dumps(run if name == "run" else bundle[name] if name in bundle else bundle["status"]))
     for name, art in bundle["artifacts"].items():
         put_new(store, f"{rkey}/models/{name}.json", dumps(art))

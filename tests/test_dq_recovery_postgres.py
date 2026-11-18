@@ -529,3 +529,37 @@ def test_16_rolling_july_to_october_every_month_forecast_sealed_before_actual(en
         assert abs(float(months[month]["profit"]) - float(want["contribution_profit"])) <= 0.50
     # February: business FAIL still published
     assert oracle_kpi()["2026-02"]["revenue_status"] == "FAIL"
+
+
+def test_17_mlops_evidence_runs_are_additive_and_never_touch_forecasts(env):
+    """Historical evaluation / experiment tickets read published warehouses only: sealed forecasts and published actuals stay byte-identical."""
+    def snapshot():
+        return (q("SELECT forecast_run_id::text,status,is_official,sealed_at FROM demo_ml.forecast_run ORDER BY 1"),
+                q("SELECT forecast_run_id::text,product_group_id,predicted_net_revenue FROM demo_ml.forecast_result ORDER BY 1,2"),
+                q('SELECT COUNT(*) FROM demo_er1."Fact_Order_Items"')[0][0], q("SELECT COUNT(*) FROM demo_ml.scenario_decision")[0][0])
+    before = snapshot()
+    assert fc("POST", "mlops_run", body={"month": "2026-07", "kind": "OFFICIAL_LINKED", "actor": "x"})[0] == 400      # only non-official kinds can be requested
+    assert fc("POST", "mlops_run", body={"month": "2026-05", "kind": "HISTORICAL_EVALUATION", "actor": "x"})[0] == 409  # before the forecast gate
+    assert fc("POST", "mlops_run", body={"month": "2026-07", "kind": "EXPERIMENT_ONLY"})[0] == 400                      # actor required
+    results = {}
+    for month, kind in (("2026-06", "HISTORICAL_EVALUATION"), ("2026-07", "HISTORICAL_EVALUATION"), ("2026-07", "EXPERIMENT_ONLY")):
+        status, data = fc("POST", "mlops_run", body={"month": month, "kind": kind, "actor": "ml.tester"})
+        assert status == 202, data
+        assert data["post_hoc_actual"] is (kind == "HISTORICAL_EVALUATION")
+        out = env["worker"].run_mlops(data["ticket"])
+        assert out["status"] == "RECORDED" and out["summary"]["official_selection_changed"] is False
+        results[(month, kind)] = out["summary"]
+    june = results[("2026-06", "HISTORICAL_EVALUATION")]["mlops"]
+    july = results[("2026-07", "HISTORICAL_EVALUATION")]["mlops"]
+    assert june["evaluation_status"] == "EXPERIMENTAL_INSUFFICIENT_VALIDATION" and july["evaluation_status"] == "ELIGIBLE"
+    stored = {key: data for (_b, key), data in env["s3"].objects.items()}
+    for run in (june, july):
+        for name in ("run", "evaluation", "params", "report", "drift", "status", "features_used"):
+            assert f"{run['run_path']}/{name}.json" in stored
+    drift = json.loads(stored[f"{june['run_path']}/drift.json"])
+    assert drift["auto_retrain"] is False and drift["sealed_forecast_modified"] is False and drift["performance_drift"]["status"] == "INSUFFICIENT_EVIDENCE"
+    report = json.loads(stored[f"{june['run_path']}/report.json"])
+    assert report["forecast_vs_actual"]["actual_shop"] is not None and report["official_selection"]["ridge_marketing_in_selection"] is False
+    exp = results[("2026-07", "EXPERIMENT_ONLY")]["mlops"]
+    assert any(key.startswith("vercel-lab/ml/index/EXPERIMENT_ONLY/2026-07/") for key in stored) and exp["training_run_id"]
+    assert snapshot() == before

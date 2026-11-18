@@ -438,15 +438,34 @@ def run_forecast(ticket: str) -> dict:
         workspace.mkdir()
         restore_run_workspace(client, bucket, previous, workspace)
         rows = monthly_forecast.read_published_group_months(workspace / "er2.duckdb")
+        try:                                                       # MLOps evidence input (additive; a failure here never blocks the forecast)
+            from pipeline.mlops import features as mlops_features
+            mlops_rows = mlops_features.read_published_marketing_months(workspace / "er2.duckdb")
+            mlops_wh_sha = mlops_features.file_sha256(workspace / "er2.duckdb")
+            mlops_error = None
+        except Exception as error:
+            mlops_rows, mlops_wh_sha, mlops_error = None, None, f"{type(error).__name__}: {error}"[:300]
     result = monthly_forecast.generate_forecast(rows, target)
     forecast_id = neon_control.save_draft_forecast(url, int(cycle), previous, result,
                                                    str(claim.get("actor") or "")[:120] or None)
+    mlops_summary = {"status": "SKIPPED", "error": mlops_error}
+    if mlops_rows is not None:
+        try:
+            from pipeline.mlops import training as mlops_training
+            from pipeline.mlops.store import S3Store
+            bundle = mlops_training.run_experiment(
+                mlops_rows, target, kind="OFFICIAL_LINKED", official_forecast_id=forecast_id,
+                source={"source_run_id": previous, "warehouse_file_sha256": mlops_wh_sha, "published_through": max(r["month"] for r in mlops_rows),
+                        "rows_read": len(mlops_rows)})
+            mlops_summary = {"status": "RECORDED", **mlops_training.persist(S3Store(client, bucket), bundle)}
+        except Exception as error:                                  # the official forecast above is already saved and unaffected
+            mlops_summary = {"status": "FAILED", "error": f"{type(error).__name__}: {error}"[:300]}
     put_json(client, bucket, f"vercel-lab/forecast/{forecast_id}/manifest.json", {
         "forecast_run_id": forecast_id, "source_warehouse_run_id": previous, **result["model_manifest"],
         "validation": result["validation"], "months_used": result["months_used"]})
     summary = {k: v for k, v in result.items() if k != "model_manifest"}
     return {"run_id": str(claim["nonce"]), "batch": neon_control.batch_for_month(target), "stage": "forecast",
-            "status": "DRAFT", "summary": {"forecast_run_id": forecast_id, **summary}}
+            "status": "DRAFT", "summary": {"forecast_run_id": forecast_id, "mlops": mlops_summary, **summary}}
 
 
 class handler(BaseHTTPRequestHandler):

@@ -416,6 +416,13 @@ def test_12_june_forecast_uses_data_through_may_only_and_is_honest_about_method(
     row = q("SELECT status,is_official,method_type FROM demo_ml.forecast_run WHERE forecast_run_id=%s", (draft["forecast_run_id"],))[0]
     assert row == ("DRAFT", False, "BASELINE")
     assert (BUCKET, f"vercel-lab/forecast/{draft['forecast_run_id']}/manifest.json") in env["s3"].objects
+    # MLOps evidence is recorded next to (never instead of) the official forecast: 5 months => 2 walk-forward origins => experimental only
+    ml = draft["mlops"]
+    assert ml["status"] == "RECORDED" and ml["evaluation_status"] == "EXPERIMENTAL_INSUFFICIENT_VALIDATION"
+    stored = {key for (_bucket, key) in env["s3"].objects}
+    for name in ("baseline_trailing_3_month_mean", "ridge_base", "ridge_marketing"):
+        assert f"{ml['run_path']}/models/{name}.json" in stored
+    assert f"{ml['feature_set_path']}/features.parquet" in stored
     env["ctx"]["june_draft"] = draft
 
 

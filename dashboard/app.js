@@ -1797,8 +1797,9 @@
           const matching = cand.candidates.filter(r => groups.has(r.Product_Group_ID));
           const narrowed = matching.length > 0 && !form.showAll;
           const shown = narrowed ? matching : cand.candidates;
-          const label = r => (groups.has(r.Product_Group_ID) ? "★ " : "") + String(r[idKey]) + " · " +
-            Object.entries(r).filter(([k, v]) => k !== idKey && v !== null && v !== "").slice(0, 4).map(([, v]) => v).join(" · ");
+          const label = r => (groups.has(r.Product_Group_ID) ? "★ " : "") + String(r[idKey]) + " · " + (r.SKU_Name
+            ? r.SKU_Name + (r.Color || r.Size ? " (" + [r.Color, r.Size].filter(Boolean).join(" · ไซส์ ") + ")" : "")
+            : Object.entries(r).filter(([k, v]) => k !== idKey && v !== null && v !== "").slice(0, 4).map(([, v]) => v).join(" · "));
           const options = [["", narrowed ? `— เลือกค่าที่ตรงกับราคา (${matching.length} รายการ) —` : `— เลือกค่าจาก ${cand.master_table} (${cand.count} รายการ) —`],
             ...shown.map(r => [String(r[idKey]), label(r)])];
           card.append(chooseField("ค่าที่ถูกต้อง (จาก Master เท่านั้น)", options, form.value, v => {

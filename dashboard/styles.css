@@ -837,3 +837,15 @@ tr:hover td{background:#fff8f0}.metric-label,.metric-sub,.panel-description{colo
 .fc-stickybar .fc-rvalue{font-size:18px}
 .dq-cascade{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}@media (max-width:700px){.dq-cascade{grid-template-columns:1fr}}
 .dq-doc-link{margin:6px 0;display:flex;flex-direction:column;gap:2px}.dq-doc-link a{font-weight:600;color:#741D2B}
+
+/* Forecast & Planning cleanup: single sticky top bar, voucher box, bulk row */
+.fc-topbar{position:sticky;top:0;z-index:30;background:#fff8f0f2;backdrop-filter:blur(6px);border:1px solid #e4c9ce;border-radius:12px;padding:8px 14px;margin:0 0 10px;display:flex;flex-direction:column;gap:6px;box-shadow:0 4px 12px rgba(116,29,43,.1)}
+.fc-refline{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:14px;color:#421D20}.fc-sep{color:#b79a9e}.fc-gap-neg{color:#a3283a;font-weight:600}
+.fc-topbar .fc-result-head{margin-bottom:2px}.fc-rline{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.fc-topbar .fc-rvalue{font-size:17px}.fc-topbar .fc-rgrid{gap:8px}
+.fc-info{color:#8a7a7c;font-weight:400;cursor:help}
+.fc-vbox{display:flex;flex-direction:column;gap:6px;background:#fbf7f7;border:1px solid #f0e2e6;border-radius:10px;padding:10px 12px}.fc-vusage .fc-num{width:110px}
+.fc-bulk{display:flex;flex-wrap:wrap;align-items:center;gap:10px}.fc-bulk-group{display:flex;align-items:center;gap:4px}.fc-bulk-name{font-size:13px;color:#6b4a4d;margin-right:2px}
+.fc-tag-low{display:inline-block;background:#fdf0d5;color:#8a5a00;border-radius:999px;padding:1px 8px;font-size:11px;font-weight:600;white-space:nowrap}
+.fc-stickyactions{margin-top:10px}
+@media (max-width:700px){.fc-topbar{padding:6px 10px}.fc-refline{font-size:12px}.fc-topbar .fc-rgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}

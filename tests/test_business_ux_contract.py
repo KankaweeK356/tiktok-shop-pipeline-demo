@@ -20,7 +20,7 @@ def test_business_actual_reads_published_er2_and_has_no_fallback_figures():
 
 def test_forecast_planning_v5_is_group_based_live_and_never_autosaves():
     fc = block("  // ---- Forecast & Planning (v5)", "  async function loadEvaluationView")
-    for needle in ("fcGroupPanel", "fcVoucherPanel", "fcControlsPayload", "fcScheduleCalc", "simSeq", "data-fc-group", "fcReferenceControls", "คืนค่าแผน",
+    for needle in ("fcGroupPanel", "fcVoucherBox", "fcBulkRow", "fcControlsPayload", "fcScheduleCalc", "simSeq", "data-fc-group", "fcReferenceControls", "คืนค่าแผน",
                    "ข้ามแผน", "INSUFFICIENT_HISTORY", "published_months"):
         assert needle in fc
     assert "Calculate" not in fc and "fc-calc" not in fc                     # no manual calculate button: live recalculation
@@ -66,3 +66,13 @@ def test_every_app_function_that_is_called_is_defined():
     defined |= set(re.findall(r"\b([A-Za-z0-9_]+)\s*:\s*(?:async\s*)?\(", APP))                       # callback properties such as renderDetail: (item) => {}
     missing = sorted(n for n in called if n not in defined)
     assert not missing, missing
+
+
+def test_cleanup_notes_10_to_14_are_in_the_forecast_page():
+    fc = block("  // ---- Forecast & Planning (v5)", "  async function loadEvaluationView")
+    assert "fc-topbar" in fc and "fc-stickybar" not in fc and "fc-cards" not in fc           # one sticky top bar, no duplicated cards/bottom bar
+    assert "fc-stepbtns" not in fc and "custom" not in fc.split("function fcVoucherBox")[1].split("function fcBulkRow")[0]   # no +/- buttons, no custom voucher
+    assert "ใช้คูปองที่เลือกได้" in fc and "ต่ำกว่า 10%" in fc and "Margin กลุ่ม" in fc
+    assert "คูปอง (ใช้กับทั้งร้าน" in fc and "สัดส่วนออเดอร์ที่ใช้คูปอง" in fc
+    for label in ("−10%", "+10%", "−1 จุด", "+1 จุด", "↺ คืนค่าแผน"):
+        assert label in fc

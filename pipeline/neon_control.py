@@ -515,6 +515,7 @@ def _publish_snapshot(cur, run_id: str, batch: str, artifact_uri: str | None) ->
 # Next-month forecast persistence (demo_ml; additive migration sql/neon_demo_ml_migration.sql)
 # --------------------------------------------------------------------------
 FORECAST_GATE_FROM = "2026-06"          # target months from June onward need a sealed official forecast
+MIN_HISTORY_MONTHS = 5                  # an official forecast needs >= 5 consecutive PUBLISHED months (counted from the warehouse runs)
 BATCH_BY_INDEX = ["initial"] + [f"incremental_{i:02d}" for i in range(1, 10)]
 
 
@@ -527,6 +528,17 @@ def batch_for_month(month: str) -> str:
 
 def month_for_batch(batch: str) -> str:
     return f"2026-{BATCH_BY_INDEX.index(batch) + 1:02d}"
+
+
+def published_month_count(cur, cycle: int) -> int:
+    """Consecutive PUBLISHED months from the first delivery, read from SUCCEEDED pipeline runs (not from click counts)."""
+    cur.execute("SELECT DISTINCT result_summary->>'batch' FROM demo_control.pipeline_runs "
+                "WHERE dataset_key='classroom' AND cycle_number=%s AND status='SUCCEEDED'", (cycle,))
+    done = {row[0] for row in cur.fetchall() if row[0]}
+    count = 0
+    while count < len(BATCH_BY_INDEX) and BATCH_BY_INDEX[count] in done:
+        count += 1
+    return count
 
 
 def ml_schema_ready(database_url: str) -> bool:

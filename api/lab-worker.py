@@ -420,6 +420,10 @@ def run_forecast(ticket: str) -> dict:
             raise RuntimeError("PREVIOUS_RUN_MISMATCH")
         published = db.execute("SELECT result_summary->>'batch' FROM demo_control.pipeline_runs WHERE run_id=%s::uuid",
                                (previous,)).fetchone()
+        with db.cursor() as cur:
+            have = neon_control.published_month_count(cur, int(cycle))
+        if have < neon_control.MIN_HISTORY_MONTHS:
+            raise RuntimeError(f"LAB_FORECAST_INSUFFICIENT_HISTORY: {have}/{neon_control.MIN_HISTORY_MONTHS} published months")
         cutoff_month = monthly_forecast.month_add(target, -1)
         if not published or not published[0] or neon_control.month_for_batch(published[0]) != cutoff_month:
             raise RuntimeError(f"LAB_FORECAST_CUTOFF_NOT_PUBLISHED: published through "

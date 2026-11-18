@@ -81,10 +81,10 @@
         "2026-06"
       ],
       "official_forecast_ids": [
-        "72b24f87-2153-403c-b63c-199600b0179f"
+        "6ca8aeae-5eb6-422c-b0c0-ac942ae06af4"
       ],
       "shadow_training_runs": [
-        "045103d5-65fe-4edb-bcd6-c5013840927e"
+        "8b4fa148-8d75-4684-9756-fc67130a5bab"
       ]
     },
     "human_decision_required": true,
@@ -136,8 +136,8 @@
         },
         "shop": 104725.06
       },
-      "actual_published_at": "2026-11-18T15:56:02.355496+00:00",
-      "actual_run_id": "2ad85f23-1e07-4ab9-a113-1bd6349ddbf8",
+      "actual_published_at": "2026-11-18T18:06:06.931451+00:00",
+      "actual_run_id": "69c32de5-41fa-4100-8a13-eb0b40e29c67",
       "baseline": {
         "group_abs_error": {
           "PG01": 5071.369999999999,
@@ -170,6 +170,7 @@
       "champion_model": "baseline_trailing_3_month_mean",
       "cycle": 1,
       "data_cutoff": "2026-05-31",
+      "data_origin": "LOCAL_REAL_SOURCE_TEST",
       "feature_version": "mlops-features-1",
       "ml": {
         "group_abs_error": {
@@ -201,11 +202,11 @@
         "shop_error": -17953.190000000002
       },
       "month": "2026-06",
-      "official_forecast_id": "72b24f87-2153-403c-b63c-199600b0179f",
+      "official_forecast_id": "6ca8aeae-5eb6-422c-b0c0-ac942ae06af4",
       "official_method": "BASELINE",
       "official_model": "trailing_3_month_mean",
-      "shadow_created_at": "2026-11-18T15:55:49.904318+00:00",
-      "shadow_training_run_id": "045103d5-65fe-4edb-bcd6-c5013840927e",
+      "shadow_created_at": "2026-11-18T18:05:55.255004+00:00",
+      "shadow_training_run_id": "8b4fa148-8d75-4684-9756-fc67130a5bab",
       "status": "EVALUATED",
       "stream": "lab-cycle-1"
     }

@@ -1,0 +1,85 @@
+{
+  "actual": {
+    "groups": {
+      "PG01": 21701.78,
+      "PG02": 25373.13,
+      "PG03": 23593.87,
+      "PG04": 17108.31,
+      "PG05": 28803.03
+    },
+    "shop": 116580.12
+  },
+  "actual_published_at": "2026-11-18T18:06:37.846228+00:00",
+  "actual_run_id": "b3cbf8da-360d-4a07-adbc-17c38de9c2de",
+  "baseline": {
+    "group_abs_error": {
+      "PG01": 3608.720000000001,
+      "PG02": 4043.5300000000025,
+      "PG03": 5518.279999999999,
+      "PG04": 2135.040000000001,
+      "PG05": 6319.57
+    },
+    "group_error": {
+      "PG01": 3608.720000000001,
+      "PG02": -4043.5300000000025,
+      "PG03": -5518.279999999999,
+      "PG04": -2135.040000000001,
+      "PG05": -6319.57
+    },
+    "groups": {
+      "PG01": 25310.5,
+      "PG02": 21329.6,
+      "PG03": 18075.59,
+      "PG04": 14973.27,
+      "PG05": 22483.46
+    },
+    "model": "baseline_trailing_3_month_mean",
+    "model_version": "baseline-trailing3-1",
+    "shop": 102172.42,
+    "shop_abs_error": 14407.699999999997,
+    "shop_ape_pct": 12.358625124077758,
+    "shop_error": -14407.699999999997
+  },
+  "champion_model": "baseline_trailing_3_month_mean",
+  "cycle": 1,
+  "data_cutoff": "2026-08-31",
+  "data_origin": "LOCAL_REAL_SOURCE_TEST",
+  "feature_version": "mlops-features-1",
+  "ml": {
+    "group_abs_error": {
+      "PG01": 1979.3899999999994,
+      "PG02": 7353.52,
+      "PG03": 7065.4699999999975,
+      "PG04": 3454.5700000000015,
+      "PG05": 6940.68
+    },
+    "group_error": {
+      "PG01": 1979.3899999999994,
+      "PG02": -7353.52,
+      "PG03": -7065.4699999999975,
+      "PG04": -3454.5700000000015,
+      "PG05": -6940.68
+    },
+    "groups": {
+      "PG01": 23681.17,
+      "PG02": 18019.61,
+      "PG03": 16528.4,
+      "PG04": 13653.74,
+      "PG05": 21862.35
+    },
+    "model": "ridge_base",
+    "model_version": "mlops-ridge-1",
+    "shop": 93745.27,
+    "shop_abs_error": 22834.84999999999,
+    "shop_ape_pct": 19.587258959760884,
+    "shop_error": -22834.84999999999
+  },
+  "month": "2026-09",
+  "official_forecast_id": "8eb3be77-1971-4dc0-b610-0cb991488007",
+  "official_method": "BASELINE",
+  "official_model": "trailing_3_month_mean",
+  "shadow_created_at": "2026-11-18T18:06:27.447444+00:00",
+  "shadow_training_run_id": "b1d6df03-bb58-4f11-b2d8-ce7cc3fdd607",
+  "status": "EVALUATED",
+  "stream": "lab-cycle-1"
+}

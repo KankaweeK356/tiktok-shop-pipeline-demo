@@ -1,0 +1,46 @@
+{
+  "alpha": 1.0,
+  "beta": [
+    -455.72532826,
+    1410.14264103,
+    877.29218718,
+    2950.87650253,
+    47.82128608,
+    -1875.99698437,
+    -3324.12569212,
+    2201.42488788,
+    18024.77
+  ],
+  "experimental": false,
+  "features": [
+    "lag1_group_net",
+    "trailing3_group_net_mean",
+    "days_in_label_month",
+    "group_PG01",
+    "group_PG02",
+    "group_PG03",
+    "group_PG04",
+    "group_PG05"
+  ],
+  "intercept_penalised": false,
+  "kind": "ridge",
+  "mean": [
+    17361.2256,
+    17305.66813333,
+    30.0
+  ],
+  "model_name": "ridge_base",
+  "model_version": "mlops-ridge-1",
+  "numeric_standardised": [
+    "lag1_group_net",
+    "trailing3_group_net_mean",
+    "days_in_label_month"
+  ],
+  "std": [
+    4237.6368634,
+    3846.134073,
+    1.09544512
+  ],
+  "trained_on_labels_through": "2026-06",
+  "training_rows": 25
+}

@@ -152,15 +152,15 @@ const monStorage = { list: async () => [], getJson: async key => { const f = pat
 const journeySql = cycle => ({ query: async text => text.includes("dataset_state") ? [{ phase: "RUN2_READY", cycle_number: cycle, last_run_id: "11111111-1111-4111-8111-111111111111" }]
   : text.includes("pipeline_runs") ? DELIVERIES.map((b, i) => ({ run_id: "22222222-2222-4222-8222-22222222222" + i, status: "SUCCEEDED", batch: b })) : [] });
 
-test("Monitoring: API returns the newest immutable summary of the current stream (4 counted months, Preliminary, labelled LOCAL_REAL_SOURCE_TEST)", async () => {
+test("Monitoring: API returns the newest summary revision of the current stream (5 counted months after September was recovered, Preliminary, labelled LOCAL_REAL_SOURCE_TEST)", async () => {
   const cycle = Number(fs.readFileSync(path.join(MON_ROOT, "cycle.txt"), "utf8"));
   const r = await callWith(journeySql(cycle), { mlopsStorage: monStorage }, "GET", { fc: "monitoring" });
   assert.equal(r.status, 200); const s = r.json.summary;
   assert.equal(r.json.stream, `lab-cycle-${cycle}`); assert.equal(s.data_origin, "LOCAL_REAL_SOURCE_TEST");
-  assert.equal(s.through_month, "2026-10"); assert.equal(s.counted_months, 4); assert.equal(s.evidence_level, "PRELIMINARY");
+  assert.equal(s.through_month, "2026-10"); assert.equal(s.counted_months, 5); assert.equal(s.evidence_level, "PRELIMINARY");
   assert.equal(s.recommendation.status, "PRELIMINARY_NOT_ASSESSED"); assert.equal(s.recommendation.auto_switch_champion, false); assert.equal(s.recommendation.auto_retrain, false);
   assert.equal(s.recommendation.champion_change_function_in_system, false);
-  assert.deepEqual(s.monthly.map(m => m.month), ["2026-06", "2026-07", "2026-08", "2026-10"]);        // 2026-09 was not recorded, so it is not guessed afterwards
+  assert.deepEqual(s.monthly.map(m => m.month), ["2026-06", "2026-07", "2026-08", "2026-09", "2026-10"]);   // 2026-09 failed once, then was recovered from original evidence (newest revision)
   assert.equal(s.pair.champion, "OFFICIAL_BASELINE_OF_EACH_MONTH"); assert.equal(s.pair.challenger, "ridge_base");
   assert.ok(Object.values(s.champion_models_by_month).every(m => /^baseline_/.test(m)));
   const absB = s.rows.reduce((a, x) => a + x.baseline.shop_abs_error, 0), act = s.rows.reduce((a, x) => a + x.actual.shop, 0);

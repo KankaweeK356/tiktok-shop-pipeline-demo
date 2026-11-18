@@ -1,0 +1,8 @@
+{
+  "created_at": "2026-11-18T18:08:36.457595+00:00",
+  "evaluation_status": "EXPERIMENTAL_INSUFFICIENT_VALIDATION",
+  "kind": "HISTORICAL_EVALUATION",
+  "run_path": "vercel-lab/ml/runs/0907761e-a79c-4b7d-8b9b-73562809f826",
+  "target_month": "2026-06",
+  "training_run_id": "0907761e-a79c-4b7d-8b9b-73562809f826"
+}

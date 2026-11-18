@@ -157,6 +157,7 @@
    "feature_version": "mlops-features-1",
    "actual_run_id": "r-2026-06",
    "actual_published_at": "2026-07-02T00:00:00+00:00",
+   "data_origin": "SYNTHETIC_FIXTURE",
    "actual": {
     "groups": {
      "PG01": 20000.0,
@@ -239,6 +240,7 @@
    "feature_version": "mlops-features-1",
    "actual_run_id": "r-2026-07",
    "actual_published_at": "2026-07-02T00:00:00+00:00",
+   "data_origin": "SYNTHETIC_FIXTURE",
    "actual": {
     "groups": {
      "PG01": 20000.0,
@@ -321,6 +323,7 @@
    "feature_version": "mlops-features-1",
    "actual_run_id": "r-2026-08",
    "actual_published_at": "2026-07-02T00:00:00+00:00",
+   "data_origin": "SYNTHETIC_FIXTURE",
    "actual": {
     "groups": {
      "PG01": 20000.0,
@@ -403,6 +406,7 @@
    "feature_version": "mlops-features-1",
    "actual_run_id": "r-2026-09",
    "actual_published_at": "2026-07-02T00:00:00+00:00",
+   "data_origin": "SYNTHETIC_FIXTURE",
    "actual": {
     "groups": {
      "PG01": 20000.0,
@@ -485,6 +489,7 @@
    "feature_version": "mlops-features-1",
    "actual_run_id": "r-2026-10",
    "actual_published_at": "2026-07-02T00:00:00+00:00",
+   "data_origin": "SYNTHETIC_FIXTURE",
    "actual": {
     "groups": {
      "PG01": 20000.0,
@@ -567,6 +572,7 @@
    "feature_version": "mlops-features-1",
    "actual_run_id": "r-2026-11",
    "actual_published_at": "2026-07-02T00:00:00+00:00",
+   "data_origin": "SYNTHETIC_FIXTURE",
    "actual": {
     "groups": {
      "PG01": 20000.0,

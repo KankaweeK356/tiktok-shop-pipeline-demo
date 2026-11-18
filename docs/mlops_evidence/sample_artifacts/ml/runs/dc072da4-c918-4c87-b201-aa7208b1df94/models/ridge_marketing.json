@@ -1,0 +1,56 @@
+{
+  "alpha": 1.0,
+  "beta": [
+    -80.72366921,
+    1171.62097157,
+    725.68448938,
+    442.00005401,
+    223.95350446,
+    2928.66357029,
+    186.88591935,
+    -1857.39786389,
+    -3286.17801053,
+    2028.02638478,
+    18024.77
+  ],
+  "experimental": true,
+  "features": [
+    "lag1_group_net",
+    "trailing3_group_net_mean",
+    "days_in_label_month",
+    "ads_to_gross_lag1",
+    "campaign_discount_to_gross_lag1",
+    "group_PG01",
+    "group_PG02",
+    "group_PG03",
+    "group_PG04",
+    "group_PG05"
+  ],
+  "intercept_penalised": false,
+  "kind": "ridge",
+  "mean": [
+    17361.2256,
+    17305.66813333,
+    30.0,
+    0.22836904,
+    0.06533426
+  ],
+  "model_name": "ridge_marketing",
+  "model_version": "mlops-ridge-marketing-1",
+  "numeric_standardised": [
+    "lag1_group_net",
+    "trailing3_group_net_mean",
+    "days_in_label_month",
+    "ads_to_gross_lag1",
+    "campaign_discount_to_gross_lag1"
+  ],
+  "std": [
+    4237.6368634,
+    3846.134073,
+    1.09544512,
+    0.06109116,
+    0.01159121
+  ],
+  "trained_on_labels_through": "2026-06",
+  "training_rows": 25
+}

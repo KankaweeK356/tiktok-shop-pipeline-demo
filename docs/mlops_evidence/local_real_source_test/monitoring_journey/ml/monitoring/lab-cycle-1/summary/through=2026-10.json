@@ -126,16 +126,16 @@
         "2026-10"
       ],
       "official_forecast_ids": [
-        "72b24f87-2153-403c-b63c-199600b0179f",
-        "98a4c3f0-cae0-4b7a-a57e-8da9bde08728",
-        "c147899a-820e-4692-a540-4b3cdbd626da",
-        "8bd4a38c-176a-4593-a154-a41f418a8d43"
+        "6ca8aeae-5eb6-422c-b0c0-ac942ae06af4",
+        "802629e8-2878-42a0-b4cf-43c396121955",
+        "ac749fbe-9ba7-464e-81dc-0451ef0bbfa6",
+        "ce924425-9d32-4d8c-b7ea-bdbceb676e0b"
       ],
       "shadow_training_runs": [
-        "045103d5-65fe-4edb-bcd6-c5013840927e",
-        "d60e0469-27a7-4e24-b2b8-1d79d62f496f",
-        "3d6f07cd-8572-46b4-882d-26f0044b6180",
-        "019c8060-ea06-43ba-b86e-6710229df6d8"
+        "8b4fa148-8d75-4684-9756-fc67130a5bab",
+        "82e64afb-dfae-4542-b75b-ab217f8779d4",
+        "e24bea3b-8e68-4602-ba3a-23ba0a8b7efb",
+        "1d66c48f-813d-49f2-ad7f-8afbb3374b48"
       ]
     },
     "human_decision_required": true,
@@ -187,8 +187,8 @@
         },
         "shop": 104725.06
       },
-      "actual_published_at": "2026-11-18T15:56:02.355496+00:00",
-      "actual_run_id": "2ad85f23-1e07-4ab9-a113-1bd6349ddbf8",
+      "actual_published_at": "2026-11-18T18:06:06.931451+00:00",
+      "actual_run_id": "69c32de5-41fa-4100-8a13-eb0b40e29c67",
       "baseline": {
         "group_abs_error": {
           "PG01": 5071.369999999999,
@@ -221,6 +221,7 @@
       "champion_model": "baseline_trailing_3_month_mean",
       "cycle": 1,
       "data_cutoff": "2026-05-31",
+      "data_origin": "LOCAL_REAL_SOURCE_TEST",
       "feature_version": "mlops-features-1",
       "ml": {
         "group_abs_error": {
@@ -252,11 +253,11 @@
         "shop_error": -17953.190000000002
       },
       "month": "2026-06",
-      "official_forecast_id": "72b24f87-2153-403c-b63c-199600b0179f",
+      "official_forecast_id": "6ca8aeae-5eb6-422c-b0c0-ac942ae06af4",
       "official_method": "BASELINE",
       "official_model": "trailing_3_month_mean",
-      "shadow_created_at": "2026-11-18T15:55:49.904318+00:00",
-      "shadow_training_run_id": "045103d5-65fe-4edb-bcd6-c5013840927e",
+      "shadow_created_at": "2026-11-18T18:05:55.255004+00:00",
+      "shadow_training_run_id": "8b4fa148-8d75-4684-9756-fc67130a5bab",
       "status": "EVALUATED",
       "stream": "lab-cycle-1"
     },
@@ -271,8 +272,8 @@
         },
         "shop": 92339.15
       },
-      "actual_published_at": "2026-11-18T15:56:13.245300+00:00",
-      "actual_run_id": "9156d0b3-173f-4c47-843f-36f4d7ac08d5",
+      "actual_published_at": "2026-11-18T18:06:17.188931+00:00",
+      "actual_run_id": "7f92b77d-b8d5-477a-b2e5-b35c969ce855",
       "baseline": {
         "group_abs_error": {
           "PG01": 558.6399999999994,
@@ -305,6 +306,7 @@
       "champion_model": "baseline_trailing_3_month_mean",
       "cycle": 1,
       "data_cutoff": "2026-06-30",
+      "data_origin": "LOCAL_REAL_SOURCE_TEST",
       "feature_version": "mlops-features-1",
       "ml": {
         "group_abs_error": {
@@ -336,11 +338,11 @@
         "shop_error": 2773.320000000007
       },
       "month": "2026-07",
-      "official_forecast_id": "98a4c3f0-cae0-4b7a-a57e-8da9bde08728",
+      "official_forecast_id": "802629e8-2878-42a0-b4cf-43c396121955",
       "official_method": "BASELINE",
       "official_model": "trailing_3_month_mean",
-      "shadow_created_at": "2026-11-18T15:56:03.001817+00:00",
-      "shadow_training_run_id": "d60e0469-27a7-4e24-b2b8-1d79d62f496f",
+      "shadow_created_at": "2026-11-18T18:06:07.586261+00:00",
+      "shadow_training_run_id": "82e64afb-dfae-4542-b75b-ab217f8779d4",
       "status": "EVALUATED",
       "stream": "lab-cycle-1"
     },
@@ -355,8 +357,8 @@
         },
         "shop": 109453.06999999999
       },
-      "actual_published_at": "2026-11-18T15:56:23.765634+00:00",
-      "actual_run_id": "232267ff-4a6d-4bba-9ad0-d6e6423233f3",
+      "actual_published_at": "2026-11-18T18:06:27.054165+00:00",
+      "actual_run_id": "3edf370b-e40a-40fc-9267-46d4df054354",
       "baseline": {
         "group_abs_error": {
           "PG01": 2386.209999999999,
@@ -389,6 +391,7 @@
       "champion_model": "baseline_trailing_3_month_mean",
       "cycle": 1,
       "data_cutoff": "2026-07-31",
+      "data_origin": "LOCAL_REAL_SOURCE_TEST",
       "feature_version": "mlops-features-1",
       "ml": {
         "group_abs_error": {
@@ -420,11 +423,11 @@
         "shop_error": -13791.939999999988
       },
       "month": "2026-08",
-      "official_forecast_id": "c147899a-820e-4692-a540-4b3cdbd626da",
+      "official_forecast_id": "ac749fbe-9ba7-464e-81dc-0451ef0bbfa6",
       "official_method": "BASELINE",
       "official_model": "trailing_3_month_mean",
-      "shadow_created_at": "2026-11-18T15:56:13.616961+00:00",
-      "shadow_training_run_id": "3d6f07cd-8572-46b4-882d-26f0044b6180",
+      "shadow_created_at": "2026-11-18T18:06:17.587861+00:00",
+      "shadow_training_run_id": "e24bea3b-8e68-4602-ba3a-23ba0a8b7efb",
       "status": "EVALUATED",
       "stream": "lab-cycle-1"
     },
@@ -439,8 +442,8 @@
         },
         "shop": 119695.48
       },
-      "actual_published_at": "2026-11-18T15:56:46.758996+00:00",
-      "actual_run_id": "7960900d-1896-4756-84b2-b69dd364fa47",
+      "actual_published_at": "2026-11-18T18:06:49.920865+00:00",
+      "actual_run_id": "522c68ab-4cd2-47ee-b6c3-3ae902155b10",
       "baseline": {
         "group_abs_error": {
           "PG01": 5692.959999999999,
@@ -473,6 +476,7 @@
       "champion_model": "baseline_trailing_3_month_mean",
       "cycle": 1,
       "data_cutoff": "2026-09-30",
+      "data_origin": "LOCAL_REAL_SOURCE_TEST",
       "feature_version": "mlops-features-1",
       "ml": {
         "group_abs_error": {
@@ -504,11 +508,11 @@
         "shop_error": -13562.159999999989
       },
       "month": "2026-10",
-      "official_forecast_id": "8bd4a38c-176a-4593-a154-a41f418a8d43",
+      "official_forecast_id": "ce924425-9d32-4d8c-b7ea-bdbceb676e0b",
       "official_method": "BASELINE",
       "official_model": "trailing_3_month_mean",
-      "shadow_created_at": "2026-11-18T15:56:34.803561+00:00",
-      "shadow_training_run_id": "019c8060-ea06-43ba-b86e-6710229df6d8",
+      "shadow_created_at": "2026-11-18T18:06:38.392946+00:00",
+      "shadow_training_run_id": "1d66c48f-813d-49f2-ad7f-8afbb3374b48",
       "status": "EVALUATED",
       "stream": "lab-cycle-1"
     }

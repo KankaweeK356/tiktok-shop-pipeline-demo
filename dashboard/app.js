@@ -4341,12 +4341,13 @@
     SHADOW_NOT_RECORDED_BEFORE_ACTUAL: "Shadow ไม่ได้บันทึกก่อน Publish Actual", ACTUAL_INCOMPLETE: "Actual ไม่ครบ 5 กลุ่ม", SHADOW_TARGET_MISMATCH: "เดือนเป้าหมายไม่ตรง", CUTOFF_MISMATCH: "Data Cutoff ไม่ตรง",
     OFFICIAL_NOT_BASELINE: "Official ของเดือนนั้นไม่ใช่ Baseline", DATA_ORIGIN_MISMATCH: "หลักฐานมาจากแหล่งข้อมูลคนละประเภท (ไม่รวมกัน)", OFFICIAL_BASELINE_MISMATCH: "Baseline ใน Shadow ไม่ตรงกับ Official ที่ Seal" };
   const MON_ORIGIN = { SYNTHETIC_FIXTURE: "ข้อมูลสังเคราะห์สำหรับทดสอบกฎเท่านั้น ไม่ใช่ผลจริง ห้ามใช้เป็นหลักฐาน", LOCAL_REAL_SOURCE_TEST: "ผลจากการทดสอบกับข้อมูล Source จริงบนฐานข้อมูลชั่วคราว ไม่ใช่ผลจาก Production" };
+  const rerenderMl = () => { if (state.view === "forecast") renderForecast(); else if (state.view === "evaluation") renderEvaluation(); };
   async function loadMonitoring(force = false) {
     const ml = state.fc.ml; if (!ml || (ml.mon && !force)) return;
-    ml.mon = { loading: true, data: null, error: "" }; renderForecast();
+    ml.mon = { loading: true, data: null, error: "" }; rerenderMl();
     const r = await fcApi("monitoring");
     ml.mon = { loading: false, data: r.ok ? r.data : null, error: r.ok ? "" : (r.data.error || "โหลดผล Monitoring ไม่สำเร็จ") };
-    if (state.view === "forecast") renderForecast();
+    rerenderMl();
   }
   // Principle only (this demo has no switch): when ML would be recommended, and that a person decides.
   const MON_RULE_DEFAULT = { min_months: 6, wape_gap_pp: 2, wins_required: 4, wins_window: 6, group_tolerance_pp: 5 };
@@ -4358,8 +4359,7 @@
   }
   async function repairMonitoring() {
     const ml = state.fc.ml; if (!ml || ml.repairing) return;
-    if (!state.fc.actor.trim()) { ml.error = "ระบุชื่อผู้ดำเนินการ"; renderForecast(); return; }
-    ml.repairing = true; ml.error = ""; renderForecast();
+    ml.repairing = true; ml.error = ""; rerenderMl();      // the repair ticket needs no actor: it only rebuilds missing evidence files
     try {
       const t = await fcApi("monitoring_repair", { method: "POST", body: {} });
       if (!t.ok) throw new Error(t.data.error || "ขอซ่อมไม่สำเร็จ");
@@ -4403,7 +4403,7 @@
     const rows = s ? s.rows : [], seen = new Set([...(s ? s.rows : []), ...(s ? s.excluded : [])].map(r => r.month));
     const notes = [];
     (s ? s.excluded : []).forEach(r => notes.push(thaiMonth(r.month) + " · ไม่นับ: " + (MON_REASON[r.exclusion_reason] || r.exclusion_reason)));
-    (f.status?.months || []).filter(m => m.official_forecast_id && !seen.has(m.month)).forEach(m => notes.push(thaiMonth(m.month) + (m.published ? " · ไม่มีผลประเมิน (ไม่มี Shadow ที่บันทึกก่อน Publish หรือการประเมินไม่สำเร็จ) ไม่นับ และไม่ย้อนสร้างทีหลัง" : " · รอ Publish Actual")));
+    ((f.status || state.ev.status)?.months || []).filter(m => m.official_forecast_id && !seen.has(m.month)).forEach(m => notes.push(thaiMonth(m.month) + (m.published ? " · ไม่มีผลประเมิน (ไม่มี Shadow ที่บันทึกก่อน Publish หรือการประเมินไม่สำเร็จ) ไม่นับ และไม่ย้อนสร้างทีหลัง" : " · รอ Publish Actual")));
     if (!s) {
       wrap.append(notice("ยังไม่มีผลประเมินจริง: เดือนแรกที่นับคือเดือนที่สร้าง Forecast หลังเปิดใช้ MLOps แล้ว Publish Actual ของเดือนนั้น (Forecast ที่ Seal ก่อนเปิดใช้ไม่มี Shadow จึงไม่ย้อนสร้าง)"));
       if (notes.length) { const ul0 = node("ul", "mlops-limits", ""); notes.forEach(t => ul0.append(node("li", "", t))); wrap.append(ul0); }
@@ -4474,6 +4474,15 @@
     const st = await fcApi("status"); state.ev.status = st.ok ? st.data : null;
     if (state.view === "evaluation") renderEvaluation();
   }
+  // Champion vs Challenger Monitoring also lives on the Forecast vs Actual page (same block, collapsed by default).
+  function renderEvalMonitoring() {
+    const f = state.fc, ml = f.ml = f.ml || { byMonth: {}, open: false, tab: "", busy: "", error: "" };
+    const det = node("details", "dq-details fc-mlops"); det.open = Boolean(ml.evOpen);
+    det.append(node("summary", "", "ML: Baseline vs ML เทียบผลจริง · Champion vs Challenger Monitoring"));
+    det.addEventListener("toggle", () => { if (det.open !== Boolean(ml.evOpen)) { ml.evOpen = det.open; if (ml.evOpen) loadMonitoring(); else ml.mon = null; } });
+    if (ml.evOpen) { det.append(small("เทียบ Baseline ที่ Seal เป็น Official กับ Ridge จาก Shadow Forecast ที่บันทึกก่อน Publish Actual · รายละเอียดสายงาน Feature → Training → Validation อยู่ในหน้าคาดการณ์และวางแผน"), renderMonitoringBlock()); if (ml.error) det.append(notice(ml.error, true)); }
+    return det;
+  }
   function evalBars(groupsEval) {
     const max = Math.max(1, ...groupsEval.flatMap(g => [g.forecast, g.actual]));
     return box("ev-bars", ...groupsEval.map(g => {
@@ -4497,6 +4506,7 @@
       root.append(box("decision-panel bz-empty", node("h3", "", waiting ? "รอยอดจริง " + thaiMonth(waiting.month) : "ยังไม่มีเดือนที่เปรียบเทียบได้"),
         node("p", "text-muted", waiting ? "Forecast ถูก Seal แล้ว แต่เดือนนี้ยังไม่ Publish จึงยังไม่แสดงยอดจริง ไปรันเดือนนี้ที่ “ทดสอบการนำเข้าข้อมูล”" : "ต้องมีทั้ง Official Forecast ที่ Seal แล้วและ Actual ที่ Publish แล้ว ผลเปรียบเทียบจึงจะแสดง"),
         (() => { const g = node("button", "button button-primary", "ไปที่ทดสอบการนำเข้าข้อมูล"); g.type = "button"; g.addEventListener("click", () => setView("pipeline")); return g; })()));
+      root.append(renderEvalMonitoring());
       return;
     }
     const sel = items.find(i => i.month === e.month) || items[items.length - 1], ev = sel.evaluation, shop = ev.shop;
@@ -4531,6 +4541,7 @@
       dataTable([["m", "เดือน"], ["meth", "วิธี"], ["ape", "Shop APE"]], items.map(i => ({ m: i.month, meth: i.forecast.method_type, ape: pct(i.evaluation.shop.ape_pct, 2) }))),
       small("Bias สะสม (Forecast − Actual) ฿" + money(e.data.aggregate.shop_bias, 2) + " · Shop MAE ฿" + money(e.data.aggregate.shop_mae, 2)));
     root.append(det);
+    root.append(renderEvalMonitoring());
     const go = goNext(); if (go) root.append(box("h-stack", go));
   }
 

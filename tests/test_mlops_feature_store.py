@@ -288,3 +288,12 @@ def test_monitoring_block_is_inside_the_existing_panel_and_read_only():
     import re
     assert not re.search(r"\b\d{1,3},\d{3}(\.\d+)?\b", block)                                      # no hard-coded results
     assert 'data-view="monitoring"' not in (_ROOT / "dashboard" / "index.html").read_text(encoding="utf-8")   # no new main tab
+
+
+def test_monitoring_is_also_on_the_forecast_vs_actual_page_without_a_new_tab():
+    app = (_ROOT / "dashboard" / "app.js").read_text(encoding="utf-8")
+    ev = app[app.index("function renderEvaluation()"):app.index("function setView(")]
+    assert ev.count("renderEvalMonitoring()") == 2                                        # both the empty state and the normal state of the page
+    section = app[app.index("function renderEvalMonitoring()"):app.index("function evalBars(")]
+    assert "renderMonitoringBlock()" in section and 'node("details"' in section and "loadMonitoring()" in section
+    assert 'data-view="monitoring"' not in (_ROOT / "dashboard" / "index.html").read_text(encoding="utf-8")

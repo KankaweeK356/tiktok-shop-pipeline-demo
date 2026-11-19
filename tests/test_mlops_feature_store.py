@@ -257,7 +257,7 @@ def test_ml_panel_is_collapsible_read_only_and_has_no_hardcoded_results():
     app = (_ROOT / "dashboard" / "app.js").read_text(encoding="utf-8")
     block = app[app.index("// ---- ML Model & Experiment Details"):app.index("async function loadEvaluationView")]
     assert 'node("details", "dq-details fc-mlops")' in block and "det.open = ml.open" in block          # collapsible, closed by default
-    for label in ("Official Forecast", "Historical Evaluation", "Experiment Only", "Published ER2", "Feature Store", "Model Selection", "Monitoring", "Decision"):
+    for label in ("ผล ML ของเดือนนี้", "Historical Evaluation", "Experiment Only", "Published ER2", "Feature Store", "Model Selection", "Monitoring", "Decision"):
         assert label in block
     assert 'fcApi("mlops"' in block and 'fcApi("mlops_run"' in block
     assert '"seal"' not in block and "sealForecast" not in block and "seal_plan" not in block           # the panel can never seal or select
@@ -318,5 +318,5 @@ def test_ml_panel_opens_by_itself_and_hides_the_optional_demo_buttons_until_aske
     app = (_ROOT / "dashboard" / "app.js").read_text(encoding="utf-8")
     assert app.count('{ byMonth: {}, open: true, tab: "", busy: "", error: "" }') >= 3              # forecast page, forecast loader, evaluation page: open by default
     assert "det.open = ml.evOpen !== false" in app                                                  # evaluation section open by default as well
-    assert 'const visible = ml.showExtras ? order : ["official_linked"]' in app                     # only the automatic tab is visible by default
+    assert 'const visible = extras ? order : ["official_linked"]' in app and 'get("demo") === "1"' in app     # the manual demo runs exist only behind ?demo=1
     assert "ไม่ต้องกดปุ่มใดๆ" in app and "ระบบจะสร้างผล ML ให้เอง ไม่ต้องกดอะไรเพิ่ม" in app               # says plainly that nothing has to be pressed

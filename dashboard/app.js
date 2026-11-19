@@ -4261,7 +4261,7 @@
   // ---- ML Model & Experiment Details (MADT8102 Ch.07) -------------------------------------------------------------
   // Read-only view of real Feature Store / Training Run / Drift artifacts. Official Forecast, Historical Evaluation and Experiment Only are
   // kept apart. Nothing here writes a forecast, selects a model or retrains; every number comes from the stored run.
-  const ML_KIND = { official_linked: ["OFFICIAL_LINKED", "Official Forecast"], historical_evaluation: ["HISTORICAL_EVALUATION", "Historical Evaluation"], experiment_only: ["EXPERIMENT_ONLY", "Experiment Only"] };
+  const ML_KIND = { official_linked: ["OFFICIAL_LINKED", "ผล ML ของเดือนนี้"], historical_evaluation: ["HISTORICAL_EVALUATION", "Historical Evaluation"], experiment_only: ["EXPERIMENT_ONLY", "Experiment Only"] };
   const ML_ROLE = { BASELINE_OFFICIAL: "Baseline (Official)", BASELINE_REFERENCE: "Baseline (อ้างอิง)", ML_OFFICIAL_CANDIDATE: "ML (ผู้เข้าเกณฑ์ Official)", ML_EXPERIMENTAL: "ML ทดลอง (ไม่เข้า Official)" };
   const DRIFT_TH = { STABLE: "คงที่", WATCH: "เฝ้าดู", ALERT: "แจ้งเตือน", INSUFFICIENT_EVIDENCE: "ข้อมูลยังไม่พอ (Insufficient Evidence)" };
   async function loadShadow(forecastId) {                      // one-line "Shadow ML" note under the forecast (two small reads, bound to this exact forecast id)
@@ -4400,7 +4400,7 @@
   function renderMonitoringBlock() {
     const f = state.fc, ml = f.ml, mon = ml.mon, wrap = box("mlops-mon");
     wrap.append(node("h3", "mon-title", "Champion vs Challenger Monitoring"),
-      small("Champion = Baseline ที่ Seal เป็น Official จริงของแต่ละเดือน (ดีที่สุดระหว่าง trailing 3 กับ naive) · Challenger = Ridge เดิม · เทียบเฉพาะเดือนที่มี Shadow Forecast บันทึกไว้ก่อน Publish Actual และมี Actual ครบทั้ง 5 กลุ่ม · ไม่รวม Historical Evaluation / Experiment / Backtest"));
+      small("Champion = Baseline ที่ Seal เป็น Official จริงของแต่ละเดือน (ดีที่สุดระหว่าง trailing 3 กับ naive) · Challenger = Ridge เดิม · เทียบเฉพาะเดือนที่ระบบบันทึกผล ML ไว้ก่อน Publish ยอดจริง และมียอดจริงครบทั้ง 5 กลุ่ม · ไม่รวมผลที่รันย้อนหลังหรือทดลองหลังรู้ยอดจริง"));
     if (!mon || mon.loading) { wrap.append(small("กำลังอ่านผล Monitoring…")); return wrap; }
     if (!mon.data) { wrap.append(notice(mon.error || "ไม่พบข้อมูล", true)); return wrap; }
     const s = mon.data.summary;
@@ -4462,21 +4462,22 @@
     if (!data) { det.append(notice(slot.error || "ไม่พบข้อมูล", true)); return det; }
     det.append(renderMonitoringBlock());
     const order = ["official_linked", "historical_evaluation", "experiment_only"];
-    const visible = ml.showExtras ? order : ["official_linked"];            // the optional demo tabs stay hidden unless asked for
-    const tab = visible.includes(ml.tab) ? ml.tab : (ml.showExtras ? (order.find(k => data[k]?.latest) || "official_linked") : "official_linked");
+    const extras = new URLSearchParams(window.location.search).get("demo") === "1";       // the two manual demo runs exist only behind ?demo=1
+    const visible = extras ? order : ["official_linked"];
+    const tab = visible.includes(ml.tab) ? ml.tab : "official_linked";
     const official = f.forecast?.official;
     const seg = box("mlops-tabs"); visible.forEach(k => { const b = node("button", "mlops-tab" + (tab === k ? " on" : ""), ML_KIND[k][1] + (data[k]?.count ? " (" + data[k].count + ")" : "")); b.type = "button"; b.addEventListener("click", () => { ml.tab = k; renderForecast(); }); seg.append(b); });
-    det.append(small("ใช้ข้อมูลจาก Artifact และ Training Run ที่บันทึกจริง · เดือนเป้าหมาย " + thaiMonth(f.month) + " · Official Forecast, Historical Evaluation และ Experiment Only แยกกันชัดเจน"), seg);
-    { const more = node("button", "mlops-more", ml.showExtras ? "ซ่อนตัวเลือกเสริมสำหรับเดโม" : "แสดงตัวเลือกเสริมสำหรับเดโม (Historical Evaluation / Experiment Only · ต้องกดปุ่มสร้างเอง)"); more.type = "button"; more.addEventListener("click", () => { ml.showExtras = !ml.showExtras; ml.tab = "official_linked"; renderForecast(); }); det.append(more); }
+    det.append(node("strong", "mlops-heading", "ผล ML ของเดือน " + thaiMonth(f.month)), small(extras ? "โหมดเดโม: มีผลที่ต้องกดสร้างเองเพิ่ม (Historical Evaluation / Experiment Only)" : "ใช้ข้อมูลจาก Training Run ที่บันทึกจริงตอนสร้าง Forecast"));
+    if (extras) det.append(seg);
     const cur = data[tab];
     if (tab === "official_linked") {
-      det.append(box("mlops-official", node("strong", "", "Official Forecast " + thaiMonth(f.month)), official ? small("SEALED · " + official.method_type + " (" + official.model_name + ") ยอดร้าน ฿" + money(official.shop_forecast, 2) + " · Seal เมื่อ " + official.sealed_at) : small("ยังไม่มี Official Forecast ที่ Seal ของเดือนนี้")));
+      det.append(box("mlops-official", node("strong", "", "Forecast ที่ Seal (ตัวเลขทางการ) · " + thaiMonth(f.month)), official ? small("SEALED · " + official.method_type + " (" + official.model_name + ") ยอดร้าน ฿" + money(official.shop_forecast, 2) + " · Seal เมื่อ " + official.sealed_at) : small("ยังไม่มี Official Forecast ที่ Seal ของเดือนนี้")));
     }
     if (cur?.latest) { det.append(mlJourney(data, cur.latest, tab === "official_linked" ? official : tab === "historical_evaluation" ? official : null, ml.mon?.data?.summary), mlRunBody(cur.latest, tab, official)); }
     else {
       det.append(mlJourney(data, null, official, ml.mon?.data?.summary));
       const hasForecast = Boolean(official || (f.forecast?.drafts || [])[0]);
-      const msg = tab === "official_linked" ? (hasForecast ? "ยังไม่มี Training Run ผูกกับ Forecast นี้ (Forecast ที่ Seal ก่อนเปิดใช้ MLOps จะไม่มี และไม่ย้อนสร้างให้) · ถ้าต้องการดูตัวอย่างให้เปิด \"ตัวเลือกเสริมสำหรับเดโม\" ด้านบน" : "ยังไม่ได้สร้าง Forecast ของเดือนนี้ · กด \"สร้าง Forecast\" ด้านบน แล้วระบบจะสร้างผล ML ให้เอง ไม่ต้องกดอะไรเพิ่ม") :
+      const msg = tab === "official_linked" ? (hasForecast ? "ยังไม่มี Training Run ผูกกับ Forecast นี้ (Forecast ที่ Seal ก่อนเปิดใช้ MLOps จะไม่มี และไม่ย้อนสร้างให้)" : "ยังไม่ได้สร้าง Forecast ของเดือนนี้ · กด \"สร้าง Forecast\" ด้านบน แล้วระบบจะสร้างผล ML ให้เอง ไม่ต้องกดอะไรเพิ่ม") :
         tab === "historical_evaluation" ? "ยังไม่มี Historical Evaluation ของเดือนนี้" : "ยังไม่มีการทดลอง (Experiment Only) ของเดือนนี้";
       det.append(notice(msg));
       if (tab !== "official_linked") { const kind = tab === "historical_evaluation" ? "HISTORICAL_EVALUATION" : "EXPERIMENT_ONLY";

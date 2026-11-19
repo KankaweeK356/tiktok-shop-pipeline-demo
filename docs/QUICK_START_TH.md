@@ -1,6 +1,6 @@
 # คู่มือเริ่มต้น — Classroom Pipeline Demo
 
-[![เปิด Pipeline Demo ใน Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/KankaweeK356/tiktok-shop-pipeline-demo/blob/feature/classroom-demo-evidence-foundation/notebooks/TikTok_Shop_Step_by_Step_Demo.ipynb)
+[![เปิด Pipeline Demo ใน Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/KankaweeK356/tiktok-shop-pipeline-demo/blob/claude/nice-ptolemy-gpmkm2/notebooks/TikTok_Shop_Step_by_Step_Demo.ipynb)
 
 [ดาวน์โหลด Source ZIP รายเดือน มกราคม–ตุลาคม 2569](https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/releases/tag/classroom-source-v1)
 

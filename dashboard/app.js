@@ -2674,8 +2674,13 @@
     const rows = PS.monthRows({ months: state.monthStates, runs: state.currentCycleRuns, monthLabels: labels });
     const ov = PS.opsOverview({ loaded: Boolean(state.opsLoaded), phase: state.realLabPhase, rows, runs: state.currentCycleRuns, latestFailed: state.latestFailedRun,
       dq: { ...state.dq }, active: state.activeRunId, snapshots: state.publishedSnapshots, publishedThrough: state.publishedThrough });
-    const wrap = box("ops-overview");
-    wrap.append(node("h3", "lab-heading", "Data Operations Overview — สำหรับผู้ดูแลข้อมูล"));
+    const wrap = node("details", "ops-overview");          // whole panel can be hidden (like the ML detail panel); the choice is remembered
+    wrap.open = state.opsOpen?.all ?? true;
+    wrap.addEventListener("toggle", () => { if ((state.opsOpen?.all ?? true) !== wrap.open) state.opsOpen = { ...(state.opsOpen || {}), all: wrap.open }; });
+    const head = node("summary", "ops-summary");
+    head.append(node("strong", "ops-summary-title", "Data Operations Overview — สำหรับผู้ดูแลข้อมูล"),
+      node("span", "ops-summary-line", ov.verified ? "Published " + ov.published + "/" + ov.total + " · Pipeline " + OPS_PIPELINE[ov.pipeline][1] + " · DQ " + OPS_DQ[ov.dq][1] : "NOT VERIFIED"));
+    wrap.append(head);
     wrap.append(small("สรุปจากสถานะที่บันทึกไว้ในฐานข้อมูลจริง (อ่านอย่างเดียว) · รีเฟรชแล้วต้องได้ผลเดิม · ไม่ใช่ผลทางธุรกิจ"));
     if (!ov.verified) { wrap.append(notice("ยังอ่านสถานะ Pipeline จากฐานข้อมูลไม่ได้ (NOT VERIFIED) — ไม่แสดงตัวเลขเพื่อไม่ให้เข้าใจผิดว่าเป็น 0 หรือผ่าน", true)); root.append(wrap); return; }
 

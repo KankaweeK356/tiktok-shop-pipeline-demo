@@ -903,8 +903,8 @@ tr:hover td{background:#fff8f0}.metric-label,.metric-sub,.panel-description{colo
 .mlops-pointer { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-size: 13px; color: #421D20; background: #fff8f0; border-left: 3px solid #741D2B; padding: 6px 10px; border-radius: 4px; margin: 6px 0; }
 
 /* Data Operations overview (Pipeline Runner). Colour is never the only signal: every card also carries the status word. */
-.ops-overview{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:16px 18px;margin:0 0 18px;display:flex;flex-direction:column;gap:12px}
-.ops-overview .lab-heading{margin:0;font-size:16px}
+.ops-overview{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:14px 18px;margin:0 0 18px}.ops-overview>*:not(summary){margin-top:12px}
+.ops-summary{cursor:pointer;display:flex;gap:6px 14px;flex-wrap:wrap;align-items:baseline;list-style-position:inside}.ops-summary-title{font-size:16px}.ops-summary-line{font-size:12px;color:var(--muted);font-weight:650}
 .ops-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 .ops-card{border:1px solid var(--line);border-left-width:5px;border-radius:11px;padding:12px 14px;display:flex;flex-direction:column;gap:3px;min-width:0;background:#fff}
 .ops-card-title{color:var(--muted);font-weight:700}.ops-card-value{font-size:19px;letter-spacing:-.4px}.ops-card-thai{font-size:12px;color:#5b4a47}

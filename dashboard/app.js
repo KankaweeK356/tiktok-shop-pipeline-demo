@@ -3967,7 +3967,7 @@
       if (!state.fc.month || !months.some(m => m.month === state.fc.month))
         state.fc.month = (months.find(m => m.can_generate || m.draft_count || m.official_forecast_id) || months[0]).month;
       const detail = await fcApi("forecast", { query: { month: state.fc.month } });
-      if (state.fc.ml?.open) { loadMlops(state.fc.month, true); loadMonitoring(true); }      // never show a cached view of ML evidence: it changes when months are published
+      if ((state.fc.ml = state.fc.ml || { byMonth: {}, open: true, tab: "", busy: "", error: "" }).open) { loadMlops(state.fc.month, true); loadMonitoring(true); }      // never show a cached view of ML evidence: it changes when months are published
       if (!fcSeq.isCurrent(token)) return;
       state.fc.forecast = detail.ok ? detail.data : null;
       { const sf = detail.ok && (detail.data.official || (detail.data.drafts || [])[0]); if (sf) loadShadow(sf.forecast_run_id); }
@@ -4273,7 +4273,7 @@
     if (state.view === "forecast") renderForecast();
   }
   async function loadMlops(month, force = false) {
-    const ml = state.fc.ml = state.fc.ml || { byMonth: {}, open: false, tab: "", busy: "", error: "" };
+    const ml = state.fc.ml = state.fc.ml || { byMonth: {}, open: true, tab: "", busy: "", error: "" };
     if (!force && ml.byMonth[month]?.data) return;
     if (!ml.byMonth[month]?.data) { ml.byMonth[month] = { loading: true, data: null, error: "" }; renderForecast(); }      // a refresh keeps showing the old data until the new one arrives
     const r = await fcApi("mlops", { query: { month } });
@@ -4451,20 +4451,23 @@
     return wrap;
   }
   function renderMlopsPanel() {
-    const f = state.fc, ml = f.ml = f.ml || { byMonth: {}, open: false, tab: "", busy: "", error: "" };
+    const f = state.fc, ml = f.ml = f.ml || { byMonth: {}, open: true, tab: "", busy: "", error: "" };
     const det = node("details", "dq-details fc-mlops"); det.open = ml.open; det.id = "mlopsDetails";
     det.append(node("summary", "", "ML Model & Experiment Details · Feature Store · Training Run · Drift"));
     det.addEventListener("toggle", () => { if (det.open !== ml.open) { ml.open = det.open; if (ml.open) { loadMlops(f.month, true); loadMonitoring(true); } else ml.mon = null; } });
     if (!ml.open) return det;
+    det.append(small("ผลทั้งหมดในส่วนนี้เกิดขึ้นเองตอนสร้าง Forecast และตอน Run เดือนนั้น ไม่ต้องกดปุ่มใดๆ · ถ้ายังว่าง แปลว่าเดือนที่เลือกยังไม่ได้สร้าง Forecast", "mlops-intro"));
     const slot = ml.byMonth[f.month], data = slot?.data;
     if (!slot || slot.loading) { det.append(small("กำลังอ่าน Artifact จาก Object Storage…")); return det; }
     if (!data) { det.append(notice(slot.error || "ไม่พบข้อมูล", true)); return det; }
     det.append(renderMonitoringBlock());
     const order = ["official_linked", "historical_evaluation", "experiment_only"];
-    const tab = order.includes(ml.tab) ? ml.tab : (order.find(k => data[k]?.latest) || "historical_evaluation");
+    const visible = ml.showExtras ? order : ["official_linked"];            // the optional demo tabs stay hidden unless asked for
+    const tab = visible.includes(ml.tab) ? ml.tab : (ml.showExtras ? (order.find(k => data[k]?.latest) || "official_linked") : "official_linked");
     const official = f.forecast?.official;
-    const seg = box("mlops-tabs"); order.forEach(k => { const b = node("button", "mlops-tab" + (tab === k ? " on" : ""), ML_KIND[k][1] + (data[k]?.count ? " (" + data[k].count + ")" : "")); b.type = "button"; b.addEventListener("click", () => { ml.tab = k; renderForecast(); }); seg.append(b); });
+    const seg = box("mlops-tabs"); visible.forEach(k => { const b = node("button", "mlops-tab" + (tab === k ? " on" : ""), ML_KIND[k][1] + (data[k]?.count ? " (" + data[k].count + ")" : "")); b.type = "button"; b.addEventListener("click", () => { ml.tab = k; renderForecast(); }); seg.append(b); });
     det.append(small("ใช้ข้อมูลจาก Artifact และ Training Run ที่บันทึกจริง · เดือนเป้าหมาย " + thaiMonth(f.month) + " · Official Forecast, Historical Evaluation และ Experiment Only แยกกันชัดเจน"), seg);
+    { const more = node("button", "mlops-more", ml.showExtras ? "ซ่อนตัวเลือกเสริมสำหรับเดโม" : "แสดงตัวเลือกเสริมสำหรับเดโม (Historical Evaluation / Experiment Only · ต้องกดปุ่มสร้างเอง)"); more.type = "button"; more.addEventListener("click", () => { ml.showExtras = !ml.showExtras; ml.tab = "official_linked"; renderForecast(); }); det.append(more); }
     const cur = data[tab];
     if (tab === "official_linked") {
       det.append(box("mlops-official", node("strong", "", "Official Forecast " + thaiMonth(f.month)), official ? small("SEALED · " + official.method_type + " (" + official.model_name + ") ยอดร้าน ฿" + money(official.shop_forecast, 2) + " · Seal เมื่อ " + official.sealed_at) : small("ยังไม่มี Official Forecast ที่ Seal ของเดือนนี้")));
@@ -4472,7 +4475,8 @@
     if (cur?.latest) { det.append(mlJourney(data, cur.latest, tab === "official_linked" ? official : tab === "historical_evaluation" ? official : null, ml.mon?.data?.summary), mlRunBody(cur.latest, tab, official)); }
     else {
       det.append(mlJourney(data, null, official, ml.mon?.data?.summary));
-      const msg = tab === "official_linked" ? "ไม่มี Training Run ที่ผูกกับ Official Forecast เดือนนี้ (Forecast ที่ Seal ก่อนเปิดใช้ MLOps จะไม่มี) ดู Historical Evaluation แทน" :
+      const hasForecast = Boolean(official || (f.forecast?.drafts || [])[0]);
+      const msg = tab === "official_linked" ? (hasForecast ? "ยังไม่มี Training Run ผูกกับ Forecast นี้ (Forecast ที่ Seal ก่อนเปิดใช้ MLOps จะไม่มี และไม่ย้อนสร้างให้) · ถ้าต้องการดูตัวอย่างให้เปิด \"ตัวเลือกเสริมสำหรับเดโม\" ด้านบน" : "ยังไม่ได้สร้าง Forecast ของเดือนนี้ · กด \"สร้าง Forecast\" ด้านบน แล้วระบบจะสร้างผล ML ให้เอง ไม่ต้องกดอะไรเพิ่ม") :
         tab === "historical_evaluation" ? "ยังไม่มี Historical Evaluation ของเดือนนี้" : "ยังไม่มีการทดลอง (Experiment Only) ของเดือนนี้";
       det.append(notice(msg));
       if (tab !== "official_linked") { const kind = tab === "historical_evaluation" ? "HISTORICAL_EVALUATION" : "EXPERIMENT_ONLY";
@@ -4487,15 +4491,15 @@
     state.ev.loaded = true; state.ev.data = r.ok ? r.data : null; state.ev.error = r.ok ? "" : (r.data.error || "โหลดผลเปรียบเทียบไม่สำเร็จ");
     const st = await fcApi("status"); state.ev.status = st.ok ? st.data : null;
     if (state.view === "evaluation") renderEvaluation();
-    if (state.fc.ml?.evOpen) loadMonitoring(true);
+    { const ml = state.fc.ml = state.fc.ml || { byMonth: {}, open: true, tab: "", busy: "", error: "" }; if (ml.evOpen !== false) loadMonitoring(true); }
   }
   // Champion vs Challenger Monitoring also lives on the Forecast vs Actual page (same block, collapsed by default).
   function renderEvalMonitoring() {
-    const f = state.fc, ml = f.ml = f.ml || { byMonth: {}, open: false, tab: "", busy: "", error: "" };
-    const det = node("details", "dq-details fc-mlops"); det.open = Boolean(ml.evOpen);
+    const f = state.fc, ml = f.ml = f.ml || { byMonth: {}, open: true, tab: "", busy: "", error: "" };
+    const det = node("details", "dq-details fc-mlops"); det.open = ml.evOpen !== false;
     det.append(node("summary", "", "ML: Baseline vs ML เทียบผลจริง · Champion vs Challenger Monitoring"));
-    det.addEventListener("toggle", () => { if (det.open !== Boolean(ml.evOpen)) { ml.evOpen = det.open; if (ml.evOpen) loadMonitoring(true); else ml.mon = null; } });
-    if (ml.evOpen) { det.append(small("เทียบ Baseline ที่ Seal เป็น Official กับ Ridge จาก Shadow Forecast ที่บันทึกก่อน Publish Actual · รายละเอียดสายงาน Feature → Training → Validation อยู่ในหน้าคาดการณ์และวางแผน"), renderMonitoringBlock()); if (ml.error) det.append(notice(ml.error, true)); }
+    det.addEventListener("toggle", () => { if (det.open !== (ml.evOpen !== false)) { ml.evOpen = det.open; if (ml.evOpen) loadMonitoring(true); else ml.mon = null; } });
+    if (ml.evOpen !== false) { det.append(small("เทียบ Baseline ที่ Seal เป็น Official กับ Ridge จาก Shadow Forecast ที่บันทึกก่อน Publish Actual · รายละเอียดสายงาน Feature → Training → Validation อยู่ในหน้าคาดการณ์และวางแผน"), renderMonitoringBlock()); if (ml.error) det.append(notice(ml.error, true)); }
     return det;
   }
   function evalBars(groupsEval) {

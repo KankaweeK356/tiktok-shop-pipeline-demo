@@ -308,7 +308,15 @@ def test_forecast_page_shows_one_shadow_ml_line_marked_not_official():
 
 def test_ml_panel_never_serves_cached_evidence_after_months_are_published():
     app = (_ROOT / "dashboard" / "app.js").read_text(encoding="utf-8")
-    assert "loadMlops(state.fc.month, true); loadMonitoring(true);" in app                  # forecast page reloads ML evidence every time it (re)loads while the panel is open
+    assert "{ loadMlops(state.fc.month, true); loadMonitoring(true); }" in app                  # forecast page reloads ML evidence every time it (re)loads while the panel is open
     assert "loadMlops(f.month, true); loadMonitoring(true);" in app                         # and every time the panel is opened
-    assert "if (state.fc.ml?.evOpen) loadMonitoring(true);" in app                          # and on the Forecast vs Actual page
+    assert "if (ml.evOpen !== false) loadMonitoring(true);" in app                          # and on the Forecast vs Actual page
     assert "a refresh keeps showing the old data" in app                                    # refresh does not blank the screen
+
+
+def test_ml_panel_opens_by_itself_and_hides_the_optional_demo_buttons_until_asked():
+    app = (_ROOT / "dashboard" / "app.js").read_text(encoding="utf-8")
+    assert app.count('{ byMonth: {}, open: true, tab: "", busy: "", error: "" }') >= 3              # forecast page, forecast loader, evaluation page: open by default
+    assert "det.open = ml.evOpen !== false" in app                                                  # evaluation section open by default as well
+    assert 'const visible = ml.showExtras ? order : ["official_linked"]' in app                     # only the automatic tab is visible by default
+    assert "ไม่ต้องกดปุ่มใดๆ" in app and "ระบบจะสร้างผล ML ให้เอง ไม่ต้องกดอะไรเพิ่ม" in app               # says plainly that nothing has to be pressed

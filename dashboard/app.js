@@ -4450,6 +4450,14 @@
     wrap.append(d2);
     return wrap;
   }
+  // Planning page keeps only a one-line pointer: the cumulative comparison with actuals lives on the Forecast vs Actual page.
+  function monitoringPointer() {
+    const sm = state.fc.ml?.mon?.data?.summary, n = sm ? sm.counted_months : 0, row = box("mlops-pointer");
+    const label = { INSUFFICIENT_EVIDENCE: "Insufficient Evidence", PRELIMINARY: "Preliminary", ADEQUATE: "Adequate" }[sm?.evidence_level || "INSUFFICIENT_EVIDENCE"];
+    row.append(node("span", "", n ? "ผลเทียบ Baseline กับ ML กับยอดจริง: " + n + " เดือนแล้ว · " + label : "ยังไม่มีเดือนที่เทียบกับยอดจริง (จะขึ้นอัตโนมัติหลัง Run เดือนที่ Seal ไว้)"));
+    const go = node("button", "mlops-more", "ดูผลเทียบยอดจริงที่หน้า คาดการณ์เทียบผลจริง →"); go.type = "button"; go.addEventListener("click", () => setView("evaluation"));
+    row.append(go); return row;
+  }
   function renderMlopsPanel() {
     const f = state.fc, ml = f.ml = f.ml || { byMonth: {}, open: true, tab: "", busy: "", error: "" };
     const det = node("details", "dq-details fc-mlops"); det.open = ml.open; det.id = "mlopsDetails";
@@ -4460,7 +4468,7 @@
     const slot = ml.byMonth[f.month], data = slot?.data;
     if (!slot || slot.loading) { det.append(small("กำลังอ่าน Artifact จาก Object Storage…")); return det; }
     if (!data) { det.append(notice(slot.error || "ไม่พบข้อมูล", true)); return det; }
-    det.append(renderMonitoringBlock());
+    det.append(monitoringPointer());
     const order = ["official_linked", "historical_evaluation", "experiment_only"];
     const extras = new URLSearchParams(window.location.search).get("demo") === "1";       // the two manual demo runs exist only behind ?demo=1
     const visible = extras ? order : ["official_linked"];

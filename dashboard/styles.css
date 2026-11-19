@@ -899,3 +899,5 @@ tr:hover td{background:#fff8f0}.metric-label,.metric-sub,.panel-description{colo
 .mlops-more { background: none; border: 0; color: #8a7578; font-size: 11.5px; text-decoration: underline; cursor: pointer; padding: 4px 0; text-align: left; }
 
 .mlops-heading { display: block; margin: 8px 0 2px; font-size: 15px; }
+
+.mlops-pointer { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-size: 13px; color: #421D20; background: #fff8f0; border-left: 3px solid #741D2B; padding: 6px 10px; border-radius: 4px; margin: 6px 0; }

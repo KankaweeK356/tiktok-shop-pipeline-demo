@@ -320,3 +320,12 @@ def test_ml_panel_opens_by_itself_and_hides_the_optional_demo_buttons_until_aske
     assert "det.open = ml.evOpen !== false" in app                                                  # evaluation section open by default as well
     assert 'const visible = extras ? order : ["official_linked"]' in app and 'get("demo") === "1"' in app     # the manual demo runs exist only behind ?demo=1
     assert "ไม่ต้องกดปุ่มใดๆ" in app and "ระบบจะสร้างผล ML ให้เอง ไม่ต้องกดอะไรเพิ่ม" in app               # says plainly that nothing has to be pressed
+
+
+def test_monitoring_lives_on_the_forecast_vs_actual_page_and_planning_keeps_only_a_pointer():
+    app = (_ROOT / "dashboard" / "app.js").read_text(encoding="utf-8")
+    panel = app[app.index("function renderMlopsPanel()"):app.index("async function loadEvaluationView")]
+    assert "renderMonitoringBlock()" not in panel and "det.append(monitoringPointer())" in panel          # no duplicate block on the planning page
+    ev = app[app.index("function renderEvalMonitoring()"):app.index("function evalBars(")]
+    assert "renderMonitoringBlock()" in ev                                                              # the full block stays where actuals are compared
+    assert 'setView("evaluation")' in app[app.index("function monitoringPointer()"):app.index("function renderMlopsPanel()")]

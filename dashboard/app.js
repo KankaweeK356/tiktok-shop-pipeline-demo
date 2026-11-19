@@ -4348,11 +4348,12 @@
     ml.mon = { loading: false, data: r.ok ? r.data : null, error: r.ok ? "" : (r.data.error || "โหลดผล Monitoring ไม่สำเร็จ") };
     if (state.view === "forecast") renderForecast();
   }
-  // Principle only (this demo has no switch): how a champion change would happen, outside the system.
-  function monPrinciple() {
-    const box1 = node("div", "small mon-principle");
-    box1.append(node("strong", "", "หลักการเปลี่ยน Champion (อธิบายเท่านั้น ระบบ Demo ไม่มีฟังก์ชันสลับ) "),
-      node("span", "", "① ML ต้องถึงระดับ Adequate (ตั้งแต่ 6 เดือน) และผ่านครบ 4 เงื่อนไขจึงขึ้น RECOMMEND_REVIEW · ② ผู้รับผิดชอบทบทวนหลักฐานและตัดสินใจเอง · ③ ถ้าเห็นชอบ ให้เริ่มใช้ ML เป็น Official ตั้งแต่เดือนเป้าหมายถัดไปที่ยังไม่ Seal (ไม่แก้ Forecast ที่ Seal แล้ว) พร้อมบันทึกผู้อนุมัติ วันที่ และ Model Version · ④ จากนั้น Baseline กลายเป็น Challenger และเริ่มนับ Monitoring รอบใหม่"));
+  // Principle only (this demo has no switch): when ML would be recommended, and that a person decides.
+  const MON_RULE_DEFAULT = { min_months: 6, wape_gap_pp: 2, wins_required: 4, wins_window: 6, group_tolerance_pp: 5 };
+  function monPrinciple(rv) {
+    const r = rv || MON_RULE_DEFAULT, box1 = node("div", "small mon-principle");
+    box1.append(node("strong", "", "หลักการเปลี่ยน Champion: "),
+      node("span", "", "ML ต้องชนะ Baseline ครบทุกข้อ คือ มีข้อมูล ≥ " + r.min_months + " เดือน · WAPE สะสมต่ำกว่า ≥ " + r.wape_gap_pp + " จุด · ชนะรายเดือน ≥ " + r.wins_required + " จาก " + r.wins_window + " เดือนล่าสุด · ไม่มีกลุ่มสินค้าใดแย่กว่าเกิน " + r.group_tolerance_pp + " จุด จึงแนะนำให้ทบทวน แล้วคนเป็นผู้ตัดสินใจ มีผลเฉพาะเดือนถัดไปที่ยังไม่ Seal (ระบบ Demo ไม่มีฟังก์ชันสลับ)"));
     return box1;
   }
   async function repairMonitoring() {
@@ -4414,7 +4415,7 @@
       rec.status === "RECOMMEND_REVIEW" ? small("หลักฐาน: เดือนที่นับ " + rec.evidence.counted_months.join(", ") + " · Shadow Run " + rec.evidence.shadow_training_runs.map(x => String(x).slice(0, 8)).join(", ")) : null,
       dataTable([["ok", ""], ["label", "เงื่อนไข (ต้องผ่านทุกข้อ)"], ["detail", "ผลตามจริง"]], rec.rules.map(r => ({ ok: r.passed ? "✓" : "✗", label: r.label, detail: r.detail }))),
       small("เป็นคำแนะนำเท่านั้น · ไม่เปลี่ยน Champion และไม่สั่ง Retrain อัตโนมัติ · ระบบนี้ไม่มีฟังก์ชันเปลี่ยน Official เป็น ML (Official ยังเป็น Baseline)"),
-      monPrinciple()));
+      monPrinciple(rec.rule_values)));
     const c = s.cumulative;
     wrap.append(node("strong", "", "ผลสะสม (ระดับ Shop) · Cumulative WAPE = Σ|error| ÷ Σ Actual ของเดือนชุดเดียวกัน"),
       dataTable([["m", "วิธี"], ["w", "Cumulative WAPE"], ["mae", "MAE/เดือน ฿"], ["b", "Bias/เดือน ฿ (คาด−จริง)"], ["t", "ผลรวมความคลาดเคลื่อนสะสม ฿"]],

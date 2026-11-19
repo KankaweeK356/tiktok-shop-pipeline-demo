@@ -281,3 +281,20 @@ test("No secret or storage detail leaks through API error bodies", async () => {
   const r = await callRaw(fakeSql([0, 1, 2, 3, 4]), { mlopsStorage: leakyStore }, "GET", { fc: "mlops", month: "2026-06" }, undefined, ok);
   assert.ok(!JSON.stringify(r.json).includes("AKIA") && !JSON.stringify(r.json).includes("secret-bucket"));
 });
+
+
+test("Shadow note API: returns only the shadow bound to that exact forecast id; unknown id / bad id / storage outage are handled", async () => {
+  const ok = { host: "app.test", origin: "https://app.test" };
+  const dir = path.join(MON_ROOT, "ml/monitoring/by_forecast"), ids = fs.readdirSync(dir).map(f => f.replace(".json", ""));
+  assert.ok(ids.length >= 5);
+  const hit = await callRaw(fakeSql([0]), { mlopsStorage: monStorage }, "GET", { fc: "mlops_shadow", forecast_id: ids[0] }, undefined, ok);
+  assert.equal(hit.status, 200); const sh = hit.json.shadow;
+  assert.ok(sh.ml.shop > 0 && sh.ml.model_version && sh.created_at && sh.data_cutoff && sh.feature_version);
+  assert.ok(Object.keys(sh.baselines).every(k => k.startsWith("baseline_")) && Object.keys(sh.baselines).length === 2);
+  assert.equal(sh.ml.groups, undefined);                                                                  // only what the note needs (no per-group values)
+  const none = await callRaw(fakeSql([0]), { mlopsStorage: monStorage }, "GET", { fc: "mlops_shadow", forecast_id: "99999999-9999-4999-8999-999999999999" }, undefined, ok);
+  assert.equal(none.status, 200); assert.equal(none.json.shadow, null);
+  assert.equal((await callRaw(fakeSql([0]), { mlopsStorage: monStorage }, "GET", { fc: "mlops_shadow", forecast_id: "nope" }, undefined, ok)).status, 400);
+  const down = await callRaw(fakeSql([0]), { mlopsStorage: { list: async () => [], getJson: async () => { throw new Error("down"); } } }, "GET", { fc: "mlops_shadow", forecast_id: ids[0] }, undefined, ok);
+  assert.equal(down.status, 503);
+});

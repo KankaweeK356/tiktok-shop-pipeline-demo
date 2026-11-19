@@ -297,3 +297,10 @@ def test_monitoring_is_also_on_the_forecast_vs_actual_page_without_a_new_tab():
     section = app[app.index("function renderEvalMonitoring()"):app.index("function evalBars(")]
     assert "renderMonitoringBlock()" in section and 'node("details"' in section and "loadMonitoring()" in section
     assert 'data-view="monitoring"' not in (_ROOT / "dashboard" / "index.html").read_text(encoding="utf-8")
+
+
+def test_forecast_page_shows_one_shadow_ml_line_marked_not_official():
+    app = (_ROOT / "dashboard" / "app.js").read_text(encoding="utf-8")
+    line = app[app.index("Shadow ML (Ridge) ทำนาย"):app.index("Shadow ML (Ridge) ทำนาย") + 700]
+    assert "ไม่ใช่ Official" in line and "บันทึกก่อนรู้ยอดจริง" in line
+    assert 'fcApi("mlops_shadow"' in app and "ยังไม่มี Shadow ML ที่ผูกกับ Forecast นี้" in app            # honest empty state for forecasts sealed before MLOps

@@ -3970,6 +3970,7 @@
       if (state.fc.ml?.open && !state.fc.ml.byMonth[state.fc.month]) loadMlops(state.fc.month);
       if (!fcSeq.isCurrent(token)) return;
       state.fc.forecast = detail.ok ? detail.data : null;
+      { const sf = detail.ok && (detail.data.official || (detail.data.drafts || [])[0]); if (sf) loadShadow(sf.forecast_run_id); }
       if (detail.ok && detail.data.official && !state.fc.defaults[state.fc.month]) {
         const d = await fcApi("defaults", { query: { month: state.fc.month } });
         if (fcSeq.isCurrent(token) && d.ok) {
@@ -4211,6 +4212,11 @@
       node("span", "", "Official Forecast " + (shown ? "฿" + money(shown.shop_forecast, 2) : "—")), shown ? node("span", "status " + (official ? "status-pass" : "status-pending"), official ? "SEALED" : "DRAFT") : null,
       gap === null ? null : node("span", "fc-sep", "·"), gap === null ? null : node("span", gap < 0 ? "fc-gap-neg" : "", "Forecast ห่างเป้า " + (gap >= 0 ? "+" : "") + money(100 * gap / tgt.revenue_target_thb, 2) + "% (" + (gap >= 0 ? "+" : "−") + "฿" + money(Math.abs(gap), 2) + ")"));
     root.append(box("fc-topbar", refLine, official ? slot : null));
+    if (shown) {                                                   // Shadow ML next to the official number: recorded before the actual, never the official value
+      const sh = f.shadow?.[shown.forecast_run_id];
+      if (sh && !sh.loading) root.append(small(sh.data?.ml ? "Shadow ML (Ridge) ทำนาย ฿" + money(sh.data.ml.shop, 2) + " · Baseline Official ฿" + money(shown.shop_forecast, 2) + " · ส่วนต่าง " + (sh.data.ml.shop - shown.shop_forecast >= 0 ? "+" : "−") + "฿" + money(Math.abs(sh.data.ml.shop - shown.shop_forecast), 2) + " · ไม่ใช่ Official (บันทึกก่อนรู้ยอดจริง)" :
+        sh.failed ? "อ่าน Shadow ML ไม่ได้ในตอนนี้ (Official Forecast ไม่ได้รับผลกระทบ)" : "ยังไม่มี Shadow ML ที่ผูกกับ Forecast นี้ (เช่น Seal ก่อนเปิดใช้ MLOps)", "fc-shadow-line"));
+    }
     if (shown) {
       const det = node("details", "dq-details"); det.append(node("summary", "", "ดู Forecast รายกลุ่มและที่มา"));
       det.append(dataTable([["group", "กลุ่มสินค้า"], ["pred", "Forecast Net Revenue (THB)"]], [...Object.entries(shown.results).map(([g, v]) => ({ group: g, pred: money(v, 2) })), { group: "รวมร้าน (ผลรวม 5 กลุ่ม)", pred: money(shown.shop_forecast, 2) }]),
@@ -4258,6 +4264,14 @@
   const ML_KIND = { official_linked: ["OFFICIAL_LINKED", "Official Forecast"], historical_evaluation: ["HISTORICAL_EVALUATION", "Historical Evaluation"], experiment_only: ["EXPERIMENT_ONLY", "Experiment Only"] };
   const ML_ROLE = { BASELINE_OFFICIAL: "Baseline (Official)", BASELINE_REFERENCE: "Baseline (อ้างอิง)", ML_OFFICIAL_CANDIDATE: "ML (ผู้เข้าเกณฑ์ Official)", ML_EXPERIMENTAL: "ML ทดลอง (ไม่เข้า Official)" };
   const DRIFT_TH = { STABLE: "คงที่", WATCH: "เฝ้าดู", ALERT: "แจ้งเตือน", INSUFFICIENT_EVIDENCE: "ข้อมูลยังไม่พอ (Insufficient Evidence)" };
+  async function loadShadow(forecastId) {                      // one-line "Shadow ML" note under the forecast (two small reads, bound to this exact forecast id)
+    const f = state.fc; f.shadow = f.shadow || {};
+    if (!forecastId || (f.shadow[forecastId] && !f.shadow[forecastId].failed)) return;
+    f.shadow[forecastId] = { loading: true, data: null };
+    const r = await fcApi("mlops_shadow", { query: { forecast_id: forecastId } });
+    f.shadow[forecastId] = { loading: false, data: r.ok ? r.data.shadow : null, failed: !r.ok };
+    if (state.view === "forecast") renderForecast();
+  }
   async function loadMlops(month, force = false) {
     const ml = state.fc.ml = state.fc.ml || { byMonth: {}, open: false, tab: "", busy: "", error: "" };
     if (!force && ml.byMonth[month]?.data) return;

@@ -113,5 +113,38 @@
       snapshot: snap ? { batch: snap.batch, runId: snap.run_id, publishedAt: snap.published_at, sourceVersion: snap.source_version } : null,
       last: succeeded ? { runId: String(succeeded.run_id), batch: runBatch(succeeded), startedAt: succeeded.created_at } : null, action };
   }
-  return { DELIVERIES, STAGE_ORDER, canonicalBatch, runBatch, runsByBatch, chipStatus, stageView, makeSequencer, monthRows, opsOverview };
+
+  /** Facts for the Source card of one month. Expected identity comes from the approved Source Lock; the recorded hash only from backend runs.
+   *  Nothing here is assumed: no lock -> NOT_VERIFIED, no run -> NOT_CHECKED. */
+  function sourceFacts({ batch, month, lock, runs, dq, snapshots }) {
+    const mine = (runs || []).filter(r => runBatch(r) === batch && r.status !== "CANCELLED")
+      .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
+    const withHash = mine.find(r => r.source_zip_sha256);
+    const snap = (snapshots || []).filter(x => x.batch === batch).slice(-1)[0] || null;
+    const dqRunHash = dq?.blocked && dq.run?.batch === batch ? (dq.run.source?.zip_sha256 || dq.issues?.[0]?.source_zip_sha256 || null) : null;
+    const recorded = withHash?.source_zip_sha256 || dqRunHash || snap?.source_zip_sha256 || null;
+    const version = withHash?.source_version || dq?.run?.source?.source_version || snap?.source_version || null;
+    const lockMonth = lock?.months?.[month] || null, expected = lockMonth?.zip_sha256 || null;
+    const file = (lock?.zip_filename_template || "classroom-source-{month}.zip").replace("{month}", month);
+    const fileState = !lock ? "NOT_VERIFIED" : expected ? "READY" : "NOT_IN_LOCK";
+    const hashState = !lock ? "NOT_VERIFIED" : !expected ? "NOT_IN_LOCK" : !recorded ? "NOT_CHECKED" : recorded === expected ? "VERIFIED" : "MISMATCH";
+    const versionMismatch = Boolean(lock?.source_version && version && lock.source_version !== version);
+    const published = mine.some(r => r.status === "SUCCEEDED");
+    const dqState = dq?.blocked && dq.run?.batch === batch ? "FAILED" : published ? "PASSED" : mine.some(r => r.status === "RUNNING" || r.status === "QUEUED") ? "RUNNING" : "NOT_CHECKED";
+    const openIssues = dqState === "FAILED" ? (dq.issues || []).filter(i => i.status !== "RESOLVED").length : null;
+    return { file, expected, recorded, version, lockVersion: lock?.source_version || null, fileState, hashState, versionMismatch, dqState, openIssues };
+  }
+  /** Reconciliation summary read from the persisted Validate-stage evidence (never "pass" without numbers). */
+  function reconciliation(evidence) {
+    const rows = evidence?.output?.preview;
+    if (!Array.isArray(rows)) return { state: "NOT_VERIFIED" };
+    const by = Object.fromEntries(rows.filter(r => r && r.check).map(r => [r.check, r]));
+    const items = by["Paid items"], rev = by["Net revenue"], failed = by["Failed checks"];
+    if (!items || !rev || items.source == null || items.warehouse == null || rev.source == null || rev.warehouse == null) return { state: "NOT_VERIFIED" };
+    const itemsOk = Number(items.source) === Number(items.warehouse), revOk = Math.abs(Number(rev.source) - Number(rev.warehouse)) < 0.01;
+    const chk = by["Checks"];                                    // real evidence: {check:"Checks", passed:N, failed:M}; older shape: a separate "Failed checks" row
+    const failedChecks = failed && failed.warehouse != null ? Number(failed.warehouse) : chk && chk.failed != null ? Number(chk.failed) : null;
+    return { state: itemsOk && revOk && (failedChecks === null || failedChecks === 0) ? "MATCH" : "MISMATCH", items: [items.source, items.warehouse], revenue: [rev.source, rev.warehouse], failedChecks };
+  }
+  return { sourceFacts, reconciliation, DELIVERIES, STAGE_ORDER, canonicalBatch, runBatch, runsByBatch, chipStatus, stageView, makeSequencer, monthRows, opsOverview };
 });

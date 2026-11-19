@@ -56,3 +56,12 @@
 | 2 Data Operations | ผู้ดูแลข้อมูล | Pipeline ถึงไหน/DQ/Warehouse พร้อมไหม/ML trace | Test Pipeline → Data Operations Overview |
 ทั้งสองอ่านข้อมูลชุดเดียวกัน: Pipeline เขียน ER1→Lake→ER2 และ Publish Snapshot; Business Dashboard ใช้เฉพาะเดือน Published.
 Rubric: Data Sources / DB-Warehouse / ETL (Runner 5 ขั้น) · Dashboards ≥2 role (ข้างบน) · AI/ML (E + หน้า Forecast) · Storytelling (Overview → Review & Fix → Publish → KPI).
+
+## F. แก้เพิ่ม (ข้อ 1B และ 2 — งานเสี่ยงต่ำ, UI อย่างเดียว)
+**Source card (หน้า Runner)** — เดิมแสดง Hash `3a7b4e19... (SHA256)` และ "พร้อมใช้งาน (Validated)" แบบตายตัวทุกเดือน → ตอนนี้
+- ชื่อไฟล์/เวอร์ชัน/จำนวน CSV มาจาก Source Lock (`dashboard/data/source_lock_classroom_v2.json`)
+- Hash แสดงค่าที่ Backend บันทึกจาก Run ของเดือนนั้น (`source_zip_sha256`) ถ้ายังไม่มี Run จะแสดง Hash ตาม Lock และระบุ "ยังไม่ตรวจ"
+- แยก 3 สถานะ: ไฟล์ (เตรียมแล้ว/ไม่อยู่ใน Lock/NOT VERIFIED) · Hash (ยืนยันแล้ว/ยังไม่ตรวจ/ไม่ตรง Lock) · ผลตรวจ DQ (ผ่าน/ไม่ผ่าน n รายการ/กำลังตรวจ/ยังไม่ตรวจ)
+- กรณี March: Hash ตรง Lock แต่ DQ ไม่ผ่าน (SKU ผิด) แสดงแยกกันชัดเจน — ภาพ `screenshots/source_card_march_hash_ok_dq_failed.png`
+**Overview ส่วน D** — Reconciliation อ่านตัวเลขจริงจากหลักฐานขั้น Validate (Paid items / Net Revenue ER1 ↔ ER2 และจำนวนเช็กที่ไม่ผ่าน) ไม่ใช่แค่ "มีหลักฐาน"; เพิ่มแถวเช็ก Snapshot ตรงกับ Run และเดือนที่ Publish ล่าสุด; อ่านหลักฐานไม่ได้ = "ไม่ได้แปลว่าไม่ผ่าน"
+Test: Unit 64/64; UI ทดสอบด้วยหลักฐานรูปแบบจริงจาก `dashboard/data/lab_steps/`

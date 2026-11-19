@@ -93,3 +93,44 @@ test("monthRows falls back to runs when backend months are absent (and never inv
   const rows = S.monthRows({ months: [], runs: [run("initial", "SUCCEEDED"), run("incremental_01", "BLOCKED_DQ")] });
   assert.equal(rows[0].state, "PUBLISHED"); assert.equal(rows[1].state, "DATA_QUALITY_BLOCKED"); assert.equal(rows[2].state, "UNKNOWN");
 });
+
+// ---- Source card facts: expected identity from the Source Lock, recorded identity only from backend runs ----
+const lock = { source_version: "classroom_v2_2026_11_16", zip_filename_template: "classroom-source-{month}.zip",
+  months: { "2026-02": { batch: "incremental_01", zip_sha256: "aa" }, "2026-03": { batch: "incremental_02", zip_sha256: "bb" } } };
+test("source card: no lock -> NOT_VERIFIED (never 'validated')", () => {
+  const f = S.sourceFacts({ batch: "incremental_02", month: "2026-03", lock: null, runs: [], dq: {}, snapshots: [] });
+  assert.equal(f.fileState, "NOT_VERIFIED"); assert.equal(f.hashState, "NOT_VERIFIED"); assert.equal(f.dqState, "NOT_CHECKED");
+});
+test("source card: lock known, month not run yet -> file READY, hash NOT_CHECKED, DQ not checked; file name from the lock template", () => {
+  const f = S.sourceFacts({ batch: "incremental_02", month: "2026-03", lock, runs: [], dq: {}, snapshots: [] });
+  assert.equal(f.file, "classroom-source-2026-03.zip"); assert.equal(f.fileState, "READY"); assert.equal(f.hashState, "NOT_CHECKED"); assert.equal(f.expected, "bb");
+});
+test("source card: March blocked by DQ -> hash VERIFIED against the lock while DQ FAILED (two separate facts)", () => {
+  const runs = [run("incremental_02", "BLOCKED_DQ", "2026-11-17T10:00:00Z", { source_zip_sha256: "bb", source_version: "classroom_v2_2026_11_16" })];
+  const dq = { blocked: true, run: { batch: "incremental_02", failed_stage: "ingest" }, issues: [{ status: "OPEN" }, { status: "RESOLVED" }] };
+  const f = S.sourceFacts({ batch: "incremental_02", month: "2026-03", lock, runs, dq, snapshots: [] });
+  assert.equal(f.hashState, "VERIFIED"); assert.equal(f.dqState, "FAILED"); assert.equal(f.openIssues, 1);
+});
+test("source card: recorded hash different from the lock -> MISMATCH; wrong version flagged", () => {
+  const runs = [run("incremental_01", "SUCCEEDED", "2026-11-17T10:00:00Z", { source_zip_sha256: "zz", source_version: "other" })];
+  const f = S.sourceFacts({ batch: "incremental_01", month: "2026-02", lock, runs, dq: {}, snapshots: [] });
+  assert.equal(f.hashState, "MISMATCH"); assert.equal(f.versionMismatch, true); assert.equal(f.dqState, "PASSED");
+});
+test("source card: CANCELLED runs are ignored; hash can fall back to the published snapshot", () => {
+  const runs = [run("incremental_01", "CANCELLED", "2026-11-17T12:00:00Z", { source_zip_sha256: "zz" })];
+  const f = S.sourceFacts({ batch: "incremental_01", month: "2026-02", lock, runs, dq: {}, snapshots: [{ batch: "incremental_01", source_zip_sha256: "aa" }] });
+  assert.equal(f.hashState, "VERIFIED");
+});
+test("reconciliation: only MATCH with real equal numbers; missing evidence is NOT_VERIFIED, differences are MISMATCH", () => {
+  const ev = (items, rev, failed = 0) => ({ output: { preview: [{ check: "Checks", source: 9, warehouse: 9 }, { check: "Failed checks", source: 0, warehouse: failed },
+    { check: "Paid items", source: items[0], warehouse: items[1] }, { check: "Net revenue", source: rev[0], warehouse: rev[1] }] } });
+  assert.equal(S.reconciliation(null).state, "NOT_VERIFIED"); assert.equal(S.reconciliation({ output: {} }).state, "NOT_VERIFIED");
+  assert.equal(S.reconciliation(ev([100, 100], [5000.5, 5000.5])).state, "MATCH");
+  assert.equal(S.reconciliation(ev([100, 99], [5000.5, 5000.5])).state, "MISMATCH");
+  assert.equal(S.reconciliation(ev([100, 100], [5000.5, 4999])).state, "MISMATCH");
+  assert.equal(S.reconciliation(ev([100, 100], [5000.5, 5000.5], 2)).state, "MISMATCH");
+});
+test("reconciliation: real evidence shape ({check:'Checks', passed, failed}) — failed checks block MATCH", () => {
+  const real = failed => ({ output: { preview: [{ check: "Checks", passed: 21 - failed, failed }, { check: "Paid items", source: 1147, warehouse: 1147 }, { check: "Net revenue", source: 417092.85, warehouse: 417092.85 }] } });
+  assert.equal(S.reconciliation(real(0)).state, "MATCH"); assert.equal(S.reconciliation(real(1)).state, "MISMATCH");
+});

@@ -2659,6 +2659,14 @@
     d.append(node("summary", "", title));
     return d;
   }
+  function loadSourceLock() {                                   // approved immutable Source identity (static file); loaded once, failure = NOT VERIFIED
+    if (state.sourceLock) return;
+    state.sourceLock = { data: null, error: "" };
+    fetch("./data/source_lock_classroom_v2.json", { cache: "no-cache" }).then(r => r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)))
+      .then(d => { state.sourceLock = { data: d, error: "" }; })
+      .catch(e => { state.sourceLock = { data: null, error: String(e && e.message || e) }; })
+      .finally(() => { if (state.view === "pipeline" && state.pipelineTab === "flow") renderPipeline(); });
+  }
   function loadOpsMl(force = false) {
     const ml = state.opsMl = state.opsMl || { loading: false, data: null, error: "", at: 0 };
     if (ml.loading || (!force && ml.at && Date.now() - ml.at < 15000)) return;
@@ -2759,12 +2767,22 @@
     // D. warehouse readiness + lineage
     const whs = opsSection("wh", "D · ความพร้อมของ Warehouse และ Lineage", false);
     const sn = ov.snapshot, lastRun = ov.last;
-    const validateOk = lastRun && state.batchResults?.[lastRun.batch]?.validate?.evidence ? "ขั้น Validate ของ Run ล่าสุดสำเร็จ (มีหลักฐาน)" : "NOT VERIFIED (ไม่พบหลักฐานขั้น Validate ที่โหลดไว้)";
+    const rec = window.PipelineState.reconciliation(lastRun ? state.batchResults?.[lastRun.batch]?.validate?.evidence : null);
+    const evUnavailable = lastRun && state.batchResults?.[lastRun.batch]?._evidenceUnavailable;
+    const baht = n => "฿" + Number(n).toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const validateOk = rec.state === "MATCH" ? "กระทบยอดผ่าน: Paid items " + money(rec.items[0]) + " = " + money(rec.items[1]) + " · Net Revenue ER1 " + baht(rec.revenue[0]) + " = ER2 " + baht(rec.revenue[1]) :
+      rec.state === "MISMATCH" ? "กระทบยอดไม่ตรง: Paid items " + money(rec.items[0]) + " vs " + money(rec.items[1]) + " · Net Revenue " + baht(rec.revenue[0]) + " vs " + baht(rec.revenue[1]) :
+        evUnavailable ? "อ่านหลักฐานขั้น Validate ไม่สำเร็จ (ไม่ได้แปลว่าไม่ผ่าน)" : lastRun ? "NOT VERIFIED (หลักฐานขั้น Validate ยังไม่ถูกโหลดหรือรูปแบบไม่ครบ)" : "ยังไม่มี Run สำเร็จ";
+    const snapMonth = sn ? (labels[sn.batch] || sn.batch) : null;
+    const snapMatch = !sn || !lastRun ? "NOT VERIFIED" : (sn.runId === lastRun.runId && snapMonth === ov.publishedThrough) ?
+      "ตรงกัน ✓ (Snapshot = Run " + sn.runId.slice(0, 8) + "… · " + thaiMonth(snapMonth) + ")" :
+      "ไม่ตรงกัน ✗ (Snapshot: Run " + String(sn.runId).slice(0, 8) + "… เดือน " + (snapMonth ? thaiMonth(snapMonth) : "—") + " · Run ล่าสุด: " + lastRun.runId.slice(0, 8) + "…)";
     whs.append(dataTable([["k", "รายการ"], ["v", "ค่าจากระบบ"]], [
       { k: "Published Warehouse ถึงเดือน", v: ov.publishedThrough ? thaiMonth(ov.publishedThrough) : "ยังไม่มี" },
       { k: "Run ID / Source Version ของ Snapshot ล่าสุด", v: sn ? (sn.runId || "—") + " / " + (sn.sourceVersion || "—") : "NOT VERIFIED" },
       { k: "Published เมื่อ", v: sn ? opsTime(sn.publishedAt) : "—" },
-      { k: "Reconciliation", v: validateOk },
+      { k: "Snapshot ตรงกับ Run และเดือนที่ Publish ล่าสุด", v: snapMatch },
+      { k: "Reconciliation (ER1 ↔ ER2)", v: validateOk },
       { k: "เดือนที่อยู่ระหว่างประมวลผล (Staging — ยังไม่ Published)", v: rows.filter(r => ["RUNNING", "DATA_QUALITY_BLOCKED", "SYSTEM_FAILED"].includes(r.state)).map(r => thaiMonth(r.month) + " (" + r.label + ")").join(", ") || "ไม่มี" }]));
     whs.append(small("Lineage: Source → ER1 (Neon) → Data Lake (Landing/Raw/Standardized) → ER2 / DuckDB Warehouse → Business Dashboard"));
     whs.append(notice("Pipeline สำเร็จ ≠ ผลทางธุรกิจผ่าน (KPI PASS) · ข้อมูล Staging หรือเดือนที่ถูกบล็อก ไม่ถูกนับเป็น Published Actual และ Business Dashboard ใช้เฉพาะเดือนที่ Published"));
@@ -3745,7 +3763,22 @@
     const isCustom = Boolean(state.sourceUploadId && state.sourceUploadMonth === month);
     const filename = "classroom-source-" + month + ".zip";
     const downloadUrl = "https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/releases/download/classroom-source-v1/" + filename;
-    const sourceHash = isCustom ? (state.sourceUploadId.slice(0, 8) + "...") : "3a7b4e19... (SHA256)";
+    loadSourceLock();
+    const lock = state.sourceLock?.data || null;
+    const sf = window.PipelineState.sourceFacts({ batch, month, lock, runs: state.currentCycleRuns, dq: state.dq, snapshots: state.publishedSnapshots });
+    const short = h => h ? h.slice(0, 12) + "…" : "—";
+    const hashCode = node("code", "source-hash-code", isCustom ? state.sourceUploadId.slice(0, 8) + "…" : short(sf.recorded || sf.expected));
+    if (!isCustom && (sf.recorded || sf.expected)) hashCode.title = (sf.recorded ? "Hash ที่บันทึกจาก Run: " + sf.recorded : "Hash ตาม Source Lock (ยังไม่มี Run): " + sf.expected);
+    const pill = (text, tone) => node("span", "ops-chip ops-" + tone, text);
+    const fileBadge = isCustom ? pill("ไฟล์: Custom Upload (นอก Source Lock)", "ready") :
+      sf.fileState === "READY" ? pill("ไฟล์: เตรียมแล้ว (ตาม Source Lock)", "ready") :
+        sf.fileState === "NOT_IN_LOCK" ? pill("ไฟล์: ไม่อยู่ใน Source Lock", "bad") : pill("ไฟล์: NOT VERIFIED (อ่าน Source Lock ไม่ได้)", "idle");
+    const hashBadge = isCustom ? pill("Hash: ไม่ตรวจกับ Lock", "idle") :
+      sf.hashState === "VERIFIED" ? pill("Hash: ยืนยันแล้ว (ตรง Source Lock)", "ok") :
+        sf.hashState === "MISMATCH" ? pill("Hash: ไม่ตรง Source Lock", "bad") :
+          sf.hashState === "NOT_CHECKED" ? pill("Hash: ยังไม่ตรวจ (ตรวจตอนรันขั้น 1)", "idle") : pill("Hash: NOT VERIFIED", "idle");
+    const dqBadge = sf.dqState === "FAILED" ? pill("ผลตรวจ DQ: ไม่ผ่าน (" + sf.openIssues + " รายการค้าง)", "bad") :
+      sf.dqState === "PASSED" ? pill("ผลตรวจ DQ: ผ่านแล้ว", "ok") : sf.dqState === "RUNNING" ? pill("ผลตรวจ DQ: กำลังตรวจ", "run") : pill("ผลตรวจ DQ: ยังไม่ตรวจ", "idle");
 
     const container = box("compact-source-selector");
 
@@ -3756,22 +3789,20 @@
         node("strong", "source-info-value", thaiMonth(month))
       ),
       box("source-info-item",
+        node("span", "source-info-label", "ไฟล์:"),
+        node("strong", "source-info-value", isCustom ? (state.sourceUploadName || "ZIP") : sf.file)
+      ),
+      box("source-info-item",
         node("span", "source-info-label", "ชุดข้อมูล:"),
-        node("strong", "source-info-value", isCustom ? `Custom Upload (${state.sourceUploadName || "ZIP"})` : "Prepared Dataset (21 CSVs)")
+        node("span", "source-info-value", isCustom ? "Custom Upload" : (lock ? lock.package_id + " · " + lock.csv_per_zip + " CSV · เวอร์ชัน " + lock.source_version : "ไม่ทราบ (อ่าน Source Lock ไม่ได้)"))
       ),
       box("source-info-item",
-        node("span", "source-info-label", "รูปแบบ:"),
-        node("span", "source-info-value", "ZIP Archive · 21 Tables (ER1)")
+        node("span", "source-info-label", isCustom ? "Upload ID:" : (sf.recorded ? "Hash (จาก Run):" : "Hash (Source Lock):")),
+        hashCode
       ),
-      box("source-info-item",
-        node("span", "source-info-label", "สถานะ:"),
-        node("span", "badge-validated", "พร้อมใช้งาน (Validated)")
-      ),
-      box("source-info-item",
-        node("span", "source-info-label", "Hash / Ref:"),
-        node("code", "source-hash-code", sourceHash)
-      )
+      box("ops-chips", fileBadge, hashBadge, dqBadge)
     );
+    if (!isCustom && sf.versionMismatch) infoGrid.append(notice("เวอร์ชัน Source ที่ Run บันทึก (" + sf.version + ") ไม่ตรงกับ Source Lock (" + sf.lockVersion + ")", true));
 
     const toggleBtn = node("button", "button button-outline button-sm",
       state.sourceSelectorExpanded ? "▲ ซ่อนตัวเลือก Source" : "⚙️ เปลี่ยน Source"

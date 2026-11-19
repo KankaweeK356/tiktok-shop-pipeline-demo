@@ -2679,24 +2679,36 @@
     wrap.append(small("สรุปจากสถานะที่บันทึกไว้ในฐานข้อมูลจริง (อ่านอย่างเดียว) · รีเฟรชแล้วต้องได้ผลเดิม · ไม่ใช่ผลทางธุรกิจ"));
     if (!ov.verified) { wrap.append(notice("ยังอ่านสถานะ Pipeline จากฐานข้อมูลไม่ได้ (NOT VERIFIED) — ไม่แสดงตัวเลขเพื่อไม่ให้เข้าใจผิดว่าเป็น 0 หรือผ่าน", true)); root.append(wrap); return; }
 
-    // A. health cards + action required
+    // A. compact header: Published N/10 | Next Action, status chips, 5-stage strip of the month in focus
     const meter = box("ops-meter"); rows.forEach(r => meter.append(node("span", "ops-meter-cell ops-" + r.tone, "")));
-    const cards = box("ops-cards");
-    cards.append(opsCard("สถานะ Pipeline", OPS_PIPELINE[ov.pipeline]),
-      opsCard("เดือนที่ Published", [ov.published + " จาก " + ov.total + " เดือน", "Published " + ov.published + "/" + ov.total, ov.published === ov.total ? "ok" : "idle"], meter),
-      opsCard("Data Quality", OPS_DQ[ov.dq]),
-      opsCard("Warehouse (Published)", OPS_WH[ov.warehouse]));
-    wrap.append(cards);
+    const pubBlock = box("ops-block", node("small", "ops-card-title", "เดือนที่ Published"), node("strong", "ops-big", ov.published + "/" + ov.total), meter,
+      small(ov.publishedThrough ? "Published ถึง " + thaiMonth(ov.publishedThrough) : "ยังไม่มีเดือน Published"));
+    const nextBlock = box("ops-block", node("small", "ops-card-title", "Next Action — สิ่งที่ต้องทำ"));
+    const chips = box("ops-chips");
+    [["Pipeline", OPS_PIPELINE[ov.pipeline]], ["Data Quality", OPS_DQ[ov.dq]], ["Warehouse", OPS_WH[ov.warehouse]]].forEach(([k, v]) =>
+      chips.append(node("span", "ops-chip ops-" + v[2], k + ": " + v[1] + " · " + v[0])));
+    wrap.append(box("ops-top", pubBlock, nextBlock), chips);
+    // stage strip for the month that matters now: running > blocked/failed > next runnable > latest published (real run state only)
+    const focus = rows.find(r => r.state === "RUNNING") || rows.find(r => ["DATA_QUALITY_BLOCKED", "SYSTEM_FAILED"].includes(r.state)) || rows.find(r => r.state === "RUNNABLE") || [...rows].reverse().find(r => r.state === "PUBLISHED");
+    if (focus) {
+      const strip = box("ops-stages"), idx = PS.STAGE_ORDER.indexOf(focus.lastStage);
+      PS.STAGE_ORDER.forEach((st, i) => {
+        const kind = focus.state === "PUBLISHED" ? "ok" : focus.state === "RUNNING" ? (i < idx ? "ok" : i === idx ? "run" : "idle") :
+          ["DATA_QUALITY_BLOCKED", "SYSTEM_FAILED"].includes(focus.state) && idx >= 0 ? (i < idx ? "ok" : i === idx ? "bad" : "idle") : "idle";
+        strip.append(box("ops-stage ops-" + kind, node("span", "ops-dot", kind === "ok" ? "✓" : kind === "bad" ? "✗" : kind === "run" ? "●" : "○"), node("small", "", OPS_STAGE_TH[st])));
+      });
+      wrap.append(box("ops-stagebox", box("ops-stagehead", node("strong", "", "Pipeline Monitoring · " + thaiMonth(focus.month)), node("small", "", "Run " + (focus.runId || "—") + " · " + focus.label)), strip,
+        small("สถานะแต่ละขั้นมาจาก Run จริงของเดือนนี้ — เดือนที่ยังไม่เริ่มแสดงเป็นว่าง ไม่สมมติว่าผ่าน")));
+    }
     const act = ov.action, month = act?.batch ? (labels[act.batch] ? thaiMonth(labels[act.batch]) : act.batch) : "";
     const actText = !act ? null : { REVIEW_FIX: ["ต้องดำเนินการ: Review & Fix ปัญหา DQ ของ" + month + " แล้ว Revalidate & Resume", "bad"],
       RETRY: ["ต้องดำเนินการ: ระบบล้มเหลว" + (month ? "ที่เดือน" + month : "ที่ขั้นล่าสุด") + " — ตรวจ Run แล้วกดรันซ้ำ (เดือนที่ Publish แล้วไม่ถูกแก้)", "bad"],
       RUN: ["ถัดไป: รันเดือน" + month, "ready"], WAIT: ["กำลังรัน — รอจนจบ ไม่ต้องกดซ้ำ", "run"],
       PREREQUISITE: ["รอเงื่อนไข: " + ({ PREVIOUS_MONTH_NOT_PUBLISHED: "เดือนก่อนหน้ายังไม่ Publish", FORECAST_NOT_SEALED: "ต้อง Seal Official Forecast ก่อน", FORECAST_SCHEMA_MISSING: "ยังไม่ติดตั้ง Migration demo_ml" }[(state.monthStates || []).find(m => m.state === "LOCKED")?.reason] || "ยังไม่พร้อม"), "idle"] }[act.kind];
     if (actText) {
-      const banner = box("ops-action ops-" + actText[1], node("strong", "", actText[0]));
+      const banner = nextBlock; banner.classList.add("ops-action", "ops-" + actText[1]); banner.append(node("strong", "", actText[0]));
       if (act.kind === "REVIEW_FIX") banner.append(opsGo("ไปที่ Review & Fix", () => { state.dq.open = true; renderPipeline(); setTimeout(() => document.querySelector(".review-fix-drawer, .alert-banner-blocked")?.scrollIntoView({ behavior: "smooth" }), 50); }));
-      wrap.append(banner);
-    } else if (ov.pipeline === "COMPLETED") wrap.append(box("ops-action ops-ok", node("strong", "", "ไม่มีงานที่ต้องดำเนินการ — ครบ 10 เดือนแล้ว")));
+    } else nextBlock.append(node("strong", "", ov.pipeline === "COMPLETED" ? "ไม่มีงานที่ต้องดำเนินการ — ครบ 10 เดือนแล้ว" : "—"));
     wrap.append(small("Run สำเร็จล่าสุด: " + (ov.last ? "Run " + ov.last.runId + " · " + (labels[ov.last.batch] ? thaiMonth(labels[ov.last.batch]) : ov.last.batch) + " · เริ่ม " + opsTime(ov.last.startedAt) : "ยังไม่มี") +
       " · Published ล่าสุดถึง: " + (ov.publishedThrough ? thaiMonth(ov.publishedThrough) : "ยังไม่มี")));
     const tech = node("details", "dq-details"); tech.append(node("summary", "", "รายละเอียดทางเทคนิค (สถานะดิบจากระบบ)"));
@@ -2708,7 +2720,7 @@
     wrap.append(tech);
 
     // B. monthly monitoring
-    const mon = opsSection("month", "B · สถานะรายเดือน (Monthly Pipeline Monitoring)");
+    const mon = opsSection("month", "B · สถานะรายเดือน (Monthly Pipeline Monitoring)", false);
     mon.append(box("table-scroll-x", dataTable([["month", "เดือน"], ["status", "สถานะ"], ["stages", "5 ขั้นตอน"], ["run", "Run ID"], ["note", "หมายเหตุ / สิ่งที่ต้องทำ"]],
       rows.map(r => ({ month: thaiMonth(r.month), status: r.label + " · " + r.thai,
         stages: r.stagesDone === null ? "—" : r.stagesDone + "/5 สำเร็จ" + (r.stagesDone < 5 && r.lastStage ? " · หยุดที่ " + (OPS_STAGE_TH[r.lastStage] || r.lastStage) : ""),

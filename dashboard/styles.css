@@ -917,3 +917,19 @@ tr:hover td{background:#fff8f0}.metric-label,.metric-sub,.panel-description{colo
 .ops-links{display:flex;gap:8px;flex-wrap:wrap}.ops-link{min-height:34px;padding:6px 12px}
 @media(max-width:900px){.ops-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.ops-cards{grid-template-columns:1fr}.ops-overview{padding:12px}}
+/* compact header (layout per expert sample) */
+.ops-top{display:grid;grid-template-columns:1fr 1.4fr;gap:14px}
+.ops-block{border:1px solid var(--line);border-radius:11px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.ops-big{font-size:28px;letter-spacing:-.8px;line-height:1.1}
+.ops-block.ops-action{border-left-width:5px}
+.ops-chips{display:flex;gap:8px;flex-wrap:wrap}.ops-chip{font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:#fff}
+.ops-chip.ops-ok{color:var(--good);background:var(--good-soft);border-color:#cfe9de}.ops-chip.ops-bad{color:#7d1f2c;background:var(--red-soft);border-color:#f0c4c9}.ops-chip.ops-run{color:#1f4f87;background:#e8f0fb;border-color:#c9daf0}.ops-chip.ops-ready{color:#7a4e0c;background:var(--warn-soft);border-color:#f0e0b6}.ops-chip.ops-idle{color:#5b4a47;background:#f6f2ed}
+.ops-stagebox{border:1px solid var(--line);border-radius:11px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.ops-stagehead{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline}
+.ops-stages{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.ops-stage{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;padding:6px 2px;border-radius:9px}
+.ops-dot{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:800;border:2px solid #cfc7c0;color:#a39a93;background:#fff}
+.ops-stage.ops-ok .ops-dot{background:var(--good);border-color:var(--good);color:#fff}.ops-stage.ops-bad .ops-dot{background:var(--red);border-color:var(--red);color:#fff}.ops-stage.ops-run .ops-dot{border-color:#2563a8;color:#2563a8}
+.ops-stage small{font-size:10px;color:#5b4a47}
+@media(max-width:700px){.ops-top{grid-template-columns:1fr}.ops-stages{grid-template-columns:repeat(5,minmax(0,1fr))}.ops-stage small{font-size:9px}}
+.ops-block{align-items:flex-start;text-align:left}

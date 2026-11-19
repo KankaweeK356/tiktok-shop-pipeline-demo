@@ -29,6 +29,8 @@
 
 กติกาสถานะ: Running > Blocked(DQ) > Failed(system) > Completed(10/10) > Ready > Waiting; DQ: Failed=มีเดือนบล็อกและยังไม่แก้, Pending=READY_TO_RESUME, Passed=มีเดือน Published และไม่มีบล็อก, Not Checked=ยังไม่รัน, NOT VERIFIED=Migration/API อ่านไม่ได้; Warehouse: Published ต้องมี snapshot จาก API.
 
+**Layout (ปรับตามตัวอย่างของผู้เชี่ยวชาญ, กะทัดรัด):** แถวบน = Published N/10 + Next Action; แถบสถานะ Pipeline/DQ/Warehouse; แถบ 5 ขั้นของเดือนที่โฟกัส (Running > Blocked/Failed > Ready > Published ล่าสุด) จาก Run จริง; รายละเอียด B–E พับไว้ (C เปิดเองเมื่อมีปัญหา) ภาพกะทัดรัด: `screenshots/ops_*_desktop_compact.png`
+
 ## D. Test Evidence
 - Unit: `node --test tests/js/*.test.mjs` → **57/57 PASS** (เพิ่ม 8 กรณี: not loaded, ready, March blocked, pending, system failed, running, snapshot missing/0/10 เดือน, fallback)
 - UI (Playwright + mock Backend รูปแบบเดียวกับ API จริง, `tests/integration/ops_overview_harness.mjs`; ML ใช้ Artifact จริงจาก Fixture local): ภาพใน `screenshots/`

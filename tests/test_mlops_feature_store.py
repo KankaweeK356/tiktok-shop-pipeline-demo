@@ -279,7 +279,7 @@ def test_monitoring_block_is_inside_the_existing_panel_and_read_only():
     app = (_ROOT / "dashboard" / "app.js").read_text(encoding="utf-8")
     block = app[app.index("// ---- Champion vs Challenger Monitoring"):app.index("  function renderMlopsPanel()")]
     assert 'fcApi("monitoring")' in block and "renderMonitoringBlock" in app[app.index("function renderMlopsPanel"):]
-    for label in ("Insufficient Evidence", "Preliminary", "Adequate", "Cumulative WAPE", "ผลรวมความคลาดเคลื่อนสะสม", "เดือนที่มีผลจริงสำหรับเปรียบเทียบ", "ไม่เปลี่ยน Champion และไม่สั่ง Retrain"):
+    for label in ("Insufficient Evidence", "Preliminary", "Adequate", "Cumulative WAPE", "ผลรวมความคลาดเคลื่อนสะสม", "เดือนที่มีผลจริงสำหรับเปรียบเทียบ", "ไม่เปลี่ยน Champion และไม่สั่ง Retrain", "หลักการเปลี่ยน Champion"):
         assert label in block
     assert "MON_ORIGIN" in block and "SYNTHETIC_FIXTURE" in block and "LOCAL_REAL_SOURCE_TEST" in block                 # simulated / test evidence is labelled in the UI
     assert "ridge_marketing" not in block and "Ridge + Marketing" not in block                      # the experimental challenger is not a column here

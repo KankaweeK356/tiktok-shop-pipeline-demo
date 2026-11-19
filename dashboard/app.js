@@ -3967,7 +3967,7 @@
       if (!state.fc.month || !months.some(m => m.month === state.fc.month))
         state.fc.month = (months.find(m => m.can_generate || m.draft_count || m.official_forecast_id) || months[0]).month;
       const detail = await fcApi("forecast", { query: { month: state.fc.month } });
-      if (state.fc.ml?.open && !state.fc.ml.byMonth[state.fc.month]) loadMlops(state.fc.month);
+      if (state.fc.ml?.open) { loadMlops(state.fc.month, true); loadMonitoring(true); }      // never show a cached view of ML evidence: it changes when months are published
       if (!fcSeq.isCurrent(token)) return;
       state.fc.forecast = detail.ok ? detail.data : null;
       { const sf = detail.ok && (detail.data.official || (detail.data.drafts || [])[0]); if (sf) loadShadow(sf.forecast_run_id); }
@@ -4275,7 +4275,7 @@
   async function loadMlops(month, force = false) {
     const ml = state.fc.ml = state.fc.ml || { byMonth: {}, open: false, tab: "", busy: "", error: "" };
     if (!force && ml.byMonth[month]?.data) return;
-    ml.byMonth[month] = { loading: true, data: null, error: "" }; renderForecast();
+    if (!ml.byMonth[month]?.data) { ml.byMonth[month] = { loading: true, data: null, error: "" }; renderForecast(); }      // a refresh keeps showing the old data until the new one arrives
     const r = await fcApi("mlops", { query: { month } });
     ml.byMonth[month] = { loading: false, data: r.ok ? r.data : null, error: r.ok ? "" : (r.data.error || "โหลด ML Artifact ไม่สำเร็จ") };
     if (state.view === "forecast") renderForecast();
@@ -4358,7 +4358,7 @@
   const rerenderMl = () => { if (state.view === "forecast") renderForecast(); else if (state.view === "evaluation") renderEvaluation(); };
   async function loadMonitoring(force = false) {
     const ml = state.fc.ml; if (!ml || (ml.mon && !force)) return;
-    ml.mon = { loading: true, data: null, error: "" }; rerenderMl();
+    if (!ml.mon?.data) { ml.mon = { loading: true, data: null, error: "" }; rerenderMl(); }
     const r = await fcApi("monitoring");
     ml.mon = { loading: false, data: r.ok ? r.data : null, error: r.ok ? "" : (r.data.error || "โหลดผล Monitoring ไม่สำเร็จ") };
     rerenderMl();
@@ -4454,7 +4454,7 @@
     const f = state.fc, ml = f.ml = f.ml || { byMonth: {}, open: false, tab: "", busy: "", error: "" };
     const det = node("details", "dq-details fc-mlops"); det.open = ml.open; det.id = "mlopsDetails";
     det.append(node("summary", "", "ML Model & Experiment Details · Feature Store · Training Run · Drift"));
-    det.addEventListener("toggle", () => { if (det.open !== ml.open) { ml.open = det.open; if (ml.open) { loadMlops(f.month); loadMonitoring(); } else ml.mon = null; } });
+    det.addEventListener("toggle", () => { if (det.open !== ml.open) { ml.open = det.open; if (ml.open) { loadMlops(f.month, true); loadMonitoring(true); } else ml.mon = null; } });
     if (!ml.open) return det;
     const slot = ml.byMonth[f.month], data = slot?.data;
     if (!slot || slot.loading) { det.append(small("กำลังอ่าน Artifact จาก Object Storage…")); return det; }
@@ -4487,13 +4487,14 @@
     state.ev.loaded = true; state.ev.data = r.ok ? r.data : null; state.ev.error = r.ok ? "" : (r.data.error || "โหลดผลเปรียบเทียบไม่สำเร็จ");
     const st = await fcApi("status"); state.ev.status = st.ok ? st.data : null;
     if (state.view === "evaluation") renderEvaluation();
+    if (state.fc.ml?.evOpen) loadMonitoring(true);
   }
   // Champion vs Challenger Monitoring also lives on the Forecast vs Actual page (same block, collapsed by default).
   function renderEvalMonitoring() {
     const f = state.fc, ml = f.ml = f.ml || { byMonth: {}, open: false, tab: "", busy: "", error: "" };
     const det = node("details", "dq-details fc-mlops"); det.open = Boolean(ml.evOpen);
     det.append(node("summary", "", "ML: Baseline vs ML เทียบผลจริง · Champion vs Challenger Monitoring"));
-    det.addEventListener("toggle", () => { if (det.open !== Boolean(ml.evOpen)) { ml.evOpen = det.open; if (ml.evOpen) loadMonitoring(); else ml.mon = null; } });
+    det.addEventListener("toggle", () => { if (det.open !== Boolean(ml.evOpen)) { ml.evOpen = det.open; if (ml.evOpen) loadMonitoring(true); else ml.mon = null; } });
     if (ml.evOpen) { det.append(small("เทียบ Baseline ที่ Seal เป็น Official กับ Ridge จาก Shadow Forecast ที่บันทึกก่อน Publish Actual · รายละเอียดสายงาน Feature → Training → Validation อยู่ในหน้าคาดการณ์และวางแผน"), renderMonitoringBlock()); if (ml.error) det.append(notice(ml.error, true)); }
     return det;
   }

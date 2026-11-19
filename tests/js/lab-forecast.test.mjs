@@ -298,3 +298,18 @@ test("Shadow note API: returns only the shadow bound to that exact forecast id; 
   const down = await callRaw(fakeSql([0]), { mlopsStorage: { list: async () => [], getJson: async () => { throw new Error("down"); } } }, "GET", { fc: "mlops_shadow", forecast_id: ids[0] }, undefined, ok);
   assert.equal(down.status, 503);
 });
+
+test("Recovery gaps: a month that was never given a shadow is not offered as a problem; a month whose shadow exists but evaluation is missing is", async () => {
+  const ok = { host: "app.test", origin: "https://app.test" };
+  const sql = { query: async text => {
+    if (text.includes("demo_control.dataset_state")) return [{ phase: "RUN2_READY", cycle_number: 7, last_run_id: "11111111-1111-4111-8111-111111111111" }];
+    if (text.includes("demo_control.pipeline_runs")) return DELIVERIES.slice(0, 6).map((b, i) => ({ run_id: "22222222-2222-4222-8222-22222222222" + i, status: "SUCCEEDED", batch: b }));
+    if (text.includes("FROM demo_ml.forecast_run")) return [{ forecast_run_id: "44444444-4444-4444-8444-444444444444", is_official: true, status: "SEALED" }];
+    return []; } };
+  const noShadow = { list: async () => [], getJson: async () => null };                                              // sealed before MLOps: no pointer, no evaluation
+  const a = await callRaw(sql, { mlopsStorage: noShadow }, "GET", { fc: "monitoring" }, undefined, ok);
+  assert.deepEqual(a.json.gaps, []);
+  const withShadow = { list: async () => [], getJson: async key => key.includes("/by_forecast/") ? { run_path: "x" } : null };   // shadow exists, evaluation missing
+  const b = await callRaw(sql, { mlopsStorage: withShadow }, "GET", { fc: "monitoring" }, undefined, ok);
+  assert.ok(b.json.gaps.length > 0 && b.json.gaps.every(g => g.missing === "evaluation"));
+});

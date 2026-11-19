@@ -901,3 +901,19 @@ tr:hover td{background:#fff8f0}.metric-label,.metric-sub,.panel-description{colo
 .mlops-heading { display: block; margin: 8px 0 2px; font-size: 15px; }
 
 .mlops-pointer { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-size: 13px; color: #421D20; background: #fff8f0; border-left: 3px solid #741D2B; padding: 6px 10px; border-radius: 4px; margin: 6px 0; }
+
+/* Data Operations overview (Pipeline Runner). Colour is never the only signal: every card also carries the status word. */
+.ops-overview{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:16px 18px;margin:0 0 18px;display:flex;flex-direction:column;gap:12px}
+.ops-overview .lab-heading{margin:0;font-size:16px}
+.ops-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.ops-card{border:1px solid var(--line);border-left-width:5px;border-radius:11px;padding:12px 14px;display:flex;flex-direction:column;gap:3px;min-width:0;background:#fff}
+.ops-card-title{color:var(--muted);font-weight:700}.ops-card-value{font-size:19px;letter-spacing:-.4px}.ops-card-thai{font-size:12px;color:#5b4a47}
+.ops-card.ops-ok{border-left-color:var(--good)}.ops-card.ops-bad{border-left-color:var(--red);background:#fff7f7}.ops-card.ops-run{border-left-color:#2563a8}.ops-card.ops-ready{border-left-color:var(--warn)}.ops-card.ops-idle{border-left-color:#b9b2ad}
+.ops-meter{display:grid;grid-template-columns:repeat(10,1fr);gap:3px;margin-top:6px}.ops-meter-cell{height:8px;border-radius:3px;background:#e3dcd5}
+.ops-meter-cell.ops-ok{background:var(--good)}.ops-meter-cell.ops-bad{background:var(--red)}.ops-meter-cell.ops-run{background:#2563a8}.ops-meter-cell.ops-ready{background:var(--warn)}
+.ops-action{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 15px;border-radius:11px;border:1px solid var(--line)}
+.ops-action.ops-bad{background:var(--red-soft);border-color:#f0c4c9;color:#7d1f2c}.ops-action.ops-ok{background:var(--good-soft);border-color:#cfe9de;color:var(--good)}.ops-action.ops-ready,.ops-action.ops-run{background:var(--warn-soft);border-color:#f0e0b6;color:#7a4e0c}.ops-action.ops-idle{background:#f6f2ed;color:#5b4a47}
+.ops-section{border:1px solid var(--line);border-radius:11px;padding:0 14px 12px}.ops-section>summary{cursor:pointer;font-weight:750;padding:11px 0;list-style-position:inside}.ops-section>*:not(summary){margin-top:8px}
+.ops-links{display:flex;gap:8px;flex-wrap:wrap}.ops-link{min-height:34px;padding:6px 12px}
+@media(max-width:900px){.ops-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.ops-cards{grid-template-columns:1fr}.ops-overview{padding:12px}}

@@ -1139,6 +1139,10 @@
       state.requiresReset = Boolean(data.requires_reset);
       state.nextSourceBatch = data.next_source_batch || null;
       state.monthStates = data.months || [];
+      state.opsLoaded = response.ok && data.ready === true;
+      state.publishedSnapshots = Array.isArray(data.published_snapshots) ? data.published_snapshots : null;   // null = not reported (never 'zero')
+      state.publishedThrough = data.published_through || null;
+      state.latestRunsAt = new Date().toISOString();
       state.sourceRemaining = data.source_remaining ?? null;
       state.sourceExhausted = Boolean(data.source_exhausted);
       if ((data.phase === "RUN1_READY" || data.phase === "RUN2_READY") &&
@@ -2633,6 +2637,145 @@
     } catch (error) { state.labNeonError = error.message || "อ่าน Neon ไม่สำเร็จ"; }
     state.labNeonBusy = false; renderPipeline();
   }
+
+  // ---- Data Operations overview (read-only summary of persisted backend state; no new API) ----------
+  const OPS_PIPELINE = { RUNNING: ["กำลังรัน", "Running", "run"], BLOCKED: ["ถูกบล็อกโดย Data Quality", "Blocked", "bad"], FAILED: ["ล้มเหลว — ต้องลองใหม่", "Failed", "bad"],
+    COMPLETED: ["ครบ 10 เดือน", "Completed", "ok"], READY: ["พร้อมรันเดือนถัดไป", "Ready", "ready"], WAITING: ["รอเงื่อนไขก่อนหน้า", "Waiting", "idle"], NOT_VERIFIED: ["ยังตรวจสอบสถานะไม่ได้", "NOT VERIFIED", "idle"] };
+  const OPS_DQ = { PASSED: ["ไม่พบเดือนที่ถูกบล็อก", "Passed", "ok"], FAILED: ["พบปัญหาที่ยังไม่แก้", "Failed", "bad"], PENDING: ["แก้แล้ว รอตรวจซ้ำ/Resume", "Pending", "run"],
+    NOT_CHECKED: ["ยังไม่มีเดือนที่รัน", "Not Checked", "idle"], NOT_VERIFIED: ["อ่านสถานะ DQ ไม่ได้", "NOT VERIFIED", "idle"] };
+  const OPS_WH = { PUBLISHED: ["มีข้อมูล Published ใช้งานได้", "Published", "ok"], NOT_PUBLISHED: ["ยังไม่มีเดือน Published", "Not Published", "idle"], NOT_VERIFIED: ["ไม่พบ Snapshot ที่ยืนยันได้", "NOT VERIFIED", "idle"] };
+  const OPS_STAGE_TH = { ingest: "1 Source → Database", extract: "2 Database → Lake", transform: "3 Lake · Standardize", load: "4 Lake → Warehouse", validate: "5 Validate" };
+  function opsCard(title, [thai, eng, tone], extra) {
+    const c = box("ops-card ops-" + tone);
+    c.append(node("small", "ops-card-title", title), node("strong", "ops-card-value", eng), node("span", "ops-card-thai", thai));
+    if (extra) c.append(extra);
+    return c;
+  }
+  function opsGo(label, handler) { const b = node("button", "button button-outline ops-link", label); b.type = "button"; b.addEventListener("click", handler); return b; }
+  function opsTime(value) { const t = Date.parse(value || ""); return Number.isFinite(t) ? new Date(t).toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" }) : "—"; }
+  function opsSection(key, title, defaultOpen = true) {
+    const d = node("details", "ops-section"); d.open = state.opsOpen?.[key] ?? defaultOpen;
+    d.addEventListener("toggle", () => { state.opsOpen = { ...(state.opsOpen || {}), [key]: d.open }; });
+    d.append(node("summary", "", title));
+    return d;
+  }
+  function loadOpsMl(force = false) {
+    const ml = state.opsMl = state.opsMl || { loading: false, data: null, error: "", at: 0 };
+    if (ml.loading || (!force && ml.at && Date.now() - ml.at < 15000)) return;
+    ml.loading = true;
+    fcApi("monitoring").then(r => {
+      state.opsMl = { loading: false, data: r.ok ? r.data : null, error: r.ok ? "" : (r.data.error || "อ่านผล Monitoring ไม่ได้"), at: Date.now() };
+      if (state.view === "pipeline" && state.pipelineTab === "flow") renderPipeline();
+    });
+  }
+  function renderOpsOverview(root) {
+    const PS = window.PipelineState;
+    const labels = Object.fromEntries(MONTH_BATCHES.map(m => [m.batch, m.month]));
+    const rows = PS.monthRows({ months: state.monthStates, runs: state.currentCycleRuns, monthLabels: labels });
+    const ov = PS.opsOverview({ loaded: Boolean(state.opsLoaded), phase: state.realLabPhase, rows, runs: state.currentCycleRuns, latestFailed: state.latestFailedRun,
+      dq: { ...state.dq }, active: state.activeRunId, snapshots: state.publishedSnapshots, publishedThrough: state.publishedThrough });
+    const wrap = box("ops-overview");
+    wrap.append(node("h3", "lab-heading", "Data Operations Overview — สำหรับผู้ดูแลข้อมูล"));
+    wrap.append(small("สรุปจากสถานะที่บันทึกไว้ในฐานข้อมูลจริง (อ่านอย่างเดียว) · รีเฟรชแล้วต้องได้ผลเดิม · ไม่ใช่ผลทางธุรกิจ"));
+    if (!ov.verified) { wrap.append(notice("ยังอ่านสถานะ Pipeline จากฐานข้อมูลไม่ได้ (NOT VERIFIED) — ไม่แสดงตัวเลขเพื่อไม่ให้เข้าใจผิดว่าเป็น 0 หรือผ่าน", true)); root.append(wrap); return; }
+
+    // A. health cards + action required
+    const meter = box("ops-meter"); rows.forEach(r => meter.append(node("span", "ops-meter-cell ops-" + r.tone, "")));
+    const cards = box("ops-cards");
+    cards.append(opsCard("สถานะ Pipeline", OPS_PIPELINE[ov.pipeline]),
+      opsCard("เดือนที่ Published", [ov.published + " จาก " + ov.total + " เดือน", "Published " + ov.published + "/" + ov.total, ov.published === ov.total ? "ok" : "idle"], meter),
+      opsCard("Data Quality", OPS_DQ[ov.dq]),
+      opsCard("Warehouse (Published)", OPS_WH[ov.warehouse]));
+    wrap.append(cards);
+    const act = ov.action, month = act?.batch ? (labels[act.batch] ? thaiMonth(labels[act.batch]) : act.batch) : "";
+    const actText = !act ? null : { REVIEW_FIX: ["ต้องดำเนินการ: Review & Fix ปัญหา DQ ของ" + month + " แล้ว Revalidate & Resume", "bad"],
+      RETRY: ["ต้องดำเนินการ: ระบบล้มเหลว" + (month ? "ที่เดือน" + month : "ที่ขั้นล่าสุด") + " — ตรวจ Run แล้วกดรันซ้ำ (เดือนที่ Publish แล้วไม่ถูกแก้)", "bad"],
+      RUN: ["ถัดไป: รันเดือน" + month, "ready"], WAIT: ["กำลังรัน — รอจนจบ ไม่ต้องกดซ้ำ", "run"],
+      PREREQUISITE: ["รอเงื่อนไข: " + ({ PREVIOUS_MONTH_NOT_PUBLISHED: "เดือนก่อนหน้ายังไม่ Publish", FORECAST_NOT_SEALED: "ต้อง Seal Official Forecast ก่อน", FORECAST_SCHEMA_MISSING: "ยังไม่ติดตั้ง Migration demo_ml" }[(state.monthStates || []).find(m => m.state === "LOCKED")?.reason] || "ยังไม่พร้อม"), "idle"] }[act.kind];
+    if (actText) {
+      const banner = box("ops-action ops-" + actText[1], node("strong", "", actText[0]));
+      if (act.kind === "REVIEW_FIX") banner.append(opsGo("ไปที่ Review & Fix", () => { state.dq.open = true; renderPipeline(); setTimeout(() => document.querySelector(".review-fix-drawer, .alert-banner-blocked")?.scrollIntoView({ behavior: "smooth" }), 50); }));
+      wrap.append(banner);
+    } else if (ov.pipeline === "COMPLETED") wrap.append(box("ops-action ops-ok", node("strong", "", "ไม่มีงานที่ต้องดำเนินการ — ครบ 10 เดือนแล้ว")));
+    wrap.append(small("Run สำเร็จล่าสุด: " + (ov.last ? "Run " + ov.last.runId + " · " + (labels[ov.last.batch] ? thaiMonth(labels[ov.last.batch]) : ov.last.batch) + " · เริ่ม " + opsTime(ov.last.startedAt) : "ยังไม่มี") +
+      " · Published ล่าสุดถึง: " + (ov.publishedThrough ? thaiMonth(ov.publishedThrough) : "ยังไม่มี")));
+    const tech = node("details", "dq-details"); tech.append(node("summary", "", "รายละเอียดทางเทคนิค (สถานะดิบจากระบบ)"));
+    tech.append(dataTable([["k", "ฟิลด์"], ["v", "ค่าจาก /api/lab-batch"]], [
+      { k: "phase", v: ov.phase || "—" }, { k: "cycle", v: String(state.realLabCycle ?? "—") }, { k: "ออเดอร์สะสม (demo_er1.Fact_Orders)", v: money(state.realLabOrders || 0) },
+      { k: "active_run_id / stage", v: (state.activeRunId || "—") + " / " + (state.activeStage || "—") }, { k: "next_source_batch", v: state.nextSourceBatch || "—" },
+      { k: "recovery_ready", v: String(state.recoveryReady) + (state.recoveryReason ? " — " + state.recoveryReason : "") },
+      { k: "ดึงข้อมูลเมื่อ", v: opsTime(state.latestRunsAt) }]));
+    wrap.append(tech);
+
+    // B. monthly monitoring
+    const mon = opsSection("month", "B · สถานะรายเดือน (Monthly Pipeline Monitoring)");
+    mon.append(box("table-scroll-x", dataTable([["month", "เดือน"], ["status", "สถานะ"], ["stages", "5 ขั้นตอน"], ["run", "Run ID"], ["note", "หมายเหตุ / สิ่งที่ต้องทำ"]],
+      rows.map(r => ({ month: thaiMonth(r.month), status: r.label + " · " + r.thai,
+        stages: r.stagesDone === null ? "—" : r.stagesDone + "/5 สำเร็จ" + (r.stagesDone < 5 && r.lastStage ? " · หยุดที่ " + (OPS_STAGE_TH[r.lastStage] || r.lastStage) : ""),
+        run: r.runId || "—",
+        note: r.state === "DATA_QUALITY_BLOCKED" ? "Review & Fix → Revalidate & Resume" : r.state === "SYSTEM_FAILED" ? "รันซ้ำได้ (ไม่มี DQ ค้าง)" : r.state === "LOCKED" ?
+          ({ PREVIOUS_MONTH_NOT_PUBLISHED: "รอเดือนก่อนหน้า Publish", FORECAST_NOT_SEALED: "รอ Seal Official Forecast", FORECAST_SCHEMA_MISSING: "ยังไม่ติดตั้ง demo_ml" }[r.reason] || "รอคิว") :
+          r.state === "RUNNABLE" ? "พร้อมกดรัน" : r.state === "PUBLISHED" ? "Published" : "" })))));
+    mon.append(small("จำนวนแถวต่อขั้นตอนดูได้ในแต่ละขั้นด้านล่าง (Validation / Output) — ไม่แสดงตัวเลขที่ระบบไม่ได้ส่งมา"));
+    wrap.append(mon);
+
+    // C. DQ & errors
+    const dqs = opsSection("dq", "C · ปัญหา Data Quality และ Error", Boolean(state.dq.blocked || state.latestFailedRun));
+    const dq = state.dq, openIssues = (dq.issues || []).filter(i => i.status !== "RESOLVED");
+    if (dq.blocked) {
+      const run = dq.run || {}, rules = dq.ruleSummary || {}, mth = sourceMonthForBatch(run.batch);
+      dqs.append(dataTable([["k", "รายการ"], ["v", "ค่าจากฐานข้อมูล"]], [
+        { k: "เดือน / ขั้นที่หยุด", v: (mth ? thaiMonth(mth) : run.batch || "—") + " · " + (OPS_STAGE_TH[run.failed_stage] || run.failed_stage || "—") },
+        { k: "Run ID", v: run.run_id || "—" },
+        { k: "DQ Issue ทั้งหมด / ยังไม่แก้", v: (dq.issues || []).length + " / " + openIssues.length },
+        { k: "กฎที่ตรวจ / ไม่ผ่าน", v: (rules.rules ?? "—") + " / " + (rules.failed ?? "—") },
+        { k: "กฎที่พบปัญหา", v: [...new Set((dq.issues || []).map(i => i.rule_id))].join(", ") || "—" },
+        { k: "Revalidation ล่าสุด", v: dq.revalidation ? (dq.revalidation.status || dq.revalidation.result || "มีผลแล้ว") : "ยังไม่ได้ตรวจซ้ำ" }]));
+      dqs.append(opsGo(dq.open ? "ซ่อน Review & Fix" : "เปิด Review & Fix", () => { dq.open = !dq.open; renderPipeline(); }),
+        small("เดือนที่ Publish แล้วไม่ถูกแก้ย้อนหลัง · ผู้ใช้เลือกค่าที่ถูกต้องเอง ระบบไม่เลือกให้"));
+    } else if (state.latestFailedRun) {
+      const f = state.latestFailedRun;
+      dqs.append(notice("ระบบล้มเหลว (ไม่ใช่ปัญหา DQ): Run " + f.run_id + " · ขั้น " + (OPS_STAGE_TH[f.failed_stage] || f.failed_stage || "—") + " · " + (f.error_code || "ไม่ระบุรหัส") + " — ยังไม่มีเดือนที่ถูก Publish จาก Run นี้", true));
+    } else dqs.append(small(dq.schemaMissing ? "ยังไม่ได้ติดตั้ง Migration ของ DQ — NOT VERIFIED" : "ไม่พบ DQ Issue หรือ Run ล้มเหลวที่ค้างอยู่ ณ ตอนนี้ (เดือนที่ Publish แล้วผ่านด่าน DQ แล้ว)"));
+    wrap.append(dqs);
+
+    // D. warehouse readiness + lineage
+    const whs = opsSection("wh", "D · ความพร้อมของ Warehouse และ Lineage", false);
+    const sn = ov.snapshot, lastRun = ov.last;
+    const validateOk = lastRun && state.batchResults?.[lastRun.batch]?.validate?.evidence ? "ขั้น Validate ของ Run ล่าสุดสำเร็จ (มีหลักฐาน)" : "NOT VERIFIED (ไม่พบหลักฐานขั้น Validate ที่โหลดไว้)";
+    whs.append(dataTable([["k", "รายการ"], ["v", "ค่าจากระบบ"]], [
+      { k: "Published Warehouse ถึงเดือน", v: ov.publishedThrough ? thaiMonth(ov.publishedThrough) : "ยังไม่มี" },
+      { k: "Run ID / Source Version ของ Snapshot ล่าสุด", v: sn ? (sn.runId || "—") + " / " + (sn.sourceVersion || "—") : "NOT VERIFIED" },
+      { k: "Published เมื่อ", v: sn ? opsTime(sn.publishedAt) : "—" },
+      { k: "Reconciliation", v: validateOk },
+      { k: "เดือนที่อยู่ระหว่างประมวลผล (Staging — ยังไม่ Published)", v: rows.filter(r => ["RUNNING", "DATA_QUALITY_BLOCKED", "SYSTEM_FAILED"].includes(r.state)).map(r => thaiMonth(r.month) + " (" + r.label + ")").join(", ") || "ไม่มี" }]));
+    whs.append(small("Lineage: Source → ER1 (Neon) → Data Lake (Landing/Raw/Standardized) → ER2 / DuckDB Warehouse → Business Dashboard"));
+    whs.append(notice("Pipeline สำเร็จ ≠ ผลทางธุรกิจผ่าน (KPI PASS) · ข้อมูล Staging หรือเดือนที่ถูกบล็อก ไม่ถูกนับเป็น Published Actual และ Business Dashboard ใช้เฉพาะเดือนที่ Published"));
+    whs.append(box("ops-links", opsGo("เปิด Data Lake & Warehouse", () => { state.pipelineTab = "files"; renderPipeline(); }),
+      opsGo("เปิด Neon · ฐานข้อมูลต้นทาง", () => { state.pipelineTab = "neon"; renderPipeline(); if (!state.labNeon) loadLabNeon(); }), opsGo("เปิด Business Dashboard", () => setView("business"))));
+    wrap.append(whs);
+
+    // E. ML readiness (summary + links only; details stay on the Forecast pages)
+    const mls = opsSection("ml", "E · ความพร้อมของข้อมูลสำหรับ ML (สรุป — รายละเอียดอยู่หน้า Forecast)", false);
+    const om = state.opsMl, mon0 = om?.data;
+    if (!om || om.loading || !om.at) mls.append(small("กำลังอ่านสถานะ ML Monitoring…"));
+    else if (!mon0) mls.append(notice("อ่านสถานะ ML ไม่ได้ (NOT AVAILABLE): " + (om.error || "ไม่ทราบสาเหตุ") + " — ไม่ได้หมายความว่า ML ผ่านหรือไม่ผ่าน", true));
+    else {
+      const sm = mon0.summary, gaps = mon0.gaps || [], lv = sm ? MON_LEVEL[sm.evidence_level] : null;
+      mls.append(dataTable([["k", "รายการ"], ["v", "สถานะจาก ML Monitoring"]], [
+        { k: "เดือนที่ประเมินได้จริง (มี Actual)", v: sm ? sm.counted_months + " เดือน" : "ยังไม่มี" },
+        { k: "ระดับหลักฐาน", v: lv ? lv[0] : "ยังไม่มีผลประเมิน" },
+        { k: "แหล่งข้อมูล (data origin)", v: sm?.data_origin || "NOT VERIFIED" },
+        { k: "คำแนะนำล่าสุด", v: sm?.recommendation ? (MON_STATUS[sm.recommendation.status] || sm.recommendation.status) + " (คำแนะนำเท่านั้น ไม่เปลี่ยน Official)" : "—" },
+        { k: "ผล Monitoring ที่ยังบันทึกไม่ครบ", v: gaps.length ? gaps.map(g => thaiMonth(g.month)).join(", ") + " — ไปหน้า Forecast vs Actual เพื่อซ่อม" : "ไม่มี" }]));
+      if (sm && sm.data_origin && MON_ORIGIN[sm.data_origin]) mls.append(notice(MON_ORIGIN[sm.data_origin], true));
+    }
+    mls.append(box("ops-links", opsGo("ไปหน้า พยากรณ์และวางแผน", () => setView("forecast")), opsGo("ไปหน้า Forecast vs Actual", () => setView("evaluation"))));
+    wrap.append(mls);
+    root.append(wrap);
+    loadOpsMl();
+  }
+
   function renderPipeline() {
     const root = $("#app"); root.replaceChildren();
     const tabs = box("notebook-tabs");
@@ -2735,6 +2878,8 @@
     if (state.staleRecovered) {
       root.append(notice("ℹ ระบบกู้คืนสถานะงานค้างก่อนหน้าเรียบร้อยแล้ว (Lease Expired) ข้อมูลใน Neon และตารางทั้งหมดยังคงปลอดภัย สามารถเริ่มประมวลผลต่อได้ทันที"));
     }
+
+    renderOpsOverview(root);
 
     // 2. Compact Source Selector
     renderCompactSourceSelector(root);

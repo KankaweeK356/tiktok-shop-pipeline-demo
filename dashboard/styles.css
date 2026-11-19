@@ -933,3 +933,8 @@ tr:hover td{background:#fff8f0}.metric-label,.metric-sub,.panel-description{colo
 .ops-stage small{font-size:10px;color:#5b4a47}
 @media(max-width:700px){.ops-top{grid-template-columns:1fr}.ops-stages{grid-template-columns:repeat(5,minmax(0,1fr))}.ops-stage small{font-size:9px}}
 .ops-block{align-items:flex-start;text-align:left}
+/* explicit show/hide control for the whole Data Operations panel (the default <details> marker is lost in a flex summary) */
+.ops-summary{list-style:none}.ops-summary::-webkit-details-marker{display:none}
+.ops-summary::after{content:"ซ่อน ▲";margin-left:auto;font-size:12px;font-weight:750;color:var(--red);border:1px solid var(--line);border-radius:999px;padding:3px 12px;background:#fff;white-space:nowrap}
+.ops-overview:not([open])>.ops-summary::after{content:"แสดง ▼"}
+.ops-summary:hover::after{border-color:var(--red)}

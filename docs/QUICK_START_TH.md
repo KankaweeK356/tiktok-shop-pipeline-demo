@@ -1,17 +1,19 @@
 # คู่มือเริ่มต้น — Classroom Pipeline Demo
 
-[![เปิด Pipeline Demo ใน Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/KankaweeK356/tiktok-shop-pipeline-demo/blob/feature/classroom-demo-evidence-foundation/notebooks/TikTok_Shop_Step_by_Step_Demo.ipynb)
+[เปิดเว็บ Demo](https://tiktok-shop-mlops-dashboard.vercel.app/) · [ดาวน์โหลด Source v2 รายเดือน มกราคม–ตุลาคม 2569](../source_packages/classroom_v2_2026_11_16/)
 
-[ดาวน์โหลด Source ZIP รายเดือน มกราคม–ตุลาคม 2569](https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/releases/tag/classroom-source-v1)
+## ทดลองบนเว็บ
 
-## เริ่มรัน
+เว็บ Production ใช้เปิดดูข้อมูลที่ Publish แล้ว สำหรับขั้นตอนที่รัน แก้ หรือบันทึกข้อมูล ให้ใช้สภาพแวดล้อมทดสอบที่ได้รับอนุมัติ
 
-1. ใน Colab เลือก **Runtime → Run all** เพื่อเตรียม Code และ Source
-2. กด **เริ่มรอบใหม่และรัน Run 1 · มกราคม**
-3. หลังรันเสร็จ ดูผลแต่ละขั้นใน Database, Data Lake และ Warehouse
-4. กด **เติมข้อมูลเดือนถัดไป** เพื่อเพิ่มทีละหนึ่งเดือน
-5. หากรันไม่ผ่าน ให้อ่านขั้นและสาเหตุ แล้วกดปุ่มเดิมเพื่อลองเดือนเดิมอีกครั้ง
+1. เริ่มรอบ Demo แล้วรัน ม.ค. และ ก.พ. ให้ขึ้น Published
+2. รัน มี.ค. เปิด Review & Fix เมื่อระบบแจ้งว่ามีรายการไม่ผ่าน เทียบ SKU กับบิล ยืนยันค่าที่ถูกต้อง แล้วกด Revalidate และ Resume
+3. รัน เม.ย. และ พ.ค. ให้ขึ้น Published แล้วสร้าง Forecast เดือน มิ.ย. ด้วยข้อมูลถึง พ.ค. จากนั้นบันทึกและล็อก Forecast
+4. ทดลอง Scenario A/B/C แล้วบันทึกแผนที่เลือก
+5. รันและ Publish มิ.ย. แล้วเปิดคาดการณ์เทียบผลจริงและภาพรวมธุรกิจของเดือนเดียวกัน
 
-## ดูผลข้อมูล
+## ทดลองใน Colab รุ่นก่อนหน้า
 
-เปิดหัวข้อ Database, Data Lake และ Warehouse เพื่อดูรายชื่อตาราง/ไฟล์ จำนวนแถว และเลือกดูตัวอย่างข้อมูลจริง. Colab ใช้ SQLite, Parquet และ DuckDB ใน Runtime ของผู้รัน ไม่เชื่อม Neon Lab และผลไม่แสดงใน Dashboard เว็บ
+[เปิด Notebook รุ่นก่อนหน้า](https://colab.research.google.com/github/KankaweeK356/tiktok-shop-pipeline-demo/blob/feature/classroom-demo-evidence-foundation/notebooks/TikTok_Shop_Step_by_Step_Demo.ipynb) · [Source Release v1 ของรอบเดิม](https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/releases/tag/classroom-source-v1)
+
+ใน Colab เลือก **Runtime → Run all** แล้วกดเริ่ม Run 1 เดือนมกราคมและเพิ่มเดือนถัดไปตามลำดับ Notebook แสดง Database, Data Lake และ Warehouse ใน Runtime ของผู้รัน โดยใช้ SQLite, Parquet และ DuckDB

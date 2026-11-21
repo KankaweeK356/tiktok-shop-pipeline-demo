@@ -4176,7 +4176,7 @@
   }
   async function generateForecast() {
     const f = state.fc; if (f.busy) return;
-    if (!f.actor.trim()) { f.error = "ระบุชื่อผู้สั่ง (Business Owner)"; renderForecast(); return; }
+    if (!f.actor.trim()) { fcFlash("err", "ระบุชื่อผู้สั่ง (Business Owner) ก่อนสร้าง Forecast"); fcRepaintFlash(); return; }
     f.busy = "generate"; f.error = ""; renderForecast();
     try {
       const t = await fcApi("generate", { method: "POST", body: { month: f.month, actor: f.actor.trim() } });
@@ -4184,16 +4184,27 @@
       const w = await fetch("/api/lab-worker.py", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ticket: t.data.ticket }) });
       const out = await w.json();
       if (!w.ok || out.status !== "DRAFT") throw new Error(out.error || out.error_code || "Worker สร้าง Forecast ไม่สำเร็จ");
-    } catch (error) { f.error = error.message; }
+    } catch (error) { f.error = error.message; fcFlash("err", "สร้าง Forecast ไม่สำเร็จ: " + error.message); }
     f.busy = ""; await loadForecastView();
+    if (!f.flash && !f.error) fcFlash("ok", "สร้าง Forecast ฉบับร่างสำเร็จ · ตรวจตัวเลขแล้วกด Save & Seal เพื่อล็อกเป็น Official");
+    else if (f.flash) fcRepaintFlash();
+  }
+  /** Result of the user's last action (save / seal / generate). Kept apart from f.error because the reload that follows every action clears f.error. */
+  function fcFlash(kind, text) { state.fc.flash = { kind, text, at: Date.now() }; }
+  function fcRepaintFlash() { if (state.view === "forecast") { renderForecast(); setTimeout(() => document.querySelector(".fc-flash")?.scrollIntoView({ behavior: "smooth", block: "center" }), 60); } }
+  function fcFlashNode() {
+    const fl = state.fc.flash; if (!fl) return null;
+    const n = notice((fl.kind === "ok" ? "✅ " : "❌ ") + fl.text, fl.kind !== "ok"); n.classList.add("fc-flash"); if (fl.kind === "ok") n.classList.add("notice-ok");
+    return n;
   }
   async function sealForecast(id) {
     const f = state.fc; if (f.busy) return;
-    if (!f.actor.trim()) { f.error = "ระบุชื่อผู้ Seal"; renderForecast(); return; }
+    if (!f.actor.trim()) { fcFlash("err", "ระบุชื่อผู้ Seal ก่อนกด Save & Seal"); fcRepaintFlash(); return; }
     f.busy = "seal"; f.error = ""; renderForecast();
     const r = await fcApi("seal", { method: "POST", body: { forecast_run_id: id, actor: f.actor.trim() } });
-    if (!r.ok) f.error = r.data.error || "Seal ไม่สำเร็จ";
-    f.busy = ""; await loadForecastView();
+    if (!r.ok) fcFlash("err", "Seal ไม่สำเร็จ: " + (r.data.error || "ไม่ทราบสาเหตุ"));
+    else fcFlash("ok", "Seal Official Forecast สำเร็จ · ล็อกแล้วแก้ไม่ได้ · ต่อไปปรับแผนและบันทึกได้");
+    f.busy = ""; await loadForecastView(); fcRepaintFlash();
   }
   // ---- Forecast & Planning (v5): Product Group table + side panel + live What-if --------------------------------
   // Plan templates are documented relative adjustments of the REFERENCE plan (previous published month). They are what-if
@@ -4252,16 +4263,23 @@
   async function sealPlan() {
     const f = state.fc; if (f.busy) return;
     const tpl = PLAN_TEMPLATES[f.planCode];
-    if (!f.actor.trim()) { f.error = "ระบุชื่อผู้เลือกแผน"; renderForecast(); return; }
+    if (!f.actor.trim()) { fcFlash("err", "ระบุชื่อผู้เลือกแผนก่อนกดบันทึก"); fcRepaintFlash(); return; }
     f.busy = "seal_plan"; f.error = ""; renderForecast();
     const title = (tpl ? tpl.title : "แผนกำหนดเอง") + " · " + thaiMonth(f.month);
     const reason = f.planReason.trim() || `เลือก ${tpl ? tpl.title : "แผนกำหนดเอง"} เป็นแผนทดลอง (What-if) ภายใต้สมมติฐานปริมาณคำสั่งซื้อคงที่`;
     const r = await fcApi("seal_plan", { method: "POST", body: { month: f.month, plan_code: f.planCode, plan_title: title, reason, actor: f.actor.trim(), controls: fcControlsPayload() } });
-    if (!r.ok) f.error = r.data.error || "บันทึกแผนไม่สำเร็จ"; else { f.review = false; f.savedAt = new Date().toISOString(); }
-    f.busy = ""; await loadForecastView();
+    if (!r.ok) {
+      const why = r.data.error || "ไม่ทราบสาเหตุ";
+      fcFlash("err", "บันทึกแผนไม่สำเร็จ — " + why + (/นำเข้าแล้ว|INGESTED/i.test(why + (r.data.error_code || "")) ? " · ต้องบันทึกแผนก่อนรันเดือนนั้น ลองเดือนที่ยังไม่ได้รัน" : ""));
+    } else {
+      f.review = false; f.savedAt = new Date().toISOString(); f.dirtyAfterSave = false;
+      fcFlash("ok", "บันทึกแผนเวอร์ชัน " + r.data.decision_version + " สำเร็จ · " + title + " · โดย " + f.actor.trim() + " · เวลา " + new Date().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }) +
+        " · ดูเทียบกับผลจริงได้หลังรันเดือนนี้ที่หน้า “คาดการณ์เทียบผลจริง”");
+    }
+    f.busy = ""; await loadForecastView(); fcRepaintFlash();
   }
   function fcSetControl(mutator) {            // every edit: change, mark as custom plan, recalc (no save)
-    const f = state.fc; mutator(f.ctl); f.tpl = "CUSTOM"; f.planCode = "CUSTOM"; f.review = false; f.dirtyAfterSave = Boolean(f.forecast?.plan_versions);
+    const f = state.fc; f.flash = null; mutator(f.ctl); f.tpl = "CUSTOM"; f.planCode = "CUSTOM"; f.review = false; f.dirtyAfterSave = Boolean(f.forecast?.plan_versions);
     fcScheduleCalc(); fcPaintGroupRows();
   }
   function fcSlider(label, value, min, max, step, unit, onChange, hint, refText, disabled = false) {
@@ -4286,6 +4304,7 @@
     const head = box("fc-result-head", node("strong", "", "ผลของแผน"), node("span", "fc-pill", "จำลอง"), f.simBusy ? node("span", "fc-pill fc-pill-busy", "กำลังคำนวณ…") : null);
     if (r) { const i = node("span", "fc-info", "ⓘ"); i.title = "สมมติฐาน: ตะกร้าคำสั่งซื้อจริงเดือนก่อน ปริมาณคงที่ · Ads เพิ่มไม่ทำให้ยอดขายเพิ่มอัตโนมัติ · Official Forecast ไม่เปลี่ยนตามตัวเลื่อน · สูตร " + r.calculator_version; head.append(i); }
     wrap.append(head);
+    wrap.append(small("Official Forecast = คำทำนายที่ล็อกแล้ว ไม่เปลี่ยนตามแผน · Scenario Net = ผลของแผนตามสมมติฐาน (จำนวนออเดอร์คงที่ ส่วนลดและคูปองกระทบยอดขาย ส่วน Ads กระทบต้นทุนและกำไร ไม่ทำให้ยอดขายเพิ่มในการคำนวณนี้)"));
     if (!r) { wrap.append(small(f.simBusy ? "กำลังคำนวณ…" : (f.simError || "ยังไม่มีผลคำนวณ"))); return wrap; }
     const g = r.gates, tgt = g.revenue.target, gapPct = tgt ? 100 * (r.net_revenue - tgt) / tgt : null, delta = r.net_revenue - official.shop_forecast;
     const cell = (label, value, status, sub) => box("fc-rcell", node("span", "fc-rlabel", label), box("fc-rline", node("strong", "fc-rvalue", value), status ? gateBadgeFc(status) : null), sub ? small(sub) : null);
@@ -4298,7 +4317,7 @@
     return wrap;
   }
   function fcPaintResult() { const slot = document.querySelector(".fc-result-slot"); if (slot) slot.replaceChildren(fcResultNode()); fcPaintGroupRows();
-    document.querySelectorAll(".fc-save-btn").forEach(b => { b.disabled = !state.fc.sim || state.fc.simBusy || Boolean(state.fc.busy); }); }
+    const done = Boolean(state.fc.status?.months?.find(m => m.month === state.fc.month)?.published); document.querySelectorAll(".fc-save-btn").forEach(b => { b.disabled = !state.fc.sim || state.fc.simBusy || Boolean(state.fc.busy) || done; }); }
   function fcGroupRowValues(g) {
     const f = state.fc, c = f.ctl, d = f.defaults[f.month], gr = f.sim?.result?.by_group?.[g];
     const v = c.voucher, eligible = v.mode !== "none" && v.groups.includes(g);
@@ -4368,12 +4387,12 @@
     return panel("ขั้น 3 · ตรวจผลก่อนบันทึก", "", box("panel-body", box("v-stack",
       small("Forecast ID " + official.forecast_run_id + " · เดือนเป้าหมาย " + thaiMonth(f.month) + " · ฐานข้อมูลถึง " + official.training_cutoff_date), tbl,
       small("Voucher: " + (v.mode === "none" ? "ไม่ใช้" : v.mode + " · อัตรา " + pct(v.rate, 1) + " · ขั้นต่ำ ฿" + money(v.min_spend, 0) + " · เพดาน " + (v.cap === null || v.cap === "" ? "ไม่จำกัด" : "฿" + money(v.cap, 0)) + " · ใช้จริง " + pct(v.usage, 0) + " ของออเดอร์ที่มีสิทธิ์")),
-      fcResultNode(), box("fc-reviewform", node("label", "field", ""), actor, reason), box("h-stack", back, confirm),
+      fcResultNode(), box("fc-reviewform", node("label", "field", ""), actor, reason), (f.flash && f.flash.kind === "err") ? fcFlashNode() : null, box("h-stack", back, confirm),
       small("บันทึกเป็นเวอร์ชันต่อท้าย (ผู้ดำเนินการ เวลา สมมติฐาน และสูตรถูกเก็บไว้) แก้ย้อนหลังไม่ได้ · เซิร์ฟเวอร์คำนวณซ้ำก่อนบันทึก"))));
   }
   function renderForecast() {
     renderForecastCore();
-    if (state.view === "forecast" && state.fc.loaded && state.fc.status) $("#app").append(renderMlopsPanel());
+    if (state.view === "forecast" && state.fc.loaded && state.fc.status) $("#app").append(renderMlPlanPointer());
   }
   function renderForecastCore() {
     const root = $("#app"); root.replaceChildren(); state.rows = [];
@@ -4389,7 +4408,7 @@
     if (!rd.ready) { const meter = box("fc-meter"); for (let i = 0; i < rd.required_months; i += 1) meter.append(node("span", "fc-meter-cell" + (i < rd.published_months ? " on" : ""), "")); bar.append(meter); }
     const actorInput = node("input", "fc-num fc-actor"); actorInput.type = "text"; actorInput.value = f.actor; actorInput.placeholder = "ชื่อผู้ดำเนินการ";
     actorInput.addEventListener("input", e => { f.actor = e.target.value; try { localStorage.setItem("fc_actor", f.actor); } catch (_) { /* storage may be blocked */ } });
-    const monthSel = st.months.length > 1 ? chooseField("เดือนเป้าหมาย", st.months.map(m => [m.month, thaiMonth(m.month)]), f.month, v => { f.month = v; f.sim = null; f.ctl = null; f.tpl = ""; f.review = false; loadForecastView(); }) : null;
+    const monthSel = st.months.length > 1 ? chooseField("เดือนเป้าหมาย", st.months.map(m => [m.month, thaiMonth(m.month)]), f.month, v => { f.month = v; f.flash = null; f.sim = null; f.ctl = null; f.tpl = ""; f.review = false; loadForecastView(); }) : null;
     const official = detail?.official, draft = (detail?.drafts || [])[0], shown = official || draft;
     root.append(box("bz-banner", box("v-stack", node("strong", "bz-banner-title", "วางแผนการตลาด " + thaiMonth(f.month)),
       small((official ? "Forecast SEALED" : shown ? "Forecast DRAFT" : "ยังไม่มี Forecast") + " · Publish แล้วถึง " + (st.published_through ? thaiMonth(st.published_through) : "ยังไม่มี") + (shown ? " · ข้อมูลฐานถึง " + shown.training_cutoff_date + " · " + (shown.method_type === "BASELINE" ? "Baseline (" + shown.model_name + ") ไม่ใช่ ML" : "ML " + shown.model_name) : ""))),
@@ -4398,6 +4417,9 @@
     const step = !official ? 1 : (f.review ? 3 : 2);
     root.append(fcStepper(step));
     if (f.error) root.append(notice(f.error, true));
+    if (f.flash && !(f.review && f.flash.kind === "err")) root.append(fcFlashNode());
+    const monthLocked = Boolean(cur?.published);
+    if (monthLocked) root.append(notice("เดือน" + thaiMonth(f.month) + "นำเข้าและ Publish แล้ว จึงบันทึกแผนใหม่ไม่ได้ (ต้องบันทึกแผนก่อนรันเดือนนั้น) · ทดลองปรับแผนเพื่อดูผลได้ แต่ไม่ถูกบันทึก · ดูแผนที่เคยบันทึกเทียบกับผลจริงที่หน้า “คาดการณ์เทียบผลจริง”", true));
     const tgt = cur?.target?.status === "OK" ? cur.target : null, gap = shown && tgt ? shown.shop_forecast - tgt.revenue_target_thb : null;
     const slot = box("fc-result-slot");
     const refLine = box("fc-refline",
@@ -4407,7 +4429,7 @@
     root.append(box("fc-topbar", refLine, official ? slot : null));
     if (shown) {                                                   // Shadow ML next to the official number: recorded before the actual, never the official value
       const sh = f.shadow?.[shown.forecast_run_id];
-      if (sh && !sh.loading) root.append(small(sh.data?.ml ? "Shadow ML (Ridge) ทำนาย ฿" + money(sh.data.ml.shop, 2) + " · Baseline Official ฿" + money(shown.shop_forecast, 2) + " · ส่วนต่าง " + (sh.data.ml.shop - shown.shop_forecast >= 0 ? "+" : "−") + "฿" + money(Math.abs(sh.data.ml.shop - shown.shop_forecast), 2) + " · ไม่ใช่ Official (บันทึกก่อนรู้ยอดจริง)" :
+      if (sh && !sh.loading) root.append(small(sh.data?.ml ? "ค่าทำนายของ ML (Ridge ที่บันทึกก่อนรู้ยอดจริง) ฿" + money(sh.data.ml.shop, 2) + " · Baseline ที่ใช้จริง ฿" + money(shown.shop_forecast, 2) + " · ส่วนต่าง " + (sh.data.ml.shop - shown.shop_forecast >= 0 ? "+" : "−") + "฿" + money(Math.abs(sh.data.ml.shop - shown.shop_forecast), 2) + " · ไม่ใช่ Official (บันทึกก่อนรู้ยอดจริง)" :
         sh.failed ? "อ่าน Shadow ML ไม่ได้ในตอนนี้ (Official Forecast ไม่ได้รับผลกระทบ)" : "ยังไม่มี Shadow ML ที่ผูกกับ Forecast นี้ (เช่น Seal ก่อนเปิดใช้ MLOps)", "fc-shadow-line"));
     }
     if (shown) {
@@ -4443,10 +4465,11 @@
     fi.title = "ปรับสเกล ×" + money(d.basis.scale_factor, 3) + " ให้ใกล้ Official Forecast เป็นสมมติฐานปริมาณคงที่ ไม่ใช่ผลทำนาย ML · " + d.basis.note + " · Margin รายกลุ่มเป็นค่าประมาณ (Fulfillment, Sample, Claim กระจายตามสัดส่วน)"; foot.append(fi);
     const left = box("v-stack", node("strong", "", "① เลือกแผนเริ่มต้น"), tpl, node("strong", "", "② ปรับค่าแผนรายกลุ่มสินค้า (5 กลุ่ม)"), fcBulkRow(), box("bz-table-wrap", table), foot);
     root.append(box("fc-main", panel("เลือกและปรับแผน", "", box("panel-body", left)), box("fc-side", fcGroupPanel(d), fcVoucherBox(d))));
-    const review = node("button", "button button-primary fc-save-btn", "ตรวจผลและบันทึกแผน →"); review.type = "button"; review.disabled = !f.sim || f.simBusy;
+    const savedNow = Boolean(detail.plan_versions) && !f.dirtyAfterSave;
+    const review = node("button", "button button-primary fc-save-btn", savedNow ? "บันทึกเป็นเวอร์ชันใหม่ →" : "ตรวจผลก่อนบันทึก →"); review.type = "button"; const monthDone = Boolean(f.status?.months?.find(m => m.month === f.month)?.published); review.disabled = !f.sim || f.simBusy || monthDone; if (monthDone) review.title = "เดือนนี้ Publish แล้ว บันทึกแผนไม่ได้";
     review.addEventListener("click", () => { f.review = true; renderForecast(); });
     const skip = node("button", "button button-outline", "ข้ามแผน ไปรัน Actual เดือนถัดไป"); skip.type = "button"; skip.addEventListener("click", () => setView("pipeline"));
-    const saved = detail.plan_versions ? small("บันทึกแล้ว เวอร์ชัน " + detail.plan_versions + (detail.selected_plan?.plan_title ? " · " + detail.selected_plan.plan_title : "") + (f.dirtyAfterSave ? " · แก้ไขหลังบันทึก ยังไม่ได้บันทึกค่าใหม่" : "")) : small("● ยังไม่ได้บันทึกแผน (เลื่อนตัวเลื่อนไม่บันทึกอัตโนมัติ)");
+    const saved = detail.plan_versions ? node("span", "ops-chip " + (f.dirtyAfterSave ? "ops-ready" : "ops-ok"), (f.dirtyAfterSave ? "⚠ แก้ไขหลังบันทึก ยังไม่ได้บันทึกค่าใหม่ · " : "✓ ") + "บันทึกแล้ว เวอร์ชัน " + detail.plan_versions + (detail.selected_plan?.plan_title ? " · " + detail.selected_plan.plan_title : "")) : node("span", "ops-chip ops-idle", "● ยังไม่ได้บันทึกแผน (เลื่อนตัวเลื่อนไม่บันทึกอัตโนมัติ)");
     root.append(box("fc-stickyactions", saved, box("h-stack", skip, review)));
     slot.append(fcResultNode());
     if (f.simSeq === undefined || !f.sim) fcScheduleCalc(0);
@@ -4468,10 +4491,10 @@
   async function loadMlops(month, force = false) {
     const ml = state.fc.ml = state.fc.ml || { byMonth: {}, open: true, tab: "", busy: "", error: "" };
     if (!force && ml.byMonth[month]?.data) return;
-    if (!ml.byMonth[month]?.data) { ml.byMonth[month] = { loading: true, data: null, error: "" }; renderForecast(); }      // a refresh keeps showing the old data until the new one arrives
+    if (!ml.byMonth[month]?.data) { ml.byMonth[month] = { loading: true, data: null, error: "" }; rerenderMl(); }      // a refresh keeps showing the old data until the new one arrives
     const r = await fcApi("mlops", { query: { month } });
     ml.byMonth[month] = { loading: false, data: r.ok ? r.data : null, error: r.ok ? "" : (r.data.error || "โหลด ML Artifact ไม่สำเร็จ") };
-    if (state.view === "forecast") renderForecast();
+    rerenderMl();
   }
   async function startMlopsRun(kind) {
     const f = state.fc, ml = f.ml; if (ml.busy) return;
@@ -4542,7 +4565,7 @@
   // ---- Champion vs Challenger Monitoring (inside the ML panel) -----------------------------------------------------
   // Baseline (trailing 3 months) vs Ridge, using only shadow forecasts recorded BEFORE the actual was published. Read-only; a recommendation
   // asks a human to review and never changes the champion or retrains.
-  const MON_LEVEL = { INSUFFICIENT_EVIDENCE: ["Insufficient Evidence", "status-fail"], PRELIMINARY: ["Preliminary", "status-pending"], ADEQUATE: ["Adequate", "status-pass"] };
+  const MON_LEVEL = { INSUFFICIENT_EVIDENCE: ["ข้อมูลยังน้อยเกินสรุป (Insufficient)", "status-fail"], PRELIMINARY: ["เริ่มมีข้อมูล แต่ยังไม่พอ (Preliminary)", "status-pending"], ADEQUATE: ["ข้อมูลเพียงพอ (Adequate)", "status-pass"] };
   const MON_STATUS = { INSUFFICIENT_EVIDENCE: "ข้อมูลยังไม่พอ", PRELIMINARY_NOT_ASSESSED: "Preliminary · ยังไม่ประเมินเกณฑ์เปลี่ยน Champion", RECOMMEND_REVIEW: "แนะนำให้พิจารณาทบทวนการเปลี่ยน Champion", NOT_RECOMMENDED: "ยังไม่ผ่านเกณฑ์เปลี่ยน Champion" };
   const MON_REASON = { NO_SHADOW: "ไม่มี Shadow ที่บันทึกไว้ก่อน Publish", SHADOW_NOT_BOUND_TO_SEALED_FORECAST: "Shadow ไม่ผูกกับ Forecast ที่ Seal", ML_OR_BASELINE_MISSING: "มีคำทำนายไม่ครบทั้งสองวิธี",
     SHADOW_NOT_RECORDED_BEFORE_ACTUAL: "Shadow ไม่ได้บันทึกก่อน Publish Actual", ACTUAL_INCOMPLETE: "Actual ไม่ครบ 5 กลุ่ม", SHADOW_TARGET_MISMATCH: "เดือนเป้าหมายไม่ตรง", CUTOFF_MISMATCH: "Data Cutoff ไม่ตรง",
@@ -4592,7 +4615,7 @@
   }
   function renderMonitoringBlock() {
     const f = state.fc, ml = f.ml, mon = ml.mon, wrap = box("mlops-mon");
-    wrap.append(node("h3", "mon-title", "Champion vs Challenger Monitoring"),
+    wrap.append(node("h3", "mon-title", "เทียบวิธีที่ใช้จริง (Champion) กับวิธีที่กำลังทดสอบ (Challenger)"),
       small("Champion = Baseline ที่ Seal เป็น Official จริงของแต่ละเดือน (ดีที่สุดระหว่าง trailing 3 กับ naive) · Challenger = Ridge เดิม · เทียบเฉพาะเดือนที่ระบบบันทึกผล ML ไว้ก่อน Publish ยอดจริง และมียอดจริงครบทั้ง 5 กลุ่ม · ไม่รวมผลที่รันย้อนหลังหรือทดลองหลังรู้ยอดจริง"));
     if (!mon || mon.loading) { wrap.append(small("กำลังอ่านผล Monitoring…")); return wrap; }
     if (!mon.data) { wrap.append(notice(mon.error || "ไม่พบข้อมูล", true)); return wrap; }
@@ -4624,9 +4647,9 @@
       small("เป็นคำแนะนำเท่านั้น · ไม่เปลี่ยน Champion และไม่สั่ง Retrain อัตโนมัติ · ระบบนี้ไม่มีฟังก์ชันเปลี่ยน Official เป็น ML (Official ยังเป็น Baseline)"),
       monPrinciple(rec.rule_values)));
     const c = s.cumulative;
-    wrap.append(node("strong", "", "ผลสะสม (ระดับ Shop) · Cumulative WAPE = Σ|error| ÷ Σ Actual ของเดือนชุดเดียวกัน"),
-      dataTable([["m", "วิธี"], ["w", "Cumulative WAPE"], ["mae", "MAE/เดือน ฿"], ["b", "Bias/เดือน ฿ (คาด−จริง)"], ["t", "ผลรวมความคลาดเคลื่อนสะสม ฿"]],
-        [["Baseline Official (Champion)", c.baseline], ["Ridge (Challenger)", c.ml]].map(([name, v]) => ({ m: name, w: pct(v.wape_pct, 2), mae: money(v.mae, 0), b: (v.bias >= 0 ? "+" : "") + money(v.bias, 0), t: money(v.abs_error_total, 0) }))));
+    wrap.append(node("strong", "", "ผลสะสม (ระดับร้าน) · ความคลาดเคลื่อนสะสม (WAPE) = Σ|คาด − จริง| ÷ Σ ยอดจริง ของเดือนชุดเดียวกัน"),
+      dataTable([["m", "วิธี"], ["w", "ความคลาดเคลื่อนสะสม (WAPE)"], ["mae", "MAE/เดือน ฿"], ["b", "Bias/เดือน ฿ (คาด−จริง)"], ["t", "ผลรวมความคลาดเคลื่อนสะสม ฿"]],
+        [["วิธีมาตรฐาน Baseline (ที่ใช้จริง · Champion)", c.baseline], ["ML Ridge (กำลังทดสอบ · Challenger)", c.ml]].map(([name, v]) => ({ m: name, w: pct(v.wape_pct, 2), mae: money(v.mae, 0), b: (v.bias >= 0 ? "+" : "") + money(v.bias, 0), t: money(v.abs_error_total, 0) }))));
     const labels = s.monthly.map(m => m.month);
     wrap.append(box("mon-charts", monChart("แนวโน้ม Forecast Error รายเดือน (APE ระดับ Shop)", labels, [{ name: "Baseline Official", color: "#741D2B", values: s.monthly.map(m => m.baseline_ape_pct) }, { name: "Ridge", color: "#2F6FB3", values: s.monthly.map(m => m.ml_ape_pct) }], "%", 1),
       monChart("ความคลาดเคลื่อนสะสม Σ|error| (฿)", labels, [{ name: "Baseline Official", color: "#741D2B", values: s.monthly.map(m => m.cum_abs_error_baseline) }, { name: "Ridge", color: "#2F6FB3", values: s.monthly.map(m => m.cum_abs_error_ml) }], "", 0)));
@@ -4651,33 +4674,38 @@
     const go = node("button", "mlops-more", "ดูผลเทียบยอดจริงที่หน้า คาดการณ์เทียบผลจริง →"); go.type = "button"; go.addEventListener("click", () => setView("evaluation"));
     row.append(go); return row;
   }
-  function renderMlopsPanel() {
+  /** Per-month ML detail (Feature Store -> Training -> Validation -> Forecast). `opts.embedded` = shown inside the Forecast vs Actual page for `opts.month`. */
+  function renderMlopsPanel(opts = {}) {
     const f = state.fc, ml = f.ml = f.ml || { byMonth: {}, open: true, tab: "", busy: "", error: "" };
-    const det = node("details", "dq-details fc-mlops"); det.open = ml.open; det.id = "mlopsDetails";
-    det.append(node("summary", "", "ML Model & Experiment Details · Feature Store · Training Run · Drift"));
-    det.addEventListener("toggle", () => { if (det.open !== ml.open) { ml.open = det.open; if (ml.open) { loadMlops(f.month, true); loadMonitoring(true); } else ml.mon = null; } });
-    if (!ml.open) return det;
-    det.append(small("ผลทั้งหมดในส่วนนี้เกิดขึ้นเองตอนสร้าง Forecast และตอน Run เดือนนั้น ไม่ต้องกดปุ่มใดๆ · ถ้ายังว่าง แปลว่าเดือนที่เลือกยังไม่ได้สร้าง Forecast", "mlops-intro"));
-    const slot = ml.byMonth[f.month], data = slot?.data;
-    if (!slot || slot.loading) { det.append(small("กำลังอ่าน Artifact จาก Object Storage…")); return det; }
+    const embedded = Boolean(opts.embedded), month = opts.month || f.month;
+    const det = embedded ? box("mlops-embedded fc-mlops") : node("details", "dq-details fc-mlops");
+    if (!embedded) {
+      det.open = ml.open; det.id = "mlopsDetails";
+      det.append(node("summary", "", "ML Model & Experiment Details · Feature Store · Training Run · Drift"));
+      det.addEventListener("toggle", () => { if (det.open !== ml.open) { ml.open = det.open; if (ml.open) { loadMlops(month, true); loadMonitoring(true); } else ml.mon = null; } });
+      if (!ml.open) return det;
+      det.append(small("ผลทั้งหมดในส่วนนี้เกิดขึ้นเองตอนสร้าง Forecast และตอน Run เดือนนั้น ไม่ต้องกดปุ่มใดๆ · ถ้ายังว่าง แปลว่าเดือนที่เลือกยังไม่ได้สร้าง Forecast", "mlops-intro"));
+    }
+    const slot = ml.byMonth[month], data = slot?.data;
+    if (!slot || slot.loading) { det.append(small("กำลังอ่านผลจาก Object Storage…")); return det; }
     if (!data) { det.append(notice(slot.error || "ไม่พบข้อมูล", true)); return det; }
-    det.append(monitoringPointer());
+    if (!embedded) det.append(monitoringPointer());
     const order = ["official_linked", "historical_evaluation", "experiment_only"];
     const extras = new URLSearchParams(window.location.search).get("demo") === "1";       // the two manual demo runs exist only behind ?demo=1
     const visible = extras ? order : ["official_linked"];
     const tab = visible.includes(ml.tab) ? ml.tab : "official_linked";
-    const official = f.forecast?.official;
-    const seg = box("mlops-tabs"); visible.forEach(k => { const b = node("button", "mlops-tab" + (tab === k ? " on" : ""), ML_KIND[k][1] + (data[k]?.count ? " (" + data[k].count + ")" : "")); b.type = "button"; b.addEventListener("click", () => { ml.tab = k; renderForecast(); }); seg.append(b); });
-    det.append(node("strong", "mlops-heading", "ผล ML ของเดือน " + thaiMonth(f.month)), small(extras ? "โหมดเดโม: มีผลที่ต้องกดสร้างเองเพิ่ม (Historical Evaluation / Experiment Only)" : "ใช้ข้อมูลจาก Training Run ที่บันทึกจริงตอนสร้าง Forecast"));
+    const official = opts.official !== undefined ? opts.official : f.forecast?.official;
+    const seg = box("mlops-tabs"); visible.forEach(k => { const b = node("button", "mlops-tab" + (tab === k ? " on" : ""), ML_KIND[k][1] + (data[k]?.count ? " (" + data[k].count + ")" : "")); b.type = "button"; b.addEventListener("click", () => { ml.tab = k; rerenderMl(); }); seg.append(b); });
+    det.append(node("strong", "mlops-heading", "ผล ML ของเดือน " + thaiMonth(month)), small(extras ? "โหมดเดโม: มีผลที่ต้องกดสร้างเองเพิ่ม (Historical Evaluation / Experiment Only)" : "ใช้ข้อมูลจาก Training Run ที่บันทึกจริงตอนสร้าง Forecast"));
     if (extras) det.append(seg);
     const cur = data[tab];
     if (tab === "official_linked") {
-      det.append(box("mlops-official", node("strong", "", "Forecast ที่ Seal (ตัวเลขทางการ) · " + thaiMonth(f.month)), official ? small("SEALED · " + official.method_type + " (" + official.model_name + ") ยอดร้าน ฿" + money(official.shop_forecast, 2) + " · Seal เมื่อ " + official.sealed_at) : small("ยังไม่มี Official Forecast ที่ Seal ของเดือนนี้")));
+      det.append(box("mlops-official", node("strong", "", "Forecast ที่ Seal (ตัวเลขทางการ) · " + thaiMonth(month)), official ? small("SEALED · " + official.method_type + " (" + official.model_name + ") ยอดร้าน ฿" + money(official.shop_forecast, 2) + " · Seal เมื่อ " + official.sealed_at) : small("ยังไม่มี Official Forecast ที่ Seal ของเดือนนี้")));
     }
     if (cur?.latest) { det.append(mlJourney(data, cur.latest, tab === "official_linked" ? official : tab === "historical_evaluation" ? official : null, ml.mon?.data?.summary), mlRunBody(cur.latest, tab, official)); }
     else {
       det.append(mlJourney(data, null, official, ml.mon?.data?.summary));
-      const hasForecast = Boolean(official || (f.forecast?.drafts || [])[0]);
+      const hasForecast = Boolean(official || (!embedded && (f.forecast?.drafts || [])[0]));
       const msg = tab === "official_linked" ? (hasForecast ? "ยังไม่มี Training Run ผูกกับ Forecast นี้ (Forecast ที่ Seal ก่อนเปิดใช้ MLOps จะไม่มี และไม่ย้อนสร้างให้)" : "ยังไม่ได้สร้าง Forecast ของเดือนนี้ · กด \"สร้าง Forecast\" ด้านบน แล้วระบบจะสร้างผล ML ให้เอง ไม่ต้องกดอะไรเพิ่ม") :
         tab === "historical_evaluation" ? "ยังไม่มี Historical Evaluation ของเดือนนี้" : "ยังไม่มีการทดลอง (Experiment Only) ของเดือนนี้";
       det.append(notice(msg));
@@ -4693,16 +4721,45 @@
     state.ev.loaded = true; state.ev.data = r.ok ? r.data : null; state.ev.error = r.ok ? "" : (r.data.error || "โหลดผลเปรียบเทียบไม่สำเร็จ");
     const st = await fcApi("status"); state.ev.status = st.ok ? st.data : null;
     if (state.view === "evaluation") renderEvaluation();
-    { const ml = state.fc.ml = state.fc.ml || { byMonth: {}, open: true, tab: "", busy: "", error: "" }; if (ml.evOpen !== false) loadMonitoring(true); }
+    { state.fc.ml = state.fc.ml || { byMonth: {}, open: true, tab: "", busy: "", error: "" }; loadMonitoring(true); }
   }
   // Champion vs Challenger Monitoring also lives on the Forecast vs Actual page (same block, collapsed by default).
-  function renderEvalMonitoring() {
+  function renderMlPlanPointer() {
+    const f = state.fc, row = box("mlops-pointer");
+    row.append(node("span", "", "ผล ML ของเดือนนี้ (Feature Store, Training, Validation) และการเทียบกับยอดจริง ดูที่หน้า “คาดการณ์เทียบผลจริง” · ML ไม่มีผลต่อแผนที่คุณปรับ"));
+    const go = node("button", "mlops-more", "ไปดู ML →"); go.type = "button"; go.addEventListener("click", () => { state.ev.month = f.month; setView("evaluation"); });
+    row.append(go); return row;
+  }
+  const ML_LEVEL_TH = { INSUFFICIENT_EVIDENCE: "ข้อมูลยังน้อยเกินสรุป", PRELIMINARY: "เริ่มมีข้อมูล แต่ยังไม่พอ", ADEQUATE: "ข้อมูลเพียงพอสำหรับพิจารณา" };
+  /** Three plain questions: is ML better than the standard method, is there enough data, what should we do. Everything technical sits below it. */
+  function mlSummaryNode() {
+    const mon = state.fc.ml?.mon, wrap = box("ev-ml-summary");
+    if (!mon || mon.loading) { wrap.append(small("กำลังอ่านผลเปรียบเทียบ ML…")); return wrap; }
+    if (!mon.data) { wrap.append(notice((mon.error || "อ่านผล ML ไม่ได้") + " — ไม่ได้แปลว่า ML ผ่านหรือไม่ผ่าน", true)); return wrap; }
+    const s = mon.data.summary;
+    if (!s) { wrap.append(small("ยังไม่มีเดือนที่เทียบ ML กับยอดจริง — เริ่มนับเมื่อเดือนที่ Seal Forecast ไว้ถูก Publish")); return wrap; }
+    const b = s.cumulative?.baseline, m = s.cumulative?.ml, n = s.counted_months, rec = s.recommendation;
+    const both = b && m && Number.isFinite(Number(b.wape_pct)) && Number.isFinite(Number(m.wape_pct));
+    wrap.append(
+      box("ev-ml-q", node("strong", "", "1) ML ดีกว่าวิธีมาตรฐานไหม"), node("span", "", both ? "ความคลาดเคลื่อนสะสม (ยิ่งต่ำยิ่งดี): วิธีมาตรฐาน (ที่ใช้จริง) " + pct(b.wape_pct, 2) + " · ML " + pct(m.wape_pct, 2) + " → " + (Number(m.wape_pct) < Number(b.wape_pct) ? "ตอนนี้ ML ต่ำกว่า" : "ตอนนี้วิธีมาตรฐานดีกว่าหรือเท่ากัน") : "ยังคำนวณเปรียบเทียบไม่ได้")),
+      box("ev-ml-q", node("strong", "", "2) ข้อมูลพอเชื่อถือหรือยัง"), node("span", "", n + " เดือนที่เทียบกับยอดจริง · " + (ML_LEVEL_TH[s.evidence_level] || s.evidence_level) + " (ควรมีอย่างน้อย " + (rec?.rule_values?.min_months ?? 6) + " เดือน)")),
+      box("ev-ml-q", node("strong", "", "3) ต้องทำอะไร"), node("span", "", rec?.status === "RECOMMEND_REVIEW" ? "ML ผ่านเกณฑ์ทั้งหมด แนะนำให้คนทบทวนว่าจะเปลี่ยนวิธีหรือไม่ (ระบบไม่เปลี่ยนเอง)" : "ยังไม่ต้องเปลี่ยนอะไร ใช้วิธีมาตรฐาน (Baseline) ต่อไป")));
+    return wrap;
+  }
+  /** ML section of the Forecast vs Actual page: short summary first, all technical detail collapsed. */
+  function renderEvalMl(sel) {
     const f = state.fc, ml = f.ml = f.ml || { byMonth: {}, open: true, tab: "", busy: "", error: "" };
-    const det = node("details", "dq-details fc-mlops"); det.open = ml.evOpen !== false;
-    det.append(node("summary", "", "ML: Baseline vs ML เทียบผลจริง · Champion vs Challenger Monitoring"));
-    det.addEventListener("toggle", () => { if (det.open !== (ml.evOpen !== false)) { ml.evOpen = det.open; if (ml.evOpen) loadMonitoring(true); else ml.mon = null; } });
-    if (ml.evOpen !== false) { det.append(small("เทียบ Baseline ที่ Seal เป็น Official กับ Ridge จาก Shadow Forecast ที่บันทึกก่อน Publish Actual · รายละเอียดสายงาน Feature → Training → Validation อยู่ในหน้าคาดการณ์และวางแผน"), renderMonitoringBlock()); if (ml.error) det.append(notice(ml.error, true)); }
-    return det;
+    const det = node("details", "dq-details"); det.open = Boolean(ml.evOpen);
+    det.append(node("summary", "", "ดูรายละเอียด ML (ขั้นตอน ผลฝึก ผลรายเดือน กราฟ)"));
+    det.addEventListener("toggle", () => { if (det.open !== Boolean(ml.evOpen)) { ml.evOpen = det.open; if (det.open) { loadMonitoring(true); if (sel) loadMlops(sel.month, true); } } });
+    if (ml.evOpen) {
+      det.append(small("เทียบวิธีมาตรฐาน (Baseline ที่ Seal เป็น Official) กับ ML (Ridge) ที่บันทึกค่าทำนายไว้ก่อนรู้ยอดจริง · เป็นข้อมูลประกอบ ไม่เปลี่ยนวิธีที่ใช้จริงอัตโนมัติ"), renderMonitoringBlock());
+      if (sel) {
+        if (!ml.byMonth[sel.month]) setTimeout(() => loadMlops(sel.month), 0);
+        det.append(renderMlopsPanel({ embedded: true, month: sel.month, official: { method_type: sel.forecast.method_type, model_name: sel.forecast.model_name, shop_forecast: sel.evaluation.shop.forecast, sealed_at: sel.forecast.sealed_at } }));
+      }
+    }
+    return panel("ML เทียบกับวิธีมาตรฐาน", "คำตอบสั้น 3 ข้อ · รายละเอียดทางเทคนิคอยู่ใน “ดูรายละเอียด ML”", box("panel-body", box("v-stack", mlSummaryNode(), det)));
   }
   function evalBars(groupsEval) {
     const max = Math.max(1, ...groupsEval.flatMap(g => [g.forecast, g.actual]));
@@ -4712,6 +4769,32 @@
       bf.title = "Forecast ฿" + money(g.forecast, 2); ba.title = "Actual ฿" + money(g.actual, 2);
       return box("ev-group", node("div", "ev-err", (g.error >= 0 ? "+" : "") + money(g.error, 0)), box("ev-pair", bf, ba), node("div", "ev-label", g.group));
     }));
+  }
+  const PLAN_CMP_LABEL = { ads: "ค่า Ads", campaign_reduction: "ส่วนลด Campaign", voucher: "Voucher", affiliate: "Affiliate", free_sample: "ตัวอย่างฟรี",
+    gross: "ยอดรวมก่อนหัก (Gross)", net_revenue: "ยอดขายสุทธิ (Scenario Net)", profit: "กำไร" };
+  const PLAN_GATE_LABEL = { revenue: "ถึงเป้ายอดขาย (ยอดขายสุทธิ ÷ เป้า ≥ 100%)", profit_protection: "กำไรคุ้มครอง (กำไร ÷ ยอดรวม ≥ 10%)", marketing_gap: "ค่าการตลาดรวม ÷ ยอดรวม ≤ 30%" };
+  const PLAN_CODE_LABEL = { A: "แผน A — คงแผนเดิม", B: "แผน B — คุมต้นทุน", C: "แผน C — ทดลองเร่งยอดขาย", CUSTOM: "แผนกำหนดเอง" };
+  /** Saved plan vs published actual of the same month: first "was the plan followed" (inputs), then "what we got" (outcomes), then the 3 gates. */
+  function evalPlanPanel(plan) {
+    const title = "แผนที่เลือก เทียบกับผลจริง (แยกจาก Forecast)";
+    if (plan.status !== "SELECTED") return panel(title, "ไม่มีแผนที่บันทึกไว้",
+      box("panel-body", small("ไม่มีแผนที่บันทึกไว้ของเดือนนี้ — ต้องบันทึกแผนที่หน้า “คาดการณ์และวางแผน” ก่อนรันเดือนนั้น (บันทึกหลังนำเข้าแล้วไม่ได้) · ยังเทียบ Forecast กับ Actual ได้ตามปกติ ไม่สร้างการเปรียบเทียบแผนปลอม")));
+    const c = plan.compare;
+    if (!c) return panel(title, "แผนเวอร์ชัน " + plan.version + " · Execution not verified", box("panel-body", box("v-stack", notice(plan.note),
+      dataTable([["k", "รายการ"], ["p", "ตามแผน (สมมติฐาน)"], ["a", "จริง"], ["d", "ผลต่าง"]], Object.entries(plan.variance).map(([k, v]) => ({ k, p: money(v.plan, 2), a: money(v.actual, 2), d: money(v.diff, 2) }))))));
+    const m = c.meta || {}, fmt = v => v === null || v === undefined ? "—" : money(v, 2), sgn = v => v === null || v === undefined ? "—" : (v > 0 ? "+" : "") + money(v, 2),
+      pc = v => v === null || v === undefined ? "—" : (v > 0 ? "+" : "") + pct(v, 1);
+    const rows = list => list.map(r => ({ k: PLAN_CMP_LABEL[r.key] || r.key, p: fmt(r.plan), a: fmt(r.actual), d: sgn(r.diff), pct: pc(r.diff_pct) }));
+    const cols = [["k", "รายการ"], ["p", "ตามแผน (สมมติฐาน)"], ["a", "จริง"], ["d", "ผลต่าง (จริง − แผน)"], ["pct", "% ผลต่าง"]];
+    const st = x => x === "PASS" ? "ผ่าน" : x === "FAIL" ? "ไม่ผ่าน" : (x || "—");
+    const gates = c.gates.map(g => ({ k: PLAN_GATE_LABEL[g.key] || g.key, p: st(g.plan_status) + (g.plan_value === null ? "" : " · " + pct(g.plan_value, 2)), a: st(g.actual_status) + (g.actual_value === null ? "" : " · " + pct(g.actual_value, 2)) }));
+    const when = m.selected_at && Number.isFinite(Date.parse(m.selected_at)) ? new Date(m.selected_at).toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" }) : "—";
+    return panel(title, "แผนเวอร์ชัน " + plan.version + " · " + (PLAN_CODE_LABEL[m.plan_code] || m.plan_code || "—") + " · บันทึกโดย " + (m.selected_by || "—") + " · " + when + " · Execution not verified (ไม่ได้ติดตามว่าทำตามแผนใน TikTok จริง)",
+      box("panel-body", box("v-stack", notice(plan.note), m.reason ? small("เหตุผลที่เลือกแผน: " + m.reason) : null,
+        node("strong", "", "1) ทำตามแผนไหม — สิ่งที่เราตัดสินใจ (ต่างจากแผนมาก = อาจไม่ได้ทำตามแผน หรือลูกค้าใช้คูปองต่างจากที่คาด)"), dataTable(cols, rows(c.inputs)),
+        node("strong", "", "2) ผลที่ได้ — ผลลัพธ์"), dataTable(cols, rows(c.outcomes)),
+        node("strong", "", "3) เกณฑ์ 3 ข้อ"), dataTable([["k", "เกณฑ์"], ["p", "ตามแผน"], ["a", "จริง"]], gates),
+        small("ตัวเลขใน “ตามแผน” คือผลคำนวณของแผน ณ ตอนบันทึก (ออเดอร์เดือนก่อนคงที่ ไม่ได้ทำนายผลของ Ads) ส่วนผลต่างรวมผลจากการทำตามแผนจริง ไม่ใช่ตัวตัดสินว่าแผนดีหรือไม่ดี"))));
   }
   function renderEvaluation() {
     const root = $("#app"); root.replaceChildren(); state.rows = [];
@@ -4727,7 +4810,7 @@
       root.append(box("decision-panel bz-empty", node("h3", "", waiting ? "รอยอดจริง " + thaiMonth(waiting.month) : "ยังไม่มีเดือนที่เปรียบเทียบได้"),
         node("p", "text-muted", waiting ? "Forecast ถูก Seal แล้ว แต่เดือนนี้ยังไม่ Publish จึงยังไม่แสดงยอดจริง ไปรันเดือนนี้ที่ “ทดสอบการนำเข้าข้อมูล”" : "ต้องมีทั้ง Official Forecast ที่ Seal แล้วและ Actual ที่ Publish แล้ว ผลเปรียบเทียบจึงจะแสดง"),
         (() => { const g = node("button", "button button-primary", "ไปที่ทดสอบการนำเข้าข้อมูล"); g.type = "button"; g.addEventListener("click", () => setView("pipeline")); return g; })()));
-      root.append(renderEvalMonitoring());
+      root.append(renderEvalMl(null));
       return;
     }
     const sel = items.find(i => i.month === e.month) || items[items.length - 1], ev = sel.evaluation, shop = ev.shop;
@@ -4749,12 +4832,9 @@
         box("bz-attn bz-attn-first", node("strong", "", "ระดับร้าน · "), node("span", "", direction + " ฿" + money(Math.abs(shop.error), 2) + " (" + pct(shop.ape_pct, 2) + " ของยอดจริง)")),
         box("bz-attn", node("strong", "", "กลุ่มที่คลาดมากสุด · "), node("span", "", worst.group + " " + (worst.error >= 0 ? "คาดต่ำกว่าจริง" : "คาดสูงกว่าจริง") + " ฿" + money(Math.abs(worst.error), 2) + (worst.ape_pct === null ? "" : " (" + pct(worst.ape_pct, 2) + ")"))),
         box("bz-attn", node("strong", "", "จำนวนเดือนที่ประเมิน · "), node("span", "", n < 3 ? "มีข้อมูลประเมินเพียง " + n + " เดือน ยังตัดสินความแม่นยำระยะยาวหรือว่า ML ดีกว่า Baseline ไม่ได้" : n + " เดือน · Shop WAPE สะสม " + pct(e.data.aggregate.shop_wape_pct, 2))),
-        small("Forecast ไม่ใช่โมเดลเชิงเหตุผลของการตอบสนองต่อการตลาด · ผลเปรียบเทียบนี้วัดเฉพาะความแม่นยำของยอดขายสุทธิ"))))));
-    const plan = sel.plan;
-    root.append(panel("แผนที่เลือก เทียบกับผลจริง (แยกจาก Forecast)", plan.status === "SELECTED" ? "แผนเวอร์ชัน " + plan.version + " · Execution not verified (ไม่ได้ติดตามว่าทำตามแผนใน TikTok จริง)" : "ไม่มีแผนที่เลือกไว้",
-      box("panel-body", plan.status === "SELECTED" ? box("v-stack", notice(plan.note), dataTable([["k", "รายการ"], ["p", "ตามแผน (สมมติฐาน)"], ["a", "จริง"], ["d", "ผลต่าง"]],
-        Object.entries(plan.variance).map(([k, v]) => ({ k, p: money(v.plan, 2), a: money(v.actual, 2), d: money(v.diff, 2) })))) :
-        small("ไม่มีแผนที่เลือกไว้ — ยังเทียบ Forecast กับ Actual ได้ตามปกติ ไม่สร้างการเปรียบเทียบแผนปลอม"))));
+        small("Forecast ไม่ใช่โมเดลเชิงเหตุผลของการตอบสนองต่อการตลาด · ผลเปรียบเทียบนี้วัดเฉพาะความแม่นยำของยอดขายสุทธิ"),
+        box("bz-attn", node("strong", "", "ข้อควรระวัง · "), node("span", "", "Forecast ทำนายก่อนมีแผน ส่วนต่างนี้จึงรวมผลของแผนที่เลือกไว้ (ถ้าทำตามจริง) ไม่ใช่ความแม่นของโมเดลล้วน ๆ · ระบบยังไม่ยืนยันว่ามีการทำตามแผน")))))));
+    root.append(evalPlanPanel(sel.plan));
     const det = node("details", "dq-details"); det.append(node("summary", "", "ตารางรายละเอียดและประวัติความคลาดเคลื่อน"));
     det.append(dataTable([["group", "กลุ่ม"], ["f", "Forecast"], ["a", "Actual"], ["err", "Actual − Forecast"], ["ape", "APE"]],
       [...ev.groups.map(g => ({ group: g.group, f: money(g.forecast, 2), a: money(g.actual, 2), err: money(g.error, 2), ape: g.ape_pct === null ? "N/A" : pct(g.ape_pct, 2) })),
@@ -4762,7 +4842,7 @@
       dataTable([["m", "เดือน"], ["meth", "วิธี"], ["ape", "Shop APE"]], items.map(i => ({ m: i.month, meth: i.forecast.method_type, ape: pct(i.evaluation.shop.ape_pct, 2) }))),
       small("Bias สะสม (Forecast − Actual) ฿" + money(e.data.aggregate.shop_bias, 2) + " · Shop MAE ฿" + money(e.data.aggregate.shop_mae, 2)));
     root.append(det);
-    root.append(renderEvalMonitoring());
+    root.append(renderEvalMl(sel));
     const go = goNext(); if (go) root.append(box("h-stack", go));
   }
 

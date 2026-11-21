@@ -313,3 +313,19 @@ test("Recovery gaps: a month that was never given a shadow is not offered as a p
   const b = await callRaw(sql, { mlopsStorage: withShadow }, "GET", { fc: "monitoring" }, undefined, ok);
   assert.ok(b.json.gaps.length > 0 && b.json.gaps.every(g => g.missing === "evaluation"));
 });
+
+test("planCompare: inputs and outcomes are separated, diff = actual - plan, missing stays null", async () => {
+  const { planCompare } = await import("../../lib/lab-forecast.js");
+  const plan = { gross: 109251, campaign_reduction: 5000, voucher_discount: 2780.4, net_revenue: 101471.6, costs: { ads: 20016.59, affiliate: 4000, free_sample: 1000 }, contribution_profit: 16394.95,
+    gates: { revenue: { status: "PASS", achievement_pct: 103.5 }, profit_protection: { status: "PASS", rate_pct: 15.01 }, marketing_gap: { status: "FAIL", rate_pct: 32.34 } } };
+  const shop = { gross: 100179, net: 92339.15, campaign_reduction: 4000, voucher: 3000, affiliate: null, ads: 17471.48, sample: 1000, profit: 15029.62,
+    gates: { revenue: { status: "FAIL", achievement_pct: 98.2 }, profit_protection: { status: "PASS", rate_pct: 15.0 }, marketing_gap: { status: "PASS", rate_pct: 28.1 } } };
+  const c = planCompare(plan, shop, { version: 2 });
+  assert.deepEqual(c.inputs.map(r => r.key), ["ads", "campaign_reduction", "voucher", "affiliate", "free_sample"]);
+  assert.deepEqual(c.outcomes.map(r => r.key), ["gross", "net_revenue", "profit"]);
+  const by = k => [...c.inputs, ...c.outcomes].find(r => r.key === k);
+  assert.equal(by("ads").diff, -2545.11); assert.equal(by("net_revenue").diff, -9132.45); assert.equal(by("net_revenue").diff_pct, -9);
+  assert.equal(by("affiliate").actual, null); assert.equal(by("affiliate").diff, null); assert.equal(by("affiliate").diff_pct, null);
+  assert.equal(c.gates.find(g => g.key === "marketing_gap").plan_status, "FAIL"); assert.equal(c.gates.find(g => g.key === "marketing_gap").actual_status, "PASS");
+  assert.equal(c.meta.version, 2);
+});

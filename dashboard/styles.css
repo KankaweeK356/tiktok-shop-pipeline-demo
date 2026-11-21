@@ -938,3 +938,10 @@ tr:hover td{background:#fff8f0}.metric-label,.metric-sub,.panel-description{colo
 .ops-summary::after{content:"ซ่อน ▲";margin-left:auto;font-size:12px;font-weight:750;color:var(--red);border:1px solid var(--line);border-radius:999px;padding:3px 12px;background:#fff;white-space:nowrap}
 .ops-overview:not([open])>.ops-summary::after{content:"แสดง ▼"}
 .ops-summary:hover::after{border-color:var(--red)}
+/* result of the last user action on the Forecast/Planning page (saved / failed) */
+.notice-ok{background:var(--good-soft);border:1px solid #cfe9de;color:var(--good);font-weight:650}
+.fc-flash{font-size:13px;scroll-margin-top:90px}
+/* ML summary on Forecast vs Actual: three plain questions, details collapsed below */
+.ev-ml-summary{display:flex;flex-direction:column;gap:8px}.ev-ml-q{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.ev-ml-q strong{font-size:13px}.ev-ml-q span{font-size:13px;color:#4b3a37}
+.mlops-embedded{display:flex;flex-direction:column;gap:10px;margin-top:10px}

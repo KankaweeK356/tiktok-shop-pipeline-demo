@@ -1,9 +1,11 @@
 # Source สำหรับ Classroom Demo
 
-Source เป็นข้อมูลสังเคราะห์เพื่อการศึกษา. ชุดที่ใช้ใน Colab และหน้า Test Pipeline คือ Source รายเดือนมกราคม–ตุลาคม 2569 จำนวน 10 ZIP; แต่ละชุดมี CSV 21 ตารางตามโครงสร้าง ER1 เดียวกัน
+ชุดข้อมูลของเว็บ Vercel คือ **`classroom_v2_2026_11_16`** เป็นข้อมูลร้านเสื้อผ้าจำลองรายเดือน มกราคม–ตุลาคม 2569 รวม 10 ZIP แต่ละ ZIP มี CSV 21 ตารางตามโครงสร้าง ER1 และ manifest ที่ระบุเดือนและรายละเอียดของไฟล์
 
-[ดาวน์โหลด Source ZIP ทั้ง 10 เดือน](https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/releases/tag/classroom-source-v1) · [ดูตัวสร้าง Source รายเดือน](https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/blob/feature/classroom-demo-evidence-foundation/pipeline/generate_classroom_source.py) · [ดู Schema](../schemas/)
+- [โฟลเดอร์ดาวน์โหลด ZIP v2](../source_packages/classroom_v2_2026_11_16/)
+- [Source Lock สำหรับตรวจ SHA-256](../source_packages/classroom_v2_2026_11_16/source_lock_classroom_v2.json)
+- [Schema ER1/ER2](../schemas/)
 
-Run 1 ใช้ Source เดือนมกราคม. การเติมแต่ละครั้งใช้ Source ของเดือนถัดไปหนึ่งเดือน. จำนวนออเดอร์ขึ้นกับ Source และแสดงจาก manifest/ผลรันจริง
+Run 1 เริ่มจากเดือนมกราคม จากนั้นนำเข้าเดือนถัดไปทีละเดือน ชุดเดือนมีนาคมมีกรณี SKU ผิดสำหรับทดสอบ Review & Fix โดย ZIP เก็บค่าต้นฉบับก่อนแก้
 
-ไฟล์ในโฟลเดอร์ `source/initial` และ `source/incremental` เก็บไว้เป็น fixture สำหรับการทดสอบเดิม; Flow ปัจจุบันเลือกใช้ Source ZIP รายเดือนตามลิงก์ด้านบน. ราคา ส่วนลด COGS และ Commission บางค่าคำนวณจากกฎใน Pipeline ไม่ได้ส่งมาจาก TikTok Shop
+ไฟล์ใน `source/initial` และ `source/incremental` เป็น fixture สำหรับการทดสอบเดิม ส่วน [GitHub Release v1](https://github.com/KankaweeK356/tiktok-shop-pipeline-demo/releases/tag/classroom-source-v1) เป็นชุดรุ่นก่อนหน้า

@@ -46,6 +46,41 @@
 
 **เมื่อไหร่ "สวิตช์":** ไม่สวิตช์อัตโนมัติ — ML ทำเป็น Shadow (บันทึกก่อนรู้ Actual) แล้ว Champion–Challenger monitor แนะนำ `RECOMMEND_REVIEW` เมื่อ มีข้อมูล ≥6 เดือน, WAPE ML ดีกว่า ≥2 pp, ชนะ ≥4 จาก 6 เดือน, ไม่มีกลุ่มแย่กว่าเกิน 5 pp → คนตัดสินใจเอง (ตรงกับ MLOps Ch.7: validate vs baseline + monitoring)
 
+## 3.5 สถาปัตยกรรมที่ใช้ (พูดชื่อให้ตรงกับสไลด์อาจารย์)
+
+**ภาพรวม:** *End-to-end advanced analytics platform* แบบ **Database → Data Lake → Data Warehouse → Dashboard/ML** (Ch.1 และ Ch.8 "Database–Data lake–Data Warehouse")
+
+```
+Source CSV(ZIP) ─► ER1 OLTP ─► Lake: landing → raw → standardized ─► ER2 Warehouse ─► Dashboard
+                  (Postgres)    (Parquet, Neon Object Storage)        (DuckDB star)      + ML/Forecast
+                         └── control/governance: checkpoint, DQ report, quarantine, lineage ──┘
+```
+
+| ชั้น | สถาปัตยกรรม/รูปแบบ | อ้างอิง |
+|---|---|---|
+| ER1 | OLTP, relational, normalized (PK/FK, bridge table) | Ch.2–3 |
+| Data Lake | **Zone-based architecture**: landing (รับดิบ+hash) → raw (เก็บถาวร ไม่แก้) → standardized (ผ่านมาตรฐาน/DQ = "trusted") + โซน governance/control; เก็บเป็น **Parquet** (open format) บน object storage | Ch.4 Zone-Based / Multi-zone |
+| Data Warehouse | **Kimball dimensional model**: star schema (Fact + Dim + conformed Dim_Date) และ **Data Mart** (Mart_Product_Group_Daily_Performance) + View KPI | Ch.5 |
+| Pipeline | **Batch + Incremental load** รายเดือน (เลือกเฉพาะแถวที่เปลี่ยนด้วย change keys), แยก 5 stage แบบ modular, checkpoint, idempotent upsert | Ch.6 |
+| ETL/ELT | แบบผสม: ER1→Lake เป็น Extract-Load (เก็บดิบก่อน) แล้ว Transform ใน Lake แล้วจึง Load เข้า Warehouse | Ch.6 ETL vs ELT |
+| ML | Forecast + Baseline เทียบ ML (walk-forward), **Shadow ML**, **Champion–Challenger**, Feature Store แบบ point-in-time, คนอนุมัติเอง ≈ **MLOps level 0–1** (pipeline เป็นสคริปต์ มี monitoring แต่ยังไม่ retrain อัตโนมัติ) | Ch.7 |
+| การรันจริง | Dashboard เป็นเว็บ (Vercel) → API → แต่ละ stage รันบน GitHub Actions/Python worker, ฐานข้อมูล Neon Postgres, Warehouse ด้วย DuckDB | Ch.1 |
+
+**หลักการออกแบบ (design principles)**
+1. **Separation of concerns / single responsibility:** 1 stage = 1 หน้าที่ ต่อกันผ่านไฟล์ Parquet (Ch.6 Modular design)
+2. **Schema-as-contract:** schema ER1 (DBML) เป็นที่มาของกฎ DQ 92 ข้อและโครงตารางทั้งหมด
+3. **Immutable raw + lineage:** เก็บดิบพร้อม SHA-256 ไม่แก้; แก้ข้อมูลผิดเป็น "overlay" แยก ไม่แก้ต้นฉบับ; ตามรอยย้อนถึงไฟล์ต้นทางได้ (Ch.6 data lineage)
+4. **Defense in depth DQ:** ตรวจ 2 ด่าน (ก่อนเข้า ER1 และก่อนเข้า Standardized) + Reconcile ปลายทาง (Ch.6 ETL testing: source-to-target)
+5. **Fail-closed:** ไม่ผ่านไม่ Publish; ล้มแล้ว Rollback/Resume ได้ (Ch.6 error handling, checkpoint, idempotency)
+6. **Point-in-time / no leakage:** Forecast ใช้เฉพาะข้อมูลที่ Publish แล้ว, Seal แล้วแก้ไม่ได้ (Ch.7)
+7. **Human-in-the-loop:** ML เป็นผู้ช่วยแนะนำ ไม่เปลี่ยนโมเดลหลักเอง
+
+**ข้อจำกัดที่ควรยอมรับตรง ๆ** (กันอาจารย์ซัก)
+- Lake เป็น Parquet ธรรมดา **ยังไม่ใช่ Lakehouse เต็มรูปแบบ** (ไม่มี table format แบบ Delta/Iceberg ที่ให้ ACID/versioning เอง; ความถูกต้องมาจาก transaction ของ ER1/ER2 + checkpoint + hash)
+- ประมวลผลเป็น **Batch รายเดือน** ไม่ใช่ real-time/streaming (ไม่ใช่ Lambda/Kappa)
+- ไม่ใช่ Data Pond/Inmon: Warehouse เป็นแบบ Kimball ไม่ได้มี Enterprise DW แบบ 3NF ตรงกลาง
+- MLOps ยังไม่มี Continuous Training; แหล่งข้อมูลเป็น CSV แบบจำลอง
+
 ## 4. หลักออกแบบ → อ้างสไลด์อาจารย์
 
 | สิ่งที่ระบบทำ | หลักการ / บท |

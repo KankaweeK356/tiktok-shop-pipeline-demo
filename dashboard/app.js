@@ -784,6 +784,52 @@
     return container;
   }
 
+  // ---- Pipeline step tabs: honest labels (what each number counts, where it comes from) -------------
+  const STAGE_RECORD_LABEL = {
+    ingest: "ออเดอร์สะสมใน ER1 (Fact_Orders)",
+    extract: "ออเดอร์ใน Raw snapshot (Fact_Orders)",
+    transform: "แถวยอดขายที่เปลี่ยนในเดือนนี้ (Fact_Sales_Order_Item)",
+    load: "แถวยอดขายสะสมใน Warehouse (Fact_Sales_Order_Item)",
+    validate: "ข้อตรวจทั้งหมด"
+  };
+  const stageMetricLabel = (stage, label) => label === "Output records" && STAGE_RECORD_LABEL[stage] ? STAGE_RECORD_LABEL[stage] : label;
+  /** {total, passed, failed} of the functional validation from either evidence shape; null when absent. */
+  function valChecks(ev) {
+    const p = (ev?.output?.preview || []).find(r => r.check === "Checks");
+    if (!p) return null;
+    const total = Number(p.source ?? ev.output.records), passed = Number(p.passed ?? p.warehouse);
+    const failed = p.failed !== undefined ? Number(p.failed) : total - passed;
+    return Number.isFinite(total) && Number.isFinite(passed) && Number.isFinite(failed) ? { total, passed, failed } : null;
+  }
+  const sourceTag = real => node("span", real ? "badge-pass" : "badge-neutral", real ? "🟢 หลักฐานรอบนี้" : "⚪ คำอธิบายขั้นตอน (ไม่ใช่ผลเฉพาะรอบ)");
+  /** Master/detail list of the tables of THIS run (names + row counts + first rows) taken from the stage evidence only. */
+  function evidenceTablesView({ key, tables, previews, leftTitle, layer, badge }) {
+    if (!Array.isArray(tables) || !tables.length)
+      return notice("รอบนี้ไม่มีหลักฐานรายตาราง (อาจเป็นรอบที่รันก่อนระบบเริ่มเก็บข้อมูลส่วนนี้) จึงไม่แสดงรายการ — ไม่ใช้ตัวอย่างสมมติแทน", true);
+    state.evSel = state.evSel || {};
+    const names = tables.map(x => x.name);
+    const selected = names.includes(state.evSel[key]) ? state.evSel[key] : names[0];
+    return renderMasterDetailSplitView({
+      items: tables.map(x => ({ id: x.name, label: x.name, sublabel: layer, count: x.rows, badge, badgeType: "validated", raw: x })),
+      selectedId: selected,
+      onSelect: v => { state.evSel[key] = v; renderPipeline(); },
+      renderDetail: item => {
+        const rows = previews ? previews[item.id] : null;
+        const wrap = box("v-stack",
+          box("alert-banner-header", node("strong", "", item.id), sourceTag(true)),
+          dataTable([["field", "รายการ"], ["val", "ค่า"]], [
+            { field: "ชั้นข้อมูล", val: layer },
+            { field: "จำนวนแถวในรอบนี้", val: money(item.raw.rows) + " แถว" }]));
+        if (Array.isArray(rows) && rows.length)
+          wrap.append(node("h5", "lab-subheading", "ตัวอย่าง " + rows.length + " แถวแรกจากรอบนี้"),
+            box("table-scroll-x", dataTable(Object.keys(rows[0]).slice(0, 8).map(c => [c, c]), rows)));
+        else wrap.append(small(previews ? "ตารางนี้ไม่มีแถวข้อมูล" : "หลักฐานรอบนี้ไม่มีตัวอย่างแถวของไฟล์นี้ (ดูตัวอย่างได้ที่แท็บ Output ของขั้นก่อนหน้า)"));
+        return wrap;
+      },
+      searchPlaceholder: "ค้นหา…", leftTitle, filterKey: "label"
+    });
+  }
+
   function renderLabResult(result) {
     if (!result) return box("lab-placeholder",
       node("span", "lab-placeholder-icon", "▷"),
@@ -799,10 +845,10 @@
       small(result.mode === "VERCEL_NATIVE_EXECUTION" ?
         "⚡ ประมวลผลบน Vercel (Vercel Native Runner)" :
         (result.mode === "REAL_GITHUB_ACTIONS_STAGE" ?
-          "ผลจาก GitHub Worker ที่ประมวลผลใหม่" : "อ้างอิง GitHub Run #" + result.historical_run))));
+          "ผลจากการรันจริง (ประมวลผลใหม่ในรอบนี้)" : "อ้างอิงผลรันเดิม (Run #" + result.historical_run + ")"))));
     if (result.metrics?.length) {
       wrap.append(box("lab-metrics", ...result.metrics.map(m =>
-        box("lab-stat", small(m.label),
+        box("lab-stat", small(stageMetricLabel(result.stage, m.label)),
           node("strong", "", typeof m.value === "number" ? money(m.value, m.unit === "THB" ? 2 : 0) : String(m.value)),
           small(m.unit || "")))));
     }
@@ -834,9 +880,9 @@
       ioOutputText = "📤 โหลดเข้า " + (outputTables ?? "—") + " ตาราง Warehouse";
       ioDesc = "สร้าง Star Schema Fact & Dimension และ Data Marts เพื่อป้อนข้อมูลให้ Dashboard & KPI";
     } else if (result.stage === "validate") {
-      ioInputText = "📥 ตรวจสอบทั้ง 4 เลเยอร์";
+      ioInputText = "📥 ตรวจ ER1 เทียบ ER2";
       ioOutputText = "📤 ผลกระทบยอด (Reconciliation)";
-      ioDesc = "ตรวจเทียบ Source ➔ Database ➔ Data Lake ➔ Warehouse ตามจำนวนรายการและยอดเงินจริงที่คำนวณได้";
+      ioDesc = "เทียบ ER1 กับ ER2 ตามจำนวนรายการและยอดเงิน แล้วสุ่มตามรอยรายการผ่าน Data Lake (lineage) ก่อนเผยแพร่";
     }
 
     if (ioInputText) {
@@ -2193,116 +2239,6 @@
     { file_name: "Ref_Platform_Fee_Estimate_Rule.csv", table_name: "Ref_Platform_Fee_Estimate_Rule", row_count: 5, column_count: 7 }
   ];
 
-  const STAGE_2_LAKE_OBJECTS = [
-    { id: "raw_orders.parquet", name: "raw_orders.parquet", layer: "lake/raw/orders/", type: "Fact (Snappy Parquet)", records: 274, columns: ["order_id", "order_status", "created_time", "paid_time", "total_amount", "shipping_fee", "payment_method", "buyer_user_id"], sample_rows: [
-      { order_id: "ORD-202601-00001", order_status: "COMPLETED", created_time: "2026-01-02 11:15:22", paid_time: "2026-01-02 11:16:04", total_amount: 398.00, shipping_fee: 40.00, payment_method: "PROMPTPAY", buyer_user_id: "USR-TH-8812" },
-      { order_id: "ORD-202601-00002", order_status: "COMPLETED", created_time: "2026-01-02 14:22:10", paid_time: "2026-01-02 14:23:45", total_amount: 199.00, shipping_fee: 0.00, payment_method: "CREDIT_CARD", buyer_user_id: "USR-TH-3941" },
-      { order_id: "ORD-202601-00003", order_status: "COMPLETED", created_time: "2026-01-03 09:05:18", paid_time: "2026-01-03 09:06:12", total_amount: 597.00, shipping_fee: 45.00, payment_method: "TRUE_MONEY", buyer_user_id: "USR-TH-1102" },
-      { order_id: "ORD-202601-00004", order_status: "COMPLETED", created_time: "2026-01-03 16:40:55", paid_time: "2026-01-03 16:42:01", total_amount: 259.00, shipping_fee: 0.00, payment_method: "PROMPTPAY", buyer_user_id: "USR-TH-9418" },
-      { order_id: "ORD-202601-00005", order_status: "COMPLETED", created_time: "2026-01-04 12:18:30", paid_time: "2026-01-04 12:19:15", total_amount: 199.00, shipping_fee: 35.00, payment_method: "COD", buyer_user_id: "USR-TH-5521" }
-    ]},
-    { id: "raw_order_items.parquet", name: "raw_order_items.parquet", layer: "lake/raw/order_items/", type: "Fact (Snappy Parquet)", records: 320, columns: ["order_item_id", "order_id", "sku_id", "quantity", "unit_price", "sku_subtotal", "sku_discount"], sample_rows: [
-      { order_item_id: "ORD-202601-00001-I1", order_id: "ORD-202601-00001", sku_id: "SKU-TSHIRT-BLK-L", quantity: 2, unit_price: 199.00, sku_subtotal: 398.00, sku_discount: 0.00 },
-      { order_item_id: "ORD-202601-00002-I1", order_id: "ORD-202601-00002", sku_id: "SKU-Vネック-WHT-M", quantity: 1, unit_price: 199.00, sku_subtotal: 199.00, sku_discount: 0.00 },
-      { order_item_id: "ORD-202601-00003-I1", order_id: "ORD-202601-00003", sku_id: "SKU-POLO-NAVY-XL", quantity: 3, unit_price: 199.00, sku_subtotal: 597.00, sku_discount: 0.00 },
-      { order_item_id: "ORD-202601-00004-I1", order_id: "ORD-202601-00004", sku_id: "SKU-CROP-BEIGE-S", quantity: 1, unit_price: 259.00, sku_subtotal: 259.00, sku_discount: 0.00 },
-      { order_item_id: "ORD-202601-00005-I1", order_id: "ORD-202601-00005", sku_id: "SKU-OVERSIZE-GRY-F", quantity: 1, unit_price: 199.00, sku_subtotal: 199.00, sku_discount: 0.00 }
-    ]},
-    { id: "raw_sku.parquet", name: "raw_sku.parquet", layer: "lake/raw/sku/", type: "Dimension (Snappy Parquet)", records: 140, columns: ["sku_id", "product_group_id", "sku_name", "color", "size", "standard_cost"], sample_rows: [
-      { sku_id: "SKU-TSHIRT-BLK-S", product_group_id: "PG01", sku_name: "เสื้อยืดคอกลม ดำ S", color: "Black", size: "S", standard_cost: 65.00 },
-      { sku_id: "SKU-TSHIRT-BLK-M", product_group_id: "PG01", sku_name: "เสื้อยืดคอกลม ดำ M", color: "Black", size: "M", standard_cost: 65.00 },
-      { sku_id: "SKU-TSHIRT-BLK-L", product_group_id: "PG01", sku_name: "เสื้อยืดคอกลม ดำ L", color: "Black", size: "L", standard_cost: 65.00 },
-      { sku_id: "SKU-TSHIRT-WHT-S", product_group_id: "PG01", sku_name: "เสื้อยืดคอกลม ขาว S", color: "White", size: "S", standard_cost: 65.00 },
-      { sku_id: "SKU-TSHIRT-WHT-M", product_group_id: "PG01", sku_name: "เสื้อยืดคอกลม ขาว M", color: "White", size: "M", standard_cost: 65.00 }
-    ]},
-    { id: "raw_products.parquet", name: "raw_products.parquet", layer: "lake/raw/products/", type: "Dimension (Snappy Parquet)", records: 35, columns: ["product_id", "product_name", "product_group_id", "category_level1"], sample_rows: [
-      { product_id: "PROD-TSHIRT-CLASSIC", product_name: "เสื้อยืดคอกลม Cotton 100%", product_group_id: "PG01", category_level1: "เสื้อผ้าแฟชั่นสตรี" },
-      { product_id: "PROD-V-NECK-SLIM", product_name: "เสื้อคอวี เข้ารูป ผ้านุ่ม", product_group_id: "PG02", category_level1: "เสื้อผ้าแฟชั่นสตรี" },
-      { product_id: "PROD-TURTLE-NECK", product_name: "เสื้อคอเต่า สไตล์เกาหลี", product_group_id: "PG03", category_level1: "เสื้อผ้าแฟชั่นสตรี" }
-    ]},
-    { id: "raw_campaigns.parquet", name: "raw_campaigns.parquet", layer: "lake/raw/campaigns/", type: "Dimension (Snappy Parquet)", records: 21, columns: ["campaign_id", "campaign_name", "campaign_type", "discount_rate"], sample_rows: [
-      { campaign_id: "CMP-2026-PAYDAY", campaign_name: "TikTok Shop Payday Expo", campaign_type: "MEGA_SALE", discount_rate: 0.15 },
-      { campaign_id: "CMP-2026-FASHION-WEEK", campaign_name: "Fashion Brand Festival", campaign_type: "CATEGORY_SALE", discount_rate: 0.10 }
-    ]},
-    { id: "raw_marketing_costs.parquet", name: "raw_marketing_costs.parquet", layer: "lake/raw/marketing_costs/", type: "Fact (Snappy Parquet)", records: 155, columns: ["cost_id", "date", "ad_channel", "campaign_id", "cost_amount"], sample_rows: [
-      { cost_id: "MKT-202601-001", date: "2026-01-02", ad_channel: "TIKTOK_SHOP_ADS", campaign_id: "CMP-2026-PAYDAY", cost_amount: 250.00 },
-      { cost_id: "MKT-202601-002", date: "2026-01-03", ad_channel: "TIKTOK_SHOP_ADS", campaign_id: "CMP-2026-PAYDAY", cost_amount: 320.00 }
-    ]},
-    { id: "raw_internal_fulfillment.parquet", name: "raw_internal_fulfillment.parquet", layer: "lake/raw/fulfillment/", type: "Fact (Snappy Parquet)", records: 274, columns: ["fulfillment_id", "order_id", "packing_cost", "courier_fee"], sample_rows: [
-      { fulfillment_id: "FUL-202601-001", order_id: "ORD-202601-00001", packing_cost: 8.50, courier_fee: 28.00 },
-      { fulfillment_id: "FUL-202601-002", order_id: "ORD-202601-00002", packing_cost: 8.50, courier_fee: 28.00 }
-    ]},
-    { id: "landing_manifest.json", name: "landing_manifest.json", layer: "lake/raw/", type: "Metadata (JSON)", records: 1, columns: ["batch_id", "sync_time", "source_engine", "checksum_status"], sample_rows: [
-      { batch_id: "BATCH-202601", sync_time: "2026-01-31T23:59:59Z", source_engine: "NEON_POSTGRES_CDC", checksum_status: "VERIFIED_MATCH" }
-    ]}
-  ];
-
-  const STAGE_3_STANDARDIZED_OBJECTS = [
-    { id: "standardized_orders.parquet", name: "standardized_orders.parquet", layer: "lake/standardized/orders/", type: "Fact (Standardized Parquet)", records: 274, columns: ["order_id", "order_status", "order_date", "paid_at_ict", "gross_revenue", "shipping_fee", "net_customer_paid"], sample_rows: [
-      { order_id: "ORD-202601-00001", order_status: "COMPLETED", order_date: "2026-01-02", paid_at_ict: "2026-01-02 18:16:04", gross_revenue: 398.00, shipping_fee: 40.00, net_customer_paid: 438.00 },
-      { order_id: "ORD-202601-00002", order_status: "COMPLETED", order_date: "2026-01-02", paid_at_ict: "2026-01-02 21:23:45", gross_revenue: 199.00, shipping_fee: 0.00, net_customer_paid: 199.00 },
-      { order_id: "ORD-202601-00003", order_status: "COMPLETED", order_date: "2026-01-03", paid_at_ict: "2026-01-03 16:06:12", gross_revenue: 597.00, shipping_fee: 45.00, net_customer_paid: 642.00 }
-    ]},
-    { id: "standardized_order_items.parquet", name: "standardized_order_items.parquet", layer: "lake/standardized/order_items/", type: "Fact (Standardized Parquet)", records: 320, columns: ["order_item_id", "order_id", "sku_id", "product_group_id", "quantity", "unit_price", "sku_subtotal"], sample_rows: [
-      { order_item_id: "ORD-202601-00001-I1", order_id: "ORD-202601-00001", sku_id: "SKU-TSHIRT-BLK-L", product_group_id: "PG01", quantity: 2, unit_price: 199.00, sku_subtotal: 398.00 },
-      { order_item_id: "ORD-202601-00002-I1", order_id: "ORD-202601-00002", sku_id: "SKU-Vネック-WHT-M", product_group_id: "PG02", quantity: 1, unit_price: 199.00, sku_subtotal: 199.00 }
-    ]},
-    { id: "standardized_sku.parquet", name: "standardized_sku.parquet", layer: "lake/standardized/sku/", type: "Dimension (Standardized Parquet)", records: 140, columns: ["sku_id", "product_group_id", "sku_name", "standard_cost", "is_active"], sample_rows: [
-      { sku_id: "SKU-TSHIRT-BLK-S", product_group_id: "PG01", sku_name: "เสื้อยืดคอกลม ดำ S", standard_cost: 65.00, is_active: true },
-      { sku_id: "SKU-TSHIRT-BLK-M", product_group_id: "PG01", sku_name: "เสื้อยืดคอกลม ดำ M", standard_cost: 65.00, is_active: true }
-    ]},
-    { id: "quarantine_records.parquet", name: "quarantine_records.parquet", layer: "lake/governance/quarantine/", type: "Governance (Quarantine Area)", records: 0, columns: ["quarantine_id", "batch", "source_file", "row_id", "error_code", "quarantined_at"], sample_rows: [] },
-    { id: "dq_summary_metrics.json", name: "dq_summary_metrics.json", layer: "lake/governance/", type: "Metadata (DQ Summary)", records: 6, columns: ["rule_name", "category", "target_table", "pass_count", "fail_count", "conclusion"], sample_rows: [
-      { rule_name: "DQ_REFERENTIAL_SKU", category: "Integrity", target_table: "order_items", pass_count: 320, fail_count: 0, conclusion: "PASS" },
-      { rule_name: "DQ_PK_UNIQUENESS", category: "Uniqueness", target_table: "orders", pass_count: 274, fail_count: 0, conclusion: "PASS" }
-    ]}
-  ];
-
-  const STAGE_4_WAREHOUSE_OBJECTS = [
-    { id: "Fact_Orders", name: "Fact_Orders", type: "Fact Table (DuckDB)", records: 274, grain: "1 แถวต่อ 1 คำสั่งซื้อ (Order)", columns: ["order_id", "order_date_key", "customer_key", "gross_revenue", "voucher_amount", "campaign_discount", "net_revenue"], sample_rows: [
-      { order_id: "ORD-202601-00001", order_date_key: 20260102, customer_key: 1082, gross_revenue: 398.00, voucher_amount: 10.00, campaign_discount: 20.00, net_revenue: 368.00 },
-      { order_id: "ORD-202601-00002", order_date_key: 20260102, customer_key: 1094, gross_revenue: 199.00, voucher_amount: 0.00, campaign_discount: 0.00, net_revenue: 199.00 },
-      { order_id: "ORD-202601-00003", order_date_key: 20260103, customer_key: 1105, gross_revenue: 597.00, voucher_amount: 15.00, campaign_discount: 30.00, net_revenue: 552.00 }
-    ]},
-    { id: "Fact_Order_Items", name: "Fact_Order_Items", type: "Fact Table (DuckDB)", records: 320, grain: "1 แถวต่อ 1 รายการสินค้า (Line Item)", columns: ["order_item_id", "order_id", "sku_key", "quantity", "unit_selling_price", "fifo_unit_cost", "item_cogs"], sample_rows: [
-      { order_item_id: "ORD-202601-00001-I1", order_id: "ORD-202601-00001", sku_key: 42, quantity: 2, unit_selling_price: 199.00, fifo_unit_cost: 65.00, item_cogs: 130.00 },
-      { order_item_id: "ORD-202601-00002-I1", order_id: "ORD-202601-00002", sku_key: 19, quantity: 1, unit_selling_price: 199.00, fifo_unit_cost: 68.00, item_cogs: 68.00 }
-    ]},
-    { id: "Dim_Date", name: "Dim_Date", type: "Dimension (DuckDB)", records: 365, grain: "1 แถวต่อ 1 วันตามปฏิทิน", columns: ["date_key", "calendar_date", "day_of_week", "month_name", "quarter", "is_weekend"], sample_rows: [
-      { date_key: 20260101, calendar_date: "2026-01-01", day_of_week: "Thursday", month_name: "January", quarter: 1, is_weekend: false },
-      { date_key: 20260102, calendar_date: "2026-01-02", day_of_week: "Friday", month_name: "January", quarter: 1, is_weekend: false }
-    ]},
-    { id: "Dim_Product", name: "Dim_Product", type: "Dimension (DuckDB)", records: 35, grain: "1 แถวต่อ 1 ผลิตภัณฑ์ (Product Model)", columns: ["product_key", "product_id", "product_name", "product_group_id", "target_margin"], sample_rows: [
-      { product_key: 1, product_id: "PROD-TSHIRT-CLASSIC", product_name: "เสื้อยืดคอกลม Cotton 100%", product_group_id: "PG01", target_margin: 0.15 },
-      { product_key: 2, product_id: "PROD-V-NECK-SLIM", product_name: "เสื้อคอวี เข้ารูป ผ้านุ่ม", product_group_id: "PG02", target_margin: 0.15 }
-    ]},
-    { id: "Dim_SKU", name: "Dim_SKU", type: "Dimension (DuckDB)", records: 140, grain: "1 แถวต่อ 1 SKU (Variant)", columns: ["sku_key", "sku_id", "product_key", "color", "size", "standard_cost"], sample_rows: [
-      { sku_key: 1, sku_id: "SKU-TSHIRT-BLK-S", product_key: 1, color: "Black", size: "S", standard_cost: 65.00 },
-      { sku_key: 2, sku_id: "SKU-TSHIRT-BLK-M", product_key: 1, color: "Black", size: "M", standard_cost: 65.00 }
-    ]},
-    { id: "Dim_Shop", name: "Dim_Shop", type: "Dimension (DuckDB)", records: 1, grain: "1 แถวต่อ 1 TikTok Shop", columns: ["shop_key", "shop_id", "shop_name", "currency", "country"], sample_rows: [
-      { shop_key: 1, shop_id: "SHOP-TH-FASHION-01", shop_name: "Fashion Intelligence Official Shop", currency: "THB", country: "TH" }
-    ]},
-    { id: "Dim_Campaign", name: "Dim_Campaign", type: "Dimension (DuckDB)", records: 21, grain: "1 แถวต่อ 1 Marketing Campaign", columns: ["campaign_key", "campaign_id", "campaign_name", "campaign_type"], sample_rows: [
-      { campaign_key: 1, campaign_id: "CMP-2026-PAYDAY", campaign_name: "TikTok Shop Payday Expo", campaign_type: "MEGA_SALE" }
-    ]},
-    { id: "Dim_Seller", name: "Dim_Seller", type: "Dimension (DuckDB)", records: 1, grain: "1 แถวต่อ 1 นิติบุคคลผู้ขาย", columns: ["seller_key", "seller_id", "seller_name", "tax_id"], sample_rows: [
-      { seller_key: 1, seller_id: "SLR-TH-001", seller_name: "Fashion Intelligence Co., Ltd.", tax_id: "0105566000001" }
-    ]},
-    { id: "Fact_Settlements", name: "Fact_Settlements", type: "Fact Table (DuckDB)", records: 48, grain: "1 แถวต่อ 1 รอบเงินโอน Settlement Payout", columns: ["settlement_id", "settlement_date", "total_payout", "platform_fee_deducted"], sample_rows: [
-      { settlement_id: "SET-202601-W1", settlement_date: "2026-01-08", total_payout: 18450.00, platform_fee_deducted: 1250.00 }
-    ]},
-    { id: "Fact_Inventory_Snapshots", name: "Fact_Inventory_Snapshots", type: "Fact Table (DuckDB)", records: 140, grain: "1 แถวต่อ SKU ต่อรอบ Snapshot", columns: ["snapshot_date", "sku_key", "on_hand_qty", "allocated_qty", "available_qty"], sample_rows: [
-      { snapshot_date: "2026-01-31", sku_key: 1, on_hand_qty: 120, allocated_qty: 15, available_qty: 105 }
-    ]},
-    { id: "Mart_Daily_Shop_Performance", name: "Mart_Daily_Shop_Performance", type: "Data Mart (DuckDB)", records: 31, grain: "1 แถวต่อ วัน x ร้านค้า", columns: ["mart_date", "gross_sales", "net_revenue", "cogs", "ads_cost", "platform_fee", "contribution_profit"], sample_rows: [
-      { mart_date: "2026-01-02", gross_sales: 3200.00, net_revenue: 2950.00, cogs: 1100.00, ads_cost: 250.00, platform_fee: 108.00, contribution_profit: 480.00 }
-    ]},
-    { id: "View_Monthly_Business_KPI", name: "View_Monthly_Business_KPI", type: "Analytics View (DuckDB)", records: 1, grain: "1 แถวต่อ เดือน x ร้านค้า", columns: ["month", "net_revenue", "revenue_target", "achievement_pct", "contribution_profit", "protection_rate_pct"], sample_rows: [
-      { month: "2026-01", net_revenue: 88136.00, revenue_target: 80000.00, achievement_pct: 110.2, contribution_profit: 12906.00, protection_rate_pct: 14.64 }
-    ]}
-  ];
-
   async function loadNeonLabTable(table = "Fact_Orders") {
     state.selectedOutputTable = table;
     state.labNeonBusy = true;
@@ -3184,6 +3120,7 @@
 
             const csvSamples = state.sourceCsvSamples || {};
             const csvList = Object.keys(csvSamples).length ? Object.values(csvSamples) : SOURCE_TABLES_FALLBACK;
+            if (!Object.keys(csvSamples).length) body.append(notice("⚪ ยังไม่ได้โหลดตัวอย่าง CSV จริงของเดือนนี้ — รายการด้านล่างเป็นตัวอย่างประกอบโครงสร้าง ไม่ใช่ไฟล์ของรอบนี้", true));
             const currentSelectedCsv = state.selectedInputCsv || "Fact_Orders.csv";
 
             const splitViewItems = csvList.map(it => ({
@@ -3231,196 +3168,101 @@
             });
             body.append(splitView);
           } else if (id === "extract") {
-            const splitView = renderMasterDetailSplitView({
-              items: ALL_ER1_TABLES_META.map(t => ({
-                id: t.name,
-                label: t.name,
-                sublabel: "demo_er1 · Neon PostgreSQL",
-                count: t.expected_jan,
-                badge: t.type.split(" ")[0],
-                badgeType: "validated",
-                raw: t
-              })),
-              selectedId: state.selectedOutputTable || "Fact_Orders",
-              onSelect: (tName) => {
-                state.selectedOutputTable = tName;
-                renderPipeline();
-              },
-              renderDetail: (item) => {
-                const t = item.raw;
-                return box("v-stack",
-                  box("alert-banner-header",
-                    node("strong", "", "ตารางต้นทางใน Neon: demo_er1.\"" + t.name + "\""),
-                    node("span", "badge-validated", t.type)
-                  ),
-                  dataTable([["field", "ข้อมูลการสกัด (Extraction Config)"], ["val", "รายละเอียด"]], [
-                    { field: "ฐานข้อมูลต้นทาง", val: "Neon PostgreSQL (demo_er1)" },
-                    { field: "รูปแบบปลายทางใน Data Lake", val: "Snappy Parquet (lake/raw/" + t.name.toLowerCase() + "/)" },
-                    { field: "พาร์ทิชัน (Partition Strategy)", val: "Year-Month (YYYY-MM)" },
-                    { field: "จำนวนแถวอ้างอิงของชุดมกราคม (ตัวอย่างเอกสาร ไม่ใช่ผลของรอบนี้)", val: money(t.expected_jan) + " แถว" }
-                  ])
-                );
-              },
-              searchPlaceholder: "ค้นหาตารางใน Neon…",
-              leftTitle: "ตารางต้นทางใน Neon (25 ตาราง)",
-              filterKey: "label"
-            });
-            body.append(splitView);
+            body.append(small("ตารางจาก Neon ที่ขั้นนี้อ่านเข้ามา (จำนวนแถวของรอบนี้ ไม่ใช่ค่าอ้างอิง)"),
+              evidenceTablesView({ key: "extract:in", tables: evidence?.input?.tables, previews: evidence?.output?.table_previews,
+                leftTitle: "ตารางที่อ่านจาก Neon (demo_er1)", layer: "demo_er1 · Neon PostgreSQL", badge: "ER1" }));
           } else if (id === "transform") {
-            const splitView = renderMasterDetailSplitView({
-              items: STAGE_2_LAKE_OBJECTS.map(o => ({
-                id: o.id,
-                label: o.name,
-                sublabel: o.layer,
-                count: o.records,
-                badge: "Parquet",
-                badgeType: "neutral",
-                raw: o
-              })),
-              selectedId: state.selectedLakeRaw || "raw_orders.parquet",
-              onSelect: (id) => {
-                state.selectedLakeRaw = id;
-                renderPipeline();
-              },
-              renderDetail: (item) => {
-                const o = item.raw;
-                return box("v-stack",
-                  box("alert-banner-header",
-                    node("strong", "", "วัตถุดิบนำเข้า: " + o.name),
-                    node("span", "badge-neutral", o.type)
-                  ),
-                  small("ตำแหน่งใน Data Lake: " + o.layer + " · จำนวน " + money(o.records) + " รายการ"),
-                  node("h5", "lab-subheading", "ตัวอย่างข้อมูล Raw ก่อนแปลงสภาพ"),
-                  box("table-scroll-x", dataTable(o.columns.slice(0, 8).map(c => [c, c]), o.sample_rows))
-                );
-              },
-              searchPlaceholder: "ค้นหาไฟล์ Raw Parquet…",
-              leftTitle: "Raw Parquet นำเข้า",
-              filterKey: "label"
-            });
-            body.append(splitView);
+            body.append(small("ไฟล์ Raw Parquet ที่ขั้นนี้อ่านเข้ามา"),
+              evidenceTablesView({ key: "transform:in", tables: evidence?.input?.tables, previews: null,
+                leftTitle: "Raw Parquet ที่อ่านเข้ามา", layer: "lake/raw/<batch>/", badge: "Raw" }));
           } else if (id === "load") {
-            const splitView = renderMasterDetailSplitView({
-              items: STAGE_3_STANDARDIZED_OBJECTS.map(o => ({
-                id: o.id,
-                label: o.name,
-                sublabel: o.layer,
-                count: o.records,
-                badge: "Standardized",
-                badgeType: "validated",
-                raw: o
-              })),
-              selectedId: state.selectedLakeStandardized || "standardized_orders.parquet",
-              onSelect: (id) => {
-                state.selectedLakeStandardized = id;
-                renderPipeline();
-              },
-              renderDetail: (item) => {
-                const o = item.raw;
-                return box("v-stack",
-                  box("alert-banner-header",
-                    node("strong", "", "ไฟล์ Standardized พร้อมโหลดเข้า DuckDB: " + o.name),
-                    node("span", "badge-validated", o.type)
-                  ),
-                  small("ตำแหน่งใน Data Lake: " + o.layer + " · ผ่านการตรวจสอบ Data Quality แล้ว"),
-                  node("h5", "lab-subheading", "ตัวอย่างข้อมูล Standardized สะอาด"),
-                  o.sample_rows.length ?
-                    box("table-scroll-x", dataTable(o.columns.slice(0, 8).map(c => [c, c]), o.sample_rows)) :
-                    small("ไม่มีแถวข้อมูล (เช่น Quarantine ที่ไม่มีข้อผิดพลาด)")
-                );
-              },
-              searchPlaceholder: "ค้นหาไฟล์ Standardized…",
-              leftTitle: "Standardized Parquet นำเข้า",
-              filterKey: "label"
-            });
-            body.append(splitView);
+            body.append(small("ไฟล์ Standardized Parquet ที่ขั้นนี้ใช้โหลดเข้า Warehouse"),
+              evidenceTablesView({ key: "load:in", tables: evidence?.input?.tables, previews: null,
+                leftTitle: "Standardized Parquet ที่ใช้โหลด", layer: "lake/standardized/<batch>/", badge: "Standardized" }));
           } else {
-            const auditLayers = [
-              { id: "layer_source", label: "1. Source CSV Package", sublabel: "classroom-source-" + sourceMonthForBatch(currentViewBatch) + ".zip", count: "—", badge: "Source", badgeType: "neutral" },
-              { id: "layer_neon", label: "2. Neon PostgreSQL (demo_er1)", sublabel: "25 ER1 Tables", count: factOrders() + " orders", badge: "Database", badgeType: "neutral" },
-              { id: "layer_lake", label: "3. Data Lake (lake/standardized/)", sublabel: "Snappy Parquet", count: "—", badge: "Lake", badgeType: "neutral" },
-              { id: "layer_warehouse", label: "4. DuckDB Data Warehouse", sublabel: "Star Schema & Marts", count: factOrders() + " orders", badge: "Warehouse", badgeType: "validated" }
-            ];
-            const splitView = renderMasterDetailSplitView({
-              items: auditLayers,
-              selectedId: state.selectedAuditLayer || "layer_source",
-              onSelect: (id) => {
-                state.selectedAuditLayer = id;
-                renderPipeline();
-              },
-              renderDetail: (item) => {
-                return box("v-stack",
-                  box("alert-banner-header",
-                    node("strong", "", "ชั้นข้อมูลที่ตรวจสอบ: " + item.label),
-                    node("span", "badge-" + item.badgeType, item.badge)
-                  ),
-                  dataTable([["field", "รายการ"], ["val", "สถานะ"]], [
-                    { field: "ชั้นสถาปัตยกรรม", val: item.label },
-                    { field: "ตำแหน่งอ้างอิง", val: item.sublabel },
-                    { field: "จำนวนคำสั่งซื้อ (Orders)", val: item.count === "—" ? "ไม่มีตัวเลขจริงของชั้นนี้ในระบบ" : String(item.count) },
-                    { field: "หมายเหตุ", val: "แสดงเฉพาะตัวเลขจริงที่ระบบมี ไม่ใช่ผลเปรียบเทียบข้ามชั้น" }
-                  ])
-                );
-              },
-              searchPlaceholder: "ค้นหาชั้นข้อมูล…",
-              leftTitle: "ชั้นข้อมูลที่ Reconcile",
-              filterKey: "label"
-            });
-            body.append(splitView);
+            const pf = (evidence?.output?.preview || []).find(r => r.check === "Paid items"), nr = (evidence?.output?.preview || []).find(r => r.check === "Net revenue");
+            const same = r => Number(r.source) === Number(r.warehouse) ? "✓ ตรงกัน" : "✗ ไม่ตรงกัน";
+            body.append(box("evidence-card", node("strong", "", "สิ่งที่ขั้นนี้นำมาเทียบกัน: ER1 (ต้นทาง) กับ ER2 (คลัง)"), sourceTag(!!(pf || nr)),
+              pf || nr ? dataTable([["item", "รายการ"], ["er1", "ER1"], ["er2", "ER2"], ["match", "ผล"]], [
+                pf ? { item: "จำนวน item ที่ชำระแล้ว", er1: money(pf.source), er2: money(pf.warehouse), match: same(pf) } : null,
+                nr ? { item: "Net Revenue (บาท)", er1: money(nr.source, 2), er2: money(nr.warehouse, 2), match: same(nr) } : null
+              ].filter(Boolean)) : small("ไม่มีตัวเลขเทียบในหลักฐานรอบนี้"),
+              small("ชั้นอื่น (Source CSV, Data Lake) ไม่ได้นำมาเทียบยอดในขั้นนี้ Lake ถูกตรวจแบบสุ่มตามรอยรายการ (lineage) เท่านั้น")));
           }
         } else if (activeSubtab === "process") {
           body.append(node("strong", "", "การประมวลผล (Process)"));
           const timeline = box("timeline-step-list");
+          const dqS = evidence?.dq, outRec = evidence?.output?.records;
+          const nOut = Array.isArray(evidence?.output?.tables) ? evidence.output.tables.length : null;
+          const nIn = Array.isArray(evidence?.input?.tables) ? evidence.input.tables.length : null;
+          const vc = valChecks(evidence), pvFind = n => (evidence?.output?.preview || []).find(r => r.check === n);
+          const dqLine = dqS ? `ตรวจ ${dqS.rules} กฎ · ผ่าน ${dqS.passed} · ไม่ผ่าน ${dqS.failed} · ตรวจ ${money(dqS.checked_rows)} แถว` : null;
+          const has = v => v !== null && v !== undefined;
           let steps = [];
           if (id === "ingest") {
             steps = [
-              { num: "1", title: "Read & Verify Source ZIP", desc: `ดาวน์โหลดและตรวจสอบ Integrity ของไฟล์ classroom-source-${sourceMonthForBatch(currentViewBatch)}.zip`, ev: "Verified SHA-256 Checksum · 21 CSVs + Manifest" },
-              { num: "2", title: "Parse & Standardize CSV Files", desc: "อ่านไฟล์ CSV ตามสัญญา Source และแปลงตาม ER1 Schema Data Types", ev: "ตรวจตามสัญญา Source (ผลจริงดูในแท็บ Output/Validation ของรอบนี้)" },
-              { num: "3", title: "Load Local ER1 SQLite Engine", desc: "นำเข้าข้อมูลเข้าสู่ SQLite (er1.sqlite) เป็นฐานข้อมูลคำนวณชั่วคราว", ev: "สร้าง er1.sqlite สำหรับคำนวณชั่วคราว" },
-              { num: "4", title: "Generate Derived ER1 Tables", desc: "คำนวณ 4 ตารางอนุพันธ์ทางธุรกิจ (FIFO Allocation, Platform Fees, Inventory Snapshot, Movement)", ev: "สร้างตารางอนุพันธ์ (FIFO, Platform Fees, Inventory, Movement)" },
-              { num: "5", title: "Sync & Reconcile to Neon PostgreSQL", desc: "ซิงก์ทั้ง 25 ตารางเข้า Schema demo_er1 ใน Neon PostgreSQL ภายใต้ Transaction เดียวกัน", ev: `Neon sync · Fact_Orders สะสม ${factOrders()} ออเดอร์ (ค่าจริงของรอบล่าสุด)` },
-              { num: "6", title: "Record Execution Checkpoint & Stage Run", desc: "บันทึก Checkpoint ลง S3 และบันทึกสถานะลง demo_control.stage_runs", ev: "Checkpoint ZIP saved · stage_runs updated to SUCCESS" }
+              { title: "ตรวจสถานะและลำดับ", desc: "ต้องอยู่ในสถานะที่ถูกต้อง และเดือนก่อนหน้าต้อง Validate ผ่านแล้ว จึงเริ่มเดือนนี้ได้" },
+              { title: "อ้างอิงข้อมูลยืนยัน Source และสร้าง Run", desc: "อ่านข้อมูลยืนยันตัวตนของ Source (Source Lock) แล้วสร้าง Run ในตารางควบคุม demo_control" },
+              { title: "อ่าน CSV เข้า staging", desc: "อ่านไฟล์ CSV ของเดือนนี้เข้าหน่วยความจำ ไฟล์ต้นฉบับไม่ถูกแก้ไข" },
+              { title: "ตรวจ DQ 92 กฎ ก่อนเขียนข้อมูล", desc: "คีย์หลักไม่ซ้ำ · คอลัมน์ที่ห้ามว่าง · คีย์นอกต้องมีข้อมูลแม่จริง (เช่น SKU ต้องมีใน Dim_SKU) ถ้าตกข้อใดข้อหนึ่ง จะหยุดทั้งเดือนและยังไม่เขียนอะไรเข้า ER1 (เดือนมีนาคมถูกบล็อกที่ข้อนี้)", real: dqLine },
+              { title: "บันทึกเข้า ER1 (SQLite) ใน transaction เดียว", desc: "upsert ข้อมูลเข้า er1.sqlite ในพื้นที่ทำงานของ worker รันซ้ำไม่ซ้ำแถว" },
+              { title: "คำนวณและสร้าง 4 ตาราง derived", desc: "คำนวณส่วนลด voucher, ค่าธรรมเนียม, affiliate และต้นทุนแบบ FIFO สร้าง Fact_FIFO_Allocation, Fact_Order_Platform_Fees, Fact_Inventory_Snapshot, Fact_Stock_Movement" },
+              { title: "ตรวจ Foreign Key ทั้งฐาน แล้ว COMMIT", desc: "ถ้าพบความสัมพันธ์ที่ขาด จะ ROLLBACK ทั้งหมด" },
+              { title: "ซิงก์เข้า Neon และบันทึกสถานะ", desc: "ซิงก์ 25 ตารางเข้า Neon (demo_er1) แบบ atomic เรียงตามลำดับคีย์นอก บันทึกสถานะลง demo_control และเก็บ workspace เป็นไฟล์ zip ใน Object Storage",
+                real: has(outRec) ? `Fact_Orders สะสม ${money(outRec)} ออเดอร์` : null }
             ];
           } else if (id === "extract") {
             steps = [
-              { num: "1", title: "Connect to Neon PostgreSQL (demo_er1)", desc: "เชื่อมต่อไปยังสคีมา demo_er1 ใน Neon PostgreSQL ผ่าน Read-only Transaction", ev: "SSL Connection Established" },
-              { num: "2", title: "Stream Tables in Micro-batches", desc: "สตรีมข้อมูล 25 ตารางแบบแบ่งพาร์ทิชันรายเดือน ไม่บล็อกงานอื่น", ev: `สตรีม Orders สะสม ${factOrders()} รายการ` },
-              { num: "3", title: "Convert to Apache Parquet Format", desc: "แปลงเป็นรูปแบบ Columnar Parquet พร้อมบีบอัดด้วยอัลกอริทึม Snappy", ev: "บีบอัดด้วย Snappy" },
-              { num: "4", title: "Write to Object Storage (lake/raw/)", desc: "เขียนไฟล์ Parquet ลง Object Storage (S3-compatible Lake Bucket)", ev: "lake/raw/orders/ written" },
-              { num: "5", title: "Verify File Checksums & Audit Receipts", desc: "ตรวจสอบ SHA-256 Checksums และบันทึก Manifest ใบรับรองการสกัดข้อมูล", ev: "landing_manifest.json created" }
+              { title: "เชื่อมต่อ Neon (สคีมา demo_er1)", desc: "อ่านข้อมูลจาก ER1 ที่ขั้น Ingest ซิงก์ไว้" },
+              { title: "คัดลอก CSV ต้นฉบับไปพื้นที่ landing", desc: "เก็บสำเนาไฟล์ต้นทางพร้อมคำนวณ SHA-256 ไว้เป็นหลักฐาน" },
+              { title: "อ่านทุกตารางแบบ snapshot เต็ม", desc: "SELECT * ทีละตาราง ครบ 25 ตาราง (ไม่แบ่งพาร์ทิชันรายเดือน) จึงรวมข้อมูลทุกเดือนที่โหลดแล้ว",
+                real: has(nIn ?? nOut) ? `อ่าน ${nIn ?? nOut} ตาราง · ออเดอร์ใน snapshot ${has(outRec) ? money(outRec) : "—"}` : null },
+              { title: "เขียนเป็นไฟล์ Parquet (Raw)", desc: "บันทึกที่ lake/raw/<batch>/ ในพื้นที่ทำงานของ worker (หลังจบขั้นจะถูกบีบเป็น zip เก็บใน Object Storage)",
+                real: has(nOut) ? `เขียน ${nOut} ไฟล์ Parquet` : null },
+              { title: "บันทึก manifest และ schema receipt", desc: "บันทึก manifest_<batch>.json (จำนวนแถวและ hash ต่อไฟล์) และใบรับรองโครงสร้างตาราง" }
             ];
           } else if (id === "transform") {
             steps = [
-              { num: "1", title: "Read Raw Parquet from Lake Bucket", desc: "อ่านไฟล์ Raw Parquet จาก lake/raw/ ผ่าน Arrow Stream Reader", ev: "Raw Arrow Stream initialized" },
-              { num: "2", title: "Cast & Normalize Data Types", desc: "ปรับปรุงรูปแบบวันที่ เวลา และ Timezone (UTC ➔ Asia/Bangkok UTC+7)", ev: "All timestamps normalized to ICT" },
-              { num: "3", title: "Apply Referential Integrity DQ Gate", desc: "ตรวจสอบความสอดคล้องระหว่าง Fact_Order_Items กับ Dim_SKU Master", ev: "DQ Gate ทำงานทุกรอบ (ผลจริงดูในแท็บ Validation)" },
-              { num: "4", title: "Quarantine Route on Error", desc: "หากพบรายการไม่ผ่านเงื่อนไข จะแยกกักเก็บที่ lake/governance/quarantine/ ทันที", ev: "Quarantine area ready" },
-              { num: "5", title: "Publish Standardized Parquet", desc: "บันทึกข้อมูลที่ผ่านการขัดเกลาและตรวจสอบแล้วลง lake/standardized/", ev: "standardized_orders.parquet created" }
+              { title: "ตรวจ DQ 92 กฎซ้ำบนข้อมูล Raw", desc: "ด่านที่ 2 เพื่อกันข้อมูลผิดที่หลุดผ่านด่านแรก ถ้าตกกฎจะหยุดทั้งเดือน (ไม่ได้กักทีละแถว) และเขียนรายงานปัญหาไว้ที่ quarantine", real: dqLine },
+              { title: "ตรวจกฎธุรกิจก่อนแปลง", desc: "แคมเปญของกลุ่มสินค้าเดียวกันห้ามซ้อนช่วงเวลากัน" },
+              { title: "สร้าง Dimension 6 ตาราง", desc: "Dim_Date, Dim_Product, Dim_Creator, Dim_Ad_Campaign, Dim_Voucher, Dim_Cost_Basis พร้อมรหัสตัวแทน (surrogate key) และแถว \"ไม่ระบุ\" (Key 0)" },
+              { title: "สร้างแถวยอดขาย (1 แถว = 1 ชิ้นในออเดอร์)", desc: "เฉพาะออเดอร์ที่ชำระแล้วและเปลี่ยนในเดือนนี้ ตรวจ voucher ไม่เกินยอดขาย · ค่าธรรมเนียม 10% · COGS > 0 · affiliate ต้องมีครีเอเตอร์ แล้วคำนวณ Net, ค่าธรรมเนียม, ค่าจัดส่งแบบกระจายตามสัดส่วน",
+                real: has(outRec) ? `แถวยอดขายที่เปลี่ยนในเดือนนี้ ${money(outRec)}` : null },
+              { title: "สร้างตารางเสริม", desc: "Ads รายวัน · ของแจกฟรี · เป้ายอดขายรายเดือน · ยอด claim รายวัน (claim เก็บแยกนอก Warehouse)" },
+              { title: "เขียน Standardized Parquet พร้อม lineage", desc: "บันทึกที่ lake/standardized/<batch>/ พร้อม lineage.csv (ตามรอยกลับถึงไฟล์ต้นทาง) และบันทึกสูตรที่ใช้คำนวณ",
+                real: has(nOut) ? `เขียน ${nOut} ไฟล์ Parquet` : null }
             ];
           } else if (id === "load") {
             steps = [
-              { num: "1", title: "Initialize DuckDB Analytics Engine", desc: "เปิดฐานข้อมูล DuckDB ประสิทธิภาพสูงสำหรับการวิเคราะห์ระดับองค์กร", ev: "เปิด DuckDB สำหรับสร้าง ER2" },
-              { num: "2", title: "Ingest Standardized Parquet into Warehouse", desc: "นำเข้าไฟล์ Standardized Parquet เข้าสู่โมเดล Star Schema (ER2)", ev: "Zero-copy Parquet scan applied" },
-              { num: "3", title: "Build Conformed Dimension Tables", desc: "สร้างและปรับปรุงมิติข้อมูล Dim_Date, Dim_Product, Dim_SKU, Dim_Shop, Dim_Campaign", ev: "สร้างมิติข้อมูล (Dim_*)" },
-              { num: "4", title: "Materialize Granular Fact Tables", desc: "คำนวณ Fact_Orders, Fact_Order_Items, Fact_Settlements พร้อม Foreign Keys", ev: "สร้างตารางข้อเท็จจริง (Fact_*)" },
-              { num: "5", title: "Aggregate Daily Mart & Business KPI Views", desc: "สร้าง Mart_Daily_Shop_Performance และ View_Monthly_Business_KPI", ev: "Marts & Views refreshed" }
+              { title: "เปิด DuckDB และสร้างโครง ER2", desc: "Warehouse เป็นไฟล์ DuckDB ในพื้นที่ทำงานของ worker" },
+              { title: "เริ่ม transaction เดียว", desc: "ถ้าล้มกลางทางจะ ROLLBACK ทั้งหมด ไม่ทิ้งข้อมูลครึ่งเดียว" },
+              { title: "โหลด Dimension 6 ตาราง", desc: "Dim_Date, Dim_Product, Dim_Creator, Dim_Ad_Campaign, Dim_Voucher, Dim_Cost_Basis (upsert ตามคีย์ธุรกิจ รันซ้ำไม่ซ้ำแถว)" },
+              { title: "โหลด Fact 4 ตาราง", desc: "Fact_Sales_Order_Item, Fact_Ads_Daily, Fact_Free_Sample, Fact_Business_Target_Monthly" },
+              { title: "สร้าง Mart ใหม่เฉพาะส่วนที่เปลี่ยน", desc: "Mart_Product_Group_Daily_Performance (วัน × กลุ่มสินค้า) ปรับเฉพาะวันและกลุ่มที่เปลี่ยนในเดือนนี้" },
+              { title: "สร้าง View รายเดือนแล้ว COMMIT", desc: "View_Shop_Monthly_KPI สำหรับ Dashboard",
+                real: has(nOut) ? `${nOut} วัตถุใน Warehouse · Fact_Sales_Order_Item ${has(outRec) ? money(outRec) : "—"} แถว` : null }
             ];
           } else {
+            const pf = pvFind("Paid items"), nr = pvFind("Net revenue");
             steps = [
-              { num: "1", title: "Cross-Layer Row Count Reconciliation", desc: "ตรวจสอบจำนวนแถวระหว่าง Source CSV, Neon PostgreSQL, Lake และ DuckDB", ev: `Orders สะสมใน Warehouse ${factOrders()} (รายละเอียดดู Published Summary)` },
-              { num: "2", title: "Financial Metric Parity (Net Revenue)", desc: "ตรวจสอบยอดขายสุทธิรวมระดับเศษสตางค์ ไม่ให้มีเศษหลุดรอด", ev: `Net Revenue สะสมใน Warehouse ${liveFacts().net === null ? "—" : "฿" + money(liveFacts().net, 2)}` },
-              { num: "3", title: "Cost & Fee Reconciliation Gate", desc: "เทียบยอดต้นทุนสินค้า (COGS), ค่าโฆษณา และค่าธรรมเนียม Platform", ev: "ต้นทุนรายเดือนดูได้ที่หน้าภาพรวมธุรกิจ (กระทบยอดรายกลุ่มกับยอดร้าน)" },
-              { num: "4", title: "Publication Approval", desc: "บันทึก Published Snapshot ของรอบนี้ลง demo_control.published_snapshot", ev: `Snapshot Run ${liveFacts().runId || "—"}` },
-              { num: "5", title: "Publish Warehouse Snapshot for Analytics", desc: "เผยแพร่ Snapshot ของ DuckDB ไปยัง Business Dashboard และ ML Lab", ev: `Published Snapshot Run ${liveFacts().runId || "—"}` }
+              { title: "เทียบยอด ER1 กับ ER2", desc: "จำนวน item ที่ชำระแล้ว, Net Revenue, Gross, COGS และ Affiliate ต้องตรงกัน (ยอมให้ต่างไม่เกิน 1 สตางค์)",
+                real: pf && nr ? `item ${money(pf.source)} = ${money(pf.warehouse)} · Net Revenue ฿${money(nr.source, 2)} = ฿${money(nr.warehouse, 2)}` : null },
+              { title: "ตรวจความถูกต้องของแต่ละแถว", desc: "ไม่มี item ซ้ำ · ยอด voucher ต่อออเดอร์ตรงกัน · Net = ยอดหลังแคมเปญ − voucher · ค่าธรรมเนียม = 10% ของ Net · Gross = จำนวน × ราคาฐาน",
+                real: vc ? `ตรวจ ${vc.total} ข้อ · ผ่าน ${vc.passed} · ไม่ผ่าน ${vc.failed}` : null },
+              { title: "ตรวจ Fact เทียบ Mart และเกณฑ์กำไรรายเดือน", desc: "Net, Ads, Sample, Claim และกำไรใน Mart ต้องเท่ากับผลรวมจาก Fact · ตรวจวิธีคำนวณเกณฑ์กำไรขั้นต่ำรายเดือน" },
+              { title: "สุ่มตามรอยรายการ (lineage)", desc: "สุ่ม 8 รายการ ตามรอยจาก CSV → ER1 → Lake → ER2 → Mart" },
+              { title: "เผยแพร่ Snapshot (อัตโนมัติเมื่อผ่านครบ)", desc: "ไม่มีขั้นอนุมัติแยกต่างหาก บันทึก published_snapshot ใน demo_control และส่งออกไฟล์ Warehouse ให้ Dashboard และ ML ใช้",
+                real: liveFacts().runId ? `Snapshot Run ${liveFacts().runId}` : null }
             ];
           }
-          steps.forEach(st => {
+          timeline.append(small("⚪ ข้อความในแต่ละข้อคือคำอธิบายขั้นตอนมาตรฐานของระบบ · 🟢 \"หลักฐานรอบนี้\" คือตัวเลขจากผลรันจริงของเดือนที่เลือก"));
+          steps.forEach((st, n) => {
             const item = box("timeline-step-item",
-              node("div", "timeline-step-icon", st.num),
+              node("div", "timeline-step-icon", String(n + 1)),
               box("timeline-step-body",
                 node("span", "timeline-step-title", st.title),
                 node("span", "timeline-step-desc", st.desc),
-                node("span", "timeline-step-evidence", "หลักฐานจริง: " + st.ev)
+                st.real ? node("span", "timeline-step-evidence", "🟢 หลักฐานรอบนี้: " + st.real) : null
               )
             );
             timeline.append(item);
@@ -3433,25 +3275,73 @@
             dataTable([["field", "รายการ"], ["val", "ค่าจริงจากระบบ"]], [
               { field: "Run ID", val: savedResult?.runId || savedResult?.run_id || state.batchRunIds[currentViewBatch] || "—" },
               { field: "รอบการทดลอง (Cycle)", val: state.realLabCycle ? "Cycle " + state.realLabCycle : "—" },
-              { field: "เครื่องมือประมวลผล (Engine)", val: "Python Native Worker (VERCEL_NATIVE)" },
-              { field: "สถานะการประมวลผลระดับ Stage", val: "SUCCEEDED (บันทึกใน demo_control.stage_runs)" },
+              { field: "เครื่องมือประมวลผล (Engine)", val: ({ VERCEL_NATIVE: "Vercel Worker (Python)", GITHUB_ACTIONS_REAL_PIPELINE_STAGE: "GitHub Actions Worker" })[savedResult?.execution || evidence?.execution] || "ไม่ระบุในหลักฐานของรอบนี้" },
+              { field: "สถานะการประมวลผลระดับ Stage", val: evidence?.success === true ? "สำเร็จ (บันทึกใน demo_control.stage_runs)" : evidence?.success === false ? "ไม่สำเร็จ" : "—" },
               { field: "เวลาที่ประมวลผล (Executed At)", val: evidence?.executed_at ? new Date(evidence.executed_at).toLocaleString("th-TH") : "—" }
             ])
           );
           body.append(metaCard);
         } else if (activeSubtab === "validation") {
-          body.append(node("strong", "", "การตรวจสอบคุณภาพข้อมูล (Validation & Data Quality Rules)"));
-          if (evidence?.dq) {
-            const d = evidence.dq;
-            body.append(box("evidence-card", node("strong", "", "ผลตรวจจริงของ DQ Gate ในขั้นตอนนี้ (จากข้อมูลที่นำเข้า)"),
-              dataTable([["field", "รายการ"], ["value", "ผลจริง"]], [
-                { field: "ชุดกฎ", value: d.rule_catalog_version + " · " + d.evaluation_kind },
-                { field: "กฎทั้งหมด / ผ่าน / ไม่ผ่าน / ไม่มีข้อมูลให้ตรวจ", value: `${d.rules} / ${d.passed} / ${d.failed} / ${d.not_checked}` },
-                { field: "แถวที่ตรวจ / แถวที่ไม่ผ่าน", value: `${money(d.checked_rows)} / ${money(d.failed_rows)}` },
-                { field: "Correction ที่นำมาใช้", value: `${d.corrections_applied} (Set ${d.correction_set_id || "—"})` }
-              ])), small("รายการกฎด้านล่างเป็นคำอธิบายมาตรฐานของระบบ ผลจริงของรอบนี้อยู่ในตารางด้านบนและตาราง demo_control.dq_rule_result"));
+          body.append(node("strong", "", "การตรวจสอบข้อมูลในขั้นนี้"));
+          const sumRows = (evidence?.output?.tables || []).reduce((s, x) => s + (Number(x.rows) || 0), 0);
+          const nInV = Array.isArray(evidence?.input?.tables) ? evidence.input.tables.length : null;
+          const nOutV = Array.isArray(evidence?.output?.tables) ? evidence.output.tables.length : null;
+          if (id === "ingest" || id === "transform") {
+            if (evidence?.dq) {
+              const d = evidence.dq;
+              body.append(box("evidence-card", node("strong", "", "ผลตรวจ DQ Gate ของรอบนี้ (ด่านที่ " + (id === "ingest" ? "1: ก่อนเขียนเข้า ER1" : "2: ตรวจซ้ำบน Raw ก่อนสร้าง Standardized") + ")"), sourceTag(true),
+                dataTable([["field", "รายการ"], ["value", "ผลจริง"]], [
+                  { field: "ชุดกฎ", value: d.rule_catalog_version + " · " + d.evaluation_kind },
+                  { field: "กฎทั้งหมด / ผ่าน / ไม่ผ่าน / ไม่มีข้อมูลให้ตรวจ", value: `${d.rules} / ${d.passed} / ${d.failed} / ${d.not_checked}` },
+                  { field: "แถวที่ตรวจ / แถวที่ไม่ผ่าน", value: `${money(d.checked_rows)} / ${money(d.failed_rows)}` },
+                  { field: "Correction ที่นำมาใช้", value: `${d.corrections_applied} (Set ${d.correction_set_id || "—"})` }
+                ])));
+            } else body.append(notice("รอบนี้ไม่มีผลตรวจ DQ ในหลักฐาน (ระบบไม่แสดงตัวเลขตัวอย่าง)", true));
+            body.append(box("evidence-card", node("strong", "", "กฎ DQ 92 ข้อ แบ่งเป็น 3 ชนิด"), sourceTag(false),
+              dataTable([["kind", "ชนิดกฎ"], ["count", "จำนวน"], ["meaning", "ความหมาย"]], [
+                { kind: "PK_UNIQUE", count: "21", meaning: "คีย์หลักของแต่ละตารางต้องไม่ซ้ำ" },
+                { kind: "NOT_NULL", count: "50", meaning: "คอลัมน์ที่กำหนดว่าห้ามว่างต้องมีค่า" },
+                { kind: "REFERENCE_EXISTS", count: "21", meaning: "คีย์นอกต้องมีข้อมูลแม่จริง เช่น SKU ในรายการสินค้าต้องมีใน Dim_SKU" }
+              ]), small("ถ้าตกกฎข้อใดข้อหนึ่ง ระบบหยุดทั้งเดือน (ไม่ใช่กักทีละแถว) ยังไม่เขียนข้อมูลลงชั้นถัดไป")));
+            if (id === "transform") body.append(box("evidence-card", node("strong", "", "กฎธุรกิจที่ตรวจระหว่างแปลงข้อมูล"), sourceTag(false),
+              dataTable([["code", "รหัส"], ["meaning", "ความหมาย"]], [
+                { code: "T02_CAMPAIGN_OVERLAP", meaning: "แคมเปญ Active ของกลุ่มสินค้าเดียวกันห้ามซ้อนช่วงเวลากัน" },
+                { code: "T01_VOUCHER", meaning: "ยอด voucher ที่หักต้องไม่ติดลบและไม่เกินยอดขายของรายการ" },
+                { code: "T05_FEE_POLICY", meaning: "ค่าธรรมเนียมแพลตฟอร์มต้องเป็นอัตราคงที่ 10%" },
+                { code: "T06_MISSING_COGS", meaning: "ต้นทุนสินค้า (COGS) ต้องมากกว่า 0" },
+                { code: "T06_AFFILIATE_WITHOUT_CREATOR", meaning: "ค่า affiliate ต้องมีครีเอเตอร์กำกับ" },
+                { code: "T07_UNKNOWN_GROUP", meaning: "รายการ Ads ต้องอ้างกลุ่มสินค้าที่มีจริง" }
+              ])));
+          } else if (id === "extract") {
+            body.append(box("evidence-card", node("strong", "", "ขั้นนี้ไม่มีกฎ DQ — ตรวจความครบถ้วนของการสกัดแทน"), sourceTag(nOutV !== null),
+              dataTable([["field", "รายการ"], ["value", "ผลของรอบนี้"]], [
+                { field: "ตารางที่อ่านจาก Neon", value: nInV === null ? "—" : String(nInV) },
+                { field: "ไฟล์ Parquet ที่เขียน", value: nOutV === null ? "—" : String(nOutV) },
+                { field: "จำนวนตาราง = จำนวนไฟล์", value: nInV === null || nOutV === null ? "—" : (nInV === nOutV ? "✓ ตรงกัน" : "✗ ไม่ตรงกัน") },
+                { field: "ผลรวมจำนวนแถวทุกไฟล์", value: nOutV === null ? "—" : money(sumRows) }
+              ]), small("hash ของแต่ละไฟล์ถูกบันทึกใน manifest_<batch>.json (บันทึกไว้เป็นหลักฐาน ไม่ได้เทียบกับค่าอื่นในขั้นนี้)")));
+          } else if (id === "load") {
+            body.append(box("evidence-card", node("strong", "", "ขั้นนี้ไม่มีกฎ DQ — การโหลดทำใน transaction เดียว"), sourceTag(nOutV !== null),
+              dataTable([["field", "รายการ"], ["value", "ผลของรอบนี้"]], [
+                { field: "ผลการโหลด", value: evidence?.success === true ? "สำเร็จ (ถ้าล้มจะ ROLLBACK ทั้งหมด)" : "—" },
+                { field: "วัตถุใน Warehouse (ตาราง + View)", value: nOutV === null ? "—" : String(nOutV) },
+                { field: "Fact_Sales_Order_Item (สะสม)", value: evidence?.output?.records === undefined ? "—" : money(evidence.output.records) + " แถว" }
+              ]), small("การตรวจกระทบยอดกับ ER1 ทำในขั้นที่ 5 (Validate)")));
+          } else {
+            const vv = valChecks(evidence);
+            body.append(box("evidence-card", node("strong", "", "ผลการตรวจกระทบยอดและความถูกต้อง"), sourceTag(!!vv),
+              dataTable([["field", "รายการ"], ["value", "ผลของรอบนี้"]], vv ? [
+                { field: "ข้อตรวจทั้งหมด", value: String(vv.total) },
+                { field: "ผ่าน", value: String(vv.passed) },
+                { field: "ไม่ผ่าน", value: String(vv.failed) }] : [{ field: "ผลตรวจ", value: "ไม่มีข้อมูลในหลักฐานรอบนี้" }])));
+            body.append(box("evidence-card", node("strong", "", "ชนิดของข้อตรวจ"), sourceTag(false),
+              dataTable([["kind", "กลุ่มการตรวจ"], ["meaning", "ตรวจอะไร"]], [
+                { kind: "ยอดตรงกัน ER1 ↔ ER2", meaning: "จำนวน item ที่ชำระแล้ว, Net Revenue, Gross, COGS, Affiliate" },
+                { kind: "ความถูกต้องรายแถว", meaning: "ไม่มี item ซ้ำ · voucher รวมตรง · Net, ค่าธรรมเนียม 10%, Gross ตามสูตร" },
+                { kind: "Fact ↔ Mart", meaning: "Net, Ads, Sample, Claim และกำไรใน Mart เท่ากับผลรวมจาก Fact" },
+                { kind: "เกณฑ์กำไรรายเดือน", meaning: "ค่าที่ต้องรักษา, ส่วนต่าง และสถานะ ผ่าน/ไม่ผ่าน คำนวณถูกต้อง" }
+              ]), small("หลักฐานรอบนี้เก็บเฉพาะจำนวนข้อตรวจ (ผ่าน/ไม่ผ่าน) ยังไม่ได้เก็บชื่อรายข้อ")));
           }
-          if (!evidence?.dq) body.append(notice("ยังไม่มีผลตรวจคุณภาพข้อมูลจริงของขั้นตอนนี้ในรอบนี้ ระบบจะแสดงผลเมื่อขั้นตอนทำงานแล้วเท่านั้น (ไม่แสดงตัวเลขตัวอย่าง)"));
         } else if (activeSubtab === "output") {
           body.append(node("strong", "", "ข้อมูลส่งออก (Output)"));
           if (id === "ingest") {
@@ -3472,7 +3362,7 @@
               id: t.name,
               label: t.name,
               sublabel: "demo_er1",
-              count: t.expected_jan,
+              count: (state.labNeon && state.labNeon.table === t.name) ? state.labNeon.row_count : "—",
               badge: t.type.split(" ")[0],
               badgeType: "validated",
               raw: t
@@ -3517,128 +3407,17 @@
             });
             body.append(splitView);
           } else if (id === "extract") {
-            const currentSelectedRaw = state.selectedLakeRaw || "raw_orders.parquet";
-            const splitView = renderMasterDetailSplitView({
-              items: STAGE_2_LAKE_OBJECTS.map(o => ({
-                id: o.id,
-                label: o.name,
-                sublabel: o.layer,
-                count: o.records,
-                badge: o.type.split(" ")[0],
-                badgeType: "validated",
-                raw: o
-              })),
-              selectedId: currentSelectedRaw,
-              onSelect: (id) => {
-                state.selectedLakeRaw = id;
-                renderPipeline();
-              },
-              renderDetail: (item) => {
-                const o = item.raw;
-                return box("v-stack",
-                  box("alert-banner-header",
-                    node("strong", "", "ไฟล์ Parquet ใน Data Lake: " + o.name),
-                    node("span", "badge-validated", o.type)
-                  ),
-                  dataTable([["field", "รายการ"], ["val", "ค่า"]], [
-                    { field: "ตำแหน่งใน Data Lake", val: o.layer },
-                    { field: "รูปแบบไฟล์", val: "Apache Parquet (Columnar)" },
-                    { field: "การบีบอัด", val: "Snappy Compression" },
-                    { field: "จำนวนแถวข้อมูล", val: money(o.records) + " แถว" },
-                    { field: "จำนวนคอลัมน์", val: String(o.columns.length) + " คอลัมน์" }
-                  ]),
-                  small("คอลัมน์ทั้งหมด: " + o.columns.join(", ")),
-                  node("h5", "lab-subheading", "ตัวอย่างข้อมูล Parquet ใน Data Lake (Sample Records)"),
-                  box("table-scroll-x", dataTable(o.columns.slice(0, 8).map(c => [c, c]), o.sample_rows))
-                );
-              },
-              searchPlaceholder: "ค้นหาไฟล์ Parquet…",
-              leftTitle: "ไฟล์ Parquet ใน Data Lake",
-              filterKey: "label"
-            });
-            body.append(splitView);
+            body.append(small("ไฟล์ Raw Parquet ที่ขั้นนี้เขียนออกมาในรอบนี้"),
+              evidenceTablesView({ key: "extract:out", tables: evidence?.output?.tables, previews: evidence?.output?.table_previews,
+                leftTitle: "Raw Parquet ที่เขียน", layer: "lake/raw/<batch>/", badge: "Raw" }));
           } else if (id === "transform") {
-            const currentSelectedStd = state.selectedLakeStandardized || "standardized_orders.parquet";
-            const splitView = renderMasterDetailSplitView({
-              items: STAGE_3_STANDARDIZED_OBJECTS.map(o => ({
-                id: o.id,
-                label: o.name,
-                sublabel: o.layer,
-                count: o.records,
-                badge: o.type.split(" ")[0],
-                badgeType: "validated",
-                raw: o
-              })),
-              selectedId: currentSelectedStd,
-              onSelect: (id) => {
-                state.selectedLakeStandardized = id;
-                renderPipeline();
-              },
-              renderDetail: (item) => {
-                const o = item.raw;
-                return box("v-stack",
-                  box("alert-banner-header",
-                    node("strong", "", "วัตถุ Standardized: " + o.name),
-                    node("span", "badge-validated", o.type)
-                  ),
-                  dataTable([["field", "รายการ"], ["val", "ค่า"]], [
-                    { field: "ตำแหน่งใน Data Lake", val: o.layer },
-                    { field: "สถานะ Data Quality", val: "PASSED (Clean & Standardized)" },
-                    { field: "จำนวนแถวข้อมูล", val: money(o.records) + " แถว" },
-                    { field: "จำนวนคอลัมน์", val: String(o.columns.length) + " คอลัมน์" }
-                  ]),
-                  small("คอลัมน์ทั้งหมด: " + o.columns.join(", ")),
-                  node("h5", "lab-subheading", "ตัวอย่างข้อมูล Standardized (Sample Records)"),
-                  o.sample_rows.length ?
-                    box("table-scroll-x", dataTable(o.columns.slice(0, 8).map(c => [c, c]), o.sample_rows)) :
-                    small("ตารางนี้ไม่มีแถวข้อมูล (เช่น Quarantine ที่ไม่มีข้อผิดพลาด)")
-                );
-              },
-              searchPlaceholder: "ค้นหาไฟล์ Standardized…",
-              leftTitle: "Standardized & Quarantine",
-              filterKey: "label"
-            });
-            body.append(splitView);
+            body.append(small("ไฟล์ Standardized Parquet ที่ขั้นนี้เขียนออกมาในรอบนี้ (เฉพาะรายการที่เปลี่ยนในเดือนนี้)"),
+              evidenceTablesView({ key: "transform:out", tables: evidence?.output?.tables, previews: evidence?.output?.table_previews,
+                leftTitle: "Standardized Parquet ที่เขียน", layer: "lake/standardized/<batch>/", badge: "Standardized" }));
           } else if (id === "load") {
-            const currentSelectedWh = state.selectedWarehouseTable || "Fact_Orders";
-            const splitView = renderMasterDetailSplitView({
-              items: STAGE_4_WAREHOUSE_OBJECTS.map(o => ({
-                id: o.id,
-                label: o.name,
-                sublabel: o.grain,
-                count: o.records,
-                badge: o.type.split(" ")[0],
-                badgeType: "validated",
-                raw: o
-              })),
-              selectedId: currentSelectedWh,
-              onSelect: (id) => {
-                state.selectedWarehouseTable = id;
-                renderPipeline();
-              },
-              renderDetail: (item) => {
-                const o = item.raw;
-                return box("v-stack",
-                  box("alert-banner-header",
-                    node("strong", "", "วัตถุใน DuckDB: " + o.name),
-                    node("span", "badge-validated", o.type)
-                  ),
-                  dataTable([["field", "รายการ"], ["val", "ค่า"]], [
-                    { field: "ชนิดวัตถุ", val: o.type },
-                    { field: "ระดับความละเอียด (Grain)", val: o.grain },
-                    { field: "จำนวนแถวข้อมูล", val: money(o.records) + " แถว" },
-                    { field: "จำนวนคอลัมน์", val: String(o.columns.length) + " คอลัมน์" }
-                  ]),
-                  small("คอลัมน์ทั้งหมด: " + o.columns.join(", ")),
-                  node("h5", "lab-subheading", "ตัวอย่างข้อมูลใน DuckDB Warehouse (Sample Records)"),
-                  box("table-scroll-x", dataTable(o.columns.slice(0, 8).map(c => [c, c]), o.sample_rows))
-                );
-              },
-              searchPlaceholder: "ค้นหาตารางใน DuckDB…",
-              leftTitle: "วัตถุใน DuckDB Warehouse (12 วัตถุ)",
-              filterKey: "label"
-            });
-            body.append(splitView);
+            body.append(small("วัตถุใน DuckDB Warehouse หลังโหลดรอบนี้ (ตารางและ View จริง จำนวนแถวเป็นยอดสะสม)"),
+              evidenceTablesView({ key: "load:out", tables: evidence?.output?.tables, previews: evidence?.output?.table_previews,
+                leftTitle: "วัตถุใน DuckDB Warehouse", layer: "er2.duckdb", badge: "ER2" }));
           } else {
             const facts = liveFacts(), lm = facts.lastMonth;
             const artifacts = [
@@ -3672,6 +3451,7 @@
             body.append(splitView);
           }
         }
+
 
         cell.append(body);
       }

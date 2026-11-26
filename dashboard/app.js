@@ -189,7 +189,7 @@
   // (state.warehouseSnapshot.result.business). No static report, no fallback figures.
   const GATE_THRESHOLD_TEXT = {
     revenue: "Net Revenue ÷ เป้ารายเดือน ≥ 100%",
-    protection: "Contribution Profit ÷ Gross Reference Sales ≥ 10%",
+    protection: "กำไรหลังหักต้นทุนและค่าใช้จ่ายการขาย ÷ Gross Reference Sales ≥ 10% (ยังไม่รวมค่าใช้จ่ายคงที่และภาษี)",
     gap: "(Campaign + Voucher + Affiliate + Ads + Free Sample) ÷ Gross Reference Sales ≤ 30%"
   };
   function nextSourceMonth(month) {
@@ -202,12 +202,12 @@
     if (g.revenue.status === "FAIL") out.push({ key: "revenue", score: 1 - g.revenue.achievement_pct / 100,
       text: "ยอดขายสุทธิ ฿" + money(selected.net, 2) + " ต่ำกว่าเป้า ฿" + money(g.revenue.target, 0) + " อยู่ " + money(Math.abs(g.revenue.gap), 2) + " บาท (" + pct(g.revenue.achievement_pct, 2) + " ของเป้า)" });
     if (g.profit_protection.status === "FAIL") out.push({ key: "protection", score: (10 - g.profit_protection.rate_pct) / 10,
-      text: "Profit Protection " + pct(g.profit_protection.rate_pct, 2) + " ต่ำกว่าเกณฑ์ 10% อยู่ " + money(10 - g.profit_protection.rate_pct, 2) + " จุดเปอร์เซ็นต์ (ต้องมีกำไรอีก ฿" + money(-g.profit_protection.headroom, 2) + ")" });
+      text: "อัตรากำไร " + pct(g.profit_protection.rate_pct, 2) + " ต่ำกว่าเกณฑ์ 10% อยู่ " + money(10 - g.profit_protection.rate_pct, 2) + " จุดเปอร์เซ็นต์ (ต้องมีกำไรอีก ฿" + money(-g.profit_protection.headroom, 2) + ")" });
     if (g.marketing_gap.status === "FAIL") out.push({ key: "gap", score: (g.marketing_gap.rate_pct - g.marketing_gap.max_rate_pct) / g.marketing_gap.max_rate_pct,
-      text: "Marketing GAP " + pct(g.marketing_gap.rate_pct, 2) + " สูงกว่าเพดาน " + pct(g.marketing_gap.max_rate_pct, 0) + " อยู่ " + money(g.marketing_gap.rate_pct - g.marketing_gap.max_rate_pct, 2) + " จุดเปอร์เซ็นต์" });
+      text: "สัดส่วนต้นทุนการตลาด " + pct(g.marketing_gap.rate_pct, 2) + " สูงกว่าเพดาน " + pct(g.marketing_gap.max_rate_pct, 0) + " อยู่ " + money(g.marketing_gap.rate_pct - g.marketing_gap.max_rate_pct, 2) + " จุดเปอร์เซ็นต์" });
     ["profit_protection", "marketing_gap"].forEach(k => {
       if (["INCOMPLETE", "MISSING_POLICY"].includes(g[k].status)) out.push({ key: k, score: 0, incomplete: true,
-        text: (k === "marketing_gap" ? "Marketing GAP" : "Profit Protection") + " คำนวณไม่ได้เพราะข้อมูลต้นทุนไม่ครบ (INCOMPLETE) ไม่นับเป็นผ่าน" });
+        text: (k === "marketing_gap" ? "สัดส่วนต้นทุนการตลาด" : "อัตรากำไร") + " คำนวณไม่ได้เพราะข้อมูลต้นทุนไม่ครบ (INCOMPLETE) ไม่นับเป็นผ่าน" });
     });
     return out.sort((a, b) => b.score - a.score);
   }
@@ -235,8 +235,8 @@
     return chart;
   }
   function marketingBreakdown(selected) {
-    const parts = [["Ads", selected.ads], ["Campaign (ส่วนลดราคา)", selected.campaign_reduction], ["Affiliate", selected.affiliate],
-      ["Voucher", selected.voucher], ["Free Sample", selected.sample]];
+    const parts = [["Ads", selected.ads], ["Campaign (ส่วนลดแคมเปญ)", selected.campaign_reduction], ["Affiliate (ค่าคอมมิชชันครีเอเตอร์)", selected.affiliate],
+      ["Voucher (คูปองส่วนลด)", selected.voucher], ["Free Sample (ของแจกฟรี)", selected.sample]];
     if (parts.some(([, v]) => v === null || v === undefined)) return notice("ต้นทุนการตลาดบางรายการยังไม่ครบ (INCOMPLETE) จึงไม่แสดงยอดรวม", true);
     const total = parts.reduce((s, [, v]) => s + Number(v), 0), max = Math.max(1, ...parts.map(([, v]) => Number(v)));
     const wrap = box("v-stack");
@@ -244,27 +244,27 @@
       const bar = node("div", "bz-mk-bar"); bar.style.width = (100 * Number(v) / max) + "%";
       wrap.append(box("bz-mk-row", node("span", "bz-mk-name", name), box("bz-mk-track", bar), node("span", "bz-mk-val", "฿" + money(v, 2))));
     });
-    wrap.append(box("bz-mk-row bz-mk-total", node("span", "bz-mk-name", "รวมต้นทุนการตลาด"), node("span", ""), node("span", "bz-mk-val", "฿" + money(total, 2))));
-    wrap.append(small("หารด้วย Gross Reference Sales ฿" + money(selected.gross, 2) + " · ไม่รวม COGS / Platform / Fulfillment / Claim"));
+    wrap.append(box("bz-mk-row bz-mk-total", node("span", "bz-mk-name", "รวมต้นทุนและส่วนลดการตลาด"), node("span", ""), node("span", "bz-mk-val", "฿" + money(total, 2))));
+    wrap.append(small("หารด้วยยอดขายอ้างอิงก่อนหักส่วนลด (Gross Reference Sales) ฿" + money(selected.gross, 2) + " · ไม่รวม COGS / Platform / Fulfillment / Claim"));
     wrap.append(marketingFrame(selected));
     return wrap;
   }
   function marketingFrame(selected) {
     const cap = window.BusinessInsights.marketingCap(selected, selected.gates?.marketing_gap?.max_rate_pct);
     if (cap.status !== "OVER" && cap.status !== "WITHIN")
-      return box("bz-frame bz-frame-na", node("strong", "", { INCOMPLETE: "ไม่สามารถสรุปกรอบได้: ข้อมูลค่าใช้จ่ายการตลาดไม่ครบ", NO_GROSS: "ไม่สามารถคำนวณ Marketing GAP ได้ (Gross เป็นศูนย์)", NO_POLICY: "ไม่มีเพดานจากนโยบายแผน" }[cap.status]));
+      return box("bz-frame bz-frame-na", node("strong", "", { INCOMPLETE: "ไม่สามารถสรุปกรอบได้: ข้อมูลค่าใช้จ่ายการตลาดไม่ครบ", NO_GROSS: "ไม่สามารถคำนวณสัดส่วนต้นทุนการตลาดได้ (Gross เป็นศูนย์)", NO_POLICY: "ไม่มีเพดานจากนโยบายแผน" }[cap.status]));
     const over = cap.status === "OVER";
     return box("bz-frame" + (over ? " bz-frame-over" : " bz-frame-ok"),
       box("bz-frame-cells",
         box("bz-frame-cell", node("span", "bz-frame-label", "กรอบที่กำหนด (≤ " + money(cap.max_rate_pct, 0) + "% ของ Gross)"), node("strong", "", "฿" + money(cap.allowed, 2))),
         box("bz-frame-cell", node("span", "bz-frame-label", "ค่าใช้จ่ายการตลาดจริง (" + money(cap.rate_pct, 2) + "% ของ Gross)"), node("strong", "", "฿" + money(cap.actual, 2))),
         box("bz-frame-cell bz-frame-result", node("span", "bz-frame-label", over ? "ส่วนที่เกินกรอบ" : "ต่ำกว่ากรอบ"), node("strong", "", (over ? "+฿" + money(cap.overage, 2) : "฿" + money(cap.headroom, 2))))),
-      small(over ? "Marketing GAP " + money(cap.rate_pct, 2) + "% — สูงกว่าเกณฑ์ " + money(cap.max_rate_pct, 0) + "% อยู่ " + money(cap.over_pct_points, 2) + " จุดเปอร์เซ็นต์ (" + money(cap.overage, 2) + " บาท)" : "อยู่ในกรอบ เหลือ " + money(cap.headroom, 2) + " บาท"));
+      small(over ? "สัดส่วนต้นทุนการตลาด " + money(cap.rate_pct, 2) + "% — สูงกว่าเกณฑ์ " + money(cap.max_rate_pct, 0) + "% อยู่ " + money(cap.over_pct_points, 2) + " จุดเปอร์เซ็นต์ (" + money(cap.overage, 2) + " บาท)" : "อยู่ในกรอบ เหลือ " + money(cap.headroom, 2) + " บาท"));
   }
   function costStructureRows(s) {
     const rows = [["Gross Reference Sales", s.gross], ["− ส่วนลด Campaign", s.campaign_reduction], ["− Voucher", s.voucher], ["= Net Revenue", s.net],
       ["− COGS", s.cogs], ["− Platform Fee", s.platform_fee], ["− Fulfillment", s.fulfillment], ["− Affiliate", s.affiliate], ["− Ads", s.ads],
-      ["− Free Sample", s.sample], ["− Claim", s.claim], ["= Contribution Profit", s.profit]];
+      ["− Free Sample", s.sample], ["− Claim", s.claim], ["= กำไร (Profit)", s.profit]];
     return rows.map(([item, v]) => ({ item, value: v === null || v === undefined ? "INCOMPLETE" : "฿" + money(v, 2) }));
   }
   function groupDrawer(selected, groupRows, runId) {
@@ -282,9 +282,9 @@
     const gross = Number(row.gross);
     dlg.append(dataTable([["item", "รายการ"], ["value", "จำนวนเงิน"], ["share", "% ของ Gross"]], b.lines.map(l => ({
       item: l.label, value: l.missing ? "ข้อมูลต้นทุนไม่ครบ" : "฿" + money(l.value, 2), share: l.missing || !(gross > 0) ? "—" : pct(100 * l.value / gross, 2) }))));
-    dlg.append(small("Profit Protection = Contribution Profit ÷ Gross Reference Sales ของกลุ่มนี้ = " + (b.protection_pct === null ? "—" : pct(b.protection_pct, 2)) + " · เกณฑ์ 10% เป็นเกณฑ์ระดับร้าน ใช้รายกลุ่มเป็นข้อมูลอ้างอิงเท่านั้น"));
+    dlg.append(small("อัตรากำไร (Profit Margin) = กำไร ÷ Gross Reference Sales ของกลุ่มนี้ = " + (b.protection_pct === null ? "—" : pct(b.protection_pct, 2)) + " · เกณฑ์ 10% เป็นเกณฑ์ระดับร้าน ใช้รายกลุ่มเป็นข้อมูลอ้างอิงเท่านั้น"));
     if (b.protection_pct !== null && b.protection_pct < 10)
-      dlg.append(notice(name + " มี Profit Protection " + pct(b.protection_pct, 2) + " ต่ำกว่าเกณฑ์อ้างอิง 10% ควรตรวจรายละเอียดต้นทุนและส่วนลดของกลุ่มนี้ (ยังไม่ระบุสาเหตุ)", true));
+      dlg.append(notice(name + " มีอัตรากำไร " + pct(b.protection_pct, 2) + " ต่ำกว่าเกณฑ์อ้างอิง 10% ควรตรวจรายละเอียดต้นทุนและส่วนลดของกลุ่มนี้ (ยังไม่ระบุสาเหตุ)", true));
     const mismatch = BI.reconcile(groupRows, selected);
     dlg.append(mismatch.length ? notice("ผลรวม 5 กลุ่มไม่ตรงกับยอดร้านที่: " + mismatch.map(m => m.label + " (กลุ่มรวม " + money(m.groups, 2) + " ≠ ร้าน " + money(m.shop, 2) + ")").join(", "), true)
       : small("ตรวจกระทบยอดแล้ว: ผลรวม 5 กลุ่มตรงกับยอดร้านเดือนนี้ทุกรายการที่เปรียบเทียบได้"));
@@ -334,18 +334,18 @@
       businessKpiCard("ยอดขายสุทธิ (Net Revenue)", "฿" + money(selected.net, 2), null,
         g.revenue.target ? `เป้า ฿${money(g.revenue.target, 0)} · ${g.revenue.gap >= 0 ? "เกินเป้า" : "ต่ำกว่าเป้า"} ฿${money(Math.abs(g.revenue.gap), 2)}` : "ไม่มีเป้าหมายเดือนนี้",
         "Net = Gross Reference Sales − ส่วนลด Campaign − Voucher (หักครั้งเดียว)", false),
-      businessKpiCard("ยอดขายเทียบเป้า (Achievement)", g.revenue.achievement_pct === null ? "—" : pct(g.revenue.achievement_pct, 2), badge(g.revenue.status),
+      businessKpiCard("ความสำเร็จเทียบเป้า (Achievement)", g.revenue.achievement_pct === null ? "—" : pct(g.revenue.achievement_pct, 2), badge(g.revenue.status),
         "เกณฑ์ ≥ 100%", GATE_THRESHOLD_TEXT.revenue, top === "revenue"),
-      businessKpiCard("อัตราคุ้มครองกำไร (Profit Protection)", g.profit_protection.rate_pct === null ? "INCOMPLETE" : pct(g.profit_protection.rate_pct, 2), badge(g.profit_protection.status),
+      businessKpiCard("อัตรากำไร (Profit Margin)", g.profit_protection.rate_pct === null ? "INCOMPLETE" : pct(g.profit_protection.rate_pct, 2), badge(g.profit_protection.status),
         "เกณฑ์ ≥ 10% ของ Gross · กำไร " + (selected.profit === null ? "INCOMPLETE" : "฿" + money(selected.profit, 2)), GATE_THRESHOLD_TEXT.protection, top === "protection" || top === "profit_protection"),
-      businessKpiCard("ค่าใช้จ่ายการตลาดต่อ Gross (Marketing GAP)", g.marketing_gap.rate_pct === null ? "INCOMPLETE" : pct(g.marketing_gap.rate_pct, 2), badge(g.marketing_gap.status),
+      businessKpiCard("สัดส่วนต้นทุนการตลาดต่อ Gross (Marketing Cost Ratio)", g.marketing_gap.rate_pct === null ? "INCOMPLETE" : pct(g.marketing_gap.rate_pct, 2), badge(g.marketing_gap.status),
         "เกณฑ์ ≤ " + (g.marketing_gap.max_rate_pct === null ? "—" : pct(g.marketing_gap.max_rate_pct, 0)) + " ของ Gross", GATE_THRESHOLD_TEXT.gap, top === "gap" || top === "marketing_gap")));
 
     // 4) trend + marketing
     root.append(box("bz-two-col",
       panel("ยอดขายจริงเทียบเป้ารายเดือน", "เฉพาะเดือนที่ Publish แล้ว · % = Net Revenue ÷ เป้ารายเดือน",
         box("panel-body", trendChart(shopMonths), box("bz-legend", node("span", "bz-legend-actual", "Actual"), node("span", "bz-legend-target", "เป้า")))),
-      panel("งบและส่วนลดการตลาด · " + thaiMonth(selected.month), "ค่าใช้จ่ายที่รวมอยู่ใน Marketing GAP", box("panel-body", marketingBreakdown(selected)))));
+      panel("ค่าใช้จ่ายและส่วนลดการตลาดจริง · " + thaiMonth(selected.month), "ค่าใช้จ่ายที่รวมอยู่ในสัดส่วนต้นทุนการตลาด (Marketing Cost Ratio)", box("panel-body", marketingBreakdown(selected)))));
 
     // 5) product groups (+ drill-down) and the "ประเด็นที่ควรตรวจสอบ" box
     const BI = window.BusinessInsights;
@@ -354,7 +354,7 @@
     const withRate = groupRows.map(r => ({ ...r, rate: BI.groupBreakdown(r).protection_pct }));
     const lowest = withRate.filter(r => r.rate !== null).sort((a, b) => a.rate - b.rate)[0];
     const gTable = node("table", "bz-group-table");
-    const head = node("tr", ""); ["กลุ่มสินค้า", "Net Revenue", "Contribution Profit", "Profit Protection", ""].forEach(h => head.append(node("th", "", h)));
+    const head = node("tr", ""); ["กลุ่มสินค้า", "Net Revenue", "กำไร (Profit)", "อัตรากำไร", ""].forEach(h => head.append(node("th", "", h)));
     const thead = node("thead", ""); thead.append(head); gTable.append(thead);
     const tbody = node("tbody", "");
     withRate.forEach(r => {
@@ -389,7 +389,7 @@
     adv.append(node("summary", "advanced-settings-summary", "รายละเอียดเชิงลึก (โครงสร้างต้นทุน · รายวัน · SKU · แคมเปญ · ตารางใน Warehouse)"));
     const body = box("v-stack"); body.style.marginTop = "14px";
     body.append(node("strong", "", "โครงสร้างต้นทุนและกำไร · " + thaiMonth(selected.month)), dataTable([["item", "รายการ"], ["value", "จำนวนเงิน"]], costStructureRows(selected)));
-    body.append(small("Profit Protection = Contribution Profit ÷ Gross Reference Sales · Marketing GAP ไม่รวม COGS/Platform/Fulfillment/Claim · แหล่งเป้าหมาย: " + g.target_policy.label + " (" + g.target_policy.version + ")"));
+    body.append(small("อัตรากำไร (Profit Margin) = กำไร ÷ Gross Reference Sales · ไม่รวมค่าใช้จ่ายคงที่และภาษี · สัดส่วนต้นทุนการตลาด (Marketing Cost Ratio) ไม่รวม COGS/Platform/Fulfillment/Claim · แหล่งเป้าหมาย: " + g.target_policy.label + " (" + g.target_policy.version + ")"));
     const business = result.business, tables = Array.isArray(load?.output?.tables) ? load.output.tables : [], previews = load?.output?.table_previews || {};
     const subtabs = [["daily", "รายวัน"], ["sku", "SKU"], ["campaign", "แคมเปญและโฆษณา"], ["tables", "ตารางใน Warehouse (" + tables.length + ")"]];
     state.explorerSubtab = state.explorerSubtab || "daily";
@@ -3643,7 +3643,7 @@
             const facts = liveFacts(), lm = facts.lastMonth;
             const artifacts = [
               { id: "art_snapshot", label: "Published Warehouse Snapshot (Run " + String(facts.runId || "—").slice(0, 8) + ")", sublabel: "DuckDB Embedded Warehouse", count: "Published", badge: "Published", badgeType: "validated" },
-              { id: "art_kpis", label: "Business KPI ของเดือนล่าสุดที่ Publish", sublabel: lm ? thaiMonth(lm.month) + " · Net ฿" + money(lm.net, 2) + (lm.gates?.profit_protection?.rate_pct === null || lm.gates?.profit_protection?.rate_pct === undefined ? "" : " · Profit Protection " + pct(lm.gates.profit_protection.rate_pct, 2)) : "ยังไม่มีเดือนที่ Publish", count: lm ? "1 เดือน" : "—", badge: "Ready", badgeType: "validated" }
+              { id: "art_kpis", label: "Business KPI ของเดือนล่าสุดที่ Publish", sublabel: lm ? thaiMonth(lm.month) + " · Net ฿" + money(lm.net, 2) + (lm.gates?.profit_protection?.rate_pct === null || lm.gates?.profit_protection?.rate_pct === undefined ? "" : " · อัตรากำไร " + pct(lm.gates.profit_protection.rate_pct, 2)) : "ยังไม่มีเดือนที่ Publish", count: lm ? "1 เดือน" : "—", badge: "Ready", badgeType: "validated" }
             ];
             const splitView = renderMasterDetailSplitView({
               items: artifacts,
@@ -4311,8 +4311,8 @@
     wrap.append(box("fc-rgrid",
       cell("Scenario Net", "฿" + money(r.net_revenue, 2), null, (delta >= 0 ? "+" : "") + money(delta, 2) + " เทียบ Forecast"),
       cell("ห่างเป้า", gapPct === null ? "—" : (gapPct >= 0 ? "+" : "") + money(gapPct, 2) + "%", g.revenue.status, tgt ? (g.revenue.gap >= 0 ? "+" : "−") + "฿" + money(Math.abs(g.revenue.gap), 2) : "ไม่มีเป้า"),
-      cell("Margin (Profit Protection)", g.profit_protection.rate_pct === undefined ? "—" : pct(g.profit_protection.rate_pct, 2), g.profit_protection.status, "เกณฑ์ ≥ 10%" + (g.profit_protection.status === "FAIL" ? " · ขาด ฿" + money(g.profit_protection.required - r.contribution_profit, 2) : "")),
-      cell("Marketing GAP", g.marketing_gap.rate_pct === undefined ? "—" : pct(g.marketing_gap.rate_pct, 2), g.marketing_gap.status, "เกณฑ์ ≤ 30%" + (g.marketing_gap.status === "FAIL" ? " · เกิน ฿" + money(g.marketing_gap.overage, 2) : "")),
+      cell("อัตรากำไร (Profit Margin)", g.profit_protection.rate_pct === undefined ? "—" : pct(g.profit_protection.rate_pct, 2), g.profit_protection.status, "เกณฑ์ ≥ 10%" + (g.profit_protection.status === "FAIL" ? " · ขาด ฿" + money(g.profit_protection.required - r.contribution_profit, 2) : "")),
+      cell("สัดส่วนต้นทุนการตลาด (Marketing Cost Ratio)", g.marketing_gap.rate_pct === undefined ? "—" : pct(g.marketing_gap.rate_pct, 2), g.marketing_gap.status, "เกณฑ์ ≤ 30%" + (g.marketing_gap.status === "FAIL" ? " · เกิน ฿" + money(g.marketing_gap.overage, 2) : "")),
       cell("กำไร", r.contribution_profit === null ? "ข้อมูลไม่ครบ" : "฿" + money(r.contribution_profit, 2), null, r.unknown_inputs.length ? "ไม่ทราบ: " + r.unknown_inputs.join(", ") : null)));
     return wrap;
   }

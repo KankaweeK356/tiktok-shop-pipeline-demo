@@ -27,7 +27,7 @@
   const LINES = [["gross", "Gross Reference Sales", "gross", false], ["campaign_reduction", "− ส่วนลด Campaign", "cost", false], ["voucher_discount", "− Voucher", "cost", false],
     ["net", "= Net Revenue", "net", true], ["cogs", "− COGS", "cost", false], ["platform_fee", "− Platform Fee", "cost", false], ["fulfillment", "− Fulfillment", "cost", false],
     ["affiliate", "− Affiliate", "cost", false], ["ads_cost", "− Ads", "cost", false], ["sample", "− Free Sample", "cost", false], ["claim", "− Claim", "cost", false],
-    ["profit", "= Contribution Profit", "profit", true]];
+    ["profit", "= กำไร (Profit)", "profit", true]];
 
   /** Ordered breakdown lines for one group-month row. A missing/incomplete value is returned as null (shown as "ข้อมูลไม่ครบ"), never 0. */
   function groupBreakdown(row) {
@@ -63,15 +63,15 @@
       detail: `ควรตรวจว่า Ads, Campaign, Affiliate และ Voucher ส่วนใดมีสัดส่วนสูง โดยดูรายละเอียดประกอบก่อนลดงบ${cap.top_component ? ` (ส่วนที่สูงสุดคือ ${cap.top_component.name} ${cap.top_component.share_pct}% ของค่าใช้จ่ายการตลาด)` : ""}` });
     else if (cap.status === "WITHIN") items.push({ tone: "ok", key: "marketing", title: `ค่าใช้จ่ายการตลาดต่ำกว่ากรอบ ${fmt(cap.headroom)} บาท`,
       detail: `ใช้ ${fmt(cap.rate_pct)}% ของ Gross จากกรอบ ${fmt(cap.max_rate_pct)}%` });
-    else items.push({ tone: "na", key: "marketing", title: "ยังสรุป Marketing GAP ไม่ได้",
-      detail: { INCOMPLETE: "ข้อมูลค่าใช้จ่ายการตลาดไม่ครบ ไม่นับเป็นผ่าน", NO_GROSS: "ไม่สามารถคำนวณ Marketing GAP ได้ เพราะ Gross เป็นศูนย์", NO_POLICY: "ไม่มีเพดานจากนโยบายแผน" }[cap.status] });
+    else items.push({ tone: "na", key: "marketing", title: "ยังสรุปสัดส่วนต้นทุนการตลาดไม่ได้",
+      detail: { INCOMPLETE: "ข้อมูลค่าใช้จ่ายการตลาดไม่ครบ ไม่นับเป็นผ่าน", NO_GROSS: "ไม่สามารถคำนวณสัดส่วนต้นทุนการตลาดได้ เพราะ Gross เป็นศูนย์", NO_POLICY: "ไม่มีเพดานจากนโยบายแผน" }[cap.status] });
     const rated = (groups || []).map(g => ({ g, p: groupBreakdown(g).protection_pct })).filter(x => x.p !== null).sort((a, b) => a.p - b.p);
     if (!rated.length) items.push({ tone: "na", key: "groups", title: "ยังไม่มีข้อมูลกำไรรายกลุ่ม", detail: "ข้อมูลต้นทุนรายกลุ่มไม่ครบใน Snapshot นี้" });
     else if (rated[0].p < minProtectionPct) {
       const low = rated.filter(x => x.p < minProtectionPct);
-      items.push({ tone: "warn", key: "groups", group_ids: low.map(x => x.g.group_id), title: `${groupLabel(rated[0].g)} มี Profit Protection ${fmt(rated[0].p)}%`,
+      items.push({ tone: "warn", key: "groups", group_ids: low.map(x => x.g.group_id), title: `${groupLabel(rated[0].g)} มีอัตรากำไร ${fmt(rated[0].p)}%`,
         detail: `ต่ำกว่าเกณฑ์อ้างอิง ${minProtectionPct}% ควรตรวจต้นทุนและส่วนลดของกลุ่มนี้เพิ่มเติม${low.length > 1 ? ` (กลุ่มที่ต่ำกว่าเกณฑ์: ${low.map(x => x.g.group_id).join(", ")})` : ""} · เกณฑ์ ${minProtectionPct}% เป็นเกณฑ์ระดับร้าน ใช้เป็นข้อมูลอ้างอิงรายกลุ่มเท่านั้น` });
-    } else items.push({ tone: "ok", key: "groups", title: `ทุกกลุ่มมี Profit Protection ไม่ต่ำกว่า ${minProtectionPct}%`, detail: `ต่ำสุดคือ ${groupLabel(rated[0].g)} ${fmt(rated[0].p)}%` });
+    } else items.push({ tone: "ok", key: "groups", title: `ทุกกลุ่มมีอัตรากำไรไม่ต่ำกว่า ${minProtectionPct}%`, detail: `ต่ำสุดคือ ${groupLabel(rated[0].g)} ${fmt(rated[0].p)}%` });
     const ach = shop?.gates?.revenue;
     if (ach && ach.achievement_pct !== null && ach.achievement_pct !== undefined) {
       const delta = Math.round((ach.achievement_pct - 100) * 100) / 100;

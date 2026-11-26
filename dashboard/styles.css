@@ -756,7 +756,7 @@ tr:hover td{background:#fff8f0}.metric-label,.metric-sub,.panel-description{colo
 .bz-legend{display:flex;gap:16px;font-size:12px;margin-top:8px}
 .bz-legend-actual::before,.bz-legend-target::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px}
 .bz-legend-actual::before{background:#741D2B}.bz-legend-target::before{background:#ecd1d5}
-.bz-mk-row{display:grid;grid-template-columns:150px 1fr 110px;gap:10px;align-items:center;font-size:13px}
+.bz-mk-row{display:grid;grid-template-columns:210px 1fr 110px;gap:10px;align-items:center;font-size:13px}
 .bz-mk-track{background:#f6ecee;border-radius:6px;height:12px;overflow:hidden}.bz-mk-bar{background:#a8566a;height:100%}
 .bz-mk-val{text-align:right;font-variant-numeric:tabular-nums}.bz-mk-total{font-weight:700;border-top:1px solid #f0e2e6;padding-top:8px}
 .bz-attn{padding:8px 10px;border-radius:8px;background:#fbf5f6;margin-bottom:6px}.bz-attn-first{background:#fbeaea;border:1px solid #e9b7bd}

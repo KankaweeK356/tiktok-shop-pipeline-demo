@@ -56,7 +56,7 @@ test("insights: three measured points that follow the data (PG05 low protection,
   const items = B.insights({ shop: june, groups, maxMarketingPct: 30 });
   assert.equal(items.length, 3);
   assert.match(items[0].title, /เกินกรอบ 3,174\.12 บาท/);
-  assert.match(items[1].title, /Oversize มี Profit Protection 7\.06%/); assert.match(items[1].detail, /เกณฑ์อ้างอิง 10%/);
+  assert.match(items[1].title, /Oversize มีอัตรากำไร 7\.06%/); assert.match(items[1].detail, /เกณฑ์อ้างอิง 10%/);
   assert.match(items[2].title, /สูงกว่าเป้า 11\.41%/);
   const calm = B.insights({ shop: { ...june, ads: 5000 }, groups: [group("PG01", "a", 1, 100, 20)], maxMarketingPct: 30 });
   assert.equal(calm[0].tone, "ok"); assert.equal(calm[1].tone, "ok");

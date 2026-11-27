@@ -822,7 +822,7 @@
             { field: "จำนวนแถวในรอบนี้", val: money(item.raw.rows) + " แถว" }]));
         if (Array.isArray(rows) && rows.length)
           wrap.append(node("h5", "lab-subheading", "ตัวอย่าง " + rows.length + " แถวแรกจากรอบนี้"),
-            box("table-scroll-x", dataTable(Object.keys(rows[0]).slice(0, 8).map(c => [c, c]), rows)));
+            box("table-scroll-x", dataTable(Object.keys(rows[0]).map(c => [c, c]), rows)));
         else wrap.append(small(previews ? "ตารางนี้ไม่มีแถวข้อมูล" : "หลักฐานรอบนี้ไม่มีตัวอย่างแถวของไฟล์นี้ (ดูตัวอย่างได้ที่แท็บ Output ของขั้นก่อนหน้า)"));
         return wrap;
       },
@@ -3389,10 +3389,10 @@
                     ),
                     small("จำนวนแถวจริงในฐานข้อมูล (SELECT COUNT(*)): " + money(nd.row_count) + " แถว"),
                     node("h5", "lab-subheading", "โครงสร้างคอลัมน์และประเภทข้อมูล (Schema & Data Types จาก PostgreSQL)"),
-                    box("table-scroll-x", dataTable([["column_name", "ชื่อคอลัมน์ (Column)"], ["data_type", "ประเภทข้อมูล (Data Type)"]], nd.columns.slice(0, 10))),
+                    box("table-scroll-x", dataTable([["column_name", "ชื่อคอลัมน์ (Column)"], ["data_type", "ประเภทข้อมูล (Data Type)"]], nd.columns)),
                     node("h5", "lab-subheading", "ตัวอย่างข้อมูลจริง 5-10 แถวแรกจาก Neon (Sample Records)"),
                     nd.preview_rows?.length ?
-                      box("table-scroll-x", dataTable(nd.columns.slice(0, 8).map(c => [c.column_name, c.column_name]), nd.preview_rows)) :
+                      box("table-scroll-x", dataTable(nd.columns.map(c => [c.column_name, c.column_name]), nd.preview_rows)) :
                       small("ตารางนี้ไม่มีแถวข้อมูล (0 แถว)")
                   );
                 } else {

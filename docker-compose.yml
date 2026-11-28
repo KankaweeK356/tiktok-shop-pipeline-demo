@@ -1,0 +1,9 @@
+# Run the demo and keep the generated database/lake/warehouse files in ./output on your machine:
+#   docker compose up --build
+services:
+  pipeline-demo:
+    build: .
+    image: tiktok-shop-pipeline
+    command: ["python", "docker/run_demo.py", "--workspace", "/app/output/docker_demo"]
+    volumes:
+      - ./output:/app/output
